@@ -1,0 +1,21 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+
+    // Path mapping for cleaner imports.
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    // Extra safety for array and object lookups, but may have false positives.
+    "noUncheckedIndexedAccess": true
+  },
+  "include": [
+    "types/*.d.ts",
+    "src/**/*",
+    "src/**/*.vue"
+  ],
+  "exclude": [
+    "src/**/__tests__/*"
+  ]
+}
