@@ -28,6 +28,8 @@ export default defineConfig({
     dts({
       tsconfigPath: './tsconfig.app.json',
       entryRoot: 'components',
+      exclude: ['vue.d.ts'],
+      processor: 'vue',
     }),
   ],
   build: {
@@ -37,7 +39,16 @@ export default defineConfig({
         'antdv-next',
         '@antdv-next/icons',
         '@vueuse/core',
+        /^dayjs/,
       ],
+
+      output: {
+        preserveModules: true,
+        preserveModulesRoot: 'components',
+        format: 'esm',
+        entryFileNames: '[name].js',
+        dir: 'dist',
+      },
     },
     lib: {
       entry: files,

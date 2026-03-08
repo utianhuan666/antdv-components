@@ -9,6 +9,9 @@
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true
   },
+  "files": [
+    "./vue.d.ts"
+  ],
   "include": [
     "components/**/*.vue",
     "components/**/*.tsx",

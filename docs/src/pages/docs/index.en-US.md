@@ -20,6 +20,7 @@ It covers custom containers, anchors, Shiki code highlighting, and `demo/*.vue` 
 
 <demo-group>
   <demo src="./demo/basic.vue">Basic example</demo>
+  <demo src="./demo/form.vue">test form</demo>
 </demo-group>
 
 

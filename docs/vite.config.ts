@@ -6,6 +6,7 @@ import unocss from 'unocss/vite'
 import autoImport from 'unplugin-auto-import/vite'
 import components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
+import dayjs from 'vite-plugin-dayjs'
 import { tsxResolveTypes } from 'vite-plugin-tsx-resolve-types'
 import vueResolveTypes from 'vite-plugin-vue-resolve-types'
 import { mdPlugin } from './plugins/markdown'
@@ -23,14 +24,18 @@ export default defineConfig({
     }),
     vueJsx(),
     unocss(),
+    dayjs(),
     autoImport({
-      dirs: [],
+      dirs: [
+        './src/stores',
+      ],
       dts: 'types/auto-imports.d.ts',
       imports: [
         'vue',
         'vue-router',
         '@vueuse/core',
         'pinia',
+        'vue-i18n',
       ],
     }),
     components({
@@ -44,6 +49,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@org/components': fileURLToPath(new URL('../components', import.meta.url)),
     },
   },
   server: {

@@ -1,15 +1,7 @@
 <script setup lang="ts">
 import type { VNode } from 'vue'
-import { computed, inject, onMounted, onUnmounted, ref, useSlots } from 'vue'
-
-interface DocPage {
-  frontmatter?: {
-    demo?: {
-      cols?: number
-      class?: string
-    }
-  }
-}
+import { computed, onMounted, onUnmounted, ref, useSlots } from 'vue'
+import { usePageInfo } from '@/composables/doc-page'
 
 defineOptions({
   name: 'DemoGroup',
@@ -20,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const slots = useSlots()
-const pageInfo = inject<DocPage | null>('__pageInfo__', null)
+const pageInfo = usePageInfo()
 const containerRef = ref<HTMLElement>()
 const containerWidth = ref(0)
 const gap = 8
@@ -98,7 +90,6 @@ onUnmounted(() => {
 .demo-column {
   flex: 1;
   min-width: 0;
-  width: 0;
   padding: var(--demo-gap);
 }
 

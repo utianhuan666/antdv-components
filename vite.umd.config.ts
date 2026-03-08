@@ -20,12 +20,17 @@ export default defineConfig({
         'vue',
         'antdv-next',
         '@antdv-next/icons',
+        /^dayjs/,
       ],
       output: {
         globals: {
           'vue': 'Vue',
           'antdv-next': 'antd',
           '@antdv-next/icons': 'AntdIcons',
+          'dayjs': 'dayjs',
+          // plugins: 'dayjs_plugin',
+          // like this
+          // 'dayjs/plugin/advancedFormat': 'dayjs_plugin_advancedFormat',
         },
       },
     },

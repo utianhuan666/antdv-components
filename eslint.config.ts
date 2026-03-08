@@ -7,5 +7,7 @@ export default antfu({
   formatters: {
     css: true,
   },
-  rules: {},
+  rules: {
+    'vue/valid-v-slot': 'off',
+  },
 })

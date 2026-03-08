@@ -20,6 +20,7 @@ export default defineConfig({
         'vue',
         'antdv-next',
         '@antdv-next/icons',
+        /^dayjs/,
       ],
     },
     emptyOutDir: false,

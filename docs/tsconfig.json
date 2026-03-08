@@ -4,7 +4,9 @@
     "baseUrl": ".",
     // Path mapping for cleaner imports.
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@org/components": ["../components/index.ts"],
+      "@org/components/*": ["../components/*"]
     },
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true

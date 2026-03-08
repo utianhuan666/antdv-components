@@ -20,6 +20,7 @@ demo:
 
 <demo-group>
   <demo src="./demo/basic.vue">基础示例</demo>
+  <demo src="./demo/form.vue">Form 测试</demo>
 </demo-group>
 
 
