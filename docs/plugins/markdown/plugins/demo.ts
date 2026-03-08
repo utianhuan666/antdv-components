@@ -12,7 +12,33 @@ function checkWrapper(content: string, wrapper = 'demo') {
   return new RegExp(`<${wrapper}(\\s|>|/)`, 'i').test(content)
 }
 
-export function replaceSrcPath(content: string, id: string, root: string, wrapper = 'demo', examples?: MarkdownItHeader) {
+function flattenHeaders(headers: MarkdownItHeader[] = []) {
+  const headerMap = new Map<string, MarkdownItHeader>()
+
+  const visit = (items: MarkdownItHeader[]) => {
+    for (const item of items) {
+      headerMap.set(item.slug, item)
+      if (item.children?.length)
+        visit(item.children)
+    }
+  }
+
+  visit(headers)
+  return headerMap
+}
+
+function getHeadingSlug(token: { attrs?: [string, string][] | null }) {
+  return token.attrs?.find(attr => attr[0] === 'id')?.[1]
+}
+
+function getHeadingLevel(token: { tag?: string }) {
+  const match = token.tag?.match(/^h([2-6])$/)
+  if (!match)
+    return null
+  return Number(match[1])
+}
+
+export function replaceSrcPath(content: string, id: string, root: string, wrapper = 'demo', parentHeader?: MarkdownItHeader) {
   function replaceSrcInTag(tagMatch: string, titleContent?: string) {
     return tagMatch.replace(/(\s|^)src=(['"])(.*?)\2/gi, (srcMatch, prefix, quote, srcValue) => {
       if (!srcValue || srcValue.startsWith('/'))
@@ -26,19 +52,19 @@ export function replaceSrcPath(content: string, id: string, root: string, wrappe
       const componentDemoPathArr = componentsArr.slice(0, demoIndex + 2)
       const componentDemoPath = componentDemoPathArr.reverse().join('/')
 
-      if (examples && titleContent) {
+      if (parentHeader && titleContent) {
         const slug = componentDemoPath.replace(/\//g, '-').replace('.vue', '')
         const item = {
-          level: examples.level + 1,
+          level: parentHeader.level + 1,
           title: titleContent,
           slug,
           link: `#${slug}`,
           children: [],
         }
-        if (examples.children)
-          examples.children.push(item)
+        if (parentHeader.children)
+          parentHeader.children.push(item)
         else
-          examples.children = [item]
+          parentHeader.children = [item]
       }
 
       return `${prefix}src=${quote}${relative.startsWith('/') ? relative : `/${relative}`}${quote}`
@@ -63,11 +89,18 @@ export function demoPlugin(md: MarkdownIt, config: { root?: string } = {}) {
   md.renderer.render = function render(tokens, options, env: MarkdownItEnv) {
     const root = config.root ?? process.cwd()
     const currentId = env.id || ''
-    const examples = env.headers?.find(item => item.slug === 'examples')
+    const headerMap = flattenHeaders(env.headers)
+    const activeHeaders = new Map<number, MarkdownItHeader>()
 
-    function processToken(token: { type: string, content: string, children?: unknown[] }) {
+    function getCurrentHeader() {
+      const levels = [...activeHeaders.keys()].sort((left, right) => right - left)
+      const nearestLevel = levels[0]
+      return nearestLevel ? activeHeaders.get(nearestLevel) : undefined
+    }
+
+    function processToken(token: { type: string, tag?: string, attrs?: [string, string][] | null, content: string, children?: unknown[] }) {
       if ((token.type === 'html_block' || token.type === 'html_inline') && checkWrapper(token.content))
-        token.content = replaceSrcPath(token.content, currentId, root, 'demo', examples)
+        token.content = replaceSrcPath(token.content, currentId, root, 'demo', getCurrentHeader())
 
       if (token.children) {
         for (const child of token.children as typeof token[]) {
@@ -76,7 +109,23 @@ export function demoPlugin(md: MarkdownIt, config: { root?: string } = {}) {
       }
     }
 
-    for (const token of tokens as typeof tokens & Array<{ type: string, content: string, children?: unknown[] }>) {
+    for (const token of tokens as typeof tokens & Array<{ type: string, tag?: string, attrs?: [string, string][] | null, content: string, children?: unknown[] }>) {
+      if (token.type === 'heading_open') {
+        const headingLevel = getHeadingLevel(token)
+        const headingSlug = getHeadingSlug(token)
+
+        if (headingLevel && headingSlug) {
+          for (const level of [...activeHeaders.keys()]) {
+            if (level >= headingLevel)
+              activeHeaders.delete(level)
+          }
+
+          const header = headerMap.get(headingSlug)
+          if (header)
+            activeHeaders.set(headingLevel, header)
+        }
+      }
+
       processToken(token)
     }
 
