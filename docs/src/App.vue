@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { useCopyCode } from '@/components/demo/copy-code'
-
-useCopyCode()
+import BaseConfig from '@/components/config/base.vue'
 </script>
 
 <template>
-  <a-app>
+  <BaseConfig>
     <router-view />
-  </a-app>
+  </BaseConfig>
 </template>

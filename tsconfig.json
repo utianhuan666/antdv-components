@@ -4,7 +4,7 @@
       "path": "./tsconfig.node.json"
     },
     {
-      "path": "./tsconfig.components.json"
+      "path": "./tsconfig.app.json"
     },
     {
       "path": "./tsconfig.vitest.json"

@@ -14,6 +14,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AApp: typeof import('antdv-next')['App']
     AButton: typeof import('antdv-next')['Button']
+    AConfigProvider: typeof import('antdv-next')['ConfigProvider']
     AFlex: typeof import('antdv-next')['Flex']
     ASkeleton: typeof import('antdv-next')['Skeleton']
     ATabPane: typeof import('antdv-next')['TabPane']
@@ -29,6 +30,7 @@ declare module 'vue' {
 declare global {
   const AApp: typeof import('antdv-next')['App']
   const AButton: typeof import('antdv-next')['Button']
+  const AConfigProvider: typeof import('antdv-next')['ConfigProvider']
   const AFlex: typeof import('antdv-next')['Flex']
   const ASkeleton: typeof import('antdv-next')['Skeleton']
   const ATabPane: typeof import('antdv-next')['TabPane']

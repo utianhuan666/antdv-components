@@ -2,7 +2,6 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "baseUrl": ".",
-
     // Path mapping for cleaner imports.
     "paths": {
       "@/*": ["src/*"]
