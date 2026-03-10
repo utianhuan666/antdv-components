@@ -8,7 +8,7 @@
 
 先把模板里的组织包名替换成你自己的包名。
 
-当前仓库默认使用 `@org/components` 作为占位包名。开始二次开发前，建议先全局搜索并替换 `@org/components`，统一改成你自己的真实包名，再继续后续开发。
+当前仓库默认使用 `@antdv/components` 作为占位包名。开始二次开发前，建议先全局搜索并替换 `@antdv/components`，统一改成你自己的真实包名，再继续后续开发。
 
 ## 主题定制
 
@@ -147,7 +147,7 @@ pnpm test:unit
 
 ## 建议你基于这个模板做的第一步
 
-1. 先全局替换 `@org/components`，改成你自己的包名。
+1. 先全局替换 `@antdv/components`，改成你自己的包名。
 2. 用自己的业务组件替换 [`components/`](./components) 下的示例内容。
 3. 修改 [`package.json`](./package.json) 中的包名与发布信息。
 4. 更新 [`docs/src/pages/`](./docs/src/pages) 下的首页和文档页面。

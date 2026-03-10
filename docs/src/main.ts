@@ -1,4 +1,4 @@
-import orgComponents from '@org/components'
+import orgComponents from '@antdv/components'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from './App.vue'

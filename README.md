@@ -8,7 +8,7 @@
 
 Replace the template package name with your own package name first.
 
-This repository uses `@org/components` as the default placeholder package name. Before secondary development, perform a global search and replace for `@org/components` and change it to your real package name.
+This repository uses `@antdv/components` as the default placeholder package name. Before secondary development, perform a global search and replace for `@antdv/components` and change it to your real package name.
 
 ## Theme customization
 
@@ -145,7 +145,7 @@ This makes the template suitable both for modular consumption and for traditiona
 
 ## Suggested way to use this template
 
-1. Perform a global replacement of `@org/components` and change it to your own package name.
+1. Perform a global replacement of `@antdv/components` and change it to your own package name.
 2. Replace the sample components in [`components/`](./components) with your own business components.
 3. Rename the package in [`package.json`](./package.json).
 4. Update the docs home page and Markdown pages in [`docs/src/pages/`](./docs/src/pages).

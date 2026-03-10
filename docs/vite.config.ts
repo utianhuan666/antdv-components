@@ -49,7 +49,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@org/components': fileURLToPath(new URL('../components', import.meta.url)),
+      '@antdv/components': fileURLToPath(new URL('../components', import.meta.url)),
     },
   },
   server: {
