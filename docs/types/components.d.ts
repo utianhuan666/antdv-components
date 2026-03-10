@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AAnchor: typeof import('antdv-next')['Anchor']
     AApp: typeof import('antdv-next')['App']
     AButton: typeof import('antdv-next')['Button']
     AConfigProvider: typeof import('antdv-next')['ConfigProvider']
@@ -30,6 +31,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const AAnchor: typeof import('antdv-next')['Anchor']
   const AApp: typeof import('antdv-next')['App']
   const AButton: typeof import('antdv-next')['Button']
   const AConfigProvider: typeof import('antdv-next')['ConfigProvider']

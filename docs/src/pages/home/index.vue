@@ -1,22 +1,22 @@
 <script setup lang="ts">
+import SiteFeatures from '@/components/features/index.vue'
+import SiteFooter from '@/components/site-footer/index.vue'
+import SiteHero from '@/components/hero/index.vue'
+
+defineOptions({ name: 'HomePage' })
 </script>
 
 <template>
-  <main class="home">
-    <h1>docs-base</h1>
-    <p>Markdown 与 demo 插件已经迁入当前项目。</p>
-    <a-button type="primary" href="/docs">
-      打开文档示例
-    </a-button>
-  </main>
+  <div class="home-page">
+    <SiteHero />
+    <SiteFeatures />
+    <SiteFooter />
+  </div>
 </template>
 
 <style scoped>
-.home {
-  min-height: 100vh;
-  display: grid;
-  gap: 16px;
-  place-content: center;
-  text-align: center;
+.home-page {
+  display: flex;
+  flex-direction: column;
 }
 </style>

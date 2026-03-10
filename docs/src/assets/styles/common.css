@@ -1,3 +1,49 @@
-:root{
+:root {
+  /* Site layout tokens */
+  --site-header-height: 64px;
+  --site-sidebar-width: 240px;
+  --site-toc-width: 176px;
+  --site-content-max-width: 1152px;
 
+  /* Gradient colors (light) */
+  --site-gradient-1: #1677ff;
+  --site-gradient-2: #13c2c2;
+  --site-gradient-3: #722ed1;
+
+  /* Header */
+  --site-header-bg: rgba(255, 255, 255, 0.85);
+
+  /* Hero gradient */
+  --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+
+  /* Sidebar */
+  --site-sidebar-item-active-bg: var(--ant-color-primary-bg);
+  --site-sidebar-item-active-color: var(--ant-color-primary);
+}
+
+.dark {
+  /* Overrides for dark mode */
+  --site-gradient-2: #eb2f96;
+  --site-header-bg: rgba(20, 20, 20, 0.85);
+  --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #eb2f96 80%, #722ed1 130%);
+}
+
+/* Global resets for docs site */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  color: var(--ant-color-primary);
 }

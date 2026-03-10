@@ -14,7 +14,6 @@ const router = createRouter({
     },
     {
       path: '/docs-layout',
-      name: 'DocsLayout',
       component: DocsLayout,
       children: docsRoutes,
     },
