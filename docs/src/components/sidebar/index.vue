@@ -49,14 +49,14 @@ function isActive(link: string) {
 <style scoped>
 .site-sidebar {
   position: sticky;
-  top: var(--site-header-height);
+  top: calc(var(--site-header-height) + 1px);
   width: var(--site-sidebar-width);
   height: calc(100vh - var(--site-header-height));
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
   border-right: 1px solid var(--ant-color-split);
-  background: var(--ant-color-bg-container);
+  background: var(--ant-color-bg-layout);
   scrollbar-width: thin;
   scrollbar-color: var(--ant-color-split) transparent;
 }
@@ -83,7 +83,7 @@ function isActive(link: string) {
 }
 
 .site-sidebar-group-title {
-  padding: 8px 20px 4px;
+  padding: 16px 20px 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ant-color-text-tertiary);
@@ -108,6 +108,9 @@ function isActive(link: string) {
     background-color 0.2s;
   line-height: 1.5;
   position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .site-sidebar-item:hover {
@@ -130,5 +133,11 @@ function isActive(link: string) {
   width: 3px;
   background: var(--ant-color-primary);
   border-radius: 0 2px 2px 0;
+}
+
+@media (max-width: 960px) {
+  .site-sidebar {
+    display: none;
+  }
 }
 </style>

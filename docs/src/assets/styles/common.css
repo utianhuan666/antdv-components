@@ -1,6 +1,7 @@
 :root {
   /* Site layout tokens */
   --site-header-height: 64px;
+  --site-footer-height: 300px;
   --site-sidebar-width: 240px;
   --site-toc-width: 176px;
   --site-content-max-width: 1152px;
@@ -12,9 +13,13 @@
 
   /* Header */
   --site-header-bg: rgba(255, 255, 255, 0.85);
+  --site-header-border: rgba(5, 5, 5, 0.08);
 
   /* Hero gradient */
   --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  --site-hero-shadow: rgba(22, 119, 255, 0.22);
+  --site-page-bg: linear-gradient(180deg, var(--ant-color-bg-container) 0%, var(--ant-color-bg-layout) 10%);
+  --site-card-bg: linear-gradient(135deg, var(--ant-color-fill-content), var(--ant-color-fill-quaternary));
 
   /* Sidebar */
   --site-sidebar-item-active-bg: var(--ant-color-primary-bg);
@@ -25,7 +30,9 @@
   /* Overrides for dark mode */
   --site-gradient-2: #eb2f96;
   --site-header-bg: rgba(20, 20, 20, 0.85);
+  --site-header-border: rgba(255, 255, 255, 0.08);
   --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #eb2f96 80%, #722ed1 130%);
+  --site-hero-shadow: rgba(255, 255, 255, 0.18);
 }
 
 /* Global resets for docs site */
@@ -37,6 +44,11 @@ html, body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
+}
+
+body {
+  color: var(--ant-color-text);
+  background: var(--ant-color-bg-layout);
 }
 
 a {

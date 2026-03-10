@@ -12,12 +12,12 @@ defineProps<{
   <aside v-if="items.length" class="site-toc">
     <div class="site-toc-inner">
       <div class="site-toc-title">
-        目录
+        Table of Contents
       </div>
       <a-anchor
         :items="items"
-        :offset-top="80"
-        :target-offset="80"
+        :offset-top="76"
+        :target-offset="76"
         :affix="false"
       />
     </div>
@@ -27,9 +27,9 @@ defineProps<{
 <style scoped>
 .site-toc {
   position: sticky;
-  top: var(--site-header-height);
+  top: 100px;
   width: var(--site-toc-width);
-  height: calc(100vh - var(--site-header-height));
+  max-height: 80vh;
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -38,7 +38,7 @@ defineProps<{
 }
 
 .site-toc-inner {
-  padding: 24px 16px 32px;
+  padding: 48px 24px 32px 0;
 }
 
 .site-toc-title {
@@ -80,5 +80,11 @@ defineProps<{
 :deep(.ant-anchor-link-title-active) {
   color: var(--ant-color-primary) !important;
   font-weight: 500;
+}
+
+@media (max-width: 1200px) {
+  .site-toc {
+    display: none;
+  }
 }
 </style>

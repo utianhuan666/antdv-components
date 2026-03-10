@@ -23,3 +23,10 @@ declare module 'virtual:demos' {
   const demos: Record<string, DemoModule>
   export default demos
 }
+
+declare module 'markdown-it-attrs' {
+  import type { PluginSimple } from 'markdown-it'
+
+  const plugin: PluginSimple
+  export default plugin
+}

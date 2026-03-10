@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import SiteFooter from '@/components/site-footer/index.vue'
 import Sidebar from '@/components/sidebar/index.vue'
 import Toc from '@/components/toc/index.vue'
 import { useDocPage } from '@/composables/doc-page'
 
 defineOptions({ name: 'DocsLayout' })
 
-const { pageData, anchorItems } = useDocPage()
+const { anchorItems } = useDocPage()
 </script>
 
 <template>
   <div class="docs-layout">
-    <Sidebar />
+    <Sidebar class="docs-layout-sidebar" />
 
     <main class="docs-layout-main">
       <div class="docs-layout-content">
@@ -18,26 +19,45 @@ const { pageData, anchorItems } = useDocPage()
       </div>
     </main>
 
-    <Toc :items="anchorItems" />
+    <Toc class="docs-layout-toc" :items="anchorItems" />
+
+    <SiteFooter class="docs-layout-footer" />
   </div>
 </template>
 
 <style scoped>
 .docs-layout {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: var(--site-sidebar-width) minmax(0, 1fr) minmax(0, var(--site-toc-width));
+  grid-template-areas:
+    'sidebar main toc'
+    'sidebar footer footer';
   min-height: calc(100vh - var(--site-header-height));
+  background: var(--site-page-bg);
+}
+
+.docs-layout-sidebar {
+  grid-area: sidebar;
 }
 
 .docs-layout-main {
-  flex: 1;
+  grid-area: main;
   min-width: 0;
-  padding: 40px 48px;
+  padding: 48px 0 64px;
 }
 
 .docs-layout-content {
-  max-width: 860px;
-  margin: 0 auto;
+  width: min(100% - 48px, 960px);
+  max-width: var(--site-content-max-width);
+  margin: 0 24px;
+}
+
+.docs-layout-toc {
+  grid-area: toc;
+}
+
+.docs-layout-footer {
+  grid-area: footer;
 }
 
 /* Markdown 内容排版增强 */
@@ -99,8 +119,26 @@ const { pageData, anchorItems } = useDocPage()
 
 /* Responsive */
 @media (max-width: 1200px) {
+  .docs-layout {
+    grid-template-columns: var(--site-sidebar-width) minmax(0, 1fr);
+    grid-template-areas:
+      'sidebar main'
+      'sidebar footer';
+  }
+}
+
+@media (max-width: 960px) {
+  .docs-layout {
+    display: block;
+  }
+
   .docs-layout-main {
-    padding: 32px 24px;
+    padding: 32px 0 48px;
+  }
+
+  .docs-layout-content {
+    width: calc(100% - 32px);
+    margin: 0 16px;
   }
 }
 </style>

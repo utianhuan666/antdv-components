@@ -1,48 +1,71 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
+import type { HeroButton } from '@/config'
 import { siteConfig } from '@/config'
 
 defineOptions({ name: 'SiteHero' })
+
+const internalButtons = computed(() =>
+  (siteConfig.hero.buttons as HeroButton[]).filter(button => !isExternalLink(button.link)),
+)
+
+const externalButtons = computed(() =>
+  (siteConfig.hero.buttons as HeroButton[]).filter(button => isExternalLink(button.link)),
+)
+
+function isExternalLink(link: string) {
+  return /^(https?:)?\/\//i.test(link)
+}
 </script>
 
 <template>
   <section class="site-hero">
-    <!-- 背景渐变球 -->
-    <div class="site-hero-blur-ball" aria-hidden="true" />
-
-    <!-- 网格图案 -->
-    <div class="site-hero-grid" aria-hidden="true" />
+    <div class="site-hero-canvas" aria-hidden="true" />
 
     <div class="site-hero-content">
-      <h1 class="site-hero-title">
-        <span class="site-hero-title-gradient">{{ siteConfig.hero.title }}</span>
-        <br>
-        <span class="site-hero-title-zh">{{ siteConfig.hero.titleZh }}</span>
-      </h1>
+      <div class="site-hero-title-wrap">
+        <h1 class="site-hero-title">
+          <span class="site-hero-title-solid">{{ siteConfig.hero.title }}</span>
+          <span class="site-hero-title-gradient">{{ siteConfig.hero.highlight }}</span>
+        </h1>
+
+        <div class="site-hero-title-shadow" aria-hidden="true">
+          <span class="site-hero-title-solid">{{ siteConfig.hero.title }}</span>
+          <span class="site-hero-title-gradient">{{ siteConfig.hero.highlight }}</span>
+        </div>
+      </div>
+
+      <p v-if="siteConfig.hero.titleZh" class="site-hero-subtitle">
+        {{ siteConfig.hero.titleZh }}
+      </p>
 
       <p class="site-hero-description">
         {{ siteConfig.hero.description }}
       </p>
 
       <div class="site-hero-actions">
-        <a
-          v-for="btn in siteConfig.hero.buttons"
+        <RouterLink
+          v-for="btn in internalButtons"
           :key="btn.label"
+          :to="btn.link"
+          class="site-hero-btn"
+          :class="btn.type === 'primary' ? 'site-hero-btn-primary' : 'site-hero-btn-default'"
+        >
+          {{ btn.label }}
+        </RouterLink>
+
+        <a
+          v-for="btn in externalButtons"
+          :key="`${btn.label}-external`"
           :href="btn.link"
-          :target="btn.link.startsWith('http') ? '_blank' : undefined"
-          :rel="btn.link.startsWith('http') ? 'noopener noreferrer' : undefined"
+          target="_blank"
+          rel="noopener noreferrer"
           class="site-hero-btn"
           :class="btn.type === 'primary' ? 'site-hero-btn-primary' : 'site-hero-btn-default'"
         >
           {{ btn.label }}
         </a>
-      </div>
-
-      <!-- 版本/生态徽章 -->
-      <div class="site-hero-badges">
-        <span class="site-hero-badge">Vue 3</span>
-        <span class="site-hero-badge">TypeScript</span>
-        <span class="site-hero-badge">Ant Design</span>
-        <span class="site-hero-badge">UnoCSS</span>
       </div>
     </div>
   </section>
@@ -54,64 +77,23 @@ defineOptions({ name: 'SiteHero' })
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - var(--site-header-height));
   overflow: hidden;
-  padding: 80px 24px;
-  background: var(--ant-color-bg-layout);
+  width: 100%;
+  padding: 72px 16px 0;
+  background: var(--site-page-bg);
 }
 
-/* 流动渐变背景球 */
-.site-hero-blur-ball {
+.site-hero-canvas {
   position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  max-width: 800px;
-  max-height: 800px;
+  top: -250px;
+  left: 50%;
+  width: 600px;
+  height: 400px;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
-  will-change: transform;
-  background: linear-gradient(
-    135deg,
-    var(--site-gradient-3) 0%,
-    var(--site-gradient-1) 30%,
-    #ff4d4f 70%,
-    var(--site-gradient-2) 100%
-  );
-  background-size: 300% 300%;
-  animation: heroGlow 12s ease infinite;
-  pointer-events: none;
-}
-
-.dark .site-hero-blur-ball {
-  opacity: 0.25;
-}
-
-@keyframes heroGlow {
-  0% {
-    background-position: 0 -100%;
-  }
-  50% {
-    background-position: 200% 50%;
-  }
-  100% {
-    background-position: 0 -100%;
-  }
-}
-
-/* 网格背景 */
-.site-hero-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--ant-color-split) 1px, transparent 1px),
-    linear-gradient(90deg, var(--ant-color-split) 1px, transparent 1px);
-  background-size: 40px 40px;
-  opacity: 0.5;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+  transform: translateX(-50%) scale(1.5);
+  opacity: 0.2;
+  background: var(--site-hero-bg);
+  filter: blur(72px);
   pointer-events: none;
 }
 
@@ -119,49 +101,65 @@ defineOptions({ name: 'SiteHero' })
   position: relative;
   z-index: 1;
   text-align: center;
-  max-width: 720px;
+  max-width: 960px;
+}
+
+.site-hero-title-wrap {
+  position: relative;
 }
 
 .site-hero-title {
-  margin: 0 0 24px;
-  font-size: clamp(40px, 6vw, 72px);
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(40px, 7vw, 68px);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
+  font-family: 'Alibaba PuHuiTi 2.0', 'Segoe UI', var(--ant-font-family), sans-serif;
+}
+
+.site-hero-title-shadow {
+  position: absolute;
+  inset: 0;
+  font-size: clamp(40px, 7vw, 68px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: transparent;
+  text-shadow: 0 0 24px var(--site-hero-shadow), 0 12px 72px var(--site-hero-shadow);
+  filter: blur(0.2px);
+  font-family: 'Alibaba PuHuiTi 2.0', 'Segoe UI', var(--ant-font-family), sans-serif;
+}
+
+.site-hero-title-solid,
+.site-hero-title-gradient {
+  display: inline-block;
+}
+
+.site-hero-title-solid {
+  color: var(--ant-color-text);
 }
 
 .site-hero-title-gradient {
+  margin-left: 0.18em;
   background: var(--site-hero-bg);
-  background-size: 300% 300%;
+  background-size: 120% 120%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: heroFlow 6s ease infinite;
-  will-change: background-position;
 }
 
-@keyframes heroFlow {
-  0% {
-    background-position: 0 0;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0 0;
-  }
-}
-
-.site-hero-title-zh {
-  color: var(--ant-color-text);
-  font-size: 0.65em;
-  font-weight: 600;
+.site-hero-subtitle {
+  margin: 28px 0 0;
+  color: var(--ant-color-text-secondary);
+  font-size: clamp(20px, 2.2vw, 24px);
 }
 
 .site-hero-description {
-  margin: 0 auto 40px;
-  max-width: 560px;
-  font-size: clamp(16px, 1.8vw, 20px);
+  margin: 28px auto 0;
+  max-width: 760px;
+  font-size: clamp(16px, 1.9vw, 20px);
   line-height: 1.7;
   color: var(--ant-color-text-secondary);
 }
@@ -170,19 +168,19 @@ defineOptions({ name: 'SiteHero' })
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 32px;
+  margin-top: 48px;
 }
 
 .site-hero-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
+  height: 40px;
   padding: 0 28px;
   border-radius: 22px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s;
@@ -194,12 +192,12 @@ defineOptions({ name: 'SiteHero' })
   background: linear-gradient(90deg, var(--site-gradient-1) 0%, var(--site-gradient-2) 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--site-gradient-1) 40%, transparent);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--site-gradient-1) 34%, transparent);
 }
 
 .site-hero-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px color-mix(in srgb, var(--site-gradient-1) 50%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--site-gradient-1) 40%, transparent);
   color: #fff;
 }
 
@@ -212,24 +210,36 @@ defineOptions({ name: 'SiteHero' })
 .site-hero-btn-default:hover {
   border-color: var(--ant-color-primary);
   color: var(--ant-color-primary);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-.site-hero-badges {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+@media (max-width: 768px) {
+  .site-hero {
+    padding-top: 56px;
+  }
 
-.site-hero-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--ant-color-fill-tertiary);
-  color: var(--ant-color-text-secondary);
-  border: 1px solid var(--ant-color-border);
+  .site-hero-canvas {
+    width: 220px;
+    height: 300px;
+  }
+
+  .site-hero-title-gradient {
+    margin-left: 0;
+    display: block;
+  }
+
+  .site-hero-subtitle {
+    margin-top: 24px;
+    font-size: 18px;
+  }
+
+  .site-hero-description {
+    margin-top: 20px;
+  }
+
+  .site-hero-actions {
+    gap: 12px;
+    margin-top: 24px;
+  }
 }
 </style>

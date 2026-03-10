@@ -33,11 +33,9 @@ const year = new Date().getFullYear()
         </div>
       </div>
 
-      <div class="site-footer-divider" />
-
       <div class="site-footer-bottom">
         <span>{{ siteConfig.footer.copyright ?? `Copyright © ${year}` }}</span>
-        <span>Built with ❤️ and Ant Design Vue</span>
+        <span>{{ siteConfig.footer.bottomMessage ?? 'Built with Vue 3 and Ant Design Vue' }}</span>
       </div>
     </div>
   </footer>
@@ -45,6 +43,7 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .site-footer {
+  width: 100%;
   background: var(--ant-color-bg-layout);
   border-top: 1px solid var(--ant-color-split);
 }
@@ -52,28 +51,27 @@ const year = new Date().getFullYear()
 .site-footer-inner {
   max-width: var(--site-content-max-width);
   margin: 0 auto;
-  padding: 48px 24px 32px;
+  padding: 60px 24px 20px;
 }
 
 .site-footer-columns {
   display: flex;
+  justify-content: space-around;
   gap: 48px;
-  flex-wrap: wrap;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 
 .site-footer-col {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 150px;
+  text-align: center;
 }
 
 .site-footer-col-title {
-  margin-bottom: 12px;
-  font-size: 13px;
-  font-weight: 600;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--ant-color-text);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .site-footer-col-list {
@@ -95,19 +93,34 @@ const year = new Date().getFullYear()
   color: var(--ant-color-primary);
 }
 
-.site-footer-divider {
-  height: 1px;
-  background: var(--ant-color-split);
-  margin-bottom: 24px;
-}
-
 .site-footer-bottom {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
-  font-size: 13px;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+  font-size: 14px;
   color: var(--ant-color-text-tertiary);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .site-footer-inner {
+    padding: 40px 24px 20px;
+  }
+
+  .site-footer-columns {
+    display: block;
+  }
+
+  .site-footer-col {
+    margin-bottom: 40px;
+  }
+
+  .site-footer-col:last-child {
+    margin-bottom: 0;
+  }
 }
 </style>

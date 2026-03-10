@@ -18,5 +18,13 @@ defineOptions({ name: 'HomePage' })
 .home-page {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 80px;
+  padding-bottom: 80px;
+  background: var(--site-page-bg);
+}
+
+.home-page > * {
+  width: 100%;
 }
 </style>

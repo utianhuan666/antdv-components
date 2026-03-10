@@ -1,164 +1,189 @@
 export interface NavItem {
-  title: string;
-  link?: string;
-  target?: string;
+  title: string
+  link?: string
+  target?: string
 }
 
 export interface SidebarItem {
-  title: string;
-  link: string;
+  title: string
+  link: string
 }
 
 export interface SidebarGroup {
-  title: string;
-  items: SidebarItem[];
+  title: string
+  items: SidebarItem[]
 }
 
 export interface HeroButton {
-  label: string;
-  link: string;
-  type?: "primary" | "default";
+  label: string
+  link: string
+  type?: 'primary' | 'default'
 }
 
 export interface HeroConfig {
-  title: string;
-  titleZh?: string;
-  description: string;
-  buttons: HeroButton[];
+  title: string
+  highlight?: string
+  titleZh?: string
+  description: string
+  buttons: HeroButton[]
 }
 
 export interface FeatureItem {
-  title: string;
-  description: string;
-  icon: string;
+  title: string
+  description: string
+  icon: string
+  link?: string
+  openExternal?: boolean
+  row?: number
+  column?: number
 }
 
 export interface FeaturesConfig {
-  title?: string;
-  items: FeatureItem[];
+  title?: string
+  items: FeatureItem[]
 }
 
 export interface FooterLink {
-  title: string;
-  url: string;
-  openExternal?: boolean;
+  title: string
+  url: string
+  openExternal?: boolean
 }
 
 export interface FooterGroup {
-  title: string;
-  items: FooterLink[];
+  title: string
+  items: FooterLink[]
 }
 
 export interface FooterConfig {
-  columns: FooterGroup[];
-  copyright?: string;
+  columns: FooterGroup[]
+  copyright?: string
+  bottomMessage?: string
 }
 
 export const siteConfig = {
-  title: "AntDV Components",
-  titleZh: "Ant Design Vue 组件库",
-  description: "基于 Ant Design Vue 的企业级 UI 组件库，为 Vue 3 而生",
-  github: "https://github.com/utianhuan666/antdv-components",
+  title: 'AntDV Components',
+  titleZh: 'Ant Design Vue 组件库',
+  description: 'Enterprise-ready component library built on top of Ant Design Vue for Vue 3 applications',
+  github: 'https://github.com/utianhuan666/antdv-components',
 
-  nav: [{ title: "组件", link: "/docs" }] satisfies NavItem[],
+  nav: [
+    { title: 'Home', link: '/' },
+    { title: 'Components', link: '/docs' },
+  ] satisfies NavItem[],
 
   sidebar: {
-    "/docs": [
+    '/docs': [
       {
-        title: "开始使用",
-        items: [{ title: "介绍", link: "/docs" }],
-      },
-      {
-        title: "通用",
-        items: [{ title: "Button 按钮", link: "/docs/button" }],
-      },
-      {
-        title: "数据录入",
-        items: [{ title: "Form 表单", link: "/docs/form" }],
+        title: 'Getting Started',
+        items: [{ title: 'Introduction', link: '/docs' }],
       },
     ],
   } as Record<string, SidebarGroup[]>,
 
   hero: {
-    title: "AntDV Components",
-    titleZh: "企业级 Vue 3 组件库",
+    title: 'AntDV',
+    highlight: 'Components',
+    titleZh: 'Enterprise-class Vue 3 component library',
     description:
-      "基于 Ant Design Vue 封装的高质量业务组件，让每个 Vue 3 项目都能拥有企业级的开发体验",
+      'Build elegant, production-ready Vue experiences with a polished component system powered by Ant Design Vue.',
     buttons: [
-      { label: "快速开始", link: "/docs", type: "primary" },
+      { label: 'Get Started', link: '/docs', type: 'primary' },
       {
-        label: "查看 GitHub",
-        link: "https://github.com/utianhuan666/antdv-components",
-        target: "_blank",
+        label: 'GitHub',
+        link: 'https://github.com/utianhuan666/antdv-components',
+        type: 'default',
       },
     ],
   } satisfies HeroConfig,
 
   features: [
     {
-      title: "高质量组件",
-
-      description: "基于 Ant Design Vue 封装，提供高质量、可复用的业务组件",
-      icon: "🧩",
-    },
-    {
-      title: "TypeScript",
+      title: 'Modern Theme Style',
       description:
-        "使用 TypeScript 编写，提供完整的类型定义，享受 IDE 智能提示",
-      icon: "🔷",
+        'A documentation experience with glassmorphism, gradient lighting, and refined spacing inspired by the original dumi theme.',
+      icon: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/q48YQ5X4ytAAAAAAAAAAAAAAFl94AQBr',
+      row: 9,
     },
     {
-      title: "开箱即用",
-      description: "所有组件均经过精心设计，可直接用于生产项目",
-      icon: "📦",
+      title: 'Based on Ant Design Vue and CSS-in-JS aesthetics',
+      description:
+        'Bring enterprise-ready interaction patterns together with Vue 3 composition power, strong tokens, and a carefully tuned visual system.',
+      icon: '◈',
+      row: 9,
+      link: '/docs',
     },
     {
-      title: "亮暗主题",
-      description: "完美支持亮色和暗色主题，跟随系统自动切换",
-      icon: "🌓",
+      title: 'One-click switch between light and dark themes',
+      description:
+        'Use the header actions to toggle theme mode and keep the reading experience consistent across bright and low-light environments.',
+      icon: '◐',
+      row: 9,
     },
     {
-      title: "国际化",
-      description: "内置多语言支持，轻松实现 i18n 国际化",
-      icon: "🌐",
+      title: 'Exquisite developer experience',
+      description:
+        'Type-safe APIs, polished docs, and reusable business abstractions help teams ship faster without losing consistency.',
+      icon: '</>',
+      row: 9,
     },
     {
-      title: "持续更新",
-      description: "跟随 Ant Design 版本迭代，持续完善和新增更多组件",
-      icon: "🚀",
+      title: 'Composable architecture',
+      description:
+        'The docs site and component library are both built with modular Vue composables, making customization and expansion straightforward.',
+      icon: '▣',
+      row: 9,
+    },
+    {
+      title: 'Flexible component reusability',
+      description:
+        'A practical component foundation for dashboards, forms, and enterprise workflows, designed to scale with your product.',
+      icon: '✦',
+      row: 9,
     },
   ] satisfies FeatureItem[],
 
   footer: {
     columns: [
       {
-        title: "资源",
+        title: 'Resources',
         items: [
           {
-            title: "Ant Design Vue",
-            url: "https://antdv.com",
+            title: 'Ant Design Vue',
+            url: 'https://antdv.com',
             openExternal: true,
           },
-          { title: "Vue 3", url: "https://vuejs.org", openExternal: true },
-          { title: "Vite", url: "https://vitejs.dev", openExternal: true },
+          { title: 'Vue 3', url: 'https://vuejs.org', openExternal: true },
+          { title: 'Vite', url: 'https://vitejs.dev', openExternal: true },
         ],
       },
       {
-        title: "社区",
+        title: 'Community',
         items: [
           {
-            title: "GitHub",
-            url: "https://github.com/utianhuan666/antdv-components",
+            title: 'GitHub',
+            url: 'https://github.com/utianhuan666/antdv-components',
             openExternal: true,
           },
           {
-            title: "问题反馈",
-            url: "https://github.com/utianhuan666/antdv-components/issues",
+            title: 'Issues',
+            url: 'https://github.com/utianhuan666/antdv-components/issues',
+            openExternal: true,
+          },
+        ],
+      },
+      {
+        title: 'Project',
+        items: [
+          { title: 'Documentation', url: '/docs' },
+          {
+            title: 'Package',
+            url: 'https://github.com/utianhuan666/antdv-components',
             openExternal: true,
           },
         ],
       },
     ],
     copyright: `Copyright © ${new Date().getFullYear()} AntDV Components`,
+    bottomMessage: 'Built with Vue 3, Ant Design Vue, and a slightly obsessive eye for pixels.',
   } satisfies FooterConfig,
-};
+}
