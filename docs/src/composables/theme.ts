@@ -8,6 +8,16 @@ export const useDarkMode = createGlobalState(() => {
 
   const isDark = computed(() => (store.value === 'auto' ? system.value === 'dark' : store.value === 'dark'))
 
+  watch(
+    isDark,
+    (dark) => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.toggle('dark', dark)
+      }
+    },
+    { immediate: true },
+  )
+
   function toggleDark(value?: boolean) {
     store.value = (value ?? !isDark.value) ? 'dark' : 'light'
   }

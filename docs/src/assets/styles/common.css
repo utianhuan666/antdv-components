@@ -45,12 +45,17 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background-color: transparent;
   scroll-behavior: smooth;
 }
 
-body {
+.ant-app {
+  min-height: 100vh;
   color: var(--ant-color-text);
   background: var(--ant-color-bg-layout);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 a {
