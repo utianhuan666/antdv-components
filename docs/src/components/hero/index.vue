@@ -92,7 +92,7 @@ function isExternalLink(link: string) {
   height: 400px;
   border-radius: 50%;
   transform: translateX(-50%) scale(1.5);
-  opacity: 0.2;
+  opacity: var(--site-hero-blur-opacity, 0.2);
   filter: blur(69px);
   will-change: transform;
   background: var(--site-hero-blur-bg);
@@ -155,7 +155,7 @@ function isExternalLink(link: string) {
 .site-hero-title-solid {
   display: inline-block;
   color: transparent;
-  background-image: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  background-image: var(--site-hero-bg);
   background-size: 300% 300%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -167,7 +167,7 @@ function isExternalLink(link: string) {
 
 .site-hero-title-gradient {
   display: inline-block;
-  background-image: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  background-image: var(--site-hero-bg);
   background-size: 300% 300%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -216,9 +216,9 @@ function isExternalLink(link: string) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 50px;
   padding: 0 28px;
-  border-radius: 20px;
+  border-radius: 50px;
   font-size: 16px;
   font-weight: 400;
   cursor: pointer;
@@ -228,7 +228,7 @@ function isExternalLink(link: string) {
 }
 
 .site-hero-btn-primary {
-  background: linear-gradient(90deg, #1677ff 0%, #13c2c2 100%);
+  background: linear-gradient(90deg, var(--site-gradient-1) 0%, var(--site-gradient-2) 100%);
   color: #fff;
   border: none;
 }

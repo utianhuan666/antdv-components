@@ -41,13 +41,15 @@ const { anchorItems } = useDocPage()
 }
 
 .docs-layout-main {
+  display: flex;
+  justify-content: center;
   grid-area: main;
   min-width: 0;
   padding: 48px 0 64px;
 }
 
 .docs-layout-content {
-  width: min(100% - 48px, 960px);
+  width: min(100% - 48px, 1150px);
   max-width: var(--site-content-max-width);
   margin: 0 24px;
 }

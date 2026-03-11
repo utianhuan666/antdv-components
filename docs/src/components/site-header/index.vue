@@ -260,7 +260,7 @@ function toggleMobileMenu() {
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: 0;
+  bottom: -20px;
   height: 2px;
   border-radius: 999px;
   background: var(--ant-color-primary);

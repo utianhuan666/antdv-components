@@ -6,32 +6,68 @@
   --site-toc-width: 176px;
   --site-content-max-width: 1152px;
 
-  /* Gradient colors (light) */
+  /* Gradient colors */
   --site-gradient-1: #1677ff;
   --site-gradient-2: #13c2c2;
   --site-gradient-3: #722ed1;
+  --site-color-red: #f5222d;
 
   /* Header */
   --site-header-bg: rgba(255, 255, 255, 0.85);
   --site-header-border: rgba(5, 5, 5, 0.08);
 
   /* Hero gradient */
-  --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  --site-hero-bg: radial-gradient(
+    at 80% 20%,
+    var(--site-gradient-1) 0%,
+    var(--site-gradient-2) 80%,
+    var(--site-gradient-3) 130%
+  );
   --site-hero-shadow: rgba(22, 119, 255, 0.22);
   --site-hero-text-shadow:
-    0 8px 20px rgba(19, 194, 194, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.4);
-  --site-hero-blur-bg: linear-gradient(135deg, #722ed1 0%, #1677ff 30%, #f5222d 70%, #13c2c2 100%);
+    0 8px 20px rgba(19, 194, 194, 0.2),
+    0 8px 60px rgba(114, 46, 209, 0.2),
+    0 8px 80px rgba(19, 194, 194, 0.4);
+  --site-hero-blur-bg: linear-gradient(
+    135deg,
+    var(--site-gradient-3) 0%,
+    var(--site-gradient-1) 30%,
+    var(--site-color-red) 70%,
+    var(--site-gradient-2) 100%
+  );
+  --site-hero-blur-opacity: 0.2;
+
+  /* Features */
+  --site-icon-bg: radial-gradient(100% 100% at 50% 0, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.05) 100%);
+  --site-feature-card-hover-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ant-color-fill-content) 50%, white),
+    color-mix(in srgb, var(--ant-color-fill-quaternary) 50%, white)
+  );
 }
 
 html.dark {
   /* Overrides for dark mode */
+  --site-gradient-1: #1668dc;
   --site-gradient-2: #eb2f96;
+  --site-gradient-3: #b37feb;
+  --site-color-red: #e84749;
+
   --site-header-border: rgba(255, 255, 255, 0.08);
-  --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #eb2f96 80%, #722ed1 130%);
   --site-hero-shadow: rgba(255, 255, 255, 0.18);
   --site-hero-text-shadow:
-    0 8px 20px rgba(235, 47, 150, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.2);
-  --site-hero-blur-bg: linear-gradient(135deg, #722ed1 0%, #1677ff 30%, #f5222d 70%, #13c2c2 100%);
+    0 8px 20px rgba(235, 47, 150, 0.2),
+    0 8px 60px rgba(114, 46, 209, 0.2),
+    0 8px 80px rgba(19, 194, 194, 0.2);
+  --site-hero-blur-opacity: 0.25;
+
+  /* Features */
+  --site-icon-bg: radial-gradient(100% 100% at 50% 0, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --site-feature-card-hover-bg: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ant-color-fill-content) 90%, white),
+    color-mix(in srgb, var(--ant-color-fill-quaternary) 90%, white)
+  );
 }
 
 /* Global resets for docs site */

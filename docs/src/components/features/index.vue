@@ -95,11 +95,7 @@ const featureItems = siteConfig.features as FeatureItem[]
 
 .site-feature-card:hover {
   transform: scale(1.03);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--ant-color-fill-content) 50%, white),
-    color-mix(in srgb, var(--ant-color-fill-quaternary) 50%, white)
-  );
+  background: var(--site-feature-card-hover-bg);
   box-shadow:
     inset 0 0 0 1px var(--ant-color-border),
     var(--ant-box-shadow-secondary);
@@ -113,8 +109,7 @@ const featureItems = siteConfig.features as FeatureItem[]
   height: 24px;
   padding: 4px;
   border-radius: 8px;
-  background: var(--ant-color-fill-content);
-  opacity: 0.8;
+  background: var(--site-icon-bg);
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   margin-bottom: 0px;
 }
