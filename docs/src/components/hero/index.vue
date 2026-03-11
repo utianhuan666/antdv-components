@@ -79,7 +79,7 @@ function isExternalLink(link: string) {
   justify-content: center;
   overflow: hidden;
   width: 100%;
-  padding: 72px 16px 0;
+  padding: calc(var(--site-header-height) + 72px) 16px 0;
   background: transparent;
   min-height: 400px;
 }
@@ -251,7 +251,7 @@ function isExternalLink(link: string) {
 
 @media (max-width: 768px) {
   .site-hero {
-    padding-top: 56px;
+    padding-top: calc(var(--site-header-height) + 56px);
   }
 
   .site-hero-canvas {

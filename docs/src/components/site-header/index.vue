@@ -69,7 +69,7 @@ function toggleMobileMenu() {
         </button>
 
         <RouterLink to="/" class="site-header-logo">
-          <img src="@/assets/antdv-next.svg" class="site-header-logo-img" alt="logo">
+          <img src="@/assets/antdv-next.svg" class="site-header-logo-img" alt="logo" />
           <span class="site-header-logo-title">{{ siteConfig.title }}</span>
         </RouterLink>
       </div>

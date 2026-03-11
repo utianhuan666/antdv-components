@@ -25,9 +25,7 @@
   );
   --site-hero-shadow: rgba(22, 119, 255, 0.22);
   --site-hero-text-shadow:
-    0 8px 20px rgba(19, 194, 194, 0.2),
-    0 8px 60px rgba(114, 46, 209, 0.2),
-    0 8px 80px rgba(19, 194, 194, 0.4);
+    0 8px 20px rgba(19, 194, 194, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.4);
   --site-hero-blur-bg: linear-gradient(
     135deg,
     var(--site-gradient-3) 0%,
@@ -56,9 +54,7 @@ html.dark {
   --site-header-border: rgba(255, 255, 255, 0.08);
   --site-hero-shadow: rgba(255, 255, 255, 0.18);
   --site-hero-text-shadow:
-    0 8px 20px rgba(235, 47, 150, 0.2),
-    0 8px 60px rgba(114, 46, 209, 0.2),
-    0 8px 80px rgba(19, 194, 194, 0.2);
+    0 8px 20px rgba(235, 47, 150, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.2);
   --site-hero-blur-opacity: 0.25;
 
   /* Features */
