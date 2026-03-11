@@ -23,10 +23,9 @@ It covers custom containers, anchors, Shiki code highlighting, and `demo/*.vue` 
   <demo src="./demo/form.vue">test form</demo>
 </demo-group>
 
-
 ## API
 
-| Prop | Description | Type |
-| --- | --- | --- |
-| `src` | Demo file path rewritten to an absolute source path at compile time | `string` |
-| `simplify` | Renders only the demo preview without meta content | `boolean` |
+| Prop       | Description                                                         | Type      |
+| ---------- | ------------------------------------------------------------------- | --------- |
+| `src`      | Demo file path rewritten to an absolute source path at compile time | `string`  |
+| `simplify` | Renders only the demo preview without meta content                  | `boolean` |

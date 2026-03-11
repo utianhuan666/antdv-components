@@ -10,11 +10,7 @@ const year = new Date().getFullYear()
   <footer class="site-footer">
     <div class="site-footer-inner">
       <div class="site-footer-columns">
-        <div
-          v-for="col in siteConfig.footer.columns"
-          :key="col.title"
-          class="site-footer-col"
-        >
+        <div v-for="col in siteConfig.footer.columns" :key="col.title" class="site-footer-col">
           <div class="site-footer-col-title">
             {{ col.title }}
           </div>

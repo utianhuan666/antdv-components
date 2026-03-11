@@ -20,11 +20,10 @@ const antdLocale = computed(() => {
 watch(
   locale,
   () => {
-  // 切换dayjs的中英文
+    // 切换dayjs的中英文
     if (locale.value === 'zh-CN') {
       dayjs.locale('zh')
-    }
-    else {
+    } else {
       dayjs.locale('en')
     }
   },

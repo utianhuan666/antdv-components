@@ -9,7 +9,7 @@ const route = useRoute()
 const groups = computed<SidebarGroup[]>(() => {
   // 匹配最长前缀的 sidebar 配置
   const paths = Object.keys(siteConfig.sidebar).sort((a, b) => b.length - a.length)
-  const matched = paths.find(p => route.path.startsWith(p))
+  const matched = paths.find((p) => route.path.startsWith(p))
   return matched ? (siteConfig.sidebar[matched] ?? []) : []
 })
 
@@ -22,21 +22,13 @@ function isActive(link: string) {
 <template>
   <aside class="site-sidebar">
     <div class="site-sidebar-inner">
-      <div
-        v-for="group in groups"
-        :key="group.title"
-        class="site-sidebar-group"
-      >
+      <div v-for="group in groups" :key="group.title" class="site-sidebar-group">
         <div class="site-sidebar-group-title">
           {{ group.title }}
         </div>
         <ul class="site-sidebar-list">
           <li v-for="item in group.items" :key="item.link">
-            <RouterLink
-              :to="item.link"
-              class="site-sidebar-item"
-              :class="{ 'is-active': isActive(item.link) }"
-            >
+            <RouterLink :to="item.link" class="site-sidebar-item" :class="{ 'is-active': isActive(item.link) }">
               {{ item.title }}
             </RouterLink>
           </li>

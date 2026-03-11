@@ -21,8 +21,6 @@ const count = ref(0)
         <CheckCircleFilled />
       </template>
     </my-button>
-    <a-tag color="blue">
-      markdown + demo
-    </a-tag>
+    <a-tag color="blue"> markdown + demo </a-tag>
   </a-flex>
 </template>

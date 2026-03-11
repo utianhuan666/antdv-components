@@ -6,9 +6,7 @@ export const useDarkMode = createGlobalState(() => {
     initialValue: 'light' as DarkMode,
   })
 
-  const isDark = computed(() =>
-    store.value === 'auto' ? system.value === 'dark' : store.value === 'dark',
-  )
+  const isDark = computed(() => (store.value === 'auto' ? system.value === 'dark' : store.value === 'dark'))
 
   function toggleDark(value?: boolean) {
     store.value = (value ?? !isDark.value) ? 'dark' : 'light'

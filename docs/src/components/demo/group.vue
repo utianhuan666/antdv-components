@@ -21,23 +21,19 @@ let resizeObserver: ResizeObserver | null = null
 
 const configuredCols = computed(() => props.cols || pageInfo?.frontmatter?.demo?.cols || 1)
 const actualCols = computed(() => {
-  if (configuredCols.value <= 1)
-    return 1
-  if (containerWidth.value === 0)
-    return configuredCols.value
+  if (configuredCols.value <= 1) return 1
+  if (containerWidth.value === 0) return configuredCols.value
   const maxPossibleCols = Math.floor((containerWidth.value + gap) / (minColumnWidth + gap))
   return Math.max(1, Math.min(configuredCols.value, maxPossibleCols))
 })
 
 const columns = computed(() => {
   const children = (slots.default?.() || []).filter((node) => {
-    if (typeof node.children === 'string' && !node.children.trim())
-      return false
+    if (typeof node.children === 'string' && !node.children.trim()) return false
     return node.type !== Comment
   }) as VNode[]
 
-  if (actualCols.value <= 1)
-    return [children]
+  if (actualCols.value <= 1) return [children]
 
   const result: VNode[][] = Array.from({ length: actualCols.value }, () => [])
   for (let i = 0; i < children.length; i++) {

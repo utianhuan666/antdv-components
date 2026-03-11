@@ -9,14 +9,12 @@ import { tsToJs } from './tsToJs'
 function toRelativePath(absolutePath: string, root: string) {
   const normalizedPath = normalizePath(absolutePath)
   const normalizedRoot = normalizePath(root)
-  return normalizedPath.startsWith(normalizedRoot)
-    ? normalizedPath.slice(normalizedRoot.length)
-    : normalizedPath
+  return normalizedPath.startsWith(normalizedRoot) ? normalizedPath.slice(normalizedRoot.length) : normalizedPath
 }
 
 function isDemoFile(filePath: string, root: string, patterns: string[]) {
   const relativePath = toRelativePath(filePath, root)
-  return patterns.some(pattern => pm.isMatch(relativePath, pattern))
+  return patterns.some((pattern) => pm.isMatch(relativePath, pattern))
 }
 
 function toDemoKey(filePath: string, root: string) {
@@ -31,18 +29,20 @@ async function parseDemoFile(filePath: string, md: ReturnType<ReturnType<typeof 
     sourceMap: false,
   })
 
-  const locales: Record<string, { html: string, title: string }> = {}
-  const docsBlocks = descriptor.customBlocks.filter(block => block.type === 'docs')
-  await Promise.all(docsBlocks.map(async (block) => {
-    const lang = typeof block.attrs.lang === 'string' ? block.attrs.lang : 'zh-CN'
-    const env: Record<string, unknown> = {}
-    const html = await md.renderAsync(block.content.trim(), env)
-    const formatterTitle = (env.formatters as { title?: string } | undefined)?.title
-    locales[lang] = {
-      html,
-      title: formatterTitle || (typeof env.title === 'string' ? env.title : ''),
-    }
-  }))
+  const locales: Record<string, { html: string; title: string }> = {}
+  const docsBlocks = descriptor.customBlocks.filter((block) => block.type === 'docs')
+  await Promise.all(
+    docsBlocks.map(async (block) => {
+      const lang = typeof block.attrs.lang === 'string' ? block.attrs.lang : 'zh-CN'
+      const env: Record<string, unknown> = {}
+      const html = await md.renderAsync(block.content.trim(), env)
+      const formatterTitle = (env.formatters as { title?: string } | undefined)?.title
+      locales[lang] = {
+        html,
+        title: formatterTitle || (typeof env.title === 'string' ? env.title : ''),
+      }
+    }),
+  )
 
   const sourceCode = code.replace(/<docs[^>]*>[\s\S]*?<\/docs>/g, '').trim()
   const jsSourceCode = await tsToJs(sourceCode)
@@ -78,8 +78,7 @@ export function demoPlugin(): PluginOption {
     enforce: 'pre',
     configureServer(server) {
       const handleDemoAdd = (filePath: string) => {
-        if (!isDemoFile(filePath, server.config.root, DEMO_GLOB))
-          return
+        if (!isDemoFile(filePath, server.config.root, DEMO_GLOB)) return
 
         server.ws.send({
           type: 'custom',
@@ -92,8 +91,7 @@ export function demoPlugin(): PluginOption {
       }
 
       const handleDemoRemove = (filePath: string) => {
-        if (!isDemoFile(filePath, server.config.root, DEMO_GLOB))
-          return
+        if (!isDemoFile(filePath, server.config.root, DEMO_GLOB)) return
 
         server.ws.send({
           type: 'custom',
@@ -108,21 +106,18 @@ export function demoPlugin(): PluginOption {
       server.watcher.on('unlink', handleDemoRemove)
     },
     async resolveId(id, importer) {
-      if (id === VIRTUAL_MODULE_ID)
-        return RESOLVED_VIRTUAL_MODULE_ID
+      if (id === VIRTUAL_MODULE_ID) return RESOLVED_VIRTUAL_MODULE_ID
 
       if (id.includes(DEMO_SUFFIX)) {
         const resolved = await this.resolve(id, importer, { skipSelf: true })
-        if (resolved)
-          return `\0${resolved.id}`
+        if (resolved) return `\0${resolved.id}`
       }
     },
     async load(id) {
       const [, query] = id.split('?')
       const params = new URLSearchParams(query)
 
-      if (params.get('vue') !== null && params.get('type') === 'docs')
-        return 'export default {}'
+      if (params.get('vue') !== null && params.get('type') === 'docs') return 'export default {}'
 
       if (id === RESOLVED_VIRTUAL_MODULE_ID) {
         return `
@@ -166,8 +161,7 @@ export default demos
       if (id.startsWith('\0') && id.includes(DEMO_SUFFIX)) {
         const virtualId = id.slice(1)
         const [filePath] = virtualId.split('?')
-        if (!filePath)
-          return
+        if (!filePath) return
 
         const normalizedFile = normalizePath(filePath)
         this.addWatchFile(filePath)
@@ -210,8 +204,7 @@ export default demoData
       }
     },
     async handleHotUpdate(ctx) {
-      if (!isDemoFile(ctx.file, ctx.server.config.root, DEMO_GLOB))
-        return
+      if (!isDemoFile(ctx.file, ctx.server.config.root, DEMO_GLOB)) return
 
       const normalizedFile = normalizePath(ctx.file)
       const { locales, sourceCode, jsSourceCode, sourceHtml, jsSourceHtml } = await parseDemoFile(ctx.file, md)

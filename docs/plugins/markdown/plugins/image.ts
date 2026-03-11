@@ -11,12 +11,10 @@ export function imagePlugin(md: MarkdownIt, { lazyLoading }: ImagePluginOptions 
     const token = tokens[idx]!
     let url = token.attrGet('src')
     if (url && !EXTERNAL_URL_RE.test(url)) {
-      if (!/^\.?\//.test(url))
-        url = `./${url}`
+      if (!/^\.?\//.test(url)) url = `./${url}`
       token.attrSet('src', decodeURIComponent(url))
     }
-    if (lazyLoading)
-      token.attrSet('loading', 'lazy')
+    if (lazyLoading) token.attrSet('loading', 'lazy')
     return imageRule(tokens, idx, options, env, self)
   }
 }

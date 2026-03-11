@@ -16,11 +16,7 @@ export function shortHash(str: string): string {
   let hash = 2166136261
   for (let i = 0; i < bytes.length; i++) {
     hash ^= bytes[i]!
-    hash += (hash << 1)
-      + (hash << 4)
-      + (hash << 7)
-      + (hash << 8)
-      + (hash << 24)
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)
   }
 
   return toBase62(hash >>> 0)

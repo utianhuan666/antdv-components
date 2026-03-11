@@ -11,15 +11,8 @@ defineProps<{
 <template>
   <aside v-if="items.length" class="site-toc">
     <div class="site-toc-inner">
-      <div class="site-toc-title">
-        Table of Contents
-      </div>
-      <a-anchor
-        :items="items"
-        :offset-top="76"
-        :target-offset="76"
-        :affix="false"
-      />
+      <div class="site-toc-title">Table of Contents</div>
+      <a-anchor :items="items" :offset-top="76" :target-offset="76" :affix="false" />
     </div>
   </aside>
 </template>

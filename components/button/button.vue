@@ -19,16 +19,8 @@ function handleClick(event: MouseEvent) {
 
 <template>
   <Button v-bind="props" @click="handleClick">
-    <template
-      v-for="(_, name) in $slots"
-      :key="name"
-      #[name]="slotProps"
-    >
-      <slot
-        :key="name"
-        :name="name as keyof ButtonSlots"
-        v-bind="slotProps"
-      />
+    <template v-for="(_, name) in $slots" :key="name" #[name]="slotProps">
+      <slot :key="name" :name="name as keyof ButtonSlots" v-bind="slotProps" />
     </template>
   </Button>
 </template>

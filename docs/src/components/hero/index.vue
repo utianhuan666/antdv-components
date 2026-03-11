@@ -1,17 +1,17 @@
 <script setup lang="ts">
+import type { HeroButton } from '@/config'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import type { HeroButton } from '@/config'
 import { siteConfig } from '@/config'
 
 defineOptions({ name: 'SiteHero' })
 
 const internalButtons = computed(() =>
-  (siteConfig.hero.buttons as HeroButton[]).filter(button => !isExternalLink(button.link)),
+  (siteConfig.hero.buttons as HeroButton[]).filter((button) => !isExternalLink(button.link)),
 )
 
 const externalButtons = computed(() =>
-  (siteConfig.hero.buttons as HeroButton[]).filter(button => isExternalLink(button.link)),
+  (siteConfig.hero.buttons as HeroButton[]).filter((button) => isExternalLink(button.link)),
 )
 
 function isExternalLink(link: string) {
@@ -80,7 +80,8 @@ function isExternalLink(link: string) {
   overflow: hidden;
   width: 100%;
   padding: 72px 16px 0;
-  background: var(--site-page-bg);
+  background: transparent;
+  min-height: 400px;
 }
 
 .site-hero-canvas {
@@ -92,9 +93,25 @@ function isExternalLink(link: string) {
   border-radius: 50%;
   transform: translateX(-50%) scale(1.5);
   opacity: 0.2;
-  background: var(--site-hero-bg);
-  filter: blur(72px);
+  filter: blur(69px);
+  will-change: transform;
+  background: var(--site-hero-blur-bg);
+  background-size: 200% 200%;
+  animation: glow 10s ease infinite;
   pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes glow {
+  0% {
+    background-position: 0 -100%;
+  }
+  50% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0 -100%;
+  }
 }
 
 .site-hero-content {
@@ -110,57 +127,79 @@ function isExternalLink(link: string) {
 
 .site-hero-title {
   position: relative;
-  z-index: 1;
+  z-index: 10;
   margin: 0;
-  font-size: clamp(40px, 7vw, 68px);
+  font-size: 68px;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: var(--ant-line-height-heading1, 1.15);
   font-family: 'Alibaba PuHuiTi 2.0', 'Segoe UI', var(--ant-font-family), sans-serif;
 }
 
 .site-hero-title-shadow {
   position: absolute;
   inset: 0;
-  font-size: clamp(40px, 7vw, 68px);
+  font-size: 68px;
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: transparent;
-  text-shadow: 0 0 24px var(--site-hero-shadow), 0 12px 72px var(--site-hero-shadow);
-  filter: blur(0.2px);
+  line-height: var(--ant-line-height-heading1, 1.15);
+  color: var(--ant-color-text-base);
+  text-shadow: var(--site-hero-text-shadow);
   font-family: 'Alibaba PuHuiTi 2.0', 'Segoe UI', var(--ant-font-family), sans-serif;
+  z-index: 0;
+  will-change: transform;
 }
 
-.site-hero-title-solid,
-.site-hero-title-gradient {
-  display: inline-block;
+.site-hero-title-shadow .site-hero-title-solid {
+  color: transparent;
 }
 
 .site-hero-title-solid {
-  color: var(--ant-color-text);
+  display: inline-block;
+  color: transparent;
+  background-image: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: flow 5s ease infinite;
+  position: relative;
+  z-index: 5;
 }
 
 .site-hero-title-gradient {
-  margin-left: 0.18em;
-  background: var(--site-hero-bg);
-  background-size: 120% 120%;
-  -webkit-background-clip: text;
+  display: inline-block;
+  background-image: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
+  background-size: 300% 300%;
   background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: flow 5s ease infinite;
+  position: relative;
+  z-index: 5;
+}
+
+@keyframes flow {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 
 .site-hero-subtitle {
   margin: 28px 0 0;
   color: var(--ant-color-text-secondary);
-  font-size: clamp(20px, 2.2vw, 24px);
+  font-size: 20px;
+  line-height: 1.6;
 }
 
 .site-hero-description {
-  margin: 28px auto 0;
-  max-width: 760px;
-  font-size: clamp(16px, 1.9vw, 20px);
-  line-height: 1.7;
+  margin: 32px;
+  font-size: 20px;
+  line-height: 1.6;
   color: var(--ant-color-text-secondary);
 }
 
@@ -179,9 +218,9 @@ function isExternalLink(link: string) {
   justify-content: center;
   height: 40px;
   padding: 0 28px;
-  border-radius: 22px;
+  border-radius: 20px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.25s;
   white-space: nowrap;
@@ -189,20 +228,18 @@ function isExternalLink(link: string) {
 }
 
 .site-hero-btn-primary {
-  background: linear-gradient(90deg, var(--site-gradient-1) 0%, var(--site-gradient-2) 100%);
+  background: linear-gradient(90deg, #1677ff 0%, #13c2c2 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 8px 30px color-mix(in srgb, var(--site-gradient-1) 34%, transparent);
 }
 
 .site-hero-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 36px color-mix(in srgb, var(--site-gradient-1) 40%, transparent);
+  filter: brightness(1.1);
   color: #fff;
 }
 
 .site-hero-btn-default {
-  background: var(--ant-color-bg-container);
+  background: transparent;
   color: var(--ant-color-text);
   border: 1px solid var(--ant-color-border);
 }
@@ -210,7 +247,6 @@ function isExternalLink(link: string) {
 .site-hero-btn-default:hover {
   border-color: var(--ant-color-primary);
   color: var(--ant-color-primary);
-  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
@@ -219,22 +255,23 @@ function isExternalLink(link: string) {
   }
 
   .site-hero-canvas {
-    width: 220px;
+    width: 200px;
     height: 300px;
   }
 
-  .site-hero-title-gradient {
-    margin-left: 0;
-    display: block;
+  .site-hero-title,
+  .site-hero-title-shadow {
+    font-size: 40px;
   }
 
   .site-hero-subtitle {
     margin-top: 24px;
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .site-hero-description {
     margin-top: 20px;
+    font-size: 16px;
   }
 
   .site-hero-actions {

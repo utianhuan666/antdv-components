@@ -16,6 +16,4 @@ const i18n = createI18n({
   },
 })
 
-export {
-  i18n,
-}
+export { i18n }

@@ -8,25 +8,19 @@ export function useCopyCode() {
       if (el.matches('div[class*="language-"] > button.copy')) {
         const parent = el.parentElement
         const sibling = el.nextElementSibling?.nextElementSibling
-        if (!parent || !sibling)
-          return
+        if (!parent || !sibling) return
 
-        const isShell = /language-(?:shellscript|shell|bash|sh|zsh)/.test(
-          parent.className,
-        )
+        const isShell = /language-(?:shellscript|shell|bash|sh|zsh)/.test(parent.className)
 
         const ignoredNodes = ['.vp-copy-ignore', '.diff.remove']
 
         // Clone the node and remove the ignored nodes
         const clone = sibling.cloneNode(true) as HTMLElement
-        clone
-          .querySelectorAll(ignoredNodes.join(','))
-          .forEach(node => node.remove())
+        clone.querySelectorAll(ignoredNodes.join(',')).forEach((node) => node.remove())
 
         let text = clone.textContent || ''
 
-        if (isShell)
-          text = text.replace(/^ *(\$|>) /gm, '').trim()
+        if (isShell) text = text.replace(/^ *(\$|>) /gm, '').trim()
 
         copyToClipboard(text).then(() => {
           el.classList.add('copied')
@@ -46,8 +40,7 @@ export function useCopyCode() {
 async function copyToClipboard(text: string) {
   try {
     return navigator.clipboard.writeText(text)
-  }
-  catch {
+  } catch {
     const element = document.createElement('textarea')
     const previouslyFocusedElement = document.activeElement
 
@@ -62,9 +55,7 @@ async function copyToClipboard(text: string) {
     element.style.fontSize = '12pt' // Prevent zooming on iOS
 
     const selection = document.getSelection()
-    const originalRange = selection
-      ? selection.rangeCount > 0 && selection.getRangeAt(0)
-      : null
+    const originalRange = selection ? selection.rangeCount > 0 && selection.getRangeAt(0) : null
 
     document.body.appendChild(element)
     element.select()

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SiteFooter from '@/components/site-footer/index.vue'
 import Sidebar from '@/components/sidebar/index.vue'
+import SiteFooter from '@/components/site-footer/index.vue'
 import Toc from '@/components/toc/index.vue'
 import { useDocPage } from '@/composables/doc-page'
 

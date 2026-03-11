@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SiteFeatures from '@/components/features/index.vue'
-import SiteFooter from '@/components/site-footer/index.vue'
 import SiteHero from '@/components/hero/index.vue'
+import SiteFooter from '@/components/site-footer/index.vue'
 
 defineOptions({ name: 'HomePage' })
 </script>
@@ -21,7 +21,6 @@ defineOptions({ name: 'HomePage' })
   align-items: center;
   gap: 80px;
   padding-bottom: 80px;
-  background: var(--site-page-bg);
 }
 
 .home-page > * {

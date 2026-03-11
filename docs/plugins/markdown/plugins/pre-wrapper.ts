@@ -26,8 +26,7 @@ export function getAdaptiveThemeMarker(options: Options) {
 }
 
 export function extractTitle(info: string, html = false) {
-  if (html)
-    return info.replace(/<!--[\s\S]*?-->/g, '').match(/data-title="(.*?)"/)?.[1] || ''
+  if (html) return info.replace(/<!--[\s\S]*?-->/g, '').match(/data-title="(.*?)"/)?.[1] || ''
   return info.match(/\[(.*)\]/)?.[1] || extractLang(info) || 'txt'
 }
 

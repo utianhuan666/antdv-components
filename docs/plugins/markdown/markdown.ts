@@ -36,35 +36,36 @@ export interface CreateMarkdownOptions {
 }
 
 export function loadShiki(md: MarkdownItAsync, cls = 'ant-doc-code') {
-  md.use(fromAsyncCodeToHtml(codeToHtml, {
-    themes: {
-      light: 'vitesse-light',
-      dark: 'vitesse-dark',
-    },
-    defaultColor: false,
-    cssVariablePrefix: '--ant-doc-',
-    transformers: [
-      transformerMetaHighlight(),
-      transformerMetaWordHighlight(),
-      transformerNotationDiff(),
-      transformerNotationErrorLevel(),
-      transformerNotationFocus(),
-      transformerNotationHighlight(),
-      transformerNotationWordHighlight(),
-      {
-        name: 'remove:clean-up',
-        code(element) {
-          if (element.tagName === 'code' && element.properties.class)
-            delete element.properties.class
-        },
-        pre(element) {
-          delete element.properties.tabindex
-          delete element.properties.style
-          this.addClassToHast(element, cls)
-        },
+  md.use(
+    fromAsyncCodeToHtml(codeToHtml, {
+      themes: {
+        light: 'vitesse-light',
+        dark: 'vitesse-dark',
       },
-    ],
-  }))
+      defaultColor: false,
+      cssVariablePrefix: '--ant-doc-',
+      transformers: [
+        transformerMetaHighlight(),
+        transformerMetaWordHighlight(),
+        transformerNotationDiff(),
+        transformerNotationErrorLevel(),
+        transformerNotationFocus(),
+        transformerNotationHighlight(),
+        transformerNotationWordHighlight(),
+        {
+          name: 'remove:clean-up',
+          code(element) {
+            if (element.tagName === 'code' && element.properties.class) delete element.properties.class
+          },
+          pre(element) {
+            delete element.properties.tabindex
+            delete element.properties.style
+            this.addClassToHast(element, cls)
+          },
+        },
+      ],
+    }),
+  )
 }
 
 export function loadBaseMd(md: MarkdownItAsync) {
@@ -93,7 +94,7 @@ function withPlugins(md: MarkdownItAsync, options: CreateMarkdownOptions) {
       renderAttrs: (slug, state) => {
         const idx = state.tokens.findIndex((token) => {
           const attrs = token.attrs
-          const id = attrs?.find(attr => attr[0] === 'id')
+          const id = attrs?.find((attr) => attr[0] === 'id')
           return id && slug === id[1]
         })
         const title = state.tokens[idx + 1]?.content || ''
@@ -117,8 +118,7 @@ export function createMarkdown() {
   let md: MarkdownItAsync | undefined
 
   return (options: CreateMarkdownOptions = {}) => {
-    if (md)
-      return md
+    if (md) return md
 
     md = MarkdownIt({
       html: true,
@@ -127,8 +127,7 @@ export function createMarkdown() {
     })
 
     options.preConfig?.(md)
-    if (options.withPlugin !== false)
-      withPlugins(md, options)
+    if (options.withPlugin !== false) withPlugins(md, options)
     options.config?.(md)
 
     return md

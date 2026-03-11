@@ -18,29 +18,31 @@
   /* Hero gradient */
   --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #13c2c2 80%, #722ed1 130%);
   --site-hero-shadow: rgba(22, 119, 255, 0.22);
-  --site-page-bg: linear-gradient(180deg, var(--ant-color-bg-container) 0%, var(--ant-color-bg-layout) 10%);
-  --site-card-bg: linear-gradient(135deg, var(--ant-color-fill-content), var(--ant-color-fill-quaternary));
-
-  /* Sidebar */
-  --site-sidebar-item-active-bg: var(--ant-color-primary-bg);
-  --site-sidebar-item-active-color: var(--ant-color-primary);
+  --site-hero-text-shadow:
+    0 8px 20px rgba(19, 194, 194, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.4);
+  --site-hero-blur-bg: linear-gradient(135deg, #722ed1 0%, #1677ff 30%, #f5222d 70%, #13c2c2 100%);
 }
 
-.dark {
+html.dark {
   /* Overrides for dark mode */
   --site-gradient-2: #eb2f96;
-  --site-header-bg: rgba(20, 20, 20, 0.85);
   --site-header-border: rgba(255, 255, 255, 0.08);
   --site-hero-bg: radial-gradient(at 80% 20%, #1677ff 0%, #eb2f96 80%, #722ed1 130%);
   --site-hero-shadow: rgba(255, 255, 255, 0.18);
+  --site-hero-text-shadow:
+    0 8px 20px rgba(235, 47, 150, 0.2), 0 8px 60px rgba(114, 46, 209, 0.2), 0 8px 80px rgba(19, 194, 194, 0.2);
+  --site-hero-blur-bg: linear-gradient(135deg, #722ed1 0%, #1677ff 30%, #f5222d 70%, #13c2c2 100%);
 }
 
 /* Global resets for docs site */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;

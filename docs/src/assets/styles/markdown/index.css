@@ -9,7 +9,6 @@
   @apply color-text;
 }
 
-
 /*
  * Keep demo content (`vp-raw`) isolated from markdown layer typography/code styles.
  * This prevents markdown rules from leaking into rendered component demos.

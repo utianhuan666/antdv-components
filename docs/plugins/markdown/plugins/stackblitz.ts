@@ -7,8 +7,7 @@ export function stackblitzPlugin(md: MarkdownIt) {
     const token = tokens[idx]!
     const info = token.info.trim()
 
-    if (!info.startsWith('stackblitz'))
-      return fence(...args)
+    if (!info.startsWith('stackblitz')) return fence(...args)
 
     const titleMatch = info.match(/\{[^}]*title\s*=\s*"([^"]*)"[^}]*\}/)
     const title = titleMatch?.[1] || ''
@@ -17,9 +16,5 @@ export function stackblitzPlugin(md: MarkdownIt) {
 }
 
 function escapeHtml(str: string) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

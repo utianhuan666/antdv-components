@@ -10,22 +10,17 @@ import type {
   SlotsType,
 } from 'vue'
 
-type EmitArgs<T>
-  = T extends (...a: infer A) => any ? A : T extends any[] ? T : never
+type EmitArgs<T> = T extends (...a: infer A) => any ? A : T extends any[] ? T : never
 
-type EmitFnFromRecord<E> = <
-  K extends Extract<keyof E, string>,
->(
-  event: K,
-  ...args: EmitArgs<E[K]>
-) => void
+type EmitFnFromRecord<E> = <K extends Extract<keyof E, string>>(event: K, ...args: EmitArgs<E[K]>) => void
 
 type NormalizeEmits<E extends object> = {
   [K in Extract<keyof E, string>]: (...args: EmitArgs<E[K]>) => any
 }
 
-type SetupContextLoose<E, S extends SlotsType>
-  = Omit<SetupContext<EmitsOptions, S>, 'emit'> & { emit: EmitFnFromRecord<E> }
+type SetupContextLoose<E, S extends SlotsType> = Omit<SetupContext<EmitsOptions, S>, 'emit'> & {
+  emit: EmitFnFromRecord<E>
+}
 
 declare module 'vue' {
   /**

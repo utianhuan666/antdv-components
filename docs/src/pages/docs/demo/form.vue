@@ -23,9 +23,7 @@ const formRef = shallowRef<FormInstance>()
         <a-input v-model:value="formData.name" placeholder="请输入" />
       </my-form-item>
       <my-form-item name="age" label="Age" required>
-        <template #tooltip>
-          请输入年龄，必须为数字
-        </template>
+        <template #tooltip> 请输入年龄，必须为数字 </template>
         <a-input-number v-model:value="formData.age" placeholder="请输入" />
       </my-form-item>
     </my-form>

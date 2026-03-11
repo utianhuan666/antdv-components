@@ -16,20 +16,17 @@ function formatPageData(env: MarkdownItEnv) {
     description: '',
   }
 
-  if (typeof env.frontmatter?.description === 'string')
-    pageData.description = env.frontmatter.description
+  if (typeof env.frontmatter?.description === 'string') pageData.description = env.frontmatter.description
 
-  if (typeof env.frontmatter?.title === 'string' && !env.title)
-    pageData.title = env.frontmatter.title
+  if (typeof env.frontmatter?.title === 'string' && !env.title) pageData.title = env.frontmatter.title
 
   return pageData
 }
 
 function checkPkgImport(findCode: string, pkg: string, importName: string) {
-  if (!findCode)
-    return false
+  if (!findCode) return false
   const imports = findStaticImports(findCode)
-  return imports.some(item => item.specifier === pkg && item.imports.includes(importName))
+  return imports.some((item) => item.specifier === pkg && item.imports.includes(importName))
 }
 
 function addScriptSetup(scriptTags: RegExpMatchArray | null, env: MarkdownItEnv) {
@@ -38,32 +35,28 @@ function addScriptSetup(scriptTags: RegExpMatchArray | null, env: MarkdownItEnv)
   const importsCode = `import { inject, provide, ref } from 'vue';\n`
   const injectedCode = `const __parentPageData = ref({});provide('__pageData__', (data) => { __parentPageData.value = data });const __pageDataFunc__ = inject('__pageData__', null);if (__pageDataFunc__) __pageDataFunc__(__pageData);provide('__pageInfo__', __pageData);defineExpose({ frontmatter, pageData: __pageData })`
 
-  if (!scriptTags?.length)
-    return `<script setup lang="ts">\n${importsCode}${baseCode}${injectedCode}\n</script>\n`
+  if (!scriptTags?.length) return `<script setup lang="ts">\n${importsCode}${baseCode}${injectedCode}\n</script>\n`
 
-  const scriptSetupCode = scriptTags.find(tag => /<script\b[^>]+\bsetup\b[^>]*>/i.test(tag))
+  const scriptSetupCode = scriptTags.find((tag) => /<script\b[^>]+\bsetup\b[^>]*>/i.test(tag))
   if (!scriptSetupCode)
     return `<script setup lang="ts">\n${importsCode}${baseCode}${injectedCode}\n</script>\n${scriptTags.join('\n')}\n`
 
-  const restScriptTags = scriptTags.filter(tag => tag !== scriptSetupCode)
-  const scriptContent = scriptSetupCode
-    .replace(/<script\b[^>]+\bsetup\b[^>]*>/i, '')
-    .replace(/<\/script>/i, '')
+  const restScriptTags = scriptTags.filter((tag) => tag !== scriptSetupCode)
+  const scriptContent = scriptSetupCode.replace(/<script\b[^>]+\bsetup\b[^>]*>/i, '').replace(/<\/script>/i, '')
 
   const importArr: string[] = []
-  if (!checkPkgImport(scriptContent, 'vue', 'provide'))
-    importArr.push('provide')
-  if (!checkPkgImport(scriptContent, 'vue', 'inject'))
-    importArr.push('inject')
-  if (!checkPkgImport(scriptContent, 'vue', 'ref'))
-    importArr.push('ref')
+  if (!checkPkgImport(scriptContent, 'vue', 'provide')) importArr.push('provide')
+  if (!checkPkgImport(scriptContent, 'vue', 'inject')) importArr.push('inject')
+  if (!checkPkgImport(scriptContent, 'vue', 'ref')) importArr.push('ref')
 
   const nextImports = importArr.length ? `import { ${importArr.join(', ')} } from 'vue';\n` : ''
   return `<script setup lang="ts">\n${nextImports}${scriptContent}${baseCode}${injectedCode}\n</script>\n${restScriptTags.join('\n')}\n`
 }
 
 export function md2Vue(code: string, env: MarkdownItEnv) {
-  code = code.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/gi, match => match.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;'))
+  code = code.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/gi, (match) =>
+    match.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;'),
+  )
 
   const scriptTags = code.match(SCRIPT_REGEX)
   const styleTags = code.match(STYLE_REGEX)
@@ -74,7 +67,7 @@ export function md2Vue(code: string, env: MarkdownItEnv) {
 
 export function md2VuePlugin(options: CreateMarkdownOptions = {}): PluginOption {
   let md: ReturnType<typeof useMarkdown>
-  const cache = new LRUCache<string, { hash: string, code: string }>({
+  const cache = new LRUCache<string, { hash: string; code: string }>({
     max: 500,
     ttl: 1000 * 60 * 10,
     allowStale: true,
@@ -84,8 +77,7 @@ export function md2VuePlugin(options: CreateMarkdownOptions = {}): PluginOption 
   async function transform(code: string, id: string) {
     const hash = shortHash(code)
     const cached = cache.get(id)
-    if (cached && cached.hash === hash)
-      return cached.code
+    if (cached && cached.hash === hash) return cached.code
 
     const env: MarkdownItEnv = { id }
     const html = await md.renderAsync(code, env)
@@ -106,14 +98,12 @@ export function md2VuePlugin(options: CreateMarkdownOptions = {}): PluginOption 
     transform: {
       filter: { id: /\.md($|\?)/ },
       async handler(code, id) {
-        if (id.includes('?vue'))
-          return null
+        if (id.includes('?vue')) return null
         return transform(code, id)
       },
     },
     handleHotUpdate(ctx) {
-      if (!ctx.file.endsWith('.md'))
-        return
+      if (!ctx.file.endsWith('.md')) return
 
       const defaultRead = ctx.read
       ctx.read = async () => transform(await defaultRead(), ctx.file)

@@ -81,64 +81,55 @@ export const siteConfig = {
   } as Record<string, SidebarGroup[]>,
 
   hero: {
-    title: 'AntDV',
-    highlight: 'Components',
-    titleZh: 'Enterprise-class Vue 3 component library',
-    description:
-      'Build elegant, production-ready Vue experiences with a polished component system powered by Ant Design Vue.',
-    buttons: [
-      { label: 'Get Started', link: '/docs', type: 'primary' },
-      {
-        label: 'GitHub',
-        link: 'https://github.com/utianhuan666/antdv-components',
-        type: 'default',
-      },
-    ],
+    title: 'ProComponents',
+    highlight: '',
+    titleZh: '🏆 让中后台开发更简单',
+    description: '',
+    buttons: [{ label: '🏮🏮 快速开始 →', link: '/docs', type: 'primary' }],
   } satisfies HeroConfig,
 
   features: [
     {
-      title: 'Modern Theme Style',
-      description:
-        'A documentation experience with glassmorphism, gradient lighting, and refined spacing inspired by the original dumi theme.',
+      title: '简单易用',
+      description: '在 Ant Design 上进行了自己的封装，更加易用',
       icon: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/q48YQ5X4ytAAAAAAAAAAAAAAFl94AQBr',
-      row: 9,
+      row: 7,
+      column: 1,
     },
     {
-      title: 'Based on Ant Design Vue and CSS-in-JS aesthetics',
-      description:
-        'Bring enterprise-ready interaction patterns together with Vue 3 composition power, strong tokens, and a carefully tuned visual system.',
-      icon: '◈',
-      row: 9,
-      link: '/docs',
+      title: 'Ant Design',
+      description: '与 Ant Design 设计体系一脉相承，无缝对接 Ant Design 项目',
+      icon: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
+      row: 7,
+      column: 1,
     },
     {
-      title: 'One-click switch between light and dark themes',
-      description:
-        'Use the header actions to toggle theme mode and keep the reading experience consistent across bright and low-light environments.',
-      icon: '◐',
-      row: 9,
+      title: '国际化',
+      description: '提供完备的国际化，与 Ant Design 体系打通，无需多余配置',
+      icon: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/UKqDTIp55HYAAAAAAAAAAAAAFl94AQBr',
+      row: 7,
+      column: 1,
     },
     {
-      title: 'Exquisite developer experience',
-      description:
-        'Type-safe APIs, polished docs, and reusable business abstractions help teams ship faster without losing consistency.',
-      icon: '</>',
-      row: 9,
+      title: '预设样式',
+      description: '样式风格与 Ant Design 一脉相承，无需魔改，浑然天成。默认好用的主题系统',
+      icon: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/Y_NMQKxw7OgAAAAAAAAAAAAAFl94AQBr',
+      row: 7,
+      column: 1,
     },
     {
-      title: 'Composable architecture',
-      description:
-        'The docs site and component library are both built with modular Vue composables, making customization and expansion straightforward.',
-      icon: '▣',
-      row: 9,
+      title: '预设行为',
+      description: '更少的代码，更少的 Bug，更多的功能',
+      icon: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/U3XjS5IA1tUAAAAAAAAAAAAAFl94AQBr',
+      row: 7,
+      column: 1,
     },
     {
-      title: 'Flexible component reusability',
-      description:
-        'A practical component foundation for dashboards, forms, and enterprise workflows, designed to scale with your product.',
-      icon: '✦',
-      row: 9,
+      title: 'TypeScript',
+      description: '使用 TypeScript 开发，提供完整的类型定义文件，无需频繁打开官网',
+      icon: 'https://gw.alipayobjects.com/zos/antfincdn/Eb8IHpb9jE/Typescript_logo_2020.svg',
+      row: 7,
+      column: 1,
     },
   ] satisfies FeatureItem[],
 

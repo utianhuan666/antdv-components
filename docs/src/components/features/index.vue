@@ -16,30 +16,38 @@ const featureItems = siteConfig.features as FeatureItem[]
           :key="feature.title"
           class="site-feature-card"
           :style="{
-            gridRow: `span ${feature.row ?? 8}`,
+            gridRow: `span ${feature.row ?? 7}`,
             gridColumn: `span ${feature.column ?? 1}`,
             cursor: feature.link ? 'pointer' : 'default',
           }"
         >
           <div class="site-feature-card-inner">
-            <div class="site-feature-icon">
-              {{ feature.icon }}
+            <div class="site-feature-icon-container" :data-role="feature.link ? 'link' : ''">
+              <img
+                v-if="
+                  feature.icon &&
+                  (feature.icon.startsWith('http') || feature.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i))
+                "
+                :src="feature.icon"
+                :alt="feature.title"
+                class="site-feature-icon-img"
+              />
+              <span v-else class="site-feature-icon-img">{{ feature.icon }}</span>
             </div>
-            <h3 class="site-feature-title">
+
+            <h3 class="site-feature-title" :class="{ 'with-link': !!feature.link }">
               {{ feature.title }}
             </h3>
+
             <p class="site-feature-desc">
               {{ feature.description }}
             </p>
 
-            <RouterLink v-if="feature.link && !feature.openExternal" :to="feature.link" class="site-feature-link">
-              Learn more →
-            </RouterLink>
-            <a v-else-if="feature.link" :href="feature.link" target="_blank" rel="noopener noreferrer" class="site-feature-link">
-              Learn more →
-            </a>
+            <div v-if="feature.link" class="site-feature-link">
+              <RouterLink v-if="!feature.openExternal" :to="feature.link"> 立即了解 → </RouterLink>
+              <a v-else :href="feature.link" target="_blank" rel="noopener noreferrer"> 立即了解 → </a>
+            </div>
           </div>
-          <div class="site-feature-blur" aria-hidden="true" />
         </div>
       </div>
     </div>
@@ -50,10 +58,12 @@ const featureItems = siteConfig.features as FeatureItem[]
 .site-features {
   width: 100%;
   padding: 0 16px;
+  position: relative;
+  z-index: 10;
 }
 
 .site-features-inner {
-  max-width: var(--site-content-max-width);
+  max-width: var(--site-content-max-width, 1152px);
   margin: 0 auto;
 }
 
@@ -67,82 +77,114 @@ const featureItems = siteConfig.features as FeatureItem[]
 
 .site-feature-card {
   position: relative;
+  z-index: 1;
   padding: 24px;
   border-radius: 24px;
-  background: var(--site-card-bg);
-  transition:
-    transform 0.3s,
-    box-shadow 0.3s,
-    background 0.3s;
+  background: linear-gradient(135deg, var(--ant-color-fill-content), var(--ant-color-fill-quaternary));
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   overflow: hidden;
 }
 
 .site-feature-card-inner {
   position: relative;
   z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .site-feature-card:hover {
   transform: scale(1.03);
-  box-shadow: inset 0 0 0 1px var(--ant-color-border), var(--ant-box-shadow-secondary);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--ant-color-fill-content) 82%, white),
-    color-mix(in srgb, var(--ant-color-fill-quaternary) 82%, white)
+    color-mix(in srgb, var(--ant-color-fill-content) 50%, white),
+    color-mix(in srgb, var(--ant-color-fill-quaternary) 50%, white)
   );
+  box-shadow:
+    inset 0 0 0 1px var(--ant-color-border),
+    var(--ant-box-shadow-secondary);
 }
 
-.site-feature-icon {
-  margin-bottom: 16px;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  background: var(--ant-color-fill-content);
+.site-feature-icon-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--ant-color-fill-content);
+  opacity: 0.8;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  margin-bottom: 0px;
+}
+
+.site-feature-icon-img {
+  width: 20px;
+  height: 20px;
   color: #fff;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18.33px;
 }
 
 .site-feature-title {
   margin: 16px 0;
   font-size: 20px;
-  font-weight: 700;
+  line-height: var(--ant-line-height-heading3, 1.33);
   color: var(--ant-color-text);
-  line-height: 1.45;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 .site-feature-desc {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
   color: var(--ant-color-text-secondary);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  line-height: var(--ant-line-height, 1.5714285714285714);
 }
 
 .site-feature-link {
-  display: inline-flex;
-  align-items: center;
   margin-top: 24px;
-  color: var(--ant-color-text-tertiary);
-  transition: color 0.2s;
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
-.site-feature-link:hover {
-  color: var(--ant-color-primary);
+.site-feature-link a {
+  color: var(--ant-color-text-description, #8c8c8c);
+  text-decoration: none;
 }
 
-.site-feature-blur {
+.site-feature-link a:hover {
+  color: var(--ant-color-primary-hover, #4096ff);
+}
+
+/* Hover effects */
+.site-feature-card:hover .site-feature-icon-container {
+  height: calc(20px * 7); /* 140px */
+  width: 100%;
+  padding: 0;
+}
+
+.site-feature-card:hover .site-feature-icon-img {
+  width: 100px;
+  height: 100px;
+  font-size: 91.6px;
+}
+
+.site-feature-card:hover .site-feature-title.with-link {
+  font-size: 14px;
+}
+
+.site-feature-card:hover .site-feature-desc {
   position: absolute;
-  inset: 0;
-  background: var(--site-hero-bg);
-  opacity: 0.08;
-  filter: blur(72px);
-  transform: scale(2);
-  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 992px) {
   .site-features-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

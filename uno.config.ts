@@ -11,10 +11,8 @@ import {
 
 export default defineConfig({
   outputToCssLayers: true,
-  safelist: [
-  ],
-  theme: {
-  },
+  safelist: [],
+  theme: {},
   presets: [
     presetWind3(),
     presetAttributify(),
@@ -25,10 +23,6 @@ export default defineConfig({
     }),
     presetAntd(),
   ],
-  shortcuts: [
-  ],
-  transformers: [
-    transformerDirectives(),
-    transformerVariantGroup(),
-  ],
+  shortcuts: [],
+  transformers: [transformerDirectives(), transformerVariantGroup()],
 })

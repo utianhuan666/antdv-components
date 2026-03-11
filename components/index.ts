@@ -11,9 +11,4 @@ export default {
   version,
 }
 
-export {
-  Button,
-  Form,
-  FormItem,
-  version,
-}
+export { Button, Form, FormItem, version }

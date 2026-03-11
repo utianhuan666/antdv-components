@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { GithubOutlined, MenuOutlined, MoonOutlined, SearchOutlined, SunOutlined, TranslationOutlined } from '@antdv-next/icons'
+import {
+  GithubOutlined,
+  MenuOutlined,
+  MoonOutlined,
+  SearchOutlined,
+  SunOutlined,
+  TranslationOutlined,
+} from '@antdv-next/icons'
 import { useMediaQuery } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 import { useDarkMode } from '@/composables/theme'
 import { siteConfig } from '@/config'
 
@@ -15,20 +22,21 @@ const mobileMenuOpen = ref(false)
 
 const searchShortcut = computed(() => 'Ctrl K')
 
-watch(() => route.fullPath, () => {
-  mobileMenuOpen.value = false
-})
+watch(
+  () => route.fullPath,
+  () => {
+    mobileMenuOpen.value = false
+  },
+)
 
 function toggleLocale() {
   locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
 }
 
 function isNavActive(link?: string) {
-  if (!link)
-    return false
+  if (!link) return false
 
-  if (link === '/')
-    return route.path === '/'
+  if (link === '/') return route.path === '/'
 
   return route.path.startsWith(link)
 }
@@ -57,7 +65,7 @@ function toggleMobileMenu() {
         </button>
 
         <RouterLink to="/" class="site-header-logo">
-          <img src="@/assets/antdv-next.svg" class="site-header-logo-img" alt="logo">
+          <img src="@/assets/antdv-next.svg" class="site-header-logo-img" alt="logo" />
           <span class="site-header-logo-title">{{ siteConfig.title }}</span>
         </RouterLink>
       </div>
@@ -95,12 +103,7 @@ function toggleMobileMenu() {
         </a-tooltip>
 
         <a-tooltip title="GitHub">
-          <a
-            :href="siteConfig.github"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="site-header-action-btn"
-          >
+          <a :href="siteConfig.github" target="_blank" rel="noopener noreferrer" class="site-header-action-btn">
             <GithubOutlined />
           </a>
         </a-tooltip>
@@ -139,7 +142,7 @@ function toggleMobileMenu() {
   right: 0;
   z-index: 100;
   height: var(--site-header-height);
-  background: var(--site-header-bg);
+  background-color: transparent;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--site-header-border);
@@ -365,7 +368,9 @@ function toggleMobileMenu() {
 
 .site-header-mobile-panel-enter-active,
 .site-header-mobile-panel-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .site-header-mobile-panel-enter-from,

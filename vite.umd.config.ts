@@ -16,18 +16,13 @@ export default defineConfig({
   ],
   build: {
     rolldownOptions: {
-      external: [
-        'vue',
-        'antdv-next',
-        '@antdv-next/icons',
-        /^dayjs/,
-      ],
+      external: ['vue', 'antdv-next', '@antdv-next/icons', /^dayjs/],
       output: {
         globals: {
-          'vue': 'Vue',
+          vue: 'Vue',
           'antdv-next': 'antd',
           '@antdv-next/icons': 'AntdIcons',
-          'dayjs': 'dayjs',
+          dayjs: 'dayjs',
           // plugins: 'dayjs_plugin',
           // like this
           // 'dayjs/plugin/advancedFormat': 'dayjs_plugin_advancedFormat',

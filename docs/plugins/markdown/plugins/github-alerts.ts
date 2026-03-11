@@ -17,29 +17,25 @@ export function gitHubAlertsPlugin(md: MarkdownIt, options?: ContainerOptions) {
   md.core.ruler.after('block', 'github-alerts', (state) => {
     const tokens = state.tokens
     for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i]!.type !== 'blockquote_open')
-        continue
+      if (tokens[i]!.type !== 'blockquote_open') continue
 
       const startIndex = i
       const open = tokens[startIndex]!
       let endIndex = i + 1
       while (
-        endIndex < tokens.length
-        && (tokens[endIndex]!.type !== 'blockquote_close' || tokens[endIndex]!.level !== open.level)
+        endIndex < tokens.length &&
+        (tokens[endIndex]!.type !== 'blockquote_close' || tokens[endIndex]!.level !== open.level)
       ) {
         endIndex++
       }
-      if (endIndex === tokens.length)
-        continue
+      if (endIndex === tokens.length) continue
 
       const close = tokens[endIndex]!
-      const firstContent = tokens.slice(startIndex, endIndex + 1).find(token => token.type === 'inline')
-      if (!firstContent)
-        continue
+      const firstContent = tokens.slice(startIndex, endIndex + 1).find((token) => token.type === 'inline')
+      if (!firstContent) continue
 
       const match = firstContent.content.match(markerRE)
-      if (!match)
-        continue
+      if (!match) continue
 
       const type = match[1]!.toLowerCase()
       const title = match[2]?.trim() || titleMark[type] || capitalize(type)
@@ -53,7 +49,7 @@ export function gitHubAlertsPlugin(md: MarkdownIt, options?: ContainerOptions) {
   })
 
   md.renderer.rules.github_alert_open = (tokens, idx) => {
-    const meta = tokens[idx]!.meta as { title: string, type: string }
+    const meta = tokens[idx]!.meta as { title: string; type: string }
     return `<div class="${meta.type} custom-block github-alert"><p class="custom-block-title">${meta.title}</p>\n`
   }
 }

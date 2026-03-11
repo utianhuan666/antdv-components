@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": "../..",
+    },
+    {
+      "path": "../../../dumi-theme-antd-style",
+    },
+    {
+      "path": "../../../pro-components",
+    },
+  ],
+  "settings": {},
+}

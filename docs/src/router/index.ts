@@ -24,8 +24,7 @@ router.beforeEach((to) => {
   const locale = i18n.global.locale.value
   const localizedPath = resolveDocRoutePath(to.path, locale)
 
-  if (!localizedPath || localizedPath === to.path)
-    return true
+  if (!localizedPath || localizedPath === to.path) return true
 
   return {
     path: localizedPath,

@@ -6,11 +6,9 @@ import { defineConfig } from 'vite'
 import { tsxResolveTypes } from 'vite-plugin-tsx-resolve-types'
 import vueResolveTypes from 'vite-plugin-vue-resolve-types'
 
-const files = globSync([
-  './components/**/*.ts',
-  './components/**/*.tsx',
-  './components/**/*.vue',
-]).map(file => `./${file}`)
+const files = globSync(['./components/**/*.ts', './components/**/*.tsx', './components/**/*.vue']).map(
+  (file) => `./${file}`,
+)
 
 export default defineConfig({
   base: './',
@@ -33,13 +31,7 @@ export default defineConfig({
   ],
   build: {
     rolldownOptions: {
-      external: [
-        'vue',
-        'antdv-next',
-        '@antdv-next/icons',
-        '@vueuse/core',
-        /^dayjs/,
-      ],
+      external: ['vue', 'antdv-next', '@antdv-next/icons', '@vueuse/core', /^dayjs/],
 
       output: {
         preserveModules: true,

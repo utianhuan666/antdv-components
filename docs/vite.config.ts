@@ -26,24 +26,14 @@ export default defineConfig({
     unocss(),
     dayjs(),
     autoImport({
-      dirs: [
-        './src/stores',
-      ],
+      dirs: ['./src/stores'],
       dts: 'types/auto-imports.d.ts',
-      imports: [
-        'vue',
-        'vue-router',
-        '@vueuse/core',
-        'pinia',
-        'vue-i18n',
-      ],
+      imports: ['vue', 'vue-router', '@vueuse/core', 'pinia', 'vue-i18n'],
     }),
     components({
       dts: 'types/components.d.ts',
       dirs: [],
-      resolvers: [
-        AntdvNextResolver(),
-      ],
+      resolvers: [AntdvNextResolver()],
     }),
   ],
   resolve: {

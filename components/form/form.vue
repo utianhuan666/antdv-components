@@ -18,16 +18,8 @@ defineExpose({
 
 <template>
   <Form ref="formRef">
-    <template
-      v-for="(_, name) in $slots"
-      :key="name"
-      #[name]="slotProps"
-    >
-      <slot
-        :key="name"
-        :name="name as keyof FormSlots"
-        v-bind="slotProps"
-      />
+    <template v-for="(_, name) in $slots" :key="name" #[name]="slotProps">
+      <slot :key="name" :name="name as keyof FormSlots" v-bind="slotProps" />
     </template>
   </Form>
 </template>

@@ -5,7 +5,7 @@ import { useDarkMode } from '@/composables/theme'
 export function useTheme() {
   const { isDark } = useDarkMode()
   const theme = shallowRef<NonNullable<ConfigProviderProps['theme']>>({
-    zeroRuntime: true,
+    cssVar: { prefix: 'ant' },
   })
   watch(
     isDark,
@@ -13,12 +13,12 @@ export function useTheme() {
       if (isDark.value) {
         theme.value = {
           algorithm: [themeConfig.darkAlgorithm],
-          zeroRuntime: true,
+          cssVar: { prefix: 'ant' },
         }
       }
       else {
         theme.value = {
-          zeroRuntime: true,
+          cssVar: { prefix: 'ant' },
         }
       }
     },
