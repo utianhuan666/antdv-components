@@ -13,7 +13,7 @@
   --site-color-red: #f5222d;
 
   /* Header */
-  --site-header-bg: rgba(255, 255, 255, 0.85);
+  --site-header-bg: rgba(255, 255, 255, 0.3);
   --site-header-border: rgba(5, 5, 5, 0.08);
 
   /* Hero gradient */

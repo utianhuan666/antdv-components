@@ -147,8 +147,8 @@ function toggleMobileMenu() {
   z-index: 100;
   height: var(--site-header-height);
   background-color: transparent;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   border-bottom: 1px solid var(--site-header-border);
   transition: background 0.3s;
 }
