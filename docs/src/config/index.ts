@@ -77,6 +77,12 @@ export const siteConfig = {
         title: 'Getting Started',
         items: [{ title: 'Introduction', link: '/docs' }],
       },
+      {
+        title: 'Components',
+        items: [
+          { title: 'ProSkeleton 骨架屏', link: '/docs/skeleton' },
+        ],
+      },
     ],
   } as Record<string, SidebarGroup[]>,
 
