@@ -6,7 +6,7 @@ defineOptions({ name: 'ResultPageSkeleton' })
 
 withDefaults(defineProps<{
   active?: boolean
-  pageHeader?: false
+  pageHeader?: boolean
 }>(), {
   active: true,
 })

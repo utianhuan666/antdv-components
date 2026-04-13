@@ -8,7 +8,7 @@ defineOptions({ name: 'DescriptionsPageSkeleton' })
 
 withDefaults(defineProps<{
   active?: boolean
-  pageHeader?: false
+  pageHeader?: boolean
   list?: number | false
 }>(), {
   active: true,

@@ -1,3 +1,5 @@
+/// <reference types="vue/jsx" />
+
 import type {
   ComponentObjectPropsOptions,
   ComponentOptions,
