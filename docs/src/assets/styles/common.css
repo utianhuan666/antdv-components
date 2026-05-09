@@ -90,6 +90,11 @@ body {
     color 0.3s;
 }
 
+.container {
+  width: 100%;
+  max-width: 1440px;
+}
+
 a {
   text-decoration: none;
   color: inherit;

@@ -23,4 +23,3 @@ registerApp({
 <template>
   <slot />
 </template>
->
