@@ -33,25 +33,26 @@ import { shallowRef } from 'vue'
 const readonly = shallowRef(false)
 const { message } = App.useApp()
 
-const initialValues = {
-  name: 'demo_user',
-  password: 'demo123',
-  select: 'china',
-  select2: '520000201604258831',
-  useMode: { label: 'Unresolved', value: 'open', key: 'open' },
-  selectMultiple: ['green', 'blue'],
-  radio: 'a',
-  radioVertical: 'b',
-  radioButton: 'b',
-  checkboxGroup: ['A', 'B', 'C'],
-  digitRange: [2, 4],
-  digit: 3,
-  switch: true,
-  slider: 66,
-  rate: 3.5,
-  segmented: 'open',
-  treeSelect: ['0-1-0'],
-  area: ['zhejiang', 'hangzhou', 'xihu'],
+const initialValues: Record<string, any> = {
+  'name': 'demo_user',
+  'password': 'demo123',
+  'select': 'china',
+  'select2': '520000201604258831',
+  'useMode': { label: 'Unresolved', value: 'open', key: 'open' },
+  'select-multiple': ['green', 'blue'],
+  'radio': 'a',
+  'radio-vertical': 'b',
+  'radio-button': 'b',
+  'checkbox-group': ['A', 'B', 'C'],
+  'input-number-range': [2, 4],
+  'input-number': 3,
+  'switch': true,
+  'slider': 66,
+  'rate': 3.5,
+  'segmented': 'open',
+  'segmented2': 'open',
+  'treeSelect': [{ title: 'Child Node3', value: '0-1-0' }],
+  'area': ['zhejiang', 'hangzhou', 'xihu'],
 }
 
 function waitTime(time = 100) {
@@ -92,7 +93,6 @@ async function handleFinish() {
     name="field-set-components-other-demo"
     :initial-values="initialValues"
     :readonly="readonly"
-    :submitter="{ searchConfig: { submitText: '提交' } }"
     @finish="handleFinish"
   >
     <ProFormGroup title="Text Types">
@@ -129,7 +129,7 @@ async function handleFinish() {
         :field-props="{ labelInValue: true }"
       />
       <ProFormSelect
-        name="selectMultiple"
+        name="select-multiple"
         label="Select[multiple]"
         :value-enum="{ red: 'Red', green: 'Green', blue: 'Blue' }"
         :field-props="{ mode: 'multiple' }"
@@ -194,7 +194,7 @@ async function handleFinish() {
         }"
       />
       <ProFormRadioGroup
-        name="radioVertical"
+        name="radio-vertical"
         label="Radio.Group"
         :field-props="{
           options: [
@@ -206,7 +206,7 @@ async function handleFinish() {
         }"
       />
       <ProFormRadioButton
-        name="radioButton"
+        name="radio-button"
         label="Radio.Button"
         :field-props="{
           options: [
@@ -217,15 +217,15 @@ async function handleFinish() {
         }"
       />
       <ProFormCheckboxGroup
-        name="checkboxGroup"
+        name="checkbox-group"
         label="Checkbox.Group"
         :field-props="{ options: ['A', 'B', 'C', 'D', 'E', 'F'] }"
       />
       <ProFormColorPicker label="Color Picker" name="color" />
     </ProFormGroup>
     <ProFormGroup title="Number Types">
-      <ProFormDigitRange label="InputNumberRange" name="digitRange" placeholder="Min,Max" />
-      <ProFormDigit label="InputNumber" name="digit" width="sm" :field-props="{ min: 1, max: 10 }" />
+      <ProFormDigitRange label="InputNumberRange" name="input-number-range" placeholder="Min,Max" />
+      <ProFormDigit label="InputNumber" name="input-number" width="sm" :field-props="{ min: 1, max: 10 }" />
       <ProFormSwitch name="switch" label="Switch" />
       <ProFormSlider
         name="slider"
