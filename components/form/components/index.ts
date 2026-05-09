@@ -10,6 +10,7 @@ export { default as ProFormDateRangePicker, ProFormDateTimeRangePicker } from '.
 export { default as ProFormDigit } from './Digit'
 export { default as ProFormDigitRange } from './Digit/DigitRange'
 export { default as ProFormField } from './Field'
+export { default as ProFormFieldSet } from './FieldSet'
 export { default as ProFormItem } from './FormItem'
 export { default as ProFormGroup } from './FormItem/Group'
 export { default as ProFormMoney } from './Money'

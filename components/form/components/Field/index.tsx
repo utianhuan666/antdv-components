@@ -30,6 +30,7 @@ const ProFormField = defineComponent({
     convertValue: { type: Function as PropType<NonNullable<ProFormFieldItemProps['convertValue']>>, default: undefined },
     formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
+    value: { type: null as unknown as PropType<any>, default: undefined },
     valueType: { type: [String, Object] as PropType<ProFieldValueTypeInput>, default: 'text' },
     valueEnum: { type: [Object, Map] as PropType<ProFormFieldItemProps['valueEnum']>, default: undefined },
     request: { type: Function as PropType<ProFormFieldItemProps['request']>, default: undefined },
@@ -65,7 +66,7 @@ const ProFormField = defineComponent({
 
     function getCellValue() {
       if (props.name === undefined)
-        return undefined
+        return props.value
       const path = Array.isArray(props.name) ? props.name : [props.name]
       return path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
     }

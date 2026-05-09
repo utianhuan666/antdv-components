@@ -111,6 +111,13 @@ export interface ProFormItemCreateConfig extends ProFormItemProps {
   ignoreWidth?: boolean
 }
 
+export interface ProFormFieldSetProps<T = any> extends ProFormItemProps {
+  value?: T[]
+  fieldProps?: Record<string, any>
+  space?: Record<string, any>
+  type?: 'space' | 'group'
+}
+
 export interface ProFormFieldItemProps<T = Record<string, any>> extends ProFormItemProps, ProFormGridConfig {
   fieldProps?: Partial<T> & Record<string, any>
   placeholder?: string | string[]

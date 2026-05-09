@@ -47,6 +47,7 @@ demo:
 ## 代码示例
 
 <demo-group>
+  <demo src="./demo/form-fieldset.vue">结构化表单项</demo>
   <demo src="./demo/components-other.vue">表单项</demo>
   <demo src="./demo/search-select.vue">查询表单</demo>
   <demo src="./demo/datatime.vue">日期表单</demo>
