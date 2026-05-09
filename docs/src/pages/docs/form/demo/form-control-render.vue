@@ -19,14 +19,14 @@ function handleFinish(values: Record<string, any>) {
 <template>
   <a-form :model="formState" layout="vertical" @finish="handleFinish">
     <a-form-item name="reason" label="Reason">
-      <a-input-group compact>
+      <a-space-compact>
         <a-select value="custom" style="width: 120px">
           <a-select-option value="custom">
             Custom
           </a-select-option>
         </a-select>
         <a-input v-model:value="formState.reason" style="width: 260px" placeholder="Please enter reason" />
-      </a-input-group>
+      </a-space-compact>
     </a-form-item>
     <a-button type="primary" html-type="submit">
       Submit

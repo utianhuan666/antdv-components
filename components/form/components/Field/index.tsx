@@ -46,7 +46,7 @@ const ProFormField = defineComponent({
     ignoreFormItem: { type: Boolean, default: false },
   },
   emits: ['change'],
-  setup(props, { emit, slots }) {
+  setup(props, { emit, slots, attrs }) {
     const fieldContext = useFieldContext()
     const editContext = useEditOrReadOnly()
 
@@ -106,6 +106,7 @@ const ProFormField = defineComponent({
       const value = getCellValue()
       const mergedFieldProps: Record<string, any> = {
         ...(fieldContext.fieldProps || {}),
+        ...(attrs || {}),
         ...(props.fieldProps || {}),
         disabled: props.disabled ?? props.fieldProps?.disabled,
         allowClear: props.allowClear ?? props.fieldProps?.allowClear,

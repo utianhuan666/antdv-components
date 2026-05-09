@@ -98,6 +98,8 @@ export {
   ProFormTextPassword,
   ProFormTimePicker,
   ProFormTreeSelect,
+  ProFormUploadButton,
+  ProFormUploadDragger,
 } from './form'
 export type {
   BaseFormProps,
@@ -109,6 +111,8 @@ export type {
   ProFormItemCreateConfig,
   ProFormItemProps,
   ProFormProps,
+  ProFormUploadButtonProps,
+  ProFormUploadDraggerProps,
   SubmitterProps,
 } from './form'
 export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'

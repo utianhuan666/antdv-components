@@ -388,12 +388,19 @@ const BaseForm = defineComponent({
     onMounted(triggerInit)
     watch(requestLoading, triggerInit)
 
-    /** 注入上下文（保持响应式，使 readonly 切换可以下发到所有子字段） */
-    provideEditOrReadOnly({
-      get readonly() {
-        return props.readonly
+    /**
+     * 注入只读上下文。使用 reactive 对象 + watch 保持响应式，
+     * 避免使用 getter 让下游组件跨边界依赖 BaseForm props，
+     * 在路由 unmount 时容易触发 patch 阶段 dom 已分离的报错。
+     */
+    const editOrReadOnlyContext = reactive({ readonly: props.readonly })
+    watch(
+      () => props.readonly,
+      (value) => {
+        editOrReadOnlyContext.readonly = value
       },
-    })
+    )
+    provideEditOrReadOnly(editOrReadOnlyContext)
     provideGridContext({
       grid: Boolean(props.grid),
       rowProps: props.rowProps,

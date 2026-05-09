@@ -118,6 +118,29 @@ export interface ProFormFieldSetProps<T = any> extends ProFormItemProps {
   type?: 'space' | 'group'
 }
 
+export interface ProFormUploadButtonProps<T = Record<string, any>> extends ProFormFieldItemProps<T> {
+  icon?: VNodeChild
+  title?: VNodeChild
+  max?: number
+  value?: any[]
+  fileList?: any[]
+  buttonProps?: Record<string, any>
+  imageProps?: Record<string, any>
+  action?: string | ((file: any) => Promise<string>)
+  accept?: string
+  listType?: string
+}
+
+export interface ProFormUploadDraggerProps<T = Record<string, any>> extends ProFormFieldItemProps<T> {
+  icon?: VNodeChild
+  title?: VNodeChild
+  description?: VNodeChild
+  max?: number
+  value?: any[]
+  action?: string | ((file: any) => Promise<string>)
+  accept?: string
+}
+
 export interface ProFormFieldItemProps<T = Record<string, any>> extends ProFormItemProps, ProFormGridConfig {
   fieldProps?: Partial<T> & Record<string, any>
   placeholder?: string | string[]

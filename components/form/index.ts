@@ -29,6 +29,8 @@ import {
   ProFormTextPassword,
   ProFormTimePicker,
   ProFormTreeSelect,
+  ProFormUploadButton,
+  ProFormUploadDragger,
 } from './components'
 import { MyFormItem } from './form-item.tsx'
 import Form from './form.vue'
@@ -71,6 +73,8 @@ export const ProFormModule = {
       ProFormTimePicker,
       ProFormDateRangePicker,
       ProFormDateTimeRangePicker,
+      ProFormUploadButton,
+      ProFormUploadDragger,
     ] as any[]
     list.forEach((c) => {
       if (c?.name) {
@@ -113,6 +117,8 @@ export {
   ProFormTextPassword,
   ProFormTimePicker,
   ProFormTreeSelect,
+  ProFormUploadButton,
+  ProFormUploadDragger,
 }
 
 export type {
@@ -125,5 +131,7 @@ export type {
   ProFormItemCreateConfig,
   ProFormItemProps,
   ProFormProps,
+  ProFormUploadButtonProps,
+  ProFormUploadDraggerProps,
   SubmitterProps,
 } from './typing'
