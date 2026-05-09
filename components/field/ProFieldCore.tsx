@@ -82,6 +82,7 @@ export function createProField(
       value: { type: [String, Number, Boolean, Array, Object] as PropType<any>, default: undefined },
       onChange: { type: Function as PropType<(...args: any[]) => void>, default: undefined },
       fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
+      valueEnum: { type: [Map, Object] as PropType<Map<any, any> | Record<string, any>>, default: undefined },
       render: {
         type: Function as PropType<ProRenderFieldPropsType['render']>,
         default: undefined,
@@ -183,6 +184,7 @@ export function createProField(
             }),
             customValueType.value,
           ),
+          valueEnum: props.valueEnum,
           request: props.request,
           emptyText: props.emptyText,
           open: props.open,

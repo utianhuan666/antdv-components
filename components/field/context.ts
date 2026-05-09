@@ -25,11 +25,7 @@ export interface ProRenderFieldPropsType {
    * @param props  – merged field props
    * @param dom    – the default rendered VNode
    */
-  formItemRender?: (
-    text: any,
-    props: ProFieldFCRenderProps,
-    dom: JSX.Element,
-  ) => JSX.Element
+  formItemRender?: (text: any, props: ProFieldFCRenderProps, dom: JSX.Element) => JSX.Element
 }
 
 // ---------------------------------------------------------------------------

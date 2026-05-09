@@ -1,0 +1,24 @@
+/**
+ * 字段组件聚合导出，对标 React `src/form/components/index.ts`。
+ * Vue 端按需选择 valueType + ProFormField 包装。
+ */
+export { default as ProFormCascader } from './Cascader'
+export { default as ProFormCheckbox, ProFormCheckboxGroup } from './Checkbox'
+export { default as ProFormColorPicker } from './ColorPicker'
+export { default as ProFormDatePicker, ProFormDateTimePicker, ProFormTimePicker } from './DatePicker'
+export { default as ProFormDateRangePicker, ProFormDateTimeRangePicker } from './DateRangePicker'
+export { default as ProFormDigit } from './Digit'
+export { default as ProFormDigitRange } from './Digit/DigitRange'
+export { default as ProFormField } from './Field'
+export { default as ProFormItem } from './FormItem'
+export { default as ProFormGroup } from './FormItem/Group'
+export { default as ProFormMoney } from './Money'
+export { default as ProFormRadio, ProFormRadioButton, ProFormRadioGroup } from './Radio'
+export { default as ProFormRate } from './Rate'
+export { default as ProFormSegmented } from './Segmented'
+export { default as ProFormSelect } from './Select'
+export { default as ProFormSlider } from './Slider'
+export { default as ProFormSwitch } from './Switch'
+export { default as ProFormText, ProFormTextPassword } from './Text'
+export { default as ProFormTextArea } from './TextArea'
+export { default as ProFormTreeSelect } from './TreeSelect'

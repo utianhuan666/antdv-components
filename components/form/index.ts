@@ -1,9 +1,125 @@
+import type { App } from 'vue'
+import { BaseForm } from './BaseForm'
+import {
+  ProFormCascader,
+  ProFormCheckbox,
+  ProFormCheckboxGroup,
+  ProFormColorPicker,
+  ProFormDatePicker,
+  ProFormDateRangePicker,
+  ProFormDateTimePicker,
+  ProFormDateTimeRangePicker,
+  ProFormDigit,
+  ProFormDigitRange,
+  ProFormField,
+  ProFormGroup,
+  ProFormItem,
+  ProFormMoney,
+  ProFormRadio,
+  ProFormRadioButton,
+  ProFormRadioGroup,
+  ProFormRate,
+  ProFormSegmented,
+  ProFormSelect,
+  ProFormSlider,
+  ProFormSwitch,
+  ProFormText,
+  ProFormTextArea,
+  ProFormTextPassword,
+  ProFormTimePicker,
+  ProFormTreeSelect,
+} from './components'
 import { MyFormItem } from './form-item.tsx'
 import Form from './form.vue'
+import ProForm from './layouts/ProForm'
 
-Form.install = (app: any) => {
+Form.install = (app: App) => {
   app.component(Form.name!, Form)
   app.component(MyFormItem.name!, MyFormItem)
 }
 
-export { Form, MyFormItem }
+export const ProFormModule = {
+  install(app: App) {
+    const list = [
+      ProForm,
+      ProFormItem,
+      ProFormGroup,
+      ProFormField,
+      ProFormText,
+      ProFormTextPassword,
+      ProFormTextArea,
+      ProFormSelect,
+      ProFormDigit,
+      ProFormDigitRange,
+      ProFormMoney,
+      ProFormSwitch,
+      ProFormRadio,
+      ProFormRadioGroup,
+      ProFormRadioButton,
+      ProFormCheckbox,
+      ProFormCheckboxGroup,
+      ProFormCascader,
+      ProFormTreeSelect,
+      ProFormSlider,
+      ProFormRate,
+      ProFormSegmented,
+      ProFormColorPicker,
+      ProFormDatePicker,
+      ProFormDateTimePicker,
+      ProFormTimePicker,
+      ProFormDateRangePicker,
+      ProFormDateTimeRangePicker,
+    ] as any[]
+    list.forEach((c) => {
+      if (c?.name) {
+        app.component(c.name, c)
+      }
+    })
+  },
+}
+
+export {
+  BaseForm,
+  Form,
+  MyFormItem,
+  ProForm,
+  ProFormCascader,
+  ProFormCheckbox,
+  ProFormCheckboxGroup,
+  ProFormColorPicker,
+  ProFormDatePicker,
+  ProFormDateRangePicker,
+  ProFormDateTimePicker,
+  ProFormDateTimeRangePicker,
+  ProFormDigit,
+  ProFormDigitRange,
+  ProFormField,
+  ProFormGroup,
+  ProFormItem,
+  ProFormMoney,
+  ProFormRadio,
+  ProFormRadioButton,
+  ProFormRadioGroup,
+  ProFormRate,
+  ProFormSegmented,
+  ProFormSelect,
+  ProFormSlider,
+  ProFormSwitch,
+  ProFormText,
+  ProFormTextArea,
+  ProFormTextPassword,
+  ProFormTimePicker,
+  ProFormTreeSelect,
+}
+
+export type {
+  BaseFormProps,
+  CommonFormProps,
+  ProFormFieldItemProps,
+  ProFormGridConfig,
+  ProFormGroupProps,
+  ProFormItemCreateConfig,
+  ProFormItemProps,
+  ProFormProps,
+  SubmitterProps,
+} from './typing'

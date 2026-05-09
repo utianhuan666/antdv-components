@@ -78,8 +78,23 @@ export const siteConfig = {
         items: [{ title: 'Introduction', link: '/docs' }],
       },
       {
-        title: 'Components',
+        title: '数据录入',
         items: [
+          { title: 'ProForm - 高级表单', link: '/docs/form' },
+          { title: 'ProFormFields - 表单项', link: '/docs/field-set' },
+          { title: 'ProFormList - 数据结构化', link: '/docs/group' },
+          { title: 'ProFormDependency - 数据联动', link: '/docs/dependency' },
+          { title: 'Schema Form - JSON 表单', link: '/docs/schema-form' },
+          { title: 'Query/LightFilter - 筛选表单', link: '/docs/query-filter' },
+          { title: 'StepsForm - 分步表单', link: '/docs/steps-form' },
+          { title: 'Modal/Drawer - 浮层表单', link: '/docs/modal-form' },
+          { title: 'LoginForm/Page - 登录表单', link: '/docs/login-form' },
+        ],
+      },
+      {
+        title: '通用',
+        items: [
+          { title: 'ProField - 原子组件', link: '/docs/field' },
           { title: 'ProSkeleton 骨架屏', link: '/docs/skeleton' },
         ],
       },
