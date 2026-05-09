@@ -1,4 +1,5 @@
 import type { InjectionKey } from 'vue'
+import type { ProFieldValueTypeInput } from '../field'
 import { inject, provide } from 'vue'
 
 export interface FieldContextValue {
@@ -23,6 +24,15 @@ export interface FieldContextValue {
   getPopupContainer?: (trigger: HTMLElement) => HTMLElement
   /** 当前 BaseForm 是否处于 loading */
   loading?: boolean
+  setFieldValueType?: (
+    name: (string | number)[],
+    config: {
+      valueType?: ProFieldValueTypeInput
+      dateFormat?: string
+      transform?: (value: any, namePath: (string | number)[]) => any
+    },
+  ) => void
+  clearFieldValueType?: (name: (string | number)[]) => void
 }
 
 export const FieldContextKey: InjectionKey<FieldContextValue> = Symbol('ProFieldContext')

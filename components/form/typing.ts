@@ -25,10 +25,10 @@ export interface SubmitterProps {
     submitText?: string
     resetText?: string
   }
-  submitButtonProps?: false | Record<string, any>
-  resetButtonProps?: false | Record<string, any>
-  onSubmit?: () => void
-  onReset?: () => void
+  submitButtonProps?: false | (Record<string, any> & { preventDefault?: boolean })
+  resetButtonProps?: false | (Record<string, any> & { preventDefault?: boolean })
+  onSubmit?: (value?: Record<string, any>) => void
+  onReset?: (value?: Record<string, any>) => void
   /** 完全自定义按钮区域；返回 false 表示隐藏 */
   render?: false | ((props: SubmitterContext, dom: VNodeChild[]) => VNodeChild)
 }
@@ -39,9 +39,19 @@ export interface CommonFormProps<T = Record<string, any>, U = Record<string, any
   initialValues?: Partial<T>
   params?: U
   request?: (params: U) => Promise<Partial<T>>
+  syncToUrl?: boolean | ((values: T, type: 'get' | 'set') => T)
+  syncToUrlAsImportant?: boolean
+  extraUrlParams?: Record<string, any>
+  syncToInitialValues?: boolean
+  omitNil?: boolean
+  dateFormatter?: string | 'string' | 'number' | false | ((value: any, valueType: string) => string | number)
+  isKeyPressSubmit?: boolean
+  autoFocusFirstInput?: boolean
+  formKey?: string
   /** 全局只读模式，所有表单项默认 readonly，单个表单项 readonly 优先 */
   readonly?: boolean
   onFinish?: (formData: T) => Promise<boolean | void> | boolean | void
+  onReset?: (formData: T) => void
   onLoadingChange?: (loading: boolean) => void
   onInit?: (values: T, form: any) => void
 }
@@ -53,6 +63,9 @@ export interface BaseFormProps<T = Record<string, any>, U = Record<string, any>>
   proFieldProps?: Record<string, any>
   formItemProps?: Record<string, any>
   groupProps?: ProFormGroupProps
+  formComponentType?: ProFormLayoutType | (string & {})
+  component?: false | string
+  size?: string
   layout?: 'horizontal' | 'vertical' | 'inline'
   model?: T
   name?: string
@@ -78,6 +91,9 @@ export interface ProFormItemProps {
   rules?: any[]
   required?: boolean
   valuePropName?: string
+  initialValue?: any
+  valueType?: ProFieldValueTypeInput
+  dataFormat?: string
   /** 提交时转换 */
   transform?: (value: any, namePath: NamePath) => any
   /** 取值时转换 */

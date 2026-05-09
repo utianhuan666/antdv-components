@@ -1,6 +1,6 @@
 import type { PropType } from 'vue'
 import type { ProFormProps } from '../../typing'
-import { defineComponent } from 'vue'
+import { defineComponent, shallowRef } from 'vue'
 import { BaseForm } from '../../BaseForm'
 import ProFormItem from '../../components/FormItem'
 import ProFormGroup from '../../components/FormItem/Group'
@@ -23,10 +23,24 @@ const ProForm = defineComponent({
     layout: { type: String as PropType<ProFormProps['layout']>, default: 'vertical' },
   },
   setup(props, { attrs, slots, expose }) {
-    const baseRef = (): any => null
-    expose({ baseRef })
+    const baseRef = shallowRef<any>()
+    expose({
+      get formInstance() {
+        return baseRef.value?.formInstance
+      },
+      submit: () => baseRef.value?.submit?.(),
+      reset: () => baseRef.value?.reset?.(),
+      getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
+      getFieldValue: (name: any) => baseRef.value?.getFieldValue?.(name),
+      getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
+      getFieldFormatValue: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValue?.(name, omitNil),
+      getFieldFormatValueObject: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValueObject?.(name, omitNil),
+      validateFieldsReturnFormatValue: (nameList?: any[], omitNil?: boolean) => baseRef.value?.validateFieldsReturnFormatValue?.(nameList, omitNil),
+      setFieldsValue: (values: Record<string, any>) => baseRef.value?.setFieldsValue?.(values),
+    })
     return () => (
       <BaseForm
+        ref={baseRef}
         layout={props.layout as any}
         contentRender={(items, submitter) => (
           <>
@@ -36,7 +50,12 @@ const ProForm = defineComponent({
         )}
         {...attrs}
       >
-        {slots.default?.()}
+        {{
+          default: () => slots.default?.(),
+          submitter: slots.submitter
+            ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
+            : undefined,
+        }}
       </BaseForm>
     )
   },

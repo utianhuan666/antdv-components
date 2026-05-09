@@ -1,14 +1,14 @@
 import type { PropType } from 'vue'
 import type { SubmitterContext, SubmitterProps } from '../../typing'
-import { Button, Space } from 'antdv-next'
+import { Button } from 'antdv-next'
 import { defineComponent } from 'vue'
 
 const SubmitterButtonProps = {
   searchConfig: { type: Object as PropType<SubmitterProps['searchConfig']>, default: () => ({}) },
   submitButtonProps: { type: [Boolean, Object] as PropType<SubmitterProps['submitButtonProps']>, default: () => ({}) },
   resetButtonProps: { type: [Boolean, Object] as PropType<SubmitterProps['resetButtonProps']>, default: () => ({}) },
-  onSubmit: { type: Function as PropType<() => void>, default: undefined },
-  onReset: { type: Function as PropType<() => void>, default: undefined },
+  onSubmit: { type: Function as PropType<(value?: Record<string, any>) => void>, default: undefined },
+  onReset: { type: Function as PropType<(value?: Record<string, any>) => void>, default: undefined },
   render: { type: [Boolean, Function] as PropType<SubmitterProps['render']>, default: undefined },
   context: { type: Object as PropType<SubmitterContext>, required: true },
 }
@@ -19,18 +19,22 @@ const Submitter = defineComponent({
   setup(props) {
     return () => {
       const { searchConfig, submitButtonProps, resetButtonProps } = props
-      const submitText = searchConfig?.submitText ?? '提 交'
-      const resetText = searchConfig?.resetText ?? '重 置'
+      const submitText = searchConfig?.submitText ?? '提交'
+      const resetText = searchConfig?.resetText ?? '重置'
 
       const dom = []
       if (resetButtonProps !== false) {
+        const { preventDefault, onClick, ...resetRestProps } = (typeof resetButtonProps === 'object' ? resetButtonProps : {}) as Record<string, any>
         dom.push(
           <Button
             key="reset"
-            {...(typeof resetButtonProps === 'object' ? resetButtonProps : {})}
-            onClick={() => {
+            htmlType="button"
+            {...resetRestProps}
+            onClick={(event: MouseEvent) => {
+              if (!preventDefault)
+                props.context!.reset()
               props.onReset?.()
-              ;(resetButtonProps as Record<string, any>)?.onClick?.()
+              onClick?.(event)
             }}
           >
             {resetText}
@@ -38,14 +42,18 @@ const Submitter = defineComponent({
         )
       }
       if (submitButtonProps !== false) {
+        const { preventDefault, onClick, ...submitRestProps } = (typeof submitButtonProps === 'object' ? submitButtonProps : {}) as Record<string, any>
         dom.push(
           <Button
             key="submit"
             type="primary"
-            {...(typeof submitButtonProps === 'object' ? submitButtonProps : {})}
-            onClick={() => {
+            htmlType="button"
+            {...submitRestProps}
+            onClick={(event: MouseEvent) => {
+              if (!preventDefault)
+                props.context!.submit()
               props.onSubmit?.()
-              ;(submitButtonProps as Record<string, any>)?.onClick?.()
+              onClick?.(event)
             }}
           >
             {submitText}
@@ -55,10 +63,23 @@ const Submitter = defineComponent({
 
       if (props.render === false)
         return null
-      if (typeof props.render === 'function')
-        return props.render(props.context!, dom)
+      const renderDom = typeof props.render === 'function' ? props.render(props.context!, dom) : dom
+      if (!renderDom)
+        return null
 
-      return <Space>{dom}</Space>
+      if (Array.isArray(renderDom)) {
+        if (renderDom.length < 1)
+          return null
+        if (renderDom.length === 1)
+          return renderDom[0]
+        return (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {renderDom}
+          </div>
+        )
+      }
+
+      return renderDom
     }
   },
 })

@@ -1,7 +1,8 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { NamePath, ProFormItemProps } from '../../typing'
 import { Col, FormItem } from 'antdv-next'
-import { defineComponent } from 'vue'
+import { defineComponent, onMounted, onUnmounted, watch } from 'vue'
+import { useFieldContext } from '../../FieldContext'
 import { useGridHelpers } from '../../helpers'
 
 /**
@@ -22,6 +23,9 @@ const ProFormItem = defineComponent({
     tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
     rules: { type: Array as PropType<any[]>, default: undefined },
     required: { type: Boolean, default: undefined },
+    initialValue: { type: null as unknown as PropType<ProFormItemProps['initialValue']>, default: undefined },
+    valueType: { type: [String, Object] as PropType<ProFormItemProps['valueType']>, default: undefined },
+    dataFormat: { type: String as PropType<ProFormItemProps['dataFormat']>, default: undefined },
     extra: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
     help: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
     formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
@@ -31,7 +35,30 @@ const ProFormItem = defineComponent({
     ignoreFormItem: { type: Boolean, default: false },
   },
   setup(props, { slots, attrs }) {
+    const fieldContext = useFieldContext()
     const { grid, colProps } = useGridHelpers(props.colProps)
+
+    function registerFieldValueType() {
+      if (!props.name)
+        return
+      const namePath = Array.isArray(props.name) ? props.name : [props.name]
+      fieldContext.setFieldValueType?.(namePath, {
+        valueType: props.valueType,
+        dateFormat: props.dataFormat,
+        transform: props.transform,
+      })
+    }
+
+    function clearFieldValueType() {
+      if (!props.name)
+        return
+      const namePath = Array.isArray(props.name) ? props.name : [props.name]
+      fieldContext.clearFieldValueType?.(namePath)
+    }
+
+    onMounted(registerFieldValueType)
+    onUnmounted(clearFieldValueType)
+    watch(() => [props.name, props.transform] as const, registerFieldValueType)
 
     return () => {
       if (props.ignoreFormItem)

@@ -1,7 +1,7 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldValueTypeInput } from '../../../field'
 import type { NamePath, ProFormFieldItemProps, ProFormItemCreateConfig } from '../../typing'
-import { computed, defineComponent } from 'vue'
+import { Comment, computed, defineComponent, Fragment, onMounted, Text, watch } from 'vue'
 import { ProField } from '../../../field'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { useFieldContext } from '../../FieldContext'
@@ -25,6 +25,9 @@ const ProFormField = defineComponent({
     rules: { type: Array as PropType<any[]>, default: undefined },
     required: { type: Boolean, default: undefined },
     valuePropName: { type: String, default: 'value' },
+    initialValue: { type: null as unknown as PropType<ProFormFieldItemProps['initialValue']>, default: undefined },
+    transform: { type: Function as PropType<NonNullable<ProFormFieldItemProps['transform']>>, default: undefined },
+    convertValue: { type: Function as PropType<NonNullable<ProFormFieldItemProps['convertValue']>>, default: undefined },
     formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     valueType: { type: [String, Object] as PropType<ProFieldValueTypeInput>, default: 'text' },
@@ -89,6 +92,15 @@ const ProFormField = defineComponent({
       props.fieldProps?.onChange?.(...args)
     }
 
+    function applyInitialValue() {
+      if (props.name === undefined || props.initialValue === undefined || getCellValue() !== undefined)
+        return
+      setCellValue(props.initialValue)
+    }
+
+    onMounted(applyInitialValue)
+    watch(() => props.initialValue, applyInitialValue)
+
     function renderProField() {
       const value = getCellValue()
       const mergedFieldProps: Record<string, any> = {
@@ -119,10 +131,29 @@ const ProFormField = defineComponent({
       )
     }
 
+    function getValidSlotChildren() {
+      const children = slots.default?.()
+      if (!children?.length)
+        return undefined
+
+      const validChildren = children.filter((node) => {
+        if (node.type === Comment)
+          return false
+        if (node.type === Text && typeof node.children === 'string' && !node.children.trim())
+          return false
+        if (node.type === Fragment && Array.isArray(node.children) && node.children.length === 0)
+          return false
+        return true
+      })
+
+      return validChildren.length > 0 ? validChildren : undefined
+    }
+
     return () => {
+      const children = getValidSlotChildren()
       // ignoreFormItem 时不再包 antdv FormItem，外层一般已自定义包装
       if (props.ignoreFormItem || !props.name) {
-        return slots.default?.() ?? renderProField()
+        return children ?? renderProField()
       }
 
       return (
@@ -132,13 +163,18 @@ const ProFormField = defineComponent({
           tooltip={props.tooltip}
           rules={props.rules}
           required={props.required}
+          initialValue={props.initialValue}
+          valueType={props.valueType}
+          dataFormat={props.fieldProps?.format}
+          transform={props.transform}
+          convertValue={props.convertValue}
           formItemProps={{
             valuePropName: props.valuePropName,
             ...(fieldContext.formItemProps || {}),
             ...(props.formItemProps || {}),
           }}
         >
-          {slots.default?.() ?? renderProField()}
+          {children ?? renderProField()}
         </ProFormItem>
       )
     }
