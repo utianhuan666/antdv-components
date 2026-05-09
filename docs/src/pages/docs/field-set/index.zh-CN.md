@@ -25,29 +25,32 @@ demo:
 
 ## 组件列表
 
-| 组件 | 使用场景 |
-| --- | --- |
-| `ProFormText` | 用于输入各类文本 |
-| `ProFormDigit` | 用于输入数字 |
-| `ProFormText.Password` | 用于输入密码 |
-| `ProFormTextArea` | 用于输入多行文本 |
-| `ProFormDatePicker` | 日期选择器用于输入日期 |
-| `ProFormDateTimePicker` | 日期 + 时间选择器 |
-| `ProFormDateRangePicker` | 日期区间选择器 |
-| `ProFormDateTimeRangePicker` | 日期 + 时间区间选择器 |
-| `ProFormSelect` | 支持 `request` 和 `valueEnum` 两种方式来生成子项 |
-| `ProFormTreeSelect` | 树选择 |
-| `ProFormCheckbox` | 复选框 |
-| `ProFormRadio.Group` | 单选框组 |
-| `ProFormSlider` | 滑块 |
-| `ProFormSwitch` | 用于输入互斥的两个选项 |
-| `ProFormMoney` | 通用金额输入组件 |
-| `ProFormSegmented` | 分段控制器 |
+| 组件                         | 使用场景                                         |
+| ---------------------------- | ------------------------------------------------ |
+| `ProFormText`                | 用于输入各类文本                                 |
+| `ProFormDigit`               | 用于输入数字                                     |
+| `ProFormText.Password`       | 用于输入密码                                     |
+| `ProFormTextArea`            | 用于输入多行文本                                 |
+| `ProFormDatePicker`          | 日期选择器用于输入日期                           |
+| `ProFormDateTimePicker`      | 日期 + 时间选择器                                |
+| `ProFormDateRangePicker`     | 日期区间选择器                                   |
+| `ProFormDateTimeRangePicker` | 日期 + 时间区间选择器                            |
+| `ProFormSelect`              | 支持 `request` 和 `valueEnum` 两种方式来生成子项 |
+| `ProFormTreeSelect`          | 树选择                                           |
+| `ProFormCheckbox`            | 复选框                                           |
+| `ProFormRadio.Group`         | 单选框组                                         |
+| `ProFormSlider`              | 滑块                                             |
+| `ProFormSwitch`              | 用于输入互斥的两个选项                           |
+| `ProFormMoney`               | 通用金额输入组件                                 |
+| `ProFormSegmented`           | 分段控制器                                       |
 
 ## 代码示例
 
 <demo-group>
   <demo src="./demo/components-other.vue">表单项</demo>
+  <demo src="./demo/search-select.vue">查询表单</demo>
+  <demo src="./demo/datatime.vue">日期表单</demo>
+  <demo src="./demo/components-other-readonly.vue">只读表单</demo>
 </demo-group>
 
 ## API
@@ -56,14 +59,14 @@ ProForm 自带的 Field 与 `valueType` 基本上一一对应。
 
 ### 通用属性
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `width` | Field 的长度，支持 `xs`、`sm`、`md`、`lg`、`xl` | `number \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | - |
-| `rowProps` | 开启 `grid` 模式时传递给 Row | `RowProps` | `{ gutter: 8 }` |
-| `colProps` | 开启 `grid` 模式时传递给 Col | `ColProps` | `{ xs: 24 }` |
-| `tooltip` | 会在 label 旁增加一个 icon，悬浮后展示配置的信息 | `string \| tooltipProps` | - |
-| `secondary` | 是否是次要控件，只针对 LightFilter 下有效 | `boolean` | `false` |
-| `allowClear` | 支持清除，主动设置情况下同时也会透传给 `fieldProps` | `boolean` | `true` |
+| 参数         | 说明                                                | 类型                                             | 默认值          |
+| ------------ | --------------------------------------------------- | ------------------------------------------------ | --------------- |
+| `width`      | Field 的长度，支持 `xs`、`sm`、`md`、`lg`、`xl`     | `number \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | -               |
+| `rowProps`   | 开启 `grid` 模式时传递给 Row                        | `RowProps`                                       | `{ gutter: 8 }` |
+| `colProps`   | 开启 `grid` 模式时传递给 Col                        | `ColProps`                                       | `{ xs: 24 }`    |
+| `tooltip`    | 会在 label 旁增加一个 icon，悬浮后展示配置的信息    | `string \| tooltipProps`                         | -               |
+| `secondary`  | 是否是次要控件，只针对 LightFilter 下有效           | `boolean`                                        | `false`         |
+| `allowClear` | 支持清除，主动设置情况下同时也会透传给 `fieldProps` | `boolean`                                        | `true`          |
 
 ### 宽度
 

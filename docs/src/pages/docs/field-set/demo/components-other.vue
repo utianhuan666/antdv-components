@@ -9,82 +9,250 @@ Mirrors React `demos/form/FieldSet/components-other.tsx`, showcasing common fiel
 <script setup lang="ts">
 import {
   ProForm,
+  ProFormCascader,
   ProFormCheckboxGroup,
+  ProFormColorPicker,
   ProFormDatePicker,
   ProFormDateTimePicker,
   ProFormDigit,
+  ProFormDigitRange,
   ProFormGroup,
-  ProFormMoney,
+  ProFormRadioButton,
   ProFormRadioGroup,
   ProFormRate,
+  ProFormSegmented,
   ProFormSelect,
+  ProFormSlider,
   ProFormSwitch,
   ProFormText,
-  ProFormTextArea,
+  ProFormTreeSelect,
 } from '@antdv/components'
+import { App } from 'antdv-next'
+import { shallowRef } from 'vue'
+
+const readonly = shallowRef(false)
+const { message } = App.useApp()
 
 const initialValues = {
-  name: 'Bruce',
-  country: 'china',
-  gender: 'male',
-  hobbies: ['sport', 'music'],
-  active: true,
-  age: 28,
-  salary: 18888,
-  score: 4,
+  name: 'demo_user',
+  password: 'demo123',
+  select: 'china',
+  select2: '520000201604258831',
+  useMode: { label: 'Unresolved', value: 'open', key: 'open' },
+  selectMultiple: ['green', 'blue'],
+  radio: 'a',
+  radioVertical: 'b',
+  radioButton: 'b',
+  checkboxGroup: ['A', 'B', 'C'],
+  digitRange: [2, 4],
+  digit: 3,
+  switch: true,
+  slider: 66,
+  rate: 3.5,
+  segmented: 'open',
+  treeSelect: ['0-1-0'],
+  area: ['zhejiang', 'hangzhou', 'xihu'],
 }
 
-function handleFinish(values: Record<string, any>) {
-  console.warn('finish', values)
+function waitTime(time = 100) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(true)
+    }, time)
+  })
+}
+
+async function requestUsers(params?: Record<string, any>) {
+  await waitTime()
+  const keyWords = params?.keyWords || ''
+  const options = [
+    { value: '520000201604258831', label: 'Patricia Lopez' },
+    { value: '520000198509222123', label: 'Jose Martinez' },
+    { value: '210000200811194757', label: 'Elizabeth Thomas' },
+    { value: '530000198808222758', label: 'Scott Anderson' },
+    { value: '500000198703236285', label: 'George Jackson' },
+  ]
+  return keyWords ? options.filter(item => item.label.includes(keyWords) || item.value.includes(keyWords)) : options
+}
+
+async function handleFinish() {
+  message.success('Submitted')
+  return true
 }
 </script>
 
 <template>
+  <a-switch
+    v-model:checked="readonly"
+    checked-children="Edit"
+    un-checked-children="Read Only"
+    style="margin-block-end: 16px"
+  />
   <ProForm
+    name="field-set-components-other-demo"
     :initial-values="initialValues"
+    :readonly="readonly"
     :submitter="{ searchConfig: { submitText: '提交' } }"
     @finish="handleFinish"
   >
     <ProFormGroup title="Text Types">
-      <ProFormText name="name" label="Name" />
-      <ProFormText.Password name="password" label="Password" />
-      <ProFormTextArea name="bio" label="Bio" />
+      <ProFormText width="md" name="name" label="Name" />
+      <ProFormText.Password width="md" name="password" label="Password" />
     </ProFormGroup>
-    <ProFormGroup title="Selection Types">
+    <ProFormGroup title="Selection Types" collapsible :style="{ gap: '0 32px' }">
       <ProFormSelect
-        name="country"
+        name="select"
         label="Select"
         :value-enum="{ china: 'China', usa: 'U.S.A' }"
+        placeholder="Please select a country"
+        :rules="[{ required: true, message: 'Please select your country!' }]"
+      />
+      <ProFormSelect
+        name="select2"
+        label="Select with Search"
+        :request="requestUsers"
+        placeholder="Please select a user"
+        :field-props="{ showSearch: true }"
+      />
+      <ProFormSelect
+        width="md"
+        name="useMode"
+        label="Contract Agreed Effective Method"
+        :request="
+          async () => [
+            { label: 'All', value: 'all' },
+            { label: 'Unresolved', value: 'open' },
+            { label: 'Resolved', value: 'closed' },
+            { label: 'In Progress', value: 'processing' },
+          ]
+        "
+        :field-props="{ labelInValue: true }"
+      />
+      <ProFormSelect
+        name="selectMultiple"
+        label="Select[multiple]"
+        :value-enum="{ red: 'Red', green: 'Green', blue: 'Blue' }"
+        :field-props="{ mode: 'multiple' }"
+        placeholder="Please select favorite colors"
+        :rules="[{ required: true, message: 'Please select your favorite colors!', type: 'array' }]"
+      />
+      <ProFormCascader
+        name="area"
+        label="Address"
+        :request="
+          async () => [
+            {
+              value: 'zhejiang',
+              label: 'Zhejiang',
+              children: [{ value: 'hangzhou', label: 'Hangzhou', children: [{ value: 'xihu', label: 'West Lake' }] }],
+            },
+            {
+              value: 'jiangsu',
+              label: 'Jiangsu',
+              children: [
+                { value: 'nanjing', label: 'Nanjing', children: [{ value: 'zhonghuamen', label: 'Zhong Hua Men' }] },
+              ],
+            },
+          ]
+        "
+        :field-props="{ changeOnSelect: true }"
+      />
+      <ProFormTreeSelect
+        name="treeSelect"
+        label="TreeSelect Request"
+        placeholder="Please tree select"
+        allow-clear
+        width="md"
+        :request="
+          async () => [
+            {
+              title: 'Node1',
+              value: '0-0',
+              children: [{ title: 'Child Node1', value: '0-0-0' }],
+            },
+            {
+              title: 'Node2',
+              value: '0-1',
+              children: [
+                { title: 'Child Node3', value: '0-1-0' },
+                { title: 'Child Node4', value: '0-1-1' },
+              ],
+            },
+          ]
+        "
+        :field-props="{ multiple: true, treeNodeFilterProp: 'title', fieldNames: { label: 'title' } }"
       />
       <ProFormRadioGroup
-        name="gender"
+        name="radio"
         label="Radio.Group"
         :field-props="{
           options: [
-            { label: 'Male', value: 'male' },
-            { label: 'Female', value: 'female' },
+            { label: 'item 1', value: 'a' },
+            { label: 'item 2', value: 'b' },
+            { label: 'item 3', value: 'c' },
+          ],
+        }"
+      />
+      <ProFormRadioGroup
+        name="radioVertical"
+        label="Radio.Group"
+        :field-props="{
+          options: [
+            { label: 'item 1', value: 'a' },
+            { label: 'item 2', value: 'b' },
+            { label: 'item 3', value: 'c' },
+          ],
+          style: { display: 'flex', flexDirection: 'column' },
+        }"
+      />
+      <ProFormRadioButton
+        name="radioButton"
+        label="Radio.Button"
+        :field-props="{
+          options: [
+            { label: 'item 1', value: 'a' },
+            { label: 'item 2', value: 'b' },
+            { label: 'item 3', value: 'c' },
           ],
         }"
       />
       <ProFormCheckboxGroup
-        name="hobbies"
+        name="checkboxGroup"
         label="Checkbox.Group"
-        :field-props="{
-          options: [
-            { label: 'Sport', value: 'sport' },
-            { label: 'Read', value: 'read' },
-            { label: 'Music', value: 'music' },
-          ],
-        }"
+        :field-props="{ options: ['A', 'B', 'C', 'D', 'E', 'F'] }"
       />
-      <ProFormSwitch name="active" label="Switch" />
+      <ProFormColorPicker label="Color Picker" name="color" />
     </ProFormGroup>
-    <ProFormGroup title="Number and Date Types">
-      <ProFormDigit name="age" label="Digit" />
-      <ProFormMoney name="salary" label="Money" />
-      <ProFormRate name="score" label="Rate" />
-      <ProFormDatePicker name="joinedAt" label="DatePicker" />
-      <ProFormDateTimePicker name="lastLogin" label="DateTimePicker" />
+    <ProFormGroup title="Number Types">
+      <ProFormDigitRange label="InputNumberRange" name="digitRange" placeholder="Min,Max" />
+      <ProFormDigit label="InputNumber" name="digit" width="sm" :field-props="{ min: 1, max: 10 }" />
+      <ProFormSwitch name="switch" label="Switch" />
+      <ProFormSlider
+        name="slider"
+        label="Slider"
+        width="lg"
+        :field-props="{ marks: { 0: 'A', 20: 'B', 40: 'C', 60: 'D', 80: 'E', 100: 'F' } }"
+      />
+      <ProFormRate name="rate" label="Rate" />
+      <ProFormSegmented
+        name="segmented"
+        label="Segmented Control"
+        :value-enum="{ open: 'Unresolved', closed: 'Resolved' }"
+      />
+      <ProFormSegmented
+        name="segmented2"
+        label="Segmented Control - Remote Data"
+        :request="
+          async () => [
+            { label: 'All', value: 'all' },
+            { label: 'Unresolved', value: 'open' },
+            { label: 'Resolved', value: 'closed' },
+            { label: 'In Progress', value: 'processing' },
+          ]
+        "
+      />
+      <ProFormDatePicker name="date" label="DatePicker" />
+      <ProFormDateTimePicker name="dateTime" label="DateTimePicker" />
     </ProFormGroup>
   </ProForm>
 </template>
