@@ -388,8 +388,12 @@ const BaseForm = defineComponent({
     onMounted(triggerInit)
     watch(requestLoading, triggerInit)
 
-    /** 注入上下文 */
-    provideEditOrReadOnly({ readonly: props.readonly })
+    /** 注入上下文（保持响应式，使 readonly 切换可以下发到所有子字段） */
+    provideEditOrReadOnly({
+      get readonly() {
+        return props.readonly
+      },
+    })
     provideGridContext({
       grid: Boolean(props.grid),
       rowProps: props.rowProps,
