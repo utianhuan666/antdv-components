@@ -35,6 +35,16 @@ const Group = defineComponent({
       const isGrid = props.grid ?? grid.value
 
       const children = slots.default?.()
+      const groupStyle = props.style || {}
+      const { gap, rowGap, columnGap, ...rootStyle } = groupStyle
+      const bodyStyle = {
+        maxWidth: '100%',
+        flexWrap: 'wrap',
+        rowGap: rowGap ?? 0,
+        ...(gap !== undefined ? { gap } : {}),
+        ...(columnGap !== undefined ? { columnGap } : {}),
+      }
+
       const body = isGrid
         ? (
             <Row {...{ ...rowProps.value, ...(props.rowProps || {}) }}>
@@ -48,7 +58,12 @@ const Group = defineComponent({
             </Row>
           )
         : (
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space
+              class="ant-pro-form-group-container"
+              align="start"
+              size={32}
+              style={bodyStyle}
+            >
               {children}
             </Space>
           )
@@ -60,9 +75,9 @@ const Group = defineComponent({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 8,
+                marginBottom: 24,
                 cursor: props.collapsible ? 'pointer' : 'default',
-                fontWeight: 500,
+                fontWeight: 'bold',
               }}
               onClick={toggle}
             >
@@ -73,7 +88,7 @@ const Group = defineComponent({
         : null
 
       return (
-        <div style={{ marginBottom: 16, ...(props.style || {}) }}>
+        <div class="ant-pro-form-group" style={{ boxSizing: 'border-box', marginBottom: 16, ...rootStyle }}>
           {titleNode}
           {!collapsed.value ? body : null}
         </div>

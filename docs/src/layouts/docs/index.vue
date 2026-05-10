@@ -44,24 +44,19 @@ function onTabChange(key: string) {
       <!-- 内容卡片：与 dumi-antd-style-content 对应 -->
       <div class="docs-content-card" :class="{ 'has-tabs': hasDemoTab }">
         <!-- Tab 在卡片内部顶部，使用 a-tabs 组件 -->
-        <div v-if="hasDemoTab" class="docs-page-tabs" role="tablist">
-          <button
-            v-for="item in tabItems"
-            :key="item.key"
-            class="docs-page-tab"
-            :class="{ 'is-active': activeTab === item.key }"
-            type="button"
-            role="tab"
-            :aria-selected="activeTab === item.key"
-            @click="onTabChange(item.key)"
-          >
-            {{ item.label }}
-          </button>
-        </div>
+        <a-tabs
+          v-if="hasDemoTab"
+          :active-key="activeTab"
+          class="docs-page-tabs"
+          :tab-bar-style="{ marginBottom: 0, paddingInline: '24px' }"
+          @change="onTabChange"
+        >
+          <a-tab-pane v-for="item in tabItems" :key="item.key" :tab="item.label" />
+        </a-tabs>
 
         <!-- 真正的文档内容 -->
         <div class="docs-content-inner">
-          <router-view :key="route.path" />
+          <router-view />
         </div>
       </div>
     </main>
@@ -121,36 +116,40 @@ function onTabChange(key: string) {
 
 /* Tab 在卡片内的样式 */
 .docs-page-tabs {
-  display: flex;
-  gap: 8px;
-  padding-inline: 24px;
-  border-bottom: 1px solid var(--ant-color-split);
+  margin-bottom: 0;
+}
+
+/* Tab 内容面板不需要 */
+.docs-page-tabs :deep(.ant-tabs-content-holder) {
+  display: none;
+}
+
+/* Tab Nav 的上方圆角跟随卡片 */
+.docs-page-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
+}
+
+.docs-page-tabs :deep(.ant-tabs-nav::before) {
+  border-color: var(--ant-color-split);
 }
 
 /* Tab 文字样式 */
-.docs-page-tab {
+.docs-page-tabs :deep(.ant-tabs-tab) {
   padding: 16px 12px 14px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
   font-size: 14px;
-  line-height: 1.5715;
   color: var(--ant-color-text-secondary);
-  cursor: pointer;
   transition:
     background-color 150ms ease-out,
-    border-color 0.2s,
     color 0.2s;
 }
 
-.docs-page-tab:hover {
+.docs-page-tabs :deep(.ant-tabs-tab:hover) {
   background: var(--ant-color-fill-tertiary);
   border-radius: 6px;
   color: var(--ant-color-text);
 }
 
-.docs-page-tab.is-active {
-  border-bottom-color: var(--ant-color-primary);
+.docs-page-tabs :deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
   color: var(--ant-color-primary);
   font-weight: 600;
 }
