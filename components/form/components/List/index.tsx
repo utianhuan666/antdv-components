@@ -5,6 +5,7 @@ import { Button, Space, Tooltip } from 'antdv-next'
 import { cloneVNode, Comment, defineComponent, Fragment, h, isVNode, onMounted, Text } from 'vue'
 import { provideFieldContext, useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
+import { provideFormListContext, useFormListContext } from './FormListContext'
 
 export interface FormListActionType<T = Record<string, any>> {
   add: (defaultValue?: Partial<T>, insertIndex?: number) => Promise<void>
@@ -63,6 +64,8 @@ const ListItemProvider = defineComponent({
   name: 'ProFormListItemProvider',
   props: {
     model: { type: Object as PropType<Record<string, any>>, required: true },
+    listName: { type: Array as PropType<(string | number)[]>, required: true },
+    name: { type: Number, required: true },
   },
   setup(props, { slots }) {
     const parentContext = useFieldContext()
@@ -70,6 +73,17 @@ const ListItemProvider = defineComponent({
       ...parentContext,
       get model() {
         return props.model
+      },
+    })
+    provideFormListContext({
+      get listName() {
+        return props.listName
+      },
+      get name() {
+        return props.name
+      },
+      get key() {
+        return props.name
       },
     })
 
@@ -104,6 +118,13 @@ const ProFormList = defineComponent({
   },
   setup(props, { slots }) {
     const fieldContext = useFieldContext()
+    const parentListContext = useFormListContext()
+
+    function getRowFieldPath(index: number): (string | number)[] {
+      const parentListName = parentListContext.listName || []
+      const currentName = Array.isArray(props.name) ? props.name : [props.name]
+      return [...parentListName, ...currentName, index] as (string | number)[]
+    }
 
     function getList(): Record<string, any>[] {
       const value = getValueByNamePath(fieldContext.model || {}, props.name)
@@ -250,7 +271,7 @@ const ProFormList = defineComponent({
       ].filter(Boolean) as VNodeChild[]
       const actionDom = props.actionRender?.(field, action, defaultActionDom, count) ?? defaultActionDom
       const listDom = (
-        <ListItemProvider model={record}>
+        <ListItemProvider model={record} listName={getRowFieldPath(index)} name={index}>
           {normalizeChildren(slots.default?.({ field, index, action: currentRowAction, count })).map((node, childIndex) => cloneVNode(node, { key: node.key ?? childIndex }))}
         </ListItemProvider>
       )

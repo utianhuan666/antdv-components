@@ -107,6 +107,7 @@ export type {
   BaseFormProps,
   CommonFormProps,
   FormListActionType,
+  NamePath,
   ProFormFieldItemProps,
   ProFormFieldSetProps,
   ProFormGridConfig,

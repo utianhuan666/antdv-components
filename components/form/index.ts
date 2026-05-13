@@ -131,6 +131,7 @@ export type { FormListActionType } from './components'
 export type {
   BaseFormProps,
   CommonFormProps,
+  NamePath,
   ProFormFieldItemProps,
   ProFormFieldSetProps,
   ProFormGridConfig,

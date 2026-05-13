@@ -420,6 +420,9 @@ const BaseForm = defineComponent({
       get model() {
         return formModel.value
       },
+      get rootModel() {
+        return formModel.value
+      },
       fieldProps: props.fieldProps,
       formItemProps: props.formItemProps,
       proFieldProps: { readonly: props.readonly, ...(props.proFieldProps || {}) },

@@ -7,6 +7,11 @@ export interface FieldContextValue {
   formInstance?: any
   /** 当前响应式 model，子字段读取/写入它 */
   model?: Record<string, any>
+  /**
+   * 表单根 model。在 ProFormList 行内部，`model` 会被替换为当前行 record，
+   * `rootModel` 始终指向 BaseForm 顶层 model，供 ProFormDependency 等跨行读取使用。
+   */
+  rootModel?: Record<string, any>
   /** 全局 fieldProps，会被字段自身 fieldProps 合并 */
   fieldProps?: Record<string, any>
   /** 全局 formItemProps，会被字段自身 formItemProps 合并 */
