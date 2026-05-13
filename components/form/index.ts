@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { BaseForm } from './BaseForm'
 import {
+  BetaSchemaForm,
   ProFormCascader,
   ProFormCheckbox,
   ProFormCheckboxGroup,
@@ -47,6 +48,7 @@ export const ProFormModule = {
   install(app: App) {
     const list = [
       ProForm,
+      BetaSchemaForm,
       ProFormItem,
       ProFormGroup,
       ProFormField,
@@ -90,6 +92,7 @@ export const ProFormModule = {
 
 export {
   BaseForm,
+  BetaSchemaForm,
   Form,
   MyFormItem,
   ProForm,
@@ -127,7 +130,7 @@ export {
   ProFormUploadDragger,
 }
 
-export type { FormListActionType } from './components'
+export type { BetaSchemaFormProps, FormListActionType, ProFormColumnsType, SchemaValueType } from './components'
 export type {
   BaseFormProps,
   CommonFormProps,
@@ -138,6 +141,7 @@ export type {
   ProFormGroupProps,
   ProFormItemCreateConfig,
   ProFormItemProps,
+  ProFormLayoutType,
   ProFormProps,
   ProFormUploadButtonProps,
   ProFormUploadDraggerProps,

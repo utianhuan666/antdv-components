@@ -68,6 +68,7 @@ export type {
 } from './field'
 export {
   BaseForm,
+  BetaSchemaForm,
   ProForm,
   ProFormCascader,
   ProFormCheckbox,
@@ -105,18 +106,22 @@ export {
 } from './form'
 export type {
   BaseFormProps,
+  BetaSchemaFormProps,
   CommonFormProps,
   FormListActionType,
   NamePath,
+  ProFormColumnsType,
   ProFormFieldItemProps,
   ProFormFieldSetProps,
   ProFormGridConfig,
   ProFormGroupProps,
   ProFormItemCreateConfig,
   ProFormItemProps,
+  ProFormLayoutType,
   ProFormProps,
   ProFormUploadButtonProps,
   ProFormUploadDraggerProps,
+  SchemaValueType,
   SubmitterProps,
 } from './form'
 export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
