@@ -1,33 +1,43 @@
 ---
 title: Query/LightFilter 筛选表单
 description: QueryFilter 和 LightFilter 是用于和 Table、List 等数据展示组件组合的筛选表单。
+demo:
+  cols: 1
 ---
 
 # QueryFilter / LightFilter 筛选表单
 
-有些时候表单要与别的组件组合使用，常见的有 Table、List 等，这时候就需要一些特殊形态的表单。
-
-QueryFilter 和 LightFilter 解决了配合组件使用的问题，避免了复杂的样式设置。ProTable 中默认支持 QueryFilter 和 LightFilter 作为自己的筛选表单。
+有些是时候表单要与别的组件组合使用，常见的有 Table，List 等，这时候就需要一些特殊形态的表单。QueryFilter 和 LightFilter 解决了配合组件使用的问题，避免了复杂的样式设置。ProTable 中默认支持了 QueryFilter 和 LightFilter 作为自己的筛选表单。
 
 ## 查询筛选
 
-React 官网在这里展示：
-
-- 基本使用
-- 查询筛选-默认收起
-- 查询筛选-垂直布局
-- 查询筛选-搜索
-- 查询筛选-自定义渲染的控件数量
+<demo-group>
+  <demo src="./demo/query-filter.vue">基本使用</demo>
+  <demo src="./demo/query-filter-collapsed.vue">查询筛选-默认收起</demo>
+  <demo src="./demo/query-filter-vertical.vue">查询筛选-垂直布局</demo>
+  <demo src="./demo/search-filter.vue">查询筛选-搜索</demo>
+  <demo src="./demo/query-filter-defaultFormItemsNumber.vue">查询筛选-自定义渲染的控件数量</demo>
+</demo-group>
 
 ## 轻量筛选
 
-React 官网在这里展示：
+<demo-group>
+  <demo src="./demo/light-filter.vue">基本使用</demo>
+  <demo src="./demo/light-filter-footer.vue">轻量筛选-自定义 footer</demo>
+  <demo src="./demo/light-filter-bordered.vue">轻量筛选-边框模式</demo>
+</demo-group>
 
-- 基本使用
-- 轻量筛选-自定义 footer
-- 轻量筛选-边框模式
-- 轻量筛选-折叠模式
-- 轻量筛选-弹出框对齐方式
+折叠模式下所有的选项都会默认折叠，不管是否有值，控件的 `secondary` 将不再有效。
+
+<demo-group>
+  <demo src="./demo/light-filter-collapse.vue">轻量筛选-折叠模式</demo>
+</demo-group>
+
+手动设置轻量筛选的弹出框，默认为 `bottomLeft`
+
+<demo-group>
+  <demo src="./demo/light-filter-placement.vue">轻量筛选-弹出框对齐方式</demo>
+</demo-group>
 
 ## API
 
@@ -35,27 +45,53 @@ React 官网在这里展示：
 
 QueryFilter 除了继承 ProForm 的 API 以外还支持下面的属性。
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `collapsed` | 是否折叠超出的表单项，用于受控模式 | `boolean` | - |
-| `defaultCollapsed` | 默认状态下是否折叠超出的表单项 | `boolean` | `true` |
-| `onCollapse` | 切换表单折叠状态时的回调 | `(collapsed) => void` | - |
-| `submitterColSpanProps` | 提交按钮所在 col 的 props | `ColProps` | - |
-| `labelWidth` | label 宽度 | `number \| 'auto'` | `80` |
-| `span` | 表单项宽度 | `number \| responsive span` | - |
+| 参数                     | 说明                                                                                    | 类型                                                                                    | 默认值 |
+| ------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------ |
+| `collapsed`              | 是否折叠超出的表单项，用于受控模式                                                      | `boolean`                                                                               | -      |
+| `defaultCollapsed`       | 默认状态下是否折叠超出的表单项                                                          | `boolean`                                                                               | `true` |
+| `onCollapse`             | 切换表单折叠状态时的回调                                                                | `(collapsed) => void`                                                                   | -      |
+| `submitterColSpanProps`  | 提交按钮所在 col 的 props（需要包含 `span`）                                            | `Omit<ColProps, 'span'> & { span: number }`                                             | -      |
+| `defaultColsNumber`      | 自定义折叠状态下默认显示的表单控件数量，**最多只展示一行控件**，超出时展示收起/隐藏按钮 | `number`                                                                                | -      |
+| `defaultFormItemsNumber` | 与 `defaultColsNumber` 的不同点在于，设置多少就展示多少个控件，超出时展示收起/隐藏按钮  | `number`                                                                                | -      |
+| `labelWidth`             | label 宽度                                                                              | `number \| 'auto'`                                                                      | `80`   |
+| `span`                   | 表单项宽度                                                                              | `number \| { xs: number; sm: number; md: number; lg: number; xl: number; xxl: number }` | -      |
+| `split`                  | 每一行是否有分割线                                                                      | `boolean`                                                                               | -      |
+| `preserve`               | 是否能够查询收起的数据，如果设置为 `false`，收起后的表单数据将会丢失                    | `boolean`                                                                               | `true` |
+
+#### 响应式断点规则
+
+注意，断点的值均为表单容器的大小而非视口大小。断点配置继承自 antd 设计 token，与 [Grid 栅格](https://antdv.com/components/grid-cn) 的响应式断点保持一致。
+
+##### 默认布局时的规则
+
+断点继承自 antd 设计 token（默认 xs=576、sm=768、md=992、lg=1200、xl=1600）：
+
+| 容器宽度断点          | 单行展示表单列数（包含操作区域） | 默认布局     |
+| --------------------- | -------------------------------- | ------------ |
+| `≧ 1600px`            | 4 列                             | `horizontal` |
+| `≧ 768px && < 1600px` | 3 列                             | `horizontal` |
+| `≧ 576px && < 768px`  | 2 列                             | `vertical`   |
+| `< 576px`             | 1 列                             | `vertical`   |
+
+##### 强制上下布局时的规则
+
+| 容器宽度断点          | 单行展示表单列数（包含操作区域） |
+| --------------------- | -------------------------------- |
+| `≧ 1600px`            | 4 列                             |
+| `≧ 992px && < 1600px` | 3 列                             |
+| `≧ 576px && < 992px`  | 2 列                             |
+| `< 576px`             | 1 列                             |
 
 ### LightFilter
 
 LightFilter 除了继承 ProForm 的 API 以外还支持下面的属性。
 
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| `collapse` | 是否默认折叠全部字段 | `boolean` | `false` |
-| `collapseLabel` | 折叠区域的标签 | `VNodeChild` | `更多筛选` |
-| `variant` | 样式变体 | `'outlined' \| 'filled' \| 'borderless'` | - |
-| `ignoreRules` | 是否忽略表单项 rules | `boolean` | - |
-| `footerRender` | 底部内容 | `Function \| false` | - |
-| `popoverProps` | 透传给内部 Popover 的属性 | `PopoverProps` | - |
-| `placement` | 选择框弹出的位置 | `TooltipPlacement` | `bottomLeft` |
-
-> 当前 Vue 实现仍在补齐 QueryFilter / LightFilter，页面结构先与官网保持一致。
+| 参数            | 说明                                                           | 类型                                                                                                           | 默认值                     |
+| --------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `collapse`      | 是否默认折叠全部字段                                           | `boolean`                                                                                                      | `false`                    |
+| `collapseLabel` | 折叠区域的标签                                                 | `VNodeChild`                                                                                                   | `更多筛选 <DownOutlined/>` |
+| `variant`       | 样式变体                                                       | `'outlined' \| 'filled' \| 'borderless'`                                                                       | -                          |
+| `ignoreRules`   | 是否忽略表单项的 rules（LightFilter 场景一般不建议使用 rules） | `boolean`                                                                                                      | -                          |
+| `footerRender`  | 底部内容，当不需要默认底部按钮时，可以设为 `false`             | `((onConfirm?: (e?: MouseEvent) => void, onClear?: (e?: MouseEvent) => void) => VNodeChild \| false) \| false` | -                          |
+| `popoverProps`  | 透传给内部 Popover 的属性（折叠态弹层），可用 `classNames` 等  | `Omit<PopoverProps, 'children' \| 'content' \| 'trigger' \| 'open' \| 'onOpenChange' \| 'placement'>`          | -                          |
+| `placement`     | 选择框弹出的位置                                               | `TooltipPlacement`                                                                                             | `bottomLeft`               |

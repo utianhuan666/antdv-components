@@ -37,6 +37,29 @@ import {
 } from './components'
 import { MyFormItem } from './form-item.tsx'
 import Form from './form.vue'
+import {
+  FieldLabel,
+  FilterDropdown,
+  LightFilter,
+  LightFilterCascader,
+  LightFilterCheckboxGroup,
+  LightFilterDate,
+  LightFilterDateRange,
+  LightFilterDateTime,
+  LightFilterDateTimeRange,
+  LightFilterDigit,
+  LightFilterDigitRange,
+  LightFilterFieldSet,
+  LightFilterInput,
+  LightFilterPassword,
+  LightFilterSelect,
+  LightFilterSlider,
+  LightFilterSwitch,
+  LightFilterTextArea,
+  LightFilterTime,
+  LightFilterTreeSelect,
+  QueryFilter,
+} from './layouts'
 import ProForm from './layouts/ProForm'
 
 Form.install = (app: App) => {
@@ -81,6 +104,27 @@ export const ProFormModule = {
       ProFormDateTimeRangePicker,
       ProFormUploadButton,
       ProFormUploadDragger,
+      QueryFilter,
+      LightFilter,
+      LightFilterInput,
+      LightFilterPassword,
+      LightFilterTextArea,
+      LightFilterSelect,
+      LightFilterTreeSelect,
+      LightFilterCascader,
+      LightFilterDigit,
+      LightFilterDigitRange,
+      LightFilterSlider,
+      LightFilterDate,
+      LightFilterDateTime,
+      LightFilterTime,
+      LightFilterDateRange,
+      LightFilterDateTimeRange,
+      LightFilterCheckboxGroup,
+      LightFilterFieldSet,
+      LightFilterSwitch,
+      FieldLabel,
+      FilterDropdown,
     ] as any[]
     list.forEach((c) => {
       if (c?.name) {
@@ -93,7 +137,27 @@ export const ProFormModule = {
 export {
   BaseForm,
   BetaSchemaForm,
+  FieldLabel,
+  FilterDropdown,
   Form,
+  LightFilter,
+  LightFilterCascader,
+  LightFilterCheckboxGroup,
+  LightFilterDate,
+  LightFilterDateRange,
+  LightFilterDateTime,
+  LightFilterDateTimeRange,
+  LightFilterDigit,
+  LightFilterDigitRange,
+  LightFilterFieldSet,
+  LightFilterInput,
+  LightFilterPassword,
+  LightFilterSelect,
+  LightFilterSlider,
+  LightFilterSwitch,
+  LightFilterTextArea,
+  LightFilterTime,
+  LightFilterTreeSelect,
   MyFormItem,
   ProForm,
   ProFormCascader,
@@ -128,9 +192,11 @@ export {
   ProFormTreeSelect,
   ProFormUploadButton,
   ProFormUploadDragger,
+  QueryFilter,
 }
 
 export type { BetaSchemaFormProps, FormListActionType, ProFormColumnsType, SchemaValueType } from './components'
+export type { LightFilterProps, QueryFilterProps, SpanConfig, SpanConfigObject } from './layouts'
 export type {
   BaseFormProps,
   CommonFormProps,
