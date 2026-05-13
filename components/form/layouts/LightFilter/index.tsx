@@ -155,25 +155,29 @@ const LightFilter = defineComponent({
       const valuePropName = (child.props as any)?.valuePropName || 'value'
       if (name && Object.prototype.hasOwnProperty.call(moreValues.value, name))
         newFieldProps[valuePropName] = moreValues.value[name]
+      // 折叠区内部：禁用 light 模式（防止 LightFilter.xxx 命名组件叠加一层 popover），按普通字段渲染
       return cloneVNode(child, {
-        fieldProps: { ...newFieldProps, placement: props.placement, variant: props.variant },
+        fieldProps: { ...newFieldProps, placement: props.placement },
+        proFieldProps: {
+          ...((child.props as any)?.proFieldProps || {}),
+          light: false,
+        },
       })
     }
 
     function renderOutsideChild(child: VNode): VNode {
+      // 外侧字段：开启 light，让 ProFormField/LightWrapper 接管 FilterDropdown + FieldLabel 渲染。
       return cloneVNode(child, {
+        proFieldProps: {
+          ...((child.props as any)?.proFieldProps || {}),
+          light: true,
+          variant: props.variant,
+          size: props.size,
+        },
         fieldProps: {
           ...((child.props as any)?.fieldProps || {}),
           placement: (child.props as any)?.fieldProps?.placement ?? props.placement,
-          variant: 'borderless',
         },
-        proFieldProps: {
-          ...((child.props as any)?.proFieldProps || {}),
-          label: (child.props as any)?.label,
-          variant: props.variant,
-          light: true,
-        },
-        variant: props.variant,
       })
     }
 

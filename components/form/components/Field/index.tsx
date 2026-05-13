@@ -5,6 +5,7 @@ import { Comment, computed, defineComponent, Fragment, onMounted, Text, watch } 
 import { ProField } from '../../../field'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { useFieldContext } from '../../FieldContext'
+import LightWrapper from '../../layouts/LightFilter/LightWrapper'
 import ProFormItem from '../FormItem'
 
 /**
@@ -112,8 +113,8 @@ const ProFormField = defineComponent({
         allowClear: props.allowClear ?? props.fieldProps?.allowClear,
         placeholder: props.placeholder ?? props.fieldProps?.placeholder,
         style: {
-          ...(props.fieldProps?.style || {}),
           ...(widthStyle.value ? { width: widthStyle.value } : {}),
+          ...(props.fieldProps?.style || {}),
         },
         onChange: handleChange,
       }
@@ -158,11 +159,38 @@ const ProFormField = defineComponent({
         return children ?? renderProField()
       }
 
+      // light 模式：把 ProField 渲染包到 LightWrapper（FilterDropdown + FieldLabel）里，
+      // 由 LightWrapper 接管 value/onChange，外层 ProFormItem 不再展示 label/tooltip。
+      // 对标 React `src/form/components/FormItem/warpField.tsx` 中的 isLightMode 分支。
+      const isLightMode = props.proFieldProps?.light === true
+      const innerNode = children ?? renderProField()
+      const finalChild = isLightMode
+        ? (
+            <LightWrapper
+              label={props.label}
+              value={getCellValue()}
+              valuePropName={props.valuePropName}
+              variant={props.proFieldProps?.variant ?? props.fieldProps?.variant ?? 'outlined'}
+              size={props.proFieldProps?.size}
+              placeholder={Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder}
+              disabled={!!props.disabled}
+              allowClear={props.allowClear !== false}
+              placement={props.fieldProps?.placement ?? props.proFieldProps?.placement}
+              valueType={typeof props.valueType === 'string' ? props.valueType : undefined}
+              footerRender={props.proFieldProps?.footerRender ?? props.fieldProps?.footerRender}
+              labelFormatter={props.proFieldProps?.labelFormatter}
+              onChange={(value: any) => handleChange(value)}
+            >
+              {innerNode}
+            </LightWrapper>
+          )
+        : innerNode
+
       return (
         <ProFormItem
           name={props.name}
-          label={props.label}
-          tooltip={props.tooltip}
+          label={isLightMode ? undefined : props.label}
+          tooltip={isLightMode ? undefined : props.tooltip}
           rules={props.rules}
           required={props.required}
           initialValue={props.initialValue}
@@ -176,7 +204,7 @@ const ProFormField = defineComponent({
             ...(props.formItemProps || {}),
           }}
         >
-          {children ?? renderProField()}
+          {finalChild}
         </ProFormItem>
       )
     }
