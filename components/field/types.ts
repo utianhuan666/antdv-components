@@ -1,4 +1,4 @@
-import type { DefineComponent, InjectionKey, VNodeChild } from 'vue'
+import type { InjectionKey, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from './internal/fieldMode'
 import { inject } from 'vue'
 
@@ -11,9 +11,12 @@ export type ProFieldEmptyText = string | false
 
 export type BaseProFieldFC = ProFieldFCRenderProps
 
+export type ProFieldFCProps<T = {}> = BaseProFieldFC & ProRenderFieldPropsType & T & Record<string, any>
+
 /** Default Field component contract. */
-export type ProFieldFC<T = {}> = DefineComponent<any, any, any> & {
-  __props?: BaseProFieldFC & ProRenderFieldPropsType & T
+export type ProFieldFC<T = {}> = {
+  (props: ProFieldFCProps<T>): any
+  __props?: ProFieldFCProps<T>
 }
 
 /** Light filter props injected by ProFieldLightWrapper. */

@@ -1,42 +1,54 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import { DateRangePicker } from 'antdv-next'
-import { defineComponent } from 'vue'
 import { parseValueToDay } from '../DatePicker/datePickerUtils'
 
-export default defineComponent({
-  name: 'FieldRangePickerEdit',
-  props: {
-    text: { type: Array as PropType<string[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    format: { type: String, default: 'YYYY-MM-DD' },
-    showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
-    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
-  },
-  setup(props) {
-    return () => {
-      const parsedValue = parseValueToDay(props.fieldProps.value, props.format)
-      const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
-        ? [parsedValue[0], parsedValue[1]] as [any, any]
-        : undefined
-      const dom = (
-        <DateRangePicker
-          picker={props.fieldProps?.picker ?? props.picker}
-          showTime={props.showTime}
-          format={props.format}
-          placeholder={['请选择', '请选择']}
-          {...props.fieldProps}
-          variant={props.variant ?? props.fieldProps?.variant}
-          value={dayValue}
-        />
-      )
-      if (props.formItemRender) {
-        return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-      }
-      return dom
-    }
-  },
-})
+type Props = NonNullable<
+  ProFieldFC<{
+    text: string[]
+    format?: string
+    variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+    showTime?: boolean | Record<string, any>
+    picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
+  }>['__props']
+> & {
+  format: string
+  intl: { getMessage: (id: string, defaultMessage: string) => string }
+}
+
+export function FieldRangePickerEdit(props: Props) {
+  const {
+    text,
+    mode,
+    format,
+    picker,
+    formItemRender,
+    showTime,
+    intl,
+    variant: propsVariant,
+  } = props
+  const fieldProps = props.fieldProps || {}
+  const parsedValue = parseValueToDay(fieldProps.value, format)
+  const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
+    ? [parsedValue[0], parsedValue[1]] as [any, any]
+    : undefined
+  const dom = (
+    <DateRangePicker
+      picker={picker}
+      showTime={showTime}
+      format={format}
+      placeholder={[
+        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+      ]}
+      {...fieldProps}
+      variant={propsVariant ?? fieldProps?.variant}
+      value={dayValue}
+    />
+  )
+  if (formItemRender) {
+    return formItemRender(text, { mode, ...fieldProps }, dom)
+  }
+  return dom
+}
+
+export default FieldRangePickerEdit

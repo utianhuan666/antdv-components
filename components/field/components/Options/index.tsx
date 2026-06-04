@@ -1,6 +1,10 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { cloneVNode, defineComponent, Fragment, h, isVNode } from 'vue'
+import type { CSSProperties, VNode, VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { cloneVNode, Fragment, h, isVNode } from 'vue'
+
+type FieldOptionsProps = NonNullable<ProFieldFC<{
+  text?: VNodeChild | VNodeChild[]
+}>['__props']>
 
 function addArrayKeys(doms: VNodeChild[]) {
   return doms.map((dom, index) => {
@@ -12,7 +16,7 @@ function addArrayKeys(doms: VNodeChild[]) {
       key: dom.key ?? index,
       ...props,
       style: {
-        ...(props.style as Record<string, any> | undefined),
+        ...(props.style as CSSProperties | undefined),
       },
     })
   })
@@ -33,32 +37,28 @@ function renderOptions(doms: VNodeChild[]) {
   )
 }
 
-export default defineComponent({
-  name: 'FieldOptions',
-  props: {
-    text: { type: [Array, Object, String, Number] as PropType<VNodeChild | VNodeChild[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
-    return () => {
-      if (props.render) {
-        const doms = props.render(props.text, { mode: props.mode, ...props.fieldProps }, <></>) as VNodeChild[]
-        if (!doms || !Array.isArray(doms) || doms.length < 1) {
-          return null
-        }
-        return renderOptions(doms)
-      }
+const FieldOptions: ProFieldFC<{
+  text?: VNodeChild | VNodeChild[]
+}> = (props) => {
+  const typedProps = props as FieldOptionsProps
+  const text = typedProps.text ?? []
+  const mode = typedProps.mode ?? 'read'
 
-      if (!props.text || !Array.isArray(props.text)) {
-        if (!isVNode(props.text))
-          return null
-        return props.text
-      }
-
-      return renderOptions(props.text)
+  if (typedProps.render) {
+    const doms = typedProps.render(text, { mode, ...typedProps.fieldProps }, <></>) as FieldOptionsProps['text']
+    if (!doms || !Array.isArray(doms) || doms.length < 1) {
+      return null
     }
-  },
-})
+    return renderOptions(doms as VNodeChild[])
+  }
+
+  if (!text || !Array.isArray(text)) {
+    if (!isVNode(text))
+      return null
+    return text
+  }
+
+  return renderOptions(text as VNodeChild[])
+}
+
+export default FieldOptions

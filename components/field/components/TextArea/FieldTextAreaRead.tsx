@@ -1,40 +1,32 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import { omit } from '@v-c/util'
-import { defineComponent } from 'vue'
 import FieldTextAreaReadonly from './readonly'
 
-export default defineComponent({
-  name: 'FieldTextAreaRead',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <FieldTextAreaReadonly
-          text={props.text}
-          fieldProps={props.fieldProps}
-          emptyText={props.emptyText}
-        />
-      )
+type Props = NonNullable<ProFieldFC<{ text: string | number }>['__props']>
 
-      if (props.render) {
-        return props.render(
-          props.text,
-          {
-            text: props.text,
-            mode: props.mode,
-            ...omit(props.fieldProps || {}, ['showCount']),
-          },
-          dom,
-        )
-      }
-      return dom
-    }
-  },
-})
+export function FieldTextAreaRead(props: Props) {
+  const { text, mode, render, fieldProps, emptyText } = props
+  const dom = (
+    <FieldTextAreaReadonly
+      text={text}
+      fieldProps={fieldProps}
+      emptyText={emptyText}
+    />
+  )
+
+  if (render) {
+    return render(
+      text,
+      {
+        text,
+        mode,
+        ...omit(fieldProps || {}, ['showCount']),
+      },
+      dom,
+    )
+  }
+
+  return dom
+}
+
+export default FieldTextAreaRead

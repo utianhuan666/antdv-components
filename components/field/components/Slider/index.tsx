@@ -1,46 +1,31 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { SliderProps } from 'antdv-next'
+import type { ProFieldFC } from '../../types'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSliderEdit from './FieldSliderEdit'
 import FieldSliderRead from './FieldSliderRead'
 
-const FieldSlider = defineComponent({
-  name: 'FieldSlider',
-  props: {
-    text: { type: [String, Number, Array] as PropType<string | number | number[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
-    return () => {
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldSliderRead
-            text={props.text}
-            mode={props.mode}
-            render={props.render}
-            fieldProps={props.fieldProps}
-          />
-        )
-      }
+type FieldSliderFCProps = {
+  text: string
+  fieldProps?: SliderProps
+}
+type FieldSliderProps = NonNullable<ProFieldFC<FieldSliderFCProps>['__props']>
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldSliderEdit
-            text={props.text}
-            mode={props.mode}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
-      }
+const FieldSlider: ProFieldFC<FieldSliderFCProps> = (props) => {
+  const fieldProps = props as FieldSliderProps
+  const mergedProps = {
+    ...fieldProps,
+    text: fieldProps.text ?? '',
+    mode: fieldProps.mode ?? 'read',
+    fieldProps: fieldProps.fieldProps ?? {},
+  }
 
-      return null
-    }
-  },
-})
+  if (isProFieldReadMode(mergedProps.mode))
+    return FieldSliderRead(mergedProps)
+
+  if (isProFieldEditOrUpdateMode(mergedProps.mode))
+    return FieldSliderEdit(mergedProps, null)
+
+  return null
+}
 
 export default FieldSlider

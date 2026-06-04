@@ -2,7 +2,7 @@ export type Value = string | number | undefined | null
 
 export type ValuePair = Value[]
 
-export interface FieldDigitRangeProps {
+export type FieldDigitRangeProps = {
   text: ValuePair
   placeholder?: string | string[]
   separator?: string

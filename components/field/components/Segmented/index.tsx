@@ -1,12 +1,18 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
+import type { VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
+import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import { Spin } from 'antdv-next'
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldSegmentedEdit from './FieldSegmentedEdit'
 import FieldSegmentedRead from './FieldSegmentedRead'
+
+type FieldSegmentedProps = NonNullable<ProFieldFC<{
+  text: string
+  emptyText?: VNodeChild
+  options?: RequestOptionsType[]
+} & FieldSelectProps>['__props']>
 
 function buildOptionsValueEnum(options: any[] | undefined) {
   if (!options?.length)
@@ -18,24 +24,26 @@ function buildOptionsValueEnum(options: any[] | undefined) {
   }, {})
 }
 
-export default defineComponent({
+const FieldSegmented = defineComponent({
   name: 'FieldSegmented',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
-    params: { type: Object as PropType<any>, default: undefined },
-    debounceTime: { type: Number, default: undefined },
-    defaultKeyWords: { type: String, default: undefined },
-    cacheForSwr: { type: Boolean, default: undefined },
-    options: { type: Array as PropType<any[]>, default: undefined },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props, { expose }) {
+  props: [
+    'text',
+    'mode',
+    'valueEnum',
+    'request',
+    'params',
+    'debounceTime',
+    'defaultKeyWords',
+    'cacheForSwr',
+    'options',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps as FieldSegmentedProps
+    const inputRef = ref<HTMLInputElement | null>(null)
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
     const segmentedOptions = computed(() =>
@@ -47,6 +55,13 @@ export default defineComponent({
       })).filter((item: any) => item.value !== undefined),
     )
     const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+    const mergedProps = computed<FieldSegmentedProps>(() => ({
+      ...props,
+      text: props.text ?? '',
+      mode: props.mode ?? 'read',
+      fieldProps: props.fieldProps ?? {},
+      emptyText: props.emptyText ?? '-',
+    }))
 
     expose({ fetchData })
 
@@ -54,34 +69,32 @@ export default defineComponent({
       if (loading.value)
         return <Spin size="small" />
 
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldSegmentedRead
-            text={props.text}
-            mode={props.mode}
-            valueEnum={props.valueEnum}
-            optionsValueEnum={optionsValueEnum.value}
-            render={props.render}
-            fieldProps={props.fieldProps}
-            emptyText={props.emptyText}
-          />
-        )
+      const fieldProps = mergedProps.value
+
+      if (isProFieldReadMode(fieldProps.mode)) {
+        return FieldSegmentedRead({
+          ...fieldProps,
+          optionsValueEnum: optionsValueEnum.value,
+          emptyText: fieldProps.emptyText,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldSegmentedEdit
-            text={props.text}
-            mode={props.mode}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-            options={segmentedOptions.value}
-            loading={loading.value}
-          />
-        )
+      if (isProFieldEditOrUpdateMode(fieldProps.mode)) {
+        return FieldSegmentedEdit({
+          ...fieldProps,
+          options: segmentedOptions.value,
+          loading: loading.value,
+          inputRef,
+        })
       }
 
       return null
     }
   },
-})
+}) as unknown as ProFieldFC<{
+  text: string
+  emptyText?: VNodeChild
+  options?: RequestOptionsType[]
+} & FieldSelectProps>
+
+export default FieldSegmented as any

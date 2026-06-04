@@ -1,4 +1,4 @@
-export interface FieldImageProps {
+export type FieldImageProps = {
   text: string
   width?: number
   placeholder?: string | string[]

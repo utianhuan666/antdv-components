@@ -1,24 +1,17 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { Ref } from 'vue'
+import type { ProFieldFC } from '../../types'
 import { Rate } from 'antdv-next'
-import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'FieldRateEdit',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
-    return () => {
-      const dom = <Rate allowHalf {...props.fieldProps} />
+type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
 
-      if (props.formItemRender)
-        return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
+export function FieldRateEdit(props: Props, rateRef?: Ref<unknown> | null) {
+  const { text, mode, formItemRender, fieldProps } = props
+  const dom = <Rate allowHalf ref={rateRef as any} {...fieldProps} />
 
-      return dom
-    }
-  },
-})
+  if (formItemRender)
+    return formItemRender(text, { mode, ...fieldProps }, dom)
+
+  return dom
+}
+
+export default FieldRateEdit

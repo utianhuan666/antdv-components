@@ -1,86 +1,106 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { RangePickerProps } from 'antdv-next'
+import type { ProFieldFC, ProFieldLightProps } from '../../types'
+import { ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldRangePickerEdit from './FieldRangePickerEdit'
 import FieldRangePickerLightEdit from './FieldRangePickerLightEdit'
 import FieldRangePickerRead from './FieldRangePickerRead'
 
-const FieldRangePicker = defineComponent({
-  name: 'FieldRangePicker',
-  props: {
-    text: { type: Array as PropType<string[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    format: { type: String, default: 'YYYY-MM-DD' },
-    label: { type: null as unknown as PropType<any>, default: undefined },
-    light: { type: Boolean, default: false },
-    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
-    showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      const [startText, endText] = Array.isArray(props.text) ? props.text : []
-      const mergedPicker = props.fieldProps?.picker ?? props.picker
-      const parsedStartText: string = startText
-        ? formatDate(startText, props.fieldProps?.format || props.format, mergedPicker)
-        : ''
-      const parsedEndText: string = endText
-        ? formatDate(endText, props.fieldProps?.format || props.format, mergedPicker)
-        : ''
+type FieldRangePickerProps = {
+  text: string[]
+  format?: string
+  variant?: RangePickerProps['variant']
+  showTime?: RangePickerProps['showTime']
+  picker?: RangePickerProps['picker']
+  fieldProps?: RangePickerProps & {
+    format?: RangePickerProps['format']
+    picker?: RangePickerProps['picker']
+  }
+} & ProFieldLightProps
 
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldRangePickerRead
-            text={props.text}
-            mode={props.mode}
-            render={props.render}
-            fieldProps={props.fieldProps}
-            parsedStartText={parsedStartText}
-            parsedEndText={parsedEndText}
-          />
-        )
-      }
+type FieldRangePickerFieldProps = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']>
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        if (props.light) {
-          return (
-            <FieldRangePickerLightEdit
-              text={props.text}
-              mode={props.mode}
-              label={props.label}
-              format={props.format}
-              showTime={props.showTime}
-              picker={props.picker}
-              variant={props.variant}
-              formItemRender={props.formItemRender}
-              fieldProps={props.fieldProps}
-            />
-          )
-        }
+const intl = {
+  getMessage: (_id: string, defaultMessage: string) => defaultMessage,
+}
 
-        return (
-          <FieldRangePickerEdit
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            showTime={props.showTime}
-            picker={props.picker}
-            variant={props.variant}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
-      }
+const FieldRangePicker: ProFieldFC<FieldRangePickerFieldProps> = (props) => {
+  const {
+    text: rawText,
+    mode = 'read',
+    light,
+    label,
+    format = 'YYYY-MM-DD',
+    render,
+    picker,
+    formItemRender,
+    showTime,
+    lightLabel,
+    variant,
+    fieldProps = {},
+  } = props
+  const text = Array.isArray(rawText) ? rawText : []
+  const [startText, endText] = text
+  const open = ref(false)
+  const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
+    open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
+  }
+  const mergedPicker = fieldProps.picker ?? picker
+  const parsedStartText: string = startText
+    ? formatDate(startText, fieldProps.format || format, mergedPicker)
+    : ''
+  const parsedEndText: string = endText
+    ? formatDate(endText, fieldProps.format || format, mergedPicker)
+    : ''
 
-      return null
+  if (isProFieldReadMode(mode)) {
+    return FieldRangePickerRead({
+      text,
+      mode,
+      light,
+      label,
+      format,
+      render,
+      picker: mergedPicker,
+      formItemRender,
+      showTime,
+      lightLabel,
+      variant,
+      fieldProps,
+      parsedStartText,
+      parsedEndText,
+    })
+  }
+
+  if (isProFieldEditOrUpdateMode(mode)) {
+    const editProps = {
+      text,
+      mode,
+      label,
+      format,
+      render,
+      picker: mergedPicker,
+      formItemRender,
+      showTime,
+      variant,
+      fieldProps,
+      intl,
     }
-  },
-})
 
-export default FieldRangePicker
+    if (light) {
+      return FieldRangePickerLightEdit({
+        ...editProps,
+        lightLabel,
+        open: open.value,
+        setOpen,
+      })
+    }
+
+    return FieldRangePickerEdit(editProps)
+  }
+
+  return null
+}
+
+export default FieldRangePicker as any

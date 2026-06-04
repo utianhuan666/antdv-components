@@ -1,44 +1,54 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
+import type { GroupProps } from './types'
 import { clsx, omit } from '@v-c/util'
 import { CheckboxGroup } from 'antdv-next'
-import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'FieldCheckboxEdit',
-  props: {
-    text: { type: [String, Number, Array] as PropType<string | number | (string | number)[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | null>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    options: { type: Array as PropType<any[]>, default: () => [] },
-    loading: { type: Boolean, default: false },
-    layout: { type: String as PropType<'horizontal' | 'vertical'>, default: 'horizontal' },
-  },
-  setup(props) {
-    return () => {
-      const restFieldProps = omit(props.fieldProps || {}, ['fieldNames'])
-      const dom = (
-        <CheckboxGroup
-          {...restFieldProps}
-          class={clsx(
-            props.fieldProps?.class,
-            props.fieldProps?.className,
-            `ant-pro-field-checkbox-${props.layout}`,
-          )}
-          options={props.options}
-        />
-      )
+type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
+  layout: 'horizontal' | 'vertical'
+  options: any[]
+  loading: boolean
+  layoutClassName: string
+  wrapSSR: (node: JSX.Element) => JSX.Element
+  hashId: string
+  status: { status?: string } | undefined
+}
 
-      if (props.formItemRender) {
-        return props.formItemRender(
-          props.text,
-          { mode: props.mode, ...props.fieldProps, options: props.options, loading: props.loading },
-          dom,
-        ) ?? null
-      }
+export function FieldCheckboxEdit(props: Props) {
+  const {
+    layout,
+    formItemRender,
+    mode,
+    options,
+    loading,
+    layoutClassName,
+    wrapSSR,
+    hashId,
+    status,
+    ...rest
+  } = props
 
-      return dom
-    }
-  },
-})
+  const { fieldNames: _fieldNames, variant: _variant, ...restFieldProps } = omit(rest.fieldProps || {}, ['fieldNames'])
+  const dom = wrapSSR(
+    <CheckboxGroup
+      {...(restFieldProps as any)}
+      class={clsx(
+        rest.fieldProps?.class,
+        rest.fieldProps?.className,
+        hashId,
+        `${layoutClassName}-${layout}`,
+        {
+          [`${layoutClassName}-error`]: status?.status === 'error',
+          [`${layoutClassName}-warning`]: status?.status === 'warning',
+        },
+      )}
+      options={options}
+    />,
+  )
+
+  if (formItemRender)
+    return formItemRender(rest.text, { mode, ...rest.fieldProps, options, loading }, dom) ?? null
+
+  return dom
+}
+
+export default FieldCheckboxEdit

@@ -1,9 +1,11 @@
-import type { CascaderProps } from 'antdv-next'
-import type { FieldSelectProps } from '../Select/types'
+import type { RadioGroupProps } from 'antdv-next'
+import type { FieldSelectProps } from '../Select'
 
-export interface FieldCascaderProps extends FieldSelectProps<CascaderProps & Record<string, any>> {
+export type GroupProps = {
+  options?: RadioGroupProps['options']
+  radioType?: 'button' | 'radio'
   placeholder?: string
-  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
-}
+  variant?: 'outlined' | 'borderless' | 'filled'
+} & FieldSelectProps
 
-export type GroupProps = FieldCascaderProps
+export type FieldCascaderProps = GroupProps

@@ -1,44 +1,37 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { ProFieldFC } from '../../types'
+import type { FieldDigitProps } from './types'
 
-export default defineComponent({
-  name: 'FieldDigitRead',
-  props: {
-    text: { type: [Number, String] as PropType<number | string>, default: undefined },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
-    return () => {
-      let fractionDigits: Intl.NumberFormatOptions = {}
-      if (props.fieldProps?.precision) {
-        fractionDigits = {
-          minimumFractionDigits: Number(props.fieldProps.precision),
-          maximumFractionDigits: Number(props.fieldProps.precision),
-        }
-      }
-
-      const digit = new Intl.NumberFormat(undefined, {
-        ...fractionDigits,
-        ...(props.fieldProps?.intlProps || {}),
-      }).format(Number(props.text))
-
-      const dom = !props.fieldProps?.stringMode
-        ? (
-            <span>
-              {props.fieldProps?.formatter?.(digit) || digit}
-            </span>
-          )
-        : (
-            <span>{props.text}</span>
-          )
-
-      if (props.render)
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-
-      return dom
+export function FieldDigitRead(
+  props: NonNullable<ProFieldFC<FieldDigitProps>['__props']>,
+) {
+  const { text, mode: type, render, fieldProps } = props
+  let fractionDigits: Intl.NumberFormatOptions = {}
+  if (fieldProps?.precision) {
+    fractionDigits = {
+      minimumFractionDigits: Number(fieldProps.precision),
+      maximumFractionDigits: Number(fieldProps.precision),
     }
-  },
-})
+  }
+
+  const digit = new Intl.NumberFormat(undefined, {
+    ...fractionDigits,
+    ...(fieldProps?.intlProps || {}),
+  }).format(Number(text))
+
+  const dom = !fieldProps?.stringMode
+    ? (
+        <span>
+          {fieldProps?.formatter?.(digit) || digit}
+        </span>
+      )
+    : (
+        <span>{text}</span>
+      )
+
+  if (render)
+    return render(text, { mode: type, ...fieldProps }, dom)
+
+  return dom
+}
+
+export default FieldDigitRead

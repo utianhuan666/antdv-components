@@ -1,14 +1,62 @@
-import type { PropType } from 'vue'
+import type { VNodeChild } from 'vue'
+import type { SelectProps } from 'antdv-next'
 import type { RequestOptionsType } from '../types'
 import { clsx } from '@v-c/util'
 import { Select } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
+
+export type LabeledValue = {
+  key?: string
+  label: VNodeChild
+  value: string | number
+}
+
+export type DefaultOptionType = NonNullable<SelectProps['options']>[number]
 
 type KeyLabel = Partial<{
   key: string
   label: any
   value: string | number
 }> & RequestOptionsType
+
+export type DataValueType<T> = KeyLabel & T
+
+export type DataValuesType<T> = DataValueType<T> | DataValueType<T>[]
+
+export interface SearchSelectProps<T = Record<string, any>> extends Omit<SelectProps, 'options'> {
+  debounceTime?: number
+  request?: (params: { query: string }) => Promise<DataValueType<T>[]>
+  value?: KeyLabel | KeyLabel[]
+  defaultValue?: KeyLabel | KeyLabel[]
+  options?: RequestOptionsType[]
+  style?: Record<string, any>
+  className?: string
+  label?: VNodeChild
+  placeholder?: SelectProps['placeholder']
+  notFoundContent?: SelectProps['notFoundContent']
+  searchOnFocus?: boolean
+  resetAfterSelect?: boolean
+  prefixCls?: string
+  fetchData: (keyWord?: string) => void
+  resetData: () => void
+  fetchDataOnSearch?: boolean
+  defaultSearchValue?: string
+}
+
+type SearchSelectMergedProps = SearchSelectProps & {
+  options: RequestOptionsType[]
+  allowClear: boolean
+  disabled: boolean
+  loading: boolean
+  fetchDataOnSearch: boolean
+  autoClearSearchValue: boolean
+  searchOnFocus: boolean
+  resetAfterSelect: boolean
+  showSearch: boolean
+  optionFilterProp: string
+  optionLabelProp: string
+  labelInValue: boolean
+}
 
 function getOriginalLabel(item: any, fallbackValue: any): any {
   if (typeof item?.label === 'string')
@@ -38,41 +86,69 @@ function findDataItem(options: RequestOptionsType[], value: any, valueName: stri
   return undefined
 }
 
-export default defineComponent({
+const searchSelectPropNames = [
+  'options',
+  'id',
+  'label',
+  'className',
+  'style',
+  'placeholder',
+  'notFoundContent',
+  'allowClear',
+  'disabled',
+  'loading',
+  'fetchData',
+  'resetData',
+  'fetchDataOnSearch',
+  'defaultSearchValue',
+  'searchValue',
+  'autoClearSearchValue',
+  'searchOnFocus',
+  'resetAfterSelect',
+  'showSearch',
+  'optionFilterProp',
+  'optionLabelProp',
+  'labelInValue',
+  'fieldNames',
+  'mode',
+  'onSearch',
+  'onChange',
+  'onFocus',
+  'onClear',
+  'filterOption',
+]
+
+function booleanValue(value: unknown, defaultValue: boolean): boolean {
+  if (value === undefined)
+    return defaultValue
+  return value === '' ? true : !!value
+}
+
+function withSearchSelectDefaults(props: SearchSelectProps): SearchSelectMergedProps {
+  return new Proxy(props, {
+    get(target, key: string) {
+      const value = (target as unknown as Record<string, unknown>)[key]
+      if (key === 'allowClear' || key === 'fetchDataOnSearch' || key === 'autoClearSearchValue' || key === 'showSearch')
+        return booleanValue(value, true)
+      if (key === 'disabled' || key === 'loading' || key === 'searchOnFocus' || key === 'resetAfterSelect' || key === 'labelInValue')
+        return booleanValue(value, false)
+      if (value !== undefined)
+        return value
+      if (key === 'options')
+        return []
+      if (key === 'optionFilterProp' || key === 'optionLabelProp')
+        return 'label'
+      return undefined
+    },
+  }) as SearchSelectMergedProps
+}
+
+const SearchSelect = defineComponent({
   name: 'SearchSelect',
   inheritAttrs: false,
-  props: {
-    options: { type: Array as PropType<RequestOptionsType[]>, default: () => [] },
-    id: { type: String, default: undefined },
-    label: { type: null as unknown as PropType<any>, default: undefined },
-    className: { type: String, default: undefined },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-    placeholder: { type: null as unknown as PropType<any>, default: undefined },
-    notFoundContent: { type: null as unknown as PropType<any>, default: undefined },
-    allowClear: { type: Boolean, default: true },
-    disabled: { type: Boolean, default: false },
-    loading: { type: Boolean, default: false },
-    fetchData: { type: Function as PropType<(keyWord?: string) => void>, default: undefined },
-    resetData: { type: Function as PropType<() => void>, default: undefined },
-    fetchDataOnSearch: { type: Boolean, default: true },
-    defaultSearchValue: { type: String, default: undefined },
-    searchValue: { type: String, default: undefined },
-    autoClearSearchValue: { type: Boolean, default: true },
-    searchOnFocus: { type: Boolean, default: false },
-    resetAfterSelect: { type: Boolean, default: false },
-    showSearch: { type: Boolean, default: true },
-    optionFilterProp: { type: String, default: 'label' },
-    optionLabelProp: { type: String, default: 'label' },
-    labelInValue: { type: Boolean, default: false },
-    fieldNames: { type: Object as PropType<Record<string, string>>, default: undefined },
-    mode: { type: String as PropType<'multiple' | 'tags'>, default: undefined },
-    onSearch: { type: Function as PropType<(value: string) => void>, default: undefined },
-    onChange: { type: Function as PropType<(value: any, option: any, ...args: any[]) => void>, default: undefined },
-    onFocus: { type: Function as PropType<(event: FocusEvent) => void>, default: undefined },
-    onClear: { type: Function as PropType<() => void>, default: undefined },
-    filterOption: { type: [Boolean, Function] as PropType<boolean | ((input: string, option: any) => boolean)>, default: undefined },
-  },
-  setup(props, { attrs, expose }) {
+  props: searchSelectPropNames,
+  setup(rawProps, { attrs, expose }) {
+    const props = withSearchSelectDefaults(rawProps as unknown as SearchSelectProps)
     const selectRef = ref<any>(null)
     const innerSearchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
 
@@ -148,7 +224,10 @@ export default defineComponent({
     }
 
     return () => {
-      const restAttrs = attrs as Record<string, any>
+      const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
+      const onChange = props.onChange as
+        | ((value: any, option: any, ...args: any[]) => void)
+        | undefined
 
       return (
         <Select
@@ -211,7 +290,7 @@ export default defineComponent({
             }
 
             if (!props.labelInValue) {
-              props.onChange?.(value, optionList, ...rest)
+              onChange?.(value, optionList, ...rest)
               return
             }
 
@@ -219,10 +298,10 @@ export default defineComponent({
               const dataItem = optionList?.['data-item']
               const foundDataItem = dataItem || findDataItem(props.options, value, fieldNames.value.value, fieldNames.value.options)
               if (!value || !foundDataItem) {
-                props.onChange?.(value ? { ...value, label: getOriginalLabel(foundDataItem, value) } : value, optionList, ...rest)
+                onChange?.(value ? { ...value, label: getOriginalLabel(foundDataItem, value) } : value, optionList, ...rest)
                 return
               }
-              props.onChange?.(
+              onChange?.(
                 {
                   ...value,
                   ...foundDataItem,
@@ -234,7 +313,7 @@ export default defineComponent({
               return
             }
 
-            props.onChange?.(getMergeValue(value, optionList), optionList, ...rest)
+            onChange?.(getMergeValue(value, optionList), optionList, ...rest)
             if (props.resetAfterSelect)
               props.resetData?.()
           }}
@@ -254,3 +333,5 @@ export default defineComponent({
     }
   },
 })
+
+export default SearchSelect

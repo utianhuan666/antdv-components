@@ -1,4 +1,6 @@
-import type { PropType } from 'vue'
+import type { VNodeChild } from 'vue'
+import type { SelectProps } from 'antdv-next'
+import type { ProFieldLightProps } from '../../../types'
 import type { RequestOptionsType } from '../types'
 import { SearchOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
@@ -6,7 +8,7 @@ import { Input, Select } from 'antdv-next'
 import { computed, defineComponent, ref } from 'vue'
 import FieldLabel from '../../../../form/layouts/LightFilter/FieldLabel'
 
-function getValueOrLabel(valueMap: Record<string, any>, value: any): any {
+function getValueOrLabel(valueMap: Record<string, VNodeChild>, value: LightSelectProps['value']): VNodeChild {
   if (Array.isArray(value))
     return value.map(item => getValueOrLabel(valueMap, item)).join(',')
   if (value && typeof value === 'object')
@@ -14,38 +16,86 @@ function getValueOrLabel(valueMap: Record<string, any>, value: any): any {
   return valueMap[value] || value
 }
 
-export default defineComponent({
+export type LightSelectProps = {
+  label?: string
+  placeholder?: any
+  valueMaxLength?: number
+  style?: Record<string, any>
+  className?: string
+  fetchData: (keyWord?: string) => void
+  fetchDataOnSearch?: boolean
+  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+  labelVariant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+} & ProFieldLightProps & SelectProps
+
+const lightSelectPropNames = [
+  'label',
+  'id',
+  'loading',
+  'placeholder',
+  'valueMaxLength',
+  'labelVariant',
+  'variant',
+  'options',
+  'value',
+  'mode',
+  'size',
+  'disabled',
+  'showSearch',
+  'allowClear',
+  'labelInValue',
+  'fieldNames',
+  'optionFilterProp',
+  'optionLabelProp',
+  'fetchDataOnSearch',
+  'fetchData',
+  'onSearch',
+  'onChange',
+  'onOpenChange',
+  'className',
+  'style',
+  'placement',
+  'lightLabel',
+  'labelTrigger',
+]
+
+function booleanValue(value: unknown, defaultValue: boolean): boolean {
+  if (value === undefined)
+    return defaultValue
+  return value === '' ? true : !!value
+}
+
+function withLightSelectDefaults(props: LightSelectProps): LightSelectProps {
+  return new Proxy(props, {
+    get(target, key: string) {
+      const value = (target as unknown as Record<string, unknown>)[key]
+      if (key === 'loading' || key === 'disabled' || key === 'showSearch' || key === 'labelInValue' || key === 'fetchDataOnSearch' || key === 'labelTrigger')
+        return booleanValue(value, false)
+      if (key === 'allowClear')
+        return booleanValue(value, true)
+      if (value !== undefined)
+        return value
+      if (key === 'valueMaxLength')
+        return 41
+      if (key === 'variant')
+        return 'outlined'
+      if (key === 'options')
+        return []
+      if (key === 'optionLabelProp')
+        return ''
+      if (key === 'placement')
+        return 'bottomLeft'
+      return undefined
+    },
+  }) as LightSelectProps
+}
+
+const LightSelect = defineComponent({
   name: 'LightSelect',
   inheritAttrs: false,
-  props: {
-    label: { type: null as unknown as PropType<any>, default: undefined },
-    id: { type: String, default: undefined },
-    loading: { type: Boolean, default: false },
-    placeholder: { type: null as unknown as PropType<any>, default: undefined },
-    labelVariant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
-    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: 'outlined' },
-    options: { type: Array as PropType<RequestOptionsType[]>, default: () => [] },
-    value: { type: null as unknown as PropType<any>, default: undefined },
-    mode: { type: String as PropType<'multiple' | 'tags'>, default: undefined },
-    disabled: { type: Boolean, default: false },
-    showSearch: { type: Boolean, default: false },
-    allowClear: { type: Boolean, default: true },
-    labelInValue: { type: Boolean, default: false },
-    fieldNames: { type: Object as PropType<Record<string, string>>, default: undefined },
-    optionFilterProp: { type: String, default: undefined },
-    optionLabelProp: { type: String, default: '' },
-    fetchDataOnSearch: { type: Boolean, default: false },
-    fetchData: { type: Function as PropType<(keyWord?: string) => void>, default: undefined },
-    onSearch: { type: Function as PropType<(value: string) => void>, default: undefined },
-    onChange: { type: Function as PropType<(value: any, option: any) => void>, default: undefined },
-    onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-    className: { type: String, default: undefined },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-    placement: { type: String, default: 'bottomLeft' },
-    lightLabel: { type: Object as PropType<any>, default: undefined },
-    labelTrigger: { type: Boolean, default: false },
-  },
-  setup(props, { attrs, expose }) {
+  props: lightSelectPropNames,
+  setup(rawProps, { attrs, expose }) {
+    const props = withLightSelectDefaults(rawProps as unknown as LightSelectProps)
     const selectRef = ref<any>(null)
     const open = ref(false)
     const keyword = ref('')
@@ -58,7 +108,7 @@ export default defineComponent({
     }))
 
     const valueMap = computed(() => {
-      const values: Record<string, any> = {}
+      const values: Record<string, VNodeChild> = {}
       props.options?.forEach((item) => {
         const optionLabel = props.optionLabelProp ? item[props.optionLabelProp] : item[fieldNames.value.label]
         const optionValue = item[fieldNames.value.value]
@@ -83,12 +133,12 @@ export default defineComponent({
 
     const mergedOpen = computed(() => {
       if (Object.prototype.hasOwnProperty.call(attrs, 'open'))
-        return (attrs as Record<string, any>).open
+        return (attrs as Record<string, unknown>).open as boolean | undefined
       return open.value
     })
 
     return () => {
-      const restAttrs = attrs as Record<string, any>
+      const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
       const displayValue = getValueOrLabel(valueMap.value, props.value)
       const hasValue = displayValue !== undefined && displayValue !== null && displayValue !== '' && (!Array.isArray(displayValue) || displayValue.length > 0)
 
@@ -102,13 +152,14 @@ export default defineComponent({
               value={props.value}
               mode={props.mode}
               labelInValue={props.labelInValue}
+              size={props.size}
               disabled={props.disabled}
               variant={props.variant}
               open={mergedOpen.value}
               showSearch={props.showSearch}
               style={props.style}
               loading={props.loading}
-              options={filteredOptions.value as any}
+              options={filteredOptions.value as SelectProps['options']}
               popupRender={(menuNode: any) => (
                 <div>
                   {props.showSearch
@@ -207,3 +258,5 @@ export default defineComponent({
     }
   },
 })
+
+export default LightSelect

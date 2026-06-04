@@ -1,31 +1,28 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
 
-export default defineComponent({
-  name: 'FieldTextRead',
-  props: {
-    text: { type: [String, Number, Boolean, Array] as PropType<string | number | boolean | unknown[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      const { prefix = '', suffix = '' } = props.fieldProps || {}
-      const dom = (
-        <>
-          {prefix}
-          {props.text ?? props.emptyText}
-          {suffix}
-        </>
-      )
+type FieldTextReadProps = NonNullable<ProFieldFC<{
+  text: string | number | boolean | unknown[]
+  emptyText?: VNodeChild
+}>['__props']> & {
+  emptyText: VNodeChild
+}
 
-      if (props.render) {
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-      }
-      return dom
-    }
-  },
-})
+export function FieldTextRead(props: FieldTextReadProps) {
+  const { text, mode, render, fieldProps, emptyText } = props
+  const { prefix = '', suffix = '' } = fieldProps || {}
+  const dom = (
+    <>
+      {prefix}
+      {text ?? emptyText}
+      {suffix}
+    </>
+  )
+
+  if (render)
+    return render(text, { mode, ...fieldProps }, dom) ?? emptyText
+
+  return dom
+}
+
+export default FieldTextRead

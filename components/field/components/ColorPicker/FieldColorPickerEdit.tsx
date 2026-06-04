@@ -1,7 +1,6 @@
-import type { CSSProperties, PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { CSSProperties } from 'vue'
+import type { ProFieldFC } from '../../types'
 import { ColorPicker } from 'antdv-next'
-import { defineComponent } from 'vue'
 
 const DEFAULT_PRESETS = {
   label: 'Recommended',
@@ -29,29 +28,24 @@ const DEFAULT_PRESETS = {
   ],
 }
 
-export default defineComponent({
-  name: 'FieldColorPickerEdit',
-  props: {
-    text: { type: String, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
-    return () => {
-      const style = { display: 'table-cell', ...(props.fieldProps?.style as CSSProperties) }
-      const dom = (
-        <ColorPicker
-          presets={[DEFAULT_PRESETS]}
-          {...props.fieldProps}
-          style={style}
-          class={`ant-pro-field-color-picker${props.fieldProps?.class ? ` ${props.fieldProps.class}` : ''}`}
-        />
-      )
-      if (props.formItemRender) {
-        return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, style }, dom)
-      }
-      return dom
-    }
-  },
-})
+type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
+
+export function FieldColorPickerEdit(props: Props) {
+  const { text, mode, formItemRender, fieldProps } = props
+  const style = { display: 'table-cell', ...(fieldProps?.style as CSSProperties) }
+  const dom = (
+    <ColorPicker
+      presets={[DEFAULT_PRESETS]}
+      {...fieldProps}
+      style={style}
+      class={`ant-pro-field-color-picker${fieldProps?.class ? ` ${fieldProps.class}` : ''}`}
+    />
+  )
+
+  if (formItemRender)
+    return formItemRender(text, { mode, ...fieldProps, style }, dom)
+
+  return dom
+}
+
+export default FieldColorPickerEdit

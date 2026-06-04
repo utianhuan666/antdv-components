@@ -1,35 +1,37 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
+import type { FieldSelectProps } from '../Select'
 import type { ProFieldValueEnumType } from '../Select/types'
-import { defineComponent } from 'vue'
 import { objectToMap, proFieldParsingText } from '../Select'
 
-export default defineComponent({
-  name: 'FieldSegmentedRead',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    optionsValueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <>
-          {proFieldParsingText(
-            props.text,
-            objectToMap(props.valueEnum || props.optionsValueEnum),
-          )}
-        </>
-      )
+type FieldSegmentedProps = NonNullable<ProFieldFC<{
+  text: string
+  emptyText?: VNodeChild
+} & FieldSelectProps>['__props']>
 
-      if (props.render)
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, <>{dom}</>) ?? props.emptyText
+type Props = FieldSegmentedProps & {
+  optionsValueEnum: ProFieldValueEnumType
+  emptyText: VNodeChild
+}
 
-      return dom
-    }
-  },
-})
+export function FieldSegmentedRead(props: Props) {
+  const {
+    text,
+    mode,
+    render,
+    fieldProps,
+    emptyText,
+    optionsValueEnum,
+    valueEnum,
+  } = props
+  const dom = (
+    <>{proFieldParsingText(text, objectToMap(valueEnum || optionsValueEnum))}</>
+  )
+
+  if (render)
+    return render(text, { mode, ...fieldProps }, <>{dom}</>) ?? emptyText
+
+  return dom
+}
+
+export default FieldSegmentedRead

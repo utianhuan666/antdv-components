@@ -1,45 +1,56 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
+import type { GroupProps } from './types'
 import { clsx } from '@v-c/util'
 import { RadioGroup } from 'antdv-next'
-import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'FieldRadioEdit',
-  props: {
-    text: { type: [String, Number, Boolean] as PropType<string | number | boolean>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    radioType: { type: String as PropType<'default' | 'button'>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | null>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    options: { type: Array as PropType<any[]>, default: () => [] },
-    loading: { type: Boolean, default: false },
-    layout: { type: String as PropType<'horizontal' | 'vertical'>, default: 'horizontal' },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <RadioGroup
-          optionType={props.radioType}
-          {...props.fieldProps}
-          class={clsx(
-            props.fieldProps?.class,
-            props.fieldProps?.className,
-            `ant-pro-field-radio-${props.fieldProps?.layout || props.layout}`,
-          )}
-          options={props.options}
-        />
-      )
+type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
+  options: any[]
+  loading: boolean
+  radioRef: any
+  layoutClassName: string
+  wrapSSR: (node: JSX.Element) => JSX.Element
+  hashId: string
+  status: { status?: string } | undefined
+}
 
-      if (props.formItemRender) {
-        return props.formItemRender(
-          props.text,
-          { mode: props.mode, ...props.fieldProps, options: props.options, loading: props.loading },
-          dom,
-        ) ?? null
-      }
+export function FieldRadioEdit(props: Props) {
+  const {
+    radioType,
+    formItemRender,
+    mode,
+    options,
+    loading,
+    radioRef,
+    layoutClassName,
+    wrapSSR,
+    hashId,
+    status,
+    ...rest
+  } = props
 
-      return dom
-    }
-  },
-})
+  const dom = wrapSSR(
+    <RadioGroup
+      ref={radioRef}
+      optionType={radioType}
+      {...rest.fieldProps}
+      class={clsx(
+        rest.fieldProps?.class,
+        rest.fieldProps?.className,
+        {
+          [`${layoutClassName}-error`]: status?.status === 'error',
+          [`${layoutClassName}-warning`]: status?.status === 'warning',
+        },
+        hashId,
+        `${layoutClassName}-${rest.fieldProps?.layout || 'horizontal'}`,
+      )}
+      options={options}
+    />,
+  )
+
+  if (formItemRender)
+    return formItemRender(rest.text, { mode, ...rest.fieldProps, options, loading }, dom) ?? null
+
+  return dom
+}
+
+export default FieldRadioEdit

@@ -1,2 +1,2 @@
-export { default } from './FieldSelectSearchEdit'
-export type { FieldSelectSearchEditProps as FieldSelectFullProps } from './FieldSelectSearchEdit'
+export { FieldSelectSearchEdit as FieldSelectEdit } from './FieldSelectSearchEdit'
+export type { FieldSelectFullProps } from './FieldSelectSearchEdit'

@@ -1,28 +1,32 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { ProFieldFC, ProFieldLightProps } from '../../types'
 
-export default defineComponent({
-  name: 'FieldRangePickerRead',
-  props: {
-    text: { type: Array as PropType<string[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    parsedStartText: { type: String, default: '' },
-    parsedEndText: { type: String, default: '' },
-  },
-  setup(props) {
-    return () => {
-      const start = props.parsedStartText
-      const end = props.parsedEndText
-      const content = !start && !end ? '-' : `${start || '-'} ~ ${end || '-'}`
-      const dom = (
-        <div>{content}</div>
-      )
-      if (props.render)
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, <span>{dom}</span>)
-      return dom
-    }
-  },
-})
+type Props = NonNullable<
+  ProFieldFC<
+    {
+      text: string[]
+      format?: string
+      variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+      showTime?: boolean | Record<string, any>
+      picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
+    } & ProFieldLightProps
+  >['__props']
+> & {
+  parsedStartText: string
+  parsedEndText: string
+}
+
+export function FieldRangePickerRead(props: Props) {
+  const { text, mode, render, parsedStartText, parsedEndText } = props
+  const fieldProps = props.fieldProps || {}
+  const start = parsedStartText
+  const end = parsedEndText
+  const content = !start && !end ? '-' : `${start || '-'} ~ ${end || '-'}`
+  const dom = (
+    <div>{content}</div>
+  )
+  if (render)
+    return render(text, { mode, ...fieldProps }, <span>{dom}</span>)
+  return dom
+}
+
+export default FieldRangePickerRead

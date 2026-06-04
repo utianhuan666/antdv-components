@@ -1,10 +1,9 @@
-import type { CSSProperties, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldRequestData as BaseProFieldRequestData, ProSchemaValueEnumMap, ProSchemaValueEnumObj } from '../../types'
+import type { VNodeChild } from 'vue'
+import type { ProFieldRequestData as BaseProFieldRequestData, ProFieldLightProps, ProRenderFieldPropsType, ProSchemaValueEnumMap, ProSchemaValueEnumObj } from '../../types'
 
 export type ProFieldValueEnumType = ProSchemaValueEnumMap | ProSchemaValueEnumObj | Map<any, any> | Record<string, any> | undefined
 
-export type RequestOptionsType = {
+export interface RequestOptionsType {
   label?: VNodeChild
   text?: VNodeChild
   value?: string | number | boolean
@@ -17,29 +16,17 @@ export type RequestOptionsType = {
 
 export type ProFieldRequestData = BaseProFieldRequestData<Record<string, any> & { keyWords?: string }>
 
-export interface ProFieldLightProps {
-  light?: boolean
-  label?: VNodeChild
-  lightLabel?: any
-  labelTrigger?: boolean
-}
-
-export interface FieldSelectProps<FieldProps = Record<string, any>> extends ProFieldLightProps {
+export interface FieldSelectProps<FieldProps = Record<string, any>> extends ProFieldLightProps, ProRenderFieldPropsType {
   text: any
-  mode?: ProFieldFCMode
   valueEnum?: ProFieldValueEnumType
   debounceTime?: number
   request?: ProFieldRequestData
   params?: any
   fieldProps?: FieldProps
-  render?: (text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined
-  formItemRender?: (text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element
-  emptyText?: VNodeChild
-  proFieldKey?: string | number
   defaultKeyWords?: string
-  cacheForSwr?: boolean
-  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+  variant?: 'outlined' | 'filled' | 'borderless' | 'underlined'
   id?: string
-  style?: CSSProperties
+  style?: Record<string, any>
   className?: string
+  fieldNames?: Record<string, string>
 }

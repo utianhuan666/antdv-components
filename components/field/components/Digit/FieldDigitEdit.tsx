@@ -1,33 +1,27 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
+import type { FieldDigitProps } from './types'
 import { InputNumber } from 'antdv-next'
-import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'FieldDigitEdit',
-  props: {
-    text: { type: [Number, String] as PropType<number | string>, default: undefined },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    placeholderValue: { type: String, required: true },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <InputNumber
-          {...({
-            min: 0,
-            placeholder: props.placeholderValue,
-            ...props.fieldProps,
-          } as any)}
-        />
-      )
+type Props = NonNullable<ProFieldFC<FieldDigitProps>['__props']> & {
+  placeholderValue: string
+}
 
-      if (props.formItemRender)
-        return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
+export function FieldDigitEdit(props: Props) {
+  const { text, mode: type, formItemRender, fieldProps, placeholderValue } = props
+  const dom = (
+    <InputNumber
+      {...({
+        min: 0,
+        placeholder: placeholderValue,
+        ...fieldProps,
+      } as any)}
+    />
+  )
 
-      return dom
-    }
-  },
-})
+  if (formItemRender)
+    return formItemRender(text, { mode: type, ...fieldProps }, dom)
+
+  return dom
+}
+
+export default FieldDigitEdit

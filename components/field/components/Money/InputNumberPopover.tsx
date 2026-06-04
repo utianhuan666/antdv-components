@@ -1,12 +1,13 @@
+import type { InputNumberProps } from 'antdv-next'
 import type { PropType, VNodeChild } from 'vue'
 import { InputNumber, Popover } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
 
-export type InputNumberPopoverProps = Record<string, any> & {
+export type InputNumberPopoverProps = InputNumberProps & {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onBlur?: (e: FocusEvent) => void
-  contentRender?: (props: Record<string, any>) => VNodeChild
+  contentRender?: (props: InputNumberProps) => VNodeChild
   numberFormatOptions?: any
   numberPopoverRender?: any
 }
@@ -16,7 +17,7 @@ export default defineComponent({
   props: {
     open: { type: Boolean, default: undefined },
     onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-    contentRender: { type: Function as PropType<(props: Record<string, any>) => VNodeChild>, default: undefined },
+    contentRender: { type: Function as PropType<(props: InputNumberProps) => VNodeChild>, default: undefined },
     numberFormatOptions: { type: Object, default: undefined },
     numberPopoverRender: { type: [Function, Boolean], default: undefined },
     // InputNumber props pass-through
@@ -55,7 +56,7 @@ export default defineComponent({
     }
 
     return () => {
-      const dom = props.contentRender?.({ ...attrs, value: mergedValue.value })
+      const dom = props.contentRender?.({ ...attrs, value: mergedValue.value } as InputNumberProps)
 
       if (!dom) {
         return (

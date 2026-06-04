@@ -1,58 +1,67 @@
-import type { PropType, Ref } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import type { RequestOptionsType } from './types'
-import { defineComponent } from 'vue'
+import type { FieldSelectFullProps } from './FieldSelectSearchEdit'
 import LightSelect from './LightSelect'
 
-export default defineComponent({
-  name: 'FieldSelectLightEdit',
-  props: {
-    text: { type: null as unknown as PropType<any>, default: undefined },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    id: { type: String, default: undefined },
-    label: { type: null as unknown as PropType<any>, default: undefined },
-    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
-    loading: { type: Boolean, default: false },
-    options: { type: Array as PropType<RequestOptionsType[]>, default: () => [] },
-    fetchData: { type: Function as PropType<(keyWord?: string) => void>, default: undefined },
-    resetData: { type: Function as PropType<() => void>, default: undefined },
-    selectRef: { type: Object as PropType<Ref<any>>, default: undefined },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-    className: { type: String, default: undefined },
-    lightLabel: { type: Object as PropType<any>, default: undefined },
-    labelTrigger: { type: Boolean, default: false },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <LightSelect
-          id={props.id}
-          ref={props.selectRef}
-          loading={props.loading}
-          allowClear
-          options={props.options}
-          label={props.label}
-          labelVariant={props.variant}
-          placeholder="请选择"
-          lightLabel={props.lightLabel}
-          labelTrigger={props.labelTrigger}
-          fetchData={props.fetchData}
-          className={props.className}
-          style={props.style}
-          {...props.fieldProps}
-        />
-      )
+export type FieldSelectLightEditProps = NonNullable<ProFieldFC<FieldSelectFullProps>['__props']> & {
+  intl: {
+    getMessage: (id: string, defaultMessage: string) => string
+  }
+  loading: boolean
+  options: RequestOptionsType[]
+  fetchData: (keyWord?: string) => void
+  resetData: () => void
+  inputRef: any
+  componentSize: string
+}
 
-      if (props.formItemRender) {
-        return props.formItemRender(
-          props.text,
-          { mode: props.mode, ...props.fieldProps, options: props.options, loading: props.loading },
-          dom,
-        )
-      }
-      return dom
-    }
-  },
-})
+export function FieldSelectLightEdit(props: FieldSelectLightEditProps) {
+  const {
+    mode,
+    formItemRender,
+    fieldProps,
+    id,
+    label,
+    variant,
+    lightLabel,
+    labelTrigger,
+    intl,
+    loading,
+    options,
+    fetchData,
+    inputRef,
+    componentSize,
+    ...rest
+  } = props
+
+  const dom = (
+    <LightSelect
+      id={id}
+      ref={inputRef}
+      loading={loading}
+      allowClear
+      size={componentSize as any}
+      options={options}
+      label={label}
+      labelVariant={variant}
+      placeholder={intl.getMessage('tableForm.selectPlaceholder', '请选择')}
+      lightLabel={lightLabel}
+      labelTrigger={labelTrigger}
+      fetchData={fetchData}
+      className={rest.className}
+      style={rest.style}
+      {...fieldProps}
+    />
+  )
+
+  if (formItemRender) {
+    return formItemRender(
+      rest.text,
+      { mode, ...fieldProps, options, loading },
+      dom,
+    ) ?? null
+  }
+  return dom
+}
+
+export default FieldSelectLightEdit

@@ -1,20 +1,25 @@
-import type { CSSProperties, PropType } from 'vue'
+import type { CSSProperties, SetupContext, VNodeChild } from 'vue'
+import type { BadgeProps } from 'antdv-next'
 import { Badge } from 'antdv-next'
-import { defineComponent } from 'vue'
 
-const statusProps = {
-  className: { type: String, default: '' },
-  style: { type: Object as PropType<CSSProperties>, default: () => ({}) },
+type StatusProps = {
+  className?: string
+  style?: CSSProperties
+  children?: VNodeChild
 }
 
-function createStatusComponent(name: string, status: 'success' | 'error' | 'default' | 'processing' | 'warning') {
-  return defineComponent({
-    name,
-    props: statusProps,
-    setup(_, { slots }) {
-      return () => <Badge status={status} text={slots.default?.() as any} />
-    },
-  })
+type StatusColorProps = StatusProps & {
+  color: BadgeProps['color']
+}
+
+type BadgeStatus = 'success' | 'error' | 'default' | 'processing' | 'warning'
+
+function createStatusComponent(name: string, status: BadgeStatus) {
+  const StatusComponent = (_props: StatusProps, { slots }: SetupContext) => {
+    return <Badge status={status} text={(slots.default?.() ?? _props.children) as BadgeProps['text']} />
+  }
+  StatusComponent.displayName = name
+  return StatusComponent
 }
 
 /** Quick status display with Badge component */
@@ -33,16 +38,9 @@ export const StatusComponents = {
 
 export type ProFieldStatusType = keyof typeof StatusComponents
 
-export const ProFieldBadgeColor = defineComponent({
-  name: 'ProFieldBadgeColor',
-  props: {
-    color: { type: String, default: '' },
-    className: { type: String, default: '' },
-    style: { type: Object as PropType<CSSProperties>, default: () => ({}) },
-  },
-  setup(props, { slots }) {
-    return () => <Badge color={props.color} text={slots.default?.() as any} />
-  },
-})
+export const ProFieldBadgeColor = (props: StatusColorProps, { slots }: SetupContext) => {
+  return <Badge color={props.color ?? ''} text={(slots.default?.() ?? props.children) as BadgeProps['text']} />
+}
+ProFieldBadgeColor.displayName = 'ProFieldBadgeColor'
 
 export default StatusComponents

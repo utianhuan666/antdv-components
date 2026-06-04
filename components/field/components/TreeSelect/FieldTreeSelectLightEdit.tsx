@@ -1,118 +1,162 @@
-import type { PropType, Ref } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { VNodeChild } from 'vue'
+import type { TreeSelectProps } from 'antdv-next'
+import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'
-import { defineComponent } from 'vue'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
 
-export default defineComponent({
-  name: 'FieldTreeSelectLightEdit',
-  props: {
-    text: { type: null as unknown as PropType<any>, default: undefined },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    label: { type: null as unknown as PropType<any>, default: undefined },
-    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    open: { type: Object as PropType<Ref<boolean>>, required: true },
-    treeSelectRef: { type: Object as PropType<Ref<any>>, default: undefined },
-    loading: { type: Boolean, default: false },
-    options: { type: Array as PropType<any[]>, default: () => [] },
-    fetchData: { type: Function as PropType<(keyWord?: string) => void>, default: undefined },
-    fetchDataOnSearch: { type: Boolean, default: undefined },
-    hasRequest: { type: Boolean, default: false },
-    showSearch: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    showSearchConfig: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    searchValue: { type: String, default: undefined },
-    setSearchValue: { type: Function as PropType<(value?: string) => void>, default: undefined },
-    autoClearSearchValue: { type: Boolean, default: undefined },
-    onClear: { type: Function as PropType<() => void>, default: undefined },
-    treeSelectOnChange: { type: Function as PropType<(value: any, optionList: any, extra: any) => void>, default: undefined },
-    onBlur: { type: Function as PropType<(event: FocusEvent) => void>, default: undefined },
-    layoutClassName: { type: String, default: '' },
-  },
-  setup(props) {
-    return () => {
-      const valuesLength = Array.isArray(props.fieldProps?.value) ? props.fieldProps.value.length : 0
-      const notEmpty = !!props.fieldProps?.value && props.fieldProps.value?.length !== 0
-      const dom = (
-        <Spin spinning={props.loading}>
-          <TreeSelect
-            ref={props.treeSelectRef}
-            {...props.fieldProps}
-            open={props.open.value}
-            popupMatchSelectWidth={false}
-            placeholder="请选择"
-            tagRender={(item: any) => {
-              if (valuesLength < 2)
-                return <>{item.label}</>
-              const itemIndex = props.fieldProps?.value?.findIndex((value: any) =>
-                value === item.value || value?.value === item.value,
-              )
-              return <>{item.label} {itemIndex < valuesLength - 1 ? ',' : ''}</>
-            }}
-            treeData={props.options}
-            showSearch={props.showSearch
-              ? {
-                  ...props.showSearchConfig,
-                  searchValue: props.searchValue,
-                  autoClearSearchValue: props.autoClearSearchValue,
-                  onSearch: (value: string) => {
-                    if (props.fetchDataOnSearch && props.hasRequest)
-                      props.fetchData?.(value)
-                    props.setSearchValue?.(value)
-                  },
-                }
-              : props.showSearch}
-            style={{ minWidth: 60, ...props.fieldProps?.style }}
-            allowClear={props.fieldProps?.allowClear !== false}
-            onOpenChange={(isOpen: boolean) => {
-              props.open.value = isOpen
-              props.fieldProps?.onOpenChange?.(isOpen)
-            }}
-            onClear={() => {
-              props.onClear?.()
-              props.fetchData?.(undefined)
-              if (props.showSearch)
-                props.setSearchValue?.(undefined)
-            }}
-            onChange={props.treeSelectOnChange}
-            onBlur={(event: FocusEvent) => {
-              props.setSearchValue?.(undefined)
-              props.fetchData?.(undefined)
-              props.onBlur?.(event)
-            }}
-            class={clsx(props.fieldProps?.className, props.layoutClassName)}
-          />
-        </Spin>
-      )
+type TreeSelectShowSearchObject = Exclude<
+  TreeSelectProps['showSearch'],
+  boolean | undefined
+>
 
-      const renderedDom = props.formItemRender
-        ? props.formItemRender(
-            props.text,
-            { mode: props.mode, ...props.fieldProps, options: props.options, loading: props.loading },
-            dom,
+export interface FieldTreeSelectLightEditProps {
+  text: string
+  mode: 'edit'
+  formItemRender?: (
+    text: any,
+    props: Record<string, any>,
+    dom: VNodeChild,
+  ) => VNodeChild
+  label?: any
+  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+  fieldProps: TreeSelectFieldProps
+  open: boolean
+  setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
+  treeSelectRef: any
+  intl: {
+    getMessage: (id: string, defaultMessage: string) => string
+  }
+  loading: boolean
+  options: NonNullable<TreeSelectProps['treeData']>
+  fetchData: (keyWord?: string) => void
+  fetchDataOnSearch?: boolean
+  hasRequest: boolean
+  showSearch: TreeSelectProps['showSearch']
+  showSearchConfig: TreeSelectShowSearchObject | Record<string, never>
+  searchValue: string | undefined
+  setSearchValue: (
+    updater:
+      | string
+      | undefined
+      | ((prev: string | undefined) => string | undefined),
+  ) => void
+  autoClearSearchValue: boolean | undefined
+  onClear?: () => void
+  treeSelectOnChange: TreeSelectProps<any>['onChange']
+  onBlur?: TreeSelectProps['onBlur']
+  layoutClassName: string
+}
+
+export function FieldTreeSelectLightEdit({
+  text,
+  mode,
+  formItemRender,
+  label,
+  variant,
+  fieldProps,
+  open,
+  setOpen,
+  treeSelectRef,
+  intl,
+  loading,
+  options,
+  fetchData,
+  fetchDataOnSearch,
+  hasRequest,
+  showSearch,
+  showSearchConfig,
+  searchValue,
+  setSearchValue,
+  autoClearSearchValue,
+  onClear,
+  treeSelectOnChange,
+  onBlur,
+  layoutClassName,
+}: FieldTreeSelectLightEditProps) {
+  const valuesLength = Array.isArray(fieldProps?.value) ? fieldProps.value.length : 0
+  let dom: any = (
+    <Spin spinning={loading}>
+      <TreeSelect
+        ref={treeSelectRef}
+        {...fieldProps}
+        open={open}
+        popupMatchSelectWidth={false}
+        placeholder={intl.getMessage('tableForm.selectPlaceholder', '请选择')}
+        tagRender={(item: any) => {
+          if (valuesLength < 2)
+            return <>{item.label}</>
+          const itemIndex = fieldProps?.value?.findIndex((value: any) =>
+            value === item.value || value?.value === item.value,
           )
-        : dom
+          return <>{item.label} {itemIndex < valuesLength - 1 ? ',' : ''}</>
+        }}
+        treeData={options}
+        showSearch={showSearch
+          ? {
+              ...showSearchConfig,
+              searchValue,
+              autoClearSearchValue,
+              onSearch: (value: string) => {
+                if (fetchDataOnSearch && hasRequest)
+                  fetchData(value)
+                setSearchValue(value)
+              },
+            }
+          : showSearch}
+        style={{ minWidth: 60, ...fieldProps?.style }}
+        allowClear={fieldProps?.allowClear !== false}
+        onOpenChange={(isOpen: boolean) => {
+          setOpen(isOpen)
+          fieldProps?.onOpenChange?.(isOpen)
+        }}
+        onClear={() => {
+          onClear?.()
+          fetchData(undefined)
+          if (showSearch)
+            setSearchValue(undefined)
+        }}
+        onChange={treeSelectOnChange}
+        onBlur={(event: FocusEvent) => {
+          setSearchValue(undefined)
+          fetchData(undefined)
+          onBlur?.(event)
+        }}
+        class={clsx(fieldProps?.className, layoutClassName)}
+      />
+    </Spin>
+  )
 
-      return (
-        <FieldLabel
-          label={props.label}
-          disabled={props.fieldProps?.disabled}
-          placeholder={props.fieldProps?.placeholder}
-          variant={props.variant}
-          value={notEmpty || props.open.value ? renderedDom : null}
-          style={notEmpty ? { paddingInlineEnd: 0 } : undefined}
-          allowClear={false}
-          downIcon={false}
-          onLabelClick={() => {
-            if (props.fieldProps?.disabled)
-              return
-            props.open.value = true
-            props.fieldProps?.onOpenChange?.(true)
-          }}
-        />
-      )
-    }
-  },
-})
+  if (formItemRender) {
+    dom = formItemRender(
+      text,
+      { mode, ...fieldProps, options, loading } as any,
+      dom,
+    ) ?? null
+  }
+
+  const { disabled, placeholder, value } = fieldProps
+  const notEmpty = !!value && value?.length !== 0
+  const handleLabelClick = () => {
+    if (disabled)
+      return
+    setOpen(true)
+    fieldProps?.onOpenChange?.(true)
+  }
+
+  return (
+    <FieldLabel
+      label={label}
+      disabled={disabled}
+      placeholder={placeholder as any}
+      variant={variant}
+      value={notEmpty || open ? dom : null}
+      style={notEmpty ? { paddingInlineEnd: 0 } : undefined}
+      allowClear={false}
+      downIcon={false}
+      onLabelClick={handleLabelClick}
+    />
+  )
+}
+
+export default FieldTreeSelectLightEdit
