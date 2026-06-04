@@ -2,7 +2,7 @@ import type { PropType, VNodeChild } from 'vue'
 import type { NamePath, ProFormUploadButtonProps } from '../../typing'
 import { UploadOutlined } from '@antdv-next/icons'
 import { Button, Image, Upload } from 'antdv-next'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import { useEditOrReadOnly } from '../../BaseForm'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
@@ -80,6 +80,16 @@ const ProFormUploadButton = defineComponent({
       }, fieldContext.model || {})
       parent[last] = value
     }
+
+    function applyInitialValue() {
+      if (props.name === undefined || props.initialValue === undefined)
+        return
+      if (fileList.value.length === 0)
+        setCellValue(props.initialValue as any[])
+    }
+
+    onMounted(applyInitialValue)
+    watch(() => props.initialValue, applyInitialValue)
 
     async function handlePreview(file: Record<string, any>) {
       if (!file.url && !file.preview && file.originFileObj)

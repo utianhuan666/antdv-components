@@ -3,6 +3,8 @@
  * Vue 端按需选择 valueType + ProFormField 包装。
  */
 export { default as ProFormCascader } from './Cascader'
+export { default as ProFormCaptcha } from './Captcha'
+export type { CaptFieldRef, ProFormCaptchaProps } from './Captcha'
 export { default as ProFormCheckbox, ProFormCheckboxGroup } from './Checkbox'
 export { default as ProFormColorPicker } from './ColorPicker'
 export { default as ProFormDatePicker, ProFormDateTimePicker, ProFormTimePicker } from './DatePicker'

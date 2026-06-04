@@ -42,6 +42,7 @@ const ProFormField = defineComponent({
     disabled: { type: Boolean, default: undefined },
     allowClear: { type: Boolean, default: undefined },
     proFieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
+    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
     fieldConfig: { type: Object as PropType<ProFormItemCreateConfig>, default: () => ({}) },
     /** ignoreFormItem=true 表示当前组件不希望被 antdv FormItem 接管，常用于自定义渲染 */
     ignoreFormItem: { type: Boolean, default: false },
@@ -110,6 +111,7 @@ const ProFormField = defineComponent({
         ...(attrs || {}),
         ...(props.fieldProps || {}),
         disabled: props.disabled ?? props.fieldProps?.disabled,
+        id: props.fieldProps?.id ?? (typeof props.name === 'string' ? props.name : undefined),
         allowClear: props.allowClear ?? props.fieldProps?.allowClear,
         placeholder: props.placeholder ?? props.fieldProps?.placeholder,
         style: {
@@ -127,6 +129,7 @@ const ProFormField = defineComponent({
           valueType={props.valueType}
           valueEnum={props.valueEnum}
           request={props.request}
+          formItemRender={props.formItemRender as any}
           fieldProps={mergedFieldProps}
           readonly={finalReadonly.value}
           {...(props.proFieldProps || {})}
@@ -144,8 +147,16 @@ const ProFormField = defineComponent({
           return false
         if (node.type === Text && typeof node.children === 'string' && !node.children.trim())
           return false
-        if (node.type === Fragment && Array.isArray(node.children) && node.children.length === 0)
-          return false
+        if (node.type === Fragment) {
+          const fragmentChildren = Array.isArray(node.children) ? node.children : []
+          return fragmentChildren.some((child: any) => {
+            if (child?.type === Comment)
+              return false
+            if (child?.type === Text && typeof child.children === 'string' && !child.children.trim())
+              return false
+            return Boolean(child)
+          })
+        }
         return true
       })
 

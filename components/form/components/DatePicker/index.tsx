@@ -1,44 +1,31 @@
-import { defineComponent } from 'vue'
-import ProFormField from '../Field'
+import ProFormDatePickerBase from './DatePicker'
+import { ProFormTimeRangePicker } from '../DateRangePicker'
+import ProFormDateTimePicker from './DateTimePicker'
+import ProFormDatePickerMonth from './MonthPicker'
+import ProFormDatePickerQuarter from './QuarterPicker'
+import ProFormTimePicker from './TimePicker'
+import ProFormDatePickerWeek from './WeekPicker'
+import ProFormDatePickerYear from './YearPicker'
 
-/** 对标 React `ProFormDatePicker`：valueType=date */
-const ProFormDatePicker = defineComponent({
-  name: 'ProFormDatePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="date" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+const ProFormDatePicker = ProFormDatePickerBase as typeof ProFormDatePickerBase & {
+  Week: typeof ProFormDatePickerWeek
+  Month: typeof ProFormDatePickerMonth
+  Quarter: typeof ProFormDatePickerQuarter
+  Year: typeof ProFormDatePickerYear
+}
 
-/** 对标 React `ProFormDateTimePicker`：valueType=dateTime */
-const ProFormDateTimePicker = defineComponent({
-  name: 'ProFormDateTimePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="dateTime" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
-
-/** 对标 React `ProFormTimePicker`：valueType=time */
-const ProFormTimePicker = defineComponent({
-  name: 'ProFormTimePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="time" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+;(ProFormDatePicker as any).Week = ProFormDatePickerWeek
+;(ProFormDatePicker as any).Month = ProFormDatePickerMonth
+;(ProFormDatePicker as any).Quarter = ProFormDatePickerQuarter
+;(ProFormDatePicker as any).Year = ProFormDatePickerYear
+;(ProFormTimePicker as any).RangePicker = ProFormTimeRangePicker
 
 export default ProFormDatePicker
-export { ProFormDateTimePicker, ProFormTimePicker }
+export {
+  ProFormDateTimePicker,
+  ProFormTimePicker,
+  ProFormDatePickerMonth,
+  ProFormDatePickerQuarter,
+  ProFormDatePickerWeek,
+  ProFormDatePickerYear,
+}

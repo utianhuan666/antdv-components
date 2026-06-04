@@ -23,6 +23,7 @@ const ProFormItem = defineComponent({
     tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
     rules: { type: Array as PropType<any[]>, default: undefined },
     required: { type: Boolean, default: undefined },
+    valuePropName: { type: String, default: undefined },
     initialValue: { type: null as unknown as PropType<ProFormItemProps['initialValue']>, default: undefined },
     valueType: { type: [String, Object] as PropType<ProFormItemProps['valueType']>, default: undefined },
     dataFormat: { type: String as PropType<ProFormItemProps['dataFormat']>, default: undefined },

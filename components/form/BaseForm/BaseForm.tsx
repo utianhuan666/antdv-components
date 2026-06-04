@@ -225,6 +225,28 @@ const BaseForm = defineComponent({
       return value
     }
 
+    function pruneEmptyPlainObjects(value: any): any {
+      if (Array.isArray(value))
+        return value.map(item => pruneEmptyPlainObjects(item))
+      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+        Object.keys(value).forEach((key) => {
+          const nextValue = pruneEmptyPlainObjects(value[key])
+          if (
+            nextValue
+            && typeof nextValue === 'object'
+            && Object.getPrototypeOf(nextValue) === Object.prototype
+            && Object.keys(nextValue).length === 0
+          ) {
+            delete value[key]
+          }
+          else {
+            value[key] = nextValue
+          }
+        })
+      }
+      return value
+    }
+
     function isDateValueType(valueType: unknown) {
       return typeof valueType === 'string' && /date|time/i.test(valueType)
     }
@@ -264,7 +286,8 @@ const BaseForm = defineComponent({
         else
           setValueByNamePath(result, namePath, transformed)
       })
-      return omitNilParam ? omitNilValues(result) : result
+      const prunedResult = pruneEmptyPlainObjects(result)
+      return omitNilParam ? omitNilValues(prunedResult) : prunedResult
     }
 
     function getFieldsFormatValue(_allData?: true, omitNilParam?: boolean) {
@@ -289,7 +312,6 @@ const BaseForm = defineComponent({
 
     async function handleFinish() {
       const finalValues = getFieldsFormatValue()
-      emit('finish', finalValues)
       if (!props.onFinish || innerLoading.value)
         return
       try {

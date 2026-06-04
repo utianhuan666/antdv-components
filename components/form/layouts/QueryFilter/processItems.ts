@@ -6,6 +6,7 @@ export interface ProcessedQueryFilterItem {
   itemDom: VNode | null
   hidden: boolean
   colSpan: number
+  name?: unknown
 }
 
 export interface ProcessQueryFilterItemsOptions {
@@ -94,11 +95,11 @@ export function processQueryFilterItems(
 
     if (hidden) {
       if (!preserve)
-        return { itemDom: null, colSpan: 0, hidden: true }
-      return { itemDom: cloneVNode(item, { hidden: true }), colSpan, hidden: true }
+        return { itemDom: null, colSpan: 0, hidden: true, name: itemProps.name }
+      return { itemDom: cloneVNode(item, { hidden: true }), colSpan, hidden: true, name: itemProps.name }
     }
 
-    return { itemDom: item, colSpan, hidden: false }
+    return { itemDom: item, colSpan, hidden: false, name: itemProps.name }
   })
 
   let runningSpan = 0

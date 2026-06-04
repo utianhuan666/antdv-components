@@ -3,6 +3,7 @@ import { BaseForm } from './BaseForm'
 import {
   BetaSchemaForm,
   ProFormCascader,
+  ProFormCaptcha,
   ProFormCheckbox,
   ProFormCheckboxGroup,
   ProFormColorPicker,
@@ -92,6 +93,7 @@ export const ProFormModule = {
       ProFormCheckbox,
       ProFormCheckboxGroup,
       ProFormCascader,
+      ProFormCaptcha,
       ProFormTreeSelect,
       ProFormSlider,
       ProFormRate,
@@ -161,6 +163,7 @@ export {
   MyFormItem,
   ProForm,
   ProFormCascader,
+  ProFormCaptcha,
   ProFormCheckbox,
   ProFormCheckboxGroup,
   ProFormColorPicker,
@@ -195,7 +198,7 @@ export {
   QueryFilter,
 }
 
-export type { BetaSchemaFormProps, FormListActionType, ProFormColumnsType, SchemaValueType } from './components'
+export type { BetaSchemaFormProps, CaptFieldRef, FormListActionType, ProFormCaptchaProps, ProFormColumnsType, SchemaValueType } from './components'
 export type { LightFilterProps, QueryFilterProps, SpanConfig, SpanConfigObject } from './layouts'
 export type {
   BaseFormProps,

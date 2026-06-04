@@ -1,19 +1,13 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
+import type { PropType } from 'vue'
 import type { NamePath } from '../../typing'
-import { ArrowDownOutlined, ArrowUpOutlined, CopyOutlined, DeleteOutlined, PlusOutlined } from '@antdv-next/icons'
-import { Button, Space, Tooltip } from 'antdv-next'
-import { cloneVNode, Comment, defineComponent, Fragment, h, isVNode, onMounted, Text } from 'vue'
-import { provideFieldContext, useFieldContext } from '../../FieldContext'
+import type { FormListActionGuard, FormListActionType, IconConfig, ProFormListCommonProps } from './typing'
+import { computed, defineComponent, onMounted, watchEffect } from 'vue'
+import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
-import { provideFormListContext, useFormListContext } from './FormListContext'
+import { useFormListContext } from './FormListContext'
+import { ProFormListContainer } from './ListContainer'
 
-export interface FormListActionType<T = Record<string, any>> {
-  add: (defaultValue?: Partial<T>, insertIndex?: number) => Promise<void>
-  remove: (index: number) => Promise<void>
-  move: (from: number, to: number) => void
-  get: (index: number) => T | undefined
-  getList: () => T[]
-}
+export type { FormListActionGuard, FormListActionType, IconConfig, ProFormListCommonProps } from './typing'
 
 function cloneValue<T>(value: T): T {
   if (Array.isArray(value))
@@ -27,28 +21,31 @@ function cloneValue<T>(value: T): T {
   return value
 }
 
-function normalizeChildren(children?: VNodeChild): VNode[] {
-  if (!Array.isArray(children))
-    return isVNode(children) ? [children] : []
-
-  return children.flatMap((node) => {
-    if (!isVNode(node) || node.type === Comment)
-      return []
-    if (node.type === Text && typeof node.children === 'string' && !node.children.trim())
-      return []
-    if (node.type === Fragment)
-      return normalizeChildren(node.children as VNodeChild)
-    return [node]
-  })
+function normalizeNamePath(name: NamePath): (string | number)[] {
+  return Array.isArray(name) ? name : [name]
 }
 
-function getValueByNamePath(model: Record<string, any>, name: NamePath) {
-  const path = Array.isArray(name) ? name : [name]
+function getValueByNamePath(model: any, name: NamePath) {
+  const path = normalizeNamePath(name)
+  if (!path.length)
+    return model
   return path.reduce<any>((current, key) => current?.[key], model)
 }
 
-function setValueByNamePath(model: Record<string, any>, name: NamePath, value: any) {
-  const path = Array.isArray(name) ? name : [name]
+function setValueByNamePath(model: any, name: NamePath, value: any) {
+  const path = normalizeNamePath(name)
+  if (!path.length) {
+    if (Array.isArray(model)) {
+      model.splice(0, model.length, ...(Array.isArray(value) ? value : []))
+      return
+    }
+    if (model && typeof model === 'object') {
+      Object.keys(model).forEach(key => delete model[key])
+      Object.assign(model, value || {})
+    }
+    return
+  }
+
   const last = path[path.length - 1]
   if (last === undefined)
     return
@@ -60,70 +57,56 @@ function setValueByNamePath(model: Record<string, any>, name: NamePath, value: a
   parent[last] = value
 }
 
-const ListItemProvider = defineComponent({
-  name: 'ProFormListItemProvider',
-  props: {
-    model: { type: Object as PropType<Record<string, any>>, required: true },
-    listName: { type: Array as PropType<(string | number)[]>, required: true },
-    name: { type: Number, required: true },
-  },
-  setup(props, { slots }) {
-    const parentContext = useFieldContext()
-    provideFieldContext({
-      ...parentContext,
-      get model() {
-        return props.model
-      },
-    })
-    provideFormListContext({
-      get listName() {
-        return props.listName
-      },
-      get name() {
-        return props.name
-      },
-      get key() {
-        return props.name
-      },
-    })
-
-    return () => slots.default?.()
-  },
-})
-
 const ProFormList = defineComponent({
   name: 'ProFormList',
   inheritAttrs: false,
   props: {
     name: { type: [String, Number, Array] as PropType<NamePath>, required: true },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
+    label: { type: [String, Number, Object] as PropType<any>, default: undefined },
+    tooltip: { type: [String, Number, Object] as PropType<any>, default: undefined },
     initialValue: { type: Array as PropType<Record<string, any>[]>, default: undefined },
     creatorRecord: { type: [Object, Function] as PropType<Record<string, any> | (() => Record<string, any>)>, default: undefined },
-    creatorButtonProps: { type: [Object, Boolean] as PropType<Record<string, any> | false>, default: () => ({}) },
-    copyIconProps: { type: [Object, Boolean] as PropType<Record<string, any> | false>, default: () => ({}) },
-    deleteIconProps: { type: [Object, Boolean] as PropType<Record<string, any> | false>, default: () => ({}) },
-    upIconProps: { type: [Object, Boolean] as PropType<Record<string, any> | false>, default: () => ({}) },
-    downIconProps: { type: [Object, Boolean] as PropType<Record<string, any> | false>, default: () => ({}) },
-    actionGuard: { type: Object as PropType<Record<string, any>>, default: undefined },
+    creatorButtonProps: { type: [Object, Boolean] as PropType<ProFormListCommonProps['creatorButtonProps']>, default: () => ({}) },
+    copyIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
+    deleteIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
+    upIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
+    downIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
+    actionGuard: { type: Object as PropType<FormListActionGuard>, default: undefined },
     actionRef: { type: Object as PropType<{ value?: FormListActionType }>, default: undefined },
-    actionRender: { type: Function as PropType<(field: any, action: FormListActionType, defaultActionDom: VNodeChild[], count: number) => VNodeChild[]>, default: undefined },
-    itemRender: { type: Function as PropType<(doms: { listDom: VNodeChild, action: VNodeChild }, meta: { record: Record<string, any>, index: number }) => VNodeChild>, default: undefined },
-    itemContainerRender: { type: Function as PropType<(doms: VNodeChild[]) => VNodeChild>, default: undefined },
+    actionRender: { type: Function as PropType<ProFormListCommonProps['actionRender']>, default: undefined },
+    itemRender: { type: Function as PropType<ProFormListCommonProps['itemRender']>, default: undefined },
+    itemContainerRender: { type: Function as PropType<ProFormListCommonProps['itemContainerRender']>, default: undefined },
+    fieldExtraRender: { type: Function as PropType<ProFormListCommonProps['fieldExtraRender']>, default: undefined },
     creatorButtonText: { type: String, default: undefined },
     alwaysShowItemLabel: { type: Boolean, default: false },
     min: { type: Number, default: undefined },
     max: { type: Number, default: undefined },
     arrowSort: { type: Boolean, default: false },
     rules: { type: Array as PropType<any[]>, default: undefined },
+    required: { type: Boolean, default: undefined },
+    readonly: { type: Boolean, default: false },
+    isValidateList: { type: Boolean, default: false },
+    emptyListMessage: { type: String, default: '列表不能为空' },
+    colProps: { type: Object as PropType<Record<string, any>>, default: undefined },
+    rowProps: { type: Object as PropType<Record<string, any>>, default: undefined },
+    containerClassName: { type: String, default: undefined },
+    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
+    onAfterAdd: { type: Function as PropType<(defaultValue: any, insertIndex: number, count: number) => void>, default: undefined },
+    onAfterRemove: { type: Function as PropType<(index: number, count: number) => void>, default: undefined },
   },
   setup(props, { slots }) {
     const fieldContext = useFieldContext()
     const parentListContext = useFormListContext()
 
+    const currentName = computed(() => {
+      if (parentListContext.name === undefined)
+        return normalizeNamePath(props.name)
+      return [parentListContext.name, ...normalizeNamePath(props.name)]
+    })
+
     function getRowFieldPath(index: number): (string | number)[] {
       const parentListName = parentListContext.listName || []
-      const currentName = Array.isArray(props.name) ? props.name : [props.name]
-      return [...parentListName, ...currentName, index] as (string | number)[]
+      return [...parentListName, ...normalizeNamePath(props.name), index]
     }
 
     function getList(): Record<string, any>[] {
@@ -146,12 +129,14 @@ const ProFormList = defineComponent({
       if (props.max !== undefined && list.length >= props.max)
         return
       const index = insertIndex ?? list.length
-      const canAdd = await props.actionGuard?.beforeAddRow?.(defaultValue, index, list.length)
+      const nextRecord = cloneValue(defaultValue ?? getCreatorRecord())
+      const canAdd = await props.actionGuard?.beforeAddRow?.(nextRecord, index, list.length)
       if (canAdd === false)
         return
       const next = [...list]
-      next.splice(index, 0, cloneValue(defaultValue))
+      next.splice(index, 0, nextRecord)
       setList(next)
+      props.onAfterAdd?.(nextRecord, index, next.length)
     }
 
     async function remove(index: number) {
@@ -162,6 +147,7 @@ const ProFormList = defineComponent({
       if (canRemove === false)
         return
       setList(list.filter((_, listIndex) => listIndex !== index))
+      props.onAfterRemove?.(index, list.length - 1)
     }
 
     function move(from: number, to: number) {
@@ -189,135 +175,72 @@ const ProFormList = defineComponent({
       setList(cloneValue(props.initialValue))
     }
 
-    onMounted(() => {
-      applyInitialValue()
+    onMounted(applyInitialValue)
+    watchEffect(() => {
       if (props.actionRef)
         props.actionRef.value = action
     })
 
-    function renderIcon(iconProps: Record<string, any> | false | undefined, fallback: any) {
-      if (iconProps === false)
-        return undefined
-      const Icon = iconProps?.Icon || fallback
-      return h(Icon)
-    }
-
-    function renderActionButton(options: {
-      iconProps?: Record<string, any> | false
-      fallbackIcon: any
-      tooltipText: string
-      disabled?: boolean
-      onClick: () => void
-    }) {
-      if (options.iconProps === false)
-        return null
-      const button = (
-        <Button type="link" size="small" disabled={options.disabled} onClick={options.onClick}>
-          {renderIcon(options.iconProps, options.fallbackIcon)}
-        </Button>
-      )
-      const tooltipText = options.iconProps && 'tooltipText' in options.iconProps ? options.iconProps.tooltipText : options.tooltipText
-      return tooltipText ? <Tooltip title={tooltipText}>{button}</Tooltip> : button
-    }
-
-    function renderItem(record: Record<string, any>, index: number) {
-      const count = getList().length
-      const rowAction: FormListActionType = {
-        ...action,
-        get: () => record,
-        getList,
+    const finalRules = computed(() => {
+      const rules = [...(props.rules || [])]
+      if (props.isValidateList || rules.some(rule => rule?.required)) {
+        rules.unshift({
+          required: true,
+          validator: async (_rule: any, value: any) => {
+            if (!value || value.length === 0)
+              throw new Error(props.emptyListMessage)
+          },
+        })
       }
-      const currentRowAction = {
-        ...rowAction,
-        getCurrentRowData: () => record,
-        setCurrentRowData: (data: Record<string, any>) => {
-          Object.assign(record, data)
-        },
-      }
-      const field = { name: index, key: index }
-      const defaultActionDom = [
-        props.arrowSort
-          ? renderActionButton({
-              iconProps: props.upIconProps,
-              fallbackIcon: ArrowUpOutlined,
-              tooltipText: '向上',
-              disabled: index === 0,
-              onClick: () => move(index, index - 1),
-            })
-          : null,
-        props.arrowSort
-          ? renderActionButton({
-              iconProps: props.downIconProps,
-              fallbackIcon: ArrowDownOutlined,
-              tooltipText: '向下',
-              disabled: index === count - 1,
-              onClick: () => move(index, index + 1),
-            })
-          : null,
-        renderActionButton({
-          iconProps: props.copyIconProps,
-          fallbackIcon: CopyOutlined,
-          tooltipText: '复制',
-          disabled: props.max !== undefined && count >= props.max,
-          onClick: () => add(cloneValue(record), index + 1),
-        }),
-        renderActionButton({
-          iconProps: props.deleteIconProps,
-          fallbackIcon: DeleteOutlined,
-          tooltipText: '删除',
-          disabled: props.min !== undefined && count <= props.min,
-          onClick: () => remove(index),
-        }),
-      ].filter(Boolean) as VNodeChild[]
-      const actionDom = props.actionRender?.(field, action, defaultActionDom, count) ?? defaultActionDom
-      const listDom = (
-        <ListItemProvider model={record} listName={getRowFieldPath(index)} name={index}>
-          {normalizeChildren(slots.default?.({ field, index, action: currentRowAction, count })).map((node, childIndex) => cloneVNode(node, { key: node.key ?? childIndex }))}
-        </ListItemProvider>
-      )
-      const content = props.itemContainerRender ? props.itemContainerRender([listDom]) : listDom
-      const actionNode = actionDom.length ? <Space size={4}>{actionDom}</Space> : null
-      const rowNode = (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBlockEnd: '8px' }}>
-          <div style={{ flex: 1 }}>{content}</div>
-          {actionNode}
-        </div>
-      )
-      return props.itemRender?.({ listDom: content, action: actionNode }, { record, index }) ?? rowNode
-    }
-
-    function renderCreatorButton(position: 'top' | 'bottom') {
-      if (props.creatorButtonProps === false)
-        return null
-      const creatorButtonProps = props.creatorButtonProps || {}
-      const buttonPosition = creatorButtonProps.position || 'bottom'
-      if (buttonPosition !== position)
-        return null
-      const list = getList()
-      return (
-        <Button
-          type={creatorButtonProps.type || 'dashed'}
-          block={creatorButtonProps.block ?? true}
-          disabled={props.max !== undefined && list.length >= props.max}
-          style={creatorButtonProps.style}
-          onClick={() => add()}
-        >
-          {creatorButtonProps.icon === false ? null : creatorButtonProps.icon || <PlusOutlined />}
-          {creatorButtonProps.creatorButtonText || props.creatorButtonText || '新建一行'}
-        </Button>
-      )
-    }
+      return rules
+    })
 
     return () => {
       const list = getList()
+      const fields = list.map((record, index) => ({ name: index, key: index, record }))
       return (
-        <ProFormItem name={props.name} label={props.label} rules={props.rules} formItemProps={{ style: { marginBottom: 16 } }}>
-          {renderCreatorButton('top')}
-          <div style={{ marginBlockStart: renderCreatorButton('top') ? '8px' : undefined }}>
-            {list.map((record, index) => <Fragment key={index}>{renderItem(record, index)}</Fragment>)}
-          </div>
-          {renderCreatorButton('bottom')}
-        </ProFormItem>
+        <div class="ant-pro-form-list">
+          <ProFormItem
+            name={props.name}
+            label={props.label}
+            tooltip={props.tooltip}
+            rules={finalRules.value}
+            required={props.required || props.rules?.some(rule => rule?.required)}
+            colProps={props.colProps}
+            formItemProps={{ style: { marginBottom: 16 } }}
+          >
+            <ProFormListContainer
+              name={currentName.value as any}
+              originName={props.name as any}
+              listName={getRowFieldPath}
+              fields={fields}
+              action={action}
+              readonly={props.readonly}
+              creatorRecord={props.creatorRecord}
+              creatorButtonProps={props.creatorButtonProps}
+              creatorButtonText={props.creatorButtonText}
+              copyIconProps={props.copyIconProps}
+              deleteIconProps={props.deleteIconProps}
+              upIconProps={props.upIconProps}
+              downIconProps={props.downIconProps}
+              actionGuard={props.actionGuard}
+              actionRender={props.actionRender}
+              itemRender={props.itemRender}
+              itemContainerRender={props.itemContainerRender}
+              fieldExtraRender={props.fieldExtraRender}
+              alwaysShowItemLabel={props.alwaysShowItemLabel}
+              min={props.min}
+              max={props.max}
+              arrowSort={props.arrowSort}
+              containerClassName={props.containerClassName}
+              containerStyle={props.containerStyle}
+            >
+              {{
+                default: (slotProps: Record<string, any>) => slots.default?.(slotProps),
+              }}
+            </ProFormListContainer>
+          </ProFormItem>
+        </div>
       )
     }
   },

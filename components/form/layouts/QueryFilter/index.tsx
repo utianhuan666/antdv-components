@@ -73,6 +73,7 @@ const QueryFilter = defineComponent({
     const containerRef = ref<HTMLElement | null>(null)
     const width = ref<number>(defaultWidth)
     const internalCollapsed = ref<boolean>(props.defaultCollapsed)
+    const hiddenNamePaths = shallowRef<(string | number)[][]>([])
 
     const isControlled = computed(() => props.collapsed !== undefined)
     const collapsed = computed(() => (isControlled.value ? !!props.collapsed : internalCollapsed.value))
@@ -133,6 +134,34 @@ const QueryFilter = defineComponent({
       getFieldsFormatValue: (...args: any[]) => baseRef.value?.getFieldsFormatValue?.(...args),
     })
 
+    function normalizeNamePath(name: unknown): (string | number)[] | undefined {
+      if (name === undefined || name === null)
+        return undefined
+      return Array.isArray(name) ? name as (string | number)[] : [name as string | number]
+    }
+
+    function deleteValueByNamePath(values: Record<string, any>, namePath: (string | number)[]) {
+      const last = namePath[namePath.length - 1]
+      if (last === undefined)
+        return
+      const parent = namePath.slice(0, -1).reduce<any>((current, key) => current?.[key], values)
+      if (parent && typeof parent === 'object')
+        delete parent[last]
+    }
+
+    function filterHiddenValues(values: Record<string, any>) {
+      if (props.preserve !== false || hiddenNamePaths.value.length === 0)
+        return values
+      const nextValues = { ...(values || {}) }
+      hiddenNamePaths.value.forEach(namePath => deleteValueByNamePath(nextValues, namePath))
+      return nextValues
+    }
+
+    async function handleFinish(values: Record<string, any>) {
+      const filteredValues = filterHiddenValues(values)
+      return (attrs.onFinish as any)?.(filteredValues)
+    }
+
     function renderContent(items: VNodeChild, submitter: VNodeChild | undefined) {
       const { processedList, totalSpan, totalSize, lastRowUsedSpan } = processQueryFilterItems({
         items,
@@ -142,6 +171,11 @@ const QueryFilter = defineComponent({
         preserve: props.preserve,
         ignoreRules: props.ignoreRules,
       })
+
+      hiddenNamePaths.value = processedList
+        .filter(entry => entry.hidden && entry.name !== undefined)
+        .map(entry => normalizeNamePath(entry.name))
+        .filter(Boolean) as (string | number)[][]
 
       let renderSpan = 0
       const doms = processedList.map((entry, index) => {
@@ -212,31 +246,40 @@ const QueryFilter = defineComponent({
       )
     }
 
-    return () => (
-      <div
-        ref={containerRef}
-        class="ant-pro-query-filter-container"
-        style={props.containerStyle}
-      >
-        <BaseForm
-          ref={baseRef}
-          isKeyPressSubmit
-          layout={spanSize.value.layout as any}
-          fieldProps={{ style: { width: '100%' } }}
-          formItemProps={formItemFixStyle.value as any}
-          contentRender={(items, submitter) => renderContent(items, submitter)}
-          {...attrs}
-          class={['ant-pro-query-filter', (attrs as any).class].filter(Boolean).join(' ')}
+    return () => {
+      const {
+        onFinish: _onFinish,
+        class: attrsClass,
+        ...restAttrs
+      } = attrs as Record<string, any>
+
+      return (
+        <div
+          ref={containerRef}
+          class="ant-pro-query-filter-container"
+          style={props.containerStyle}
         >
-          {{
-            default: () => slots.default?.(),
-            submitter: slots.submitter
-              ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
-              : undefined,
-          }}
-        </BaseForm>
-      </div>
-    )
+          <BaseForm
+            ref={baseRef}
+            isKeyPressSubmit
+            layout={spanSize.value.layout as any}
+            fieldProps={{ style: { width: '100%' } }}
+            formItemProps={formItemFixStyle.value as any}
+            contentRender={(items, submitter) => renderContent(items, submitter)}
+            {...restAttrs}
+            onFinish={handleFinish}
+            class={['ant-pro-query-filter', attrsClass].filter(Boolean).join(' ')}
+          >
+            {{
+              default: () => slots.default?.(),
+              submitter: slots.submitter
+                ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
+                : undefined,
+            }}
+          </BaseForm>
+        </div>
+      )
+    }
   },
 })
 

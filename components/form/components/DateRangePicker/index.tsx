@@ -1,5 +1,11 @@
 import { defineComponent } from 'vue'
-import ProFormField from '../Field'
+import { BaseDateRanger } from './BaseDateRanger'
+import { ProFormDateMonthRangePicker } from './DateMonthRangePicker'
+import { ProFormDateQuarterRangePicker } from './DateQuarterRangePicker'
+import { ProFormDateTimeRangePicker } from './DateTimeRangePicker'
+import { ProFormDateWeekRangePicker } from './DateWeekRangePicker'
+import { ProFormDateYearRangePicker } from './DateYearRangePicker'
+import { ProFormTimeRangePicker } from './TimeRangePicker'
 
 /** 对标 React `ProFormDateRangePicker`：valueType=dateRange */
 const ProFormDateRangePicker = defineComponent({
@@ -7,25 +13,19 @@ const ProFormDateRangePicker = defineComponent({
   inheritAttrs: false,
   setup(_, { attrs, slots }) {
     return () => (
-      <ProFormField valueType="dateRange" {...attrs}>
+      <BaseDateRanger valueType="dateRange" {...attrs}>
         {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
-
-/** 对标 React `ProFormDateTimeRangePicker`：valueType=dateTimeRange */
-const ProFormDateTimeRangePicker = defineComponent({
-  name: 'ProFormDateTimeRangePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="dateTimeRange" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
+      </BaseDateRanger>
     )
   },
 })
 
 export default ProFormDateRangePicker
-export { ProFormDateTimeRangePicker }
+export {
+  ProFormDateMonthRangePicker,
+  ProFormDateQuarterRangePicker,
+  ProFormDateTimeRangePicker,
+  ProFormDateWeekRangePicker,
+  ProFormDateYearRangePicker,
+  ProFormTimeRangePicker,
+}
