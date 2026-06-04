@@ -1,5 +1,6 @@
-import type { VNodeChild } from 'vue'
+import type { DefineComponent, InjectionKey, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from './internal/fieldMode'
+import { inject } from 'vue'
 
 // ---------------------------------------------------------------------------
 // Empty text
@@ -7,6 +8,25 @@ import type { ProFieldFCMode } from './internal/fieldMode'
 
 /** Displayed when the field value is empty in read mode; `false` hides it. */
 export type ProFieldEmptyText = string | false
+
+export type BaseProFieldFC = ProFieldFCRenderProps
+
+/** Default Field component contract. */
+export type ProFieldFC<T = {}> = DefineComponent<any, any, any> & {
+  __props?: BaseProFieldFC & ProRenderFieldPropsType & T
+}
+
+/** Light filter props injected by ProFieldLightWrapper. */
+export type ProFieldLightProps = {
+  lightLabel?: {
+    labelRef: { value: HTMLElement | null }
+    clearRef: { value: HTMLElement | null }
+  }
+  labelTrigger?: boolean
+}
+
+/** Value type by function. */
+export type ProFieldValueTypeFunction<T> = (item: T) => ProFieldValueTypeInput
 
 // ---------------------------------------------------------------------------
 // Text / value types
@@ -149,6 +169,9 @@ export interface ProFieldFCRenderProps {
   label?: VNodeChild
   valueEnum?: ProSchemaValueEnumObj | ProSchemaValueEnumMap
   proFieldKey?: string | number
+  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+  lightLabel?: ProFieldLightProps['lightLabel']
+  labelTrigger?: boolean
 }
 
 /** Customisers exposed by ProConfigProvider / valueTypeMap entries. */
@@ -156,13 +179,13 @@ export interface ProRenderFieldPropsType {
   render?: (
     text: any,
     props: Omit<ProFieldFCRenderProps, 'value' | 'onChange'>,
-    dom: JSX.Element,
-  ) => JSX.Element | undefined
+    dom: VNodeChild,
+  ) => VNodeChild | undefined
   formItemRender?: (
     text: any,
     props: ProFieldFCRenderProps,
-    dom: JSX.Element,
-  ) => JSX.Element
+    dom: VNodeChild,
+  ) => VNodeChild
 }
 
 // ---------------------------------------------------------------------------
@@ -188,3 +211,15 @@ export type ProFieldPropsType = {
   text?: ProFieldTextType
   valueType?: ProFieldValueTypeInput
 } & ProFieldRenderProps
+
+// ---------------------------------------------------------------------------
+// ProConfig provide / inject
+// ---------------------------------------------------------------------------
+
+export interface ProConfigContextType {
+  valueTypeMap?: Record<string, ProRenderFieldPropsType>
+}
+
+export const ProConfigKey: InjectionKey<ProConfigContextType> = Symbol('ProConfig')
+
+export const useProConfig = (): ProConfigContextType => inject(ProConfigKey, {})

@@ -1,4 +1,4 @@
 export interface FieldDigitProps {
-  text: number
+  text: number | string
   placeholder?: string
 }

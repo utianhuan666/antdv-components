@@ -1,7 +1,7 @@
 import type { PropType } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import dayjs from 'dayjs'
 import { defineComponent } from 'vue'
+import { parseValueToDay } from '../DatePicker/datePickerUtils'
 
 export default defineComponent({
   name: 'FieldTimePickerRead',
@@ -14,14 +14,13 @@ export default defineComponent({
   },
   setup(props) {
     return () => {
-      const isNumberOrDayjs = dayjs.isDayjs(props.text) || typeof props.text === 'number'
-      const formatted = props.text
-        ? dayjs(props.text as any, isNumberOrDayjs ? undefined : props.finalFormat).format(props.finalFormat)
+      const dayValue = parseValueToDay(props.text, props.finalFormat)
+      const formatted = dayValue && !Array.isArray(dayValue)
+        ? dayValue.format(props.finalFormat)
         : '-'
       const dom = <span>{formatted}</span>
-      if (props.render) {
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? '-'
-      }
+      if (props.render)
+        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, <span>{dom}</span>)
       return dom
     }
   },

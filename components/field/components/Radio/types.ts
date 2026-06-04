@@ -1,13 +1,19 @@
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldValueEnumType } from '../Select/types'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
 
 export interface FieldRadioProps {
-  text: string | number
+  text: string | number | boolean
   mode?: ProFieldFCMode
   /** Value enum: Map or Object mapping value -> label */
   valueEnum?: ProFieldValueEnumType
   /** Radio group options */
-  options?: Array<{ label: string, value: string | number, disabled?: boolean }>
+  options?: Array<{ label: any, value: any, disabled?: boolean }>
+  /** Async function to fetch options */
+  request?: ProFieldRequestData
+  /** Params passed to request */
+  params?: any
+  /** Debounce time in ms for request */
+  debounceTime?: number
   /** Radio type: default or button */
   radioType?: 'default' | 'button'
   /** Layout direction for radio group */

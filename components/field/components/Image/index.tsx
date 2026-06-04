@@ -1,9 +1,10 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
 import type { FieldImageProps } from './types'
-import { Image, Input } from 'antdv-next'
 import { defineComponent } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldImageEdit from './FieldImageEdit'
+import FieldImageRead from './FieldImageRead'
 
 export type { FieldImageProps }
 
@@ -12,8 +13,8 @@ export default defineComponent({
   props: {
     text: { type: String as PropType<string>, default: '' },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
+    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
+    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     placeholder: { type: [String, Array] as PropType<string | string[]>, default: undefined },
@@ -22,31 +23,28 @@ export default defineComponent({
   setup(props) {
     return () => {
       if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <Image
-            width={props.width || 32}
-            src={props.text}
-            {...props.fieldProps}
+        return (
+          <FieldImageRead
+            text={props.text}
+            mode={props.mode}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            width={props.width}
           />
         )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
-        const placeholderValue = (Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder) || '???'
-        const dom = (
-          <Input
-            placeholder={placeholderValue}
-            {...props.fieldProps}
+        const placeholderValue = (Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder) || '请输入'
+        return (
+          <FieldImageEdit
+            text={props.text}
+            mode={props.mode}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
+            placeholderValue={placeholderValue}
           />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       return null

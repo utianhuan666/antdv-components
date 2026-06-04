@@ -1,5 +1,5 @@
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldValueEnumType } from '../Select/types'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
 
 export interface FieldCheckboxProps {
   text: string | number | (string | number)[]
@@ -7,7 +7,13 @@ export interface FieldCheckboxProps {
   /** Value enum: Map or Object mapping value -> label */
   valueEnum?: ProFieldValueEnumType
   /** Checkbox group options */
-  options?: Array<{ label: string, value: string | number, disabled?: boolean }>
+  options?: Array<{ label: any, value: any, disabled?: boolean }>
+  /** Async function to fetch options */
+  request?: ProFieldRequestData
+  /** Params passed to request */
+  params?: any
+  /** Debounce time in ms for request */
+  debounceTime?: number
   /** Layout direction for checkbox group */
   layout?: 'horizontal' | 'vertical'
   /** Component-level props passed to antdv CheckboxGroup */

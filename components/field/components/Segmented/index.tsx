@@ -1,11 +1,22 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldRequestData } from '../../types'
-import type { ProFieldValueEnumType } from '../Select/types'
-import { Segmented } from 'antdv-next'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
+import { Spin } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
+import FieldSegmentedEdit from './FieldSegmentedEdit'
+import FieldSegmentedRead from './FieldSegmentedRead'
+
+function buildOptionsValueEnum(options: any[] | undefined) {
+  if (!options?.length)
+    return undefined
+
+  return options.reduce<Record<string, any>>((pre, cur) => {
+    pre[cur?.value ?? ''] = cur?.label
+    return pre
+  }, {})
+}
 
 export default defineComponent({
   name: 'FieldSegmented',
@@ -15,13 +26,18 @@ export default defineComponent({
     valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
     request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
     params: { type: Object as PropType<any>, default: undefined },
+    debounceTime: { type: Number, default: undefined },
+    defaultKeyWords: { type: String, default: undefined },
+    cacheForSwr: { type: Boolean, default: undefined },
+    options: { type: Array as PropType<any[]>, default: undefined },
     render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
     formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
   },
-  setup(props) {
-    const [, options] = useFieldFetchData(props as any)
+  setup(props, { expose }) {
+    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
+    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
     const segmentedOptions = computed(() =>
       options.value.map((item: any) => ({
         label: item.label ?? item.text,
@@ -30,48 +46,39 @@ export default defineComponent({
         icon: item.icon,
       })).filter((item: any) => item.value !== undefined),
     )
+    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
 
-    /** Resolve label from options/valueEnum matching text value */
-    const displayLabel = computed(() => {
-      const optionItems = options.value
-      const valueEnum = props.valueEnum
-
-      if (optionItems?.length) {
-        const matched = optionItems.find((o: any) => o.value === props.text)
-        if (matched)
-          return matched.label
-      }
-
-      if (valueEnum) {
-        const entry = valueEnum instanceof Map ? valueEnum.get(props.text) : valueEnum[props.text as string]
-        if (entry)
-          return typeof entry === 'object' ? entry.text : entry
-      }
-
-      return props.text
-    })
+    expose({ fetchData })
 
     return () => {
+      if (loading.value)
+        return <Spin size="small" />
+
       if (isProFieldReadMode(props.mode)) {
-        const dom = <>{displayLabel.value ?? props.emptyText}</>
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+        return (
+          <FieldSegmentedRead
+            text={props.text}
+            mode={props.mode}
+            valueEnum={props.valueEnum}
+            optionsValueEnum={optionsValueEnum.value}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            emptyText={props.emptyText}
+          />
+        )
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
-        const { allowClear, ...restFieldProps } = props.fieldProps || {}
-        const dom = (
-          <Segmented
+        return (
+          <FieldSegmentedEdit
+            text={props.text}
+            mode={props.mode}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
             options={segmentedOptions.value}
-            {...restFieldProps}
+            loading={loading.value}
           />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       return null

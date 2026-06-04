@@ -1,73 +1,83 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldValueEnumType } from '../Select/types'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
 import type { FieldRadioProps } from './types'
-import { RadioButton, RadioGroup } from 'antdv-next'
-import { defineComponent } from 'vue'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { objectToMap, proFieldParsingText } from '../Select/utils'
+import { Spin } from 'antdv-next'
+import { computed, defineComponent } from 'vue'
+import { isProFieldReadMode } from '../../internal/fieldMode'
+import { useFieldFetchData } from '../Select'
+import FieldRadioEdit from './FieldRadioEdit'
+import FieldRadioRead from './FieldRadioRead'
 
 export type { FieldRadioProps }
+
+function buildOptionsValueEnum(options: any[] | undefined) {
+  if (!options?.length)
+    return undefined
+
+  return options.reduce<Record<string, any>>((pre, cur) => {
+    pre[cur?.value ?? ''] = cur?.label
+    return pre
+  }, {})
+}
 
 const FieldRadio = defineComponent({
   name: 'FieldRadio',
   props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
+    text: { type: [String, Number, Boolean] as PropType<string | number | boolean>, default: '' },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
     render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
     formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    options: { type: Array as PropType<Array<{ label: string, value: string | number, disabled?: boolean }>>, default: undefined },
+    options: { type: Array as PropType<any[]>, default: undefined },
+    request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
+    params: { type: Object as PropType<any>, default: undefined },
+    debounceTime: { type: Number, default: undefined },
+    defaultKeyWords: { type: String, default: undefined },
+    cacheForSwr: { type: Boolean, default: undefined },
     radioType: { type: String as PropType<'default' | 'button'>, default: undefined },
     layout: { type: String as PropType<'horizontal' | 'vertical'>, default: 'horizontal' },
   },
-  setup(props) {
+  setup(props, { expose }) {
+    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
+    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
+    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+
+    expose({ fetchData })
+
     return () => {
-      // Build optionsValueEnum from options if provided
-      const optionsValueEnum = props.options?.length
-        ? props.options.reduce<Record<string, any>>((pre, cur) => {
-            pre[cur.value ?? ''] = cur.label
-            return pre
-          }, {})
-        : undefined
+      if (loading.value)
+        return <Spin size="small" />
 
       if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <>
-            {proFieldParsingText(
-              props.text,
-              objectToMap(props.valueEnum || optionsValueEnum),
-            )}
-          </>
+        return (
+          <FieldRadioRead
+            text={props.text}
+            mode={props.mode}
+            valueEnum={props.valueEnum}
+            optionsValueEnum={optionsValueEnum.value}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            emptyText={props.emptyText}
+          />
         )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <RadioGroup
-            optionType={props.radioType}
-            options={props.options}
-            {...props.fieldProps}
-          >
-            {props.radioType === 'button' && props.options
-              ? props.options.map(opt => (
-                  <RadioButton key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label}
-                  </RadioButton>
-                ))
-              : undefined}
-          </RadioGroup>
+      if (props.mode === 'edit') {
+        return (
+          <FieldRadioEdit
+            text={props.text}
+            mode={props.mode}
+            radioType={props.radioType}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
+            options={options.value}
+            loading={loading.value}
+            layout={props.layout}
+          />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, options: props.options }, dom)
-        }
-        return dom
       }
 
       return null

@@ -1,8 +1,8 @@
 import type { PropType } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
 import { DatePicker } from 'antdv-next'
-import dayjs from 'dayjs'
 import { defineComponent } from 'vue'
+import { parseValueToDay } from './datePickerUtils'
 
 export default defineComponent({
   name: 'FieldDatePickerEdit',
@@ -14,28 +14,26 @@ export default defineComponent({
     format: { type: String, default: 'YYYY-MM-DD' },
     showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
     picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
+    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
   },
   setup(props) {
     return () => {
-      const { value, defaultValue, valueFormat, ...restFieldProps } = props.fieldProps || {}
-      const mergedValue = value ?? props.text
-      const mergedValueFormat = valueFormat || props.format
-      const normalizeValue = (dateValue: any) => {
-        if (!dateValue)
-          return undefined
-        return dayjs.isDayjs(dateValue) ? dateValue.format(mergedValueFormat) : dateValue
-      }
+      const {
+        disabled: _disabled,
+        value,
+        placeholder = '请选择',
+      } = props.fieldProps || {}
+      const dayValue = parseValueToDay(value, props.format)
 
       const dom = (
         <DatePicker
-          picker={props.picker}
+          picker={props.fieldProps?.picker ?? props.picker}
           showTime={props.showTime}
           format={props.format}
-          valueFormat={mergedValueFormat}
-          placeholder="请选择"
-          {...restFieldProps}
-          value={normalizeValue(mergedValue)}
-          defaultValue={normalizeValue(defaultValue)}
+          placeholder={placeholder}
+          {...props.fieldProps}
+          variant={props.variant ?? props.fieldProps?.variant}
+          value={dayValue}
         />
       )
       if (props.formItemRender) {

@@ -1,8 +1,8 @@
-import type { VNode } from 'vue'
+import type { VNodeChild } from 'vue'
 
 export interface PercentPropInt {
-  prefix?: VNode
-  suffix?: VNode
+  prefix?: VNodeChild
+  suffix?: VNodeChild
   text?: number | string
   precision?: number
   showColor?: boolean

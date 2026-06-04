@@ -1,12 +1,12 @@
-import type { PropType } from 'vue'
+import type { PropType, VNodeChild } from 'vue'
 import { InputNumber, Popover } from 'antdv-next'
-import { defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
 
 export type InputNumberPopoverProps = Record<string, any> & {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onBlur?: (e: FocusEvent) => void
-  contentRender?: (props: Record<string, any>) => JSX.Element | null
+  contentRender?: (props: Record<string, any>) => VNodeChild
   numberFormatOptions?: any
   numberPopoverRender?: any
 }
@@ -16,21 +16,23 @@ export default defineComponent({
   props: {
     open: { type: Boolean, default: undefined },
     onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-    contentRender: { type: Function as PropType<(props: Record<string, any>) => JSX.Element | null>, default: undefined },
+    contentRender: { type: Function as PropType<(props: Record<string, any>) => VNodeChild>, default: undefined },
     numberFormatOptions: { type: Object, default: undefined },
     numberPopoverRender: { type: [Function, Boolean], default: undefined },
     // InputNumber props pass-through
     value: { type: [Number, String] as PropType<number | string>, default: undefined },
     defaultValue: { type: [Number, String] as PropType<number | string>, default: undefined },
+    precision: { type: Number, default: undefined },
     onChange: { type: Function as PropType<(value: any) => void>, default: undefined },
     onBlur: { type: Function as PropType<(e: FocusEvent) => void>, default: undefined },
   },
   setup(props, { attrs }) {
     const localValue = ref(props.value ?? props.defaultValue)
     const localOpen = ref(props.open ?? false)
+    const mergedValue = computed(() => props.value !== undefined ? props.value : localValue.value)
 
     watch(() => props.value, (val) => {
-      if (val !== undefined)
+      if (props.value !== undefined)
         localValue.value = val
     })
 
@@ -40,7 +42,8 @@ export default defineComponent({
     })
 
     const handleChange = (val: any) => {
-      localValue.value = val
+      if (props.value === undefined)
+        localValue.value = val
       props.onChange?.(val)
     }
 
@@ -52,13 +55,13 @@ export default defineComponent({
     }
 
     return () => {
-      const dom = props.contentRender?.({ ...attrs, value: localValue.value })
+      const dom = props.contentRender?.({ ...attrs, value: mergedValue.value })
 
       if (!dom) {
         return (
           <InputNumber
             {...attrs}
-            value={localValue.value}
+            value={mergedValue.value}
             onChange={handleChange}
             onBlur={props.onBlur}
           />
@@ -71,14 +74,14 @@ export default defineComponent({
           open={localOpen.value}
           onOpenChange={handleOpenChange}
           trigger={['focus', 'click']}
-          content={dom}
+          content={dom as any}
           getPopupContainer={(triggerNode: HTMLElement) => {
             return triggerNode?.parentElement || document.body
           }}
         >
           <InputNumber
             {...attrs}
-            value={localValue.value}
+            value={mergedValue.value}
             onChange={handleChange}
             onBlur={props.onBlur}
           />

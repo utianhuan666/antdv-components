@@ -1,9 +1,10 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import dayjs from 'dayjs'
 import { defineComponent } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldRangePickerEdit from './FieldRangePickerEdit'
+import FieldRangePickerLightEdit from './FieldRangePickerLightEdit'
 import FieldRangePickerRead from './FieldRangePickerRead'
 
 const FieldRangePicker = defineComponent({
@@ -12,6 +13,9 @@ const FieldRangePicker = defineComponent({
     text: { type: Array as PropType<string[]>, default: () => [] },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
     format: { type: String, default: 'YYYY-MM-DD' },
+    label: { type: null as unknown as PropType<any>, default: undefined },
+    light: { type: Boolean, default: false },
+    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
     showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
     picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
     render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
@@ -22,19 +26,12 @@ const FieldRangePicker = defineComponent({
   setup(props) {
     return () => {
       const [startText, endText] = Array.isArray(props.text) ? props.text : []
-
-      const genFormatText = (formatValue: dayjs.Dayjs): string => {
-        if (typeof props.fieldProps?.format === 'function') {
-          return props.fieldProps.format(formatValue)
-        }
-        return props.fieldProps?.format || props.format || 'YYYY-MM-DD'
-      }
-
+      const mergedPicker = props.fieldProps?.picker ?? props.picker
       const parsedStartText: string = startText
-        ? dayjs(startText).format(genFormatText(dayjs(startText)))
+        ? formatDate(startText, props.fieldProps?.format || props.format, mergedPicker)
         : ''
       const parsedEndText: string = endText
-        ? dayjs(endText).format(genFormatText(dayjs(endText)))
+        ? formatDate(endText, props.fieldProps?.format || props.format, mergedPicker)
         : ''
 
       if (isProFieldReadMode(props.mode)) {
@@ -51,6 +48,22 @@ const FieldRangePicker = defineComponent({
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
+        if (props.light) {
+          return (
+            <FieldRangePickerLightEdit
+              text={props.text}
+              mode={props.mode}
+              label={props.label}
+              format={props.format}
+              showTime={props.showTime}
+              picker={props.picker}
+              variant={props.variant}
+              formItemRender={props.formItemRender}
+              fieldProps={props.fieldProps}
+            />
+          )
+        }
+
         return (
           <FieldRangePickerEdit
             text={props.text}
@@ -58,6 +71,7 @@ const FieldRangePicker = defineComponent({
             format={props.format}
             showTime={props.showTime}
             picker={props.picker}
+            variant={props.variant}
             formItemRender={props.formItemRender}
             fieldProps={props.fieldProps}
           />

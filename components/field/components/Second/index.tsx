@@ -1,9 +1,10 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
 import type { FieldSecondProps } from './types'
-import { InputNumber } from 'antdv-next'
-import { defineComponent } from 'vue'
+import { computed, defineComponent } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldSecondEdit from './FieldSecondEdit'
+import FieldSecondRead from './FieldSecondRead'
 import { formatSecond } from './utils'
 
 export { formatSecond }
@@ -14,39 +15,37 @@ export default defineComponent({
   props: {
     text: { type: [Number, String] as PropType<number | string>, default: 0 },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
+    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
+    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     placeholder: { type: String, default: undefined },
   },
   setup(props) {
+    const placeholderValue = computed(() => props.placeholder || '请输入')
+
     return () => {
       if (isProFieldReadMode(props.mode)) {
-        const secondText = formatSecond(Number(props.text))
-        const dom = <span>{secondText}</span>
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+        return (
+          <FieldSecondRead
+            text={props.text}
+            mode={props.mode}
+            render={props.render}
+            fieldProps={props.fieldProps}
+          />
+        )
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
-        const placeholderValue = props.placeholder || '???'
-        const dom = (
-          <InputNumber
-            {...({
-              min: 0,
-              style: { width: '100%' },
-              placeholder: placeholderValue,
-              ...props.fieldProps,
-            } as any)}
+        return (
+          <FieldSecondEdit
+            text={props.text}
+            mode={props.mode}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
+            placeholderValue={placeholderValue.value}
           />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       return null

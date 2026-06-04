@@ -11,3 +11,8 @@ export function isProFieldReadMode(mode: ProFieldFCMode | undefined): boolean {
 export function isProFieldEditOrUpdateMode(mode: ProFieldFCMode | undefined): boolean {
   return mode === 'edit' || mode === 'update'
 }
+
+/** Strict `edit` only -- used where `update` should fall through like upstream. */
+export function isProFieldEditOnlyMode(mode: ProFieldFCMode | undefined): boolean {
+  return mode === 'edit'
+}

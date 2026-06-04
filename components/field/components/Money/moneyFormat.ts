@@ -48,10 +48,10 @@ const intlMap: Record<string, any> = {
 /**
  * Format money text by locale.
  */
-export function getTextByLocale(locale: string | false, paramsText: number | string | undefined, precision: number, config?: any, moneySymbol: string = ''): string {
+export function getTextByLocale(locale: string | false, paramsText: number | string | undefined, precision: number, config?: any, moneySymbol: string = ''): string | number {
   let moneyText: number | string | undefined = paramsText
     ?.toString()
-    .replaceAll(',', '')
+    .replace(/,/g, '')
   if (typeof moneyText === 'string') {
     const parsedNum = Number(moneyText)
     if (Number.isNaN(parsedNum))
@@ -106,6 +106,6 @@ export function getTextByLocale(locale: string | false, paramsText: number | str
     return `${moneySymbol || ''}${pureMoneyText}`
   }
   catch {
-    return String(moneyText)
+    return moneyText
   }
 }

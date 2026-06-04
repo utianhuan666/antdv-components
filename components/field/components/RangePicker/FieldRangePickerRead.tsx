@@ -14,16 +14,14 @@ export default defineComponent({
   },
   setup(props) {
     return () => {
+      const start = props.parsedStartText
+      const end = props.parsedEndText
+      const content = !start && !end ? '-' : `${start || '-'} ~ ${end || '-'}`
       const dom = (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          <div>{props.parsedStartText || '-'}</div>
-          <div>~</div>
-          <div>{props.parsedEndText || '-'}</div>
-        </div>
+        <div>{content}</div>
       )
-      if (props.render) {
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? '-'
-      }
+      if (props.render)
+        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, <span>{dom}</span>)
       return dom
     }
   },

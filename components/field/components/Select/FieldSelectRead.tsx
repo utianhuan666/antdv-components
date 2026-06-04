@@ -2,12 +2,12 @@ import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
 import type { ProFieldValueEnumType } from './types'
 import { defineComponent } from 'vue'
-import { objectToMap, proFieldParsingText } from './utils'
+import { objectToMap, proFieldParsingText } from './index'
 
 export default defineComponent({
   name: 'FieldSelectRead',
   props: {
-    text: { type: [String, Number, Array] as PropType<string | number | (string | number)[]>, default: '' },
+    text: { type: null as unknown as PropType<any>, default: '' },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
     valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
     optionsValueEnum: { type: Map as PropType<Map<any, any> | undefined>, default: undefined },
@@ -26,9 +26,8 @@ export default defineComponent({
         </>
       )
 
-      if (props.render) {
+      if (props.render)
         return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-      }
       return dom
     }
   },

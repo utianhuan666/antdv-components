@@ -12,11 +12,3 @@ export function getProgressStatus(
   }
   return 'normal'
 }
-
-/** Convert a possibly-percent string like "85%" to a plain number. */
-export function toNumber(text: string | number): number {
-  if (typeof text === 'string' && text.includes('%')) {
-    return Number(text.replace('%', ''))
-  }
-  return Number(text)
-}

@@ -8,10 +8,14 @@
     // Vitest runs in a different environment than the application code.
     // Adjust lib and types accordingly.
     "lib": [],
+    "baseUrl": "./components/__tests__",
+    "paths": {
+      "@antdv/components": ["../index.ts"]
+    },
     "types": ["node", "jsdom"]
   },
   // Override to include only test files and clear exclusions.
   // Application code imported in tests is automatically included via module resolution.
-  "include": ["docs/**/__tests__/*", "components/**/__tests__/*", "components/**/tests/*"],
+  "include": ["docs/**/__tests__/**/*", "components/**/__tests__/**/*", "components/**/tests/**/*"],
   "exclude": []
 }

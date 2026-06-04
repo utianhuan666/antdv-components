@@ -1,24 +1,22 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldRequestData } from '../../types'
-import type { ProFieldValueEnumType } from '../Select/types'
-import { Cascader } from 'antdv-next'
-import { computed, defineComponent } from 'vue'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
+import { computed, defineComponent, ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { useFieldFetchData } from '../Select/useFieldFetchData'
-import { objectToMap, proFieldParsingText } from '../Select/utils'
+import { useFieldFetchData } from '../Select'
+import FieldCascaderEdit from './FieldCascaderEdit'
+import FieldCascaderLightEdit from './FieldCascaderLightEdit'
+import FieldCascaderRead from './FieldCascaderRead'
 
-export type { FieldCascaderProps } from './types'
+export type { FieldCascaderProps, GroupProps } from './types'
 
-/**
- * Build a flat valueEnum Map from cascader options by traversing children.
- */
 function buildCascaderOptionsValueEnum(
   options: any[],
   fieldNames?: Record<string, string>,
 ): Map<any, any> | undefined {
   if (!options?.length)
     return undefined
+
   const {
     value: valueName = 'value',
     label: labelName = 'label',
@@ -39,9 +37,10 @@ function buildCascaderOptionsValueEnum(
 export default defineComponent({
   name: 'FieldCascader',
   props: {
-    text: { type: [String, Number, Array] as PropType<string | number | (string | number)[]>, default: '' },
+    text: { type: null as unknown as PropType<any>, default: '' },
     mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
     valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
+    debounceTime: { type: Number, default: undefined },
     request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
     params: { type: Object as PropType<any>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
@@ -49,9 +48,22 @@ export default defineComponent({
     formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     placeholder: { type: String, default: undefined },
+    light: { type: Boolean, default: false },
+    label: { type: null as unknown as PropType<any>, default: undefined },
+    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
+    proFieldKey: { type: [String, Number] as PropType<string | number>, default: undefined },
+    defaultKeyWords: { type: String, default: undefined },
+    cacheForSwr: { type: Boolean, default: undefined },
   },
-  setup(props) {
-    const [loading, options, _fetchData] = useFieldFetchData(props)
+  setup(props, { expose }) {
+    const cascaderRef = ref<any>(null)
+    const open = ref(false)
+    const [loading, options, fetchData] = useFieldFetchData(props)
+
+    expose({
+      fetchData,
+      cascaderRef,
+    })
 
     const optionsValueEnum = computed(() => {
       if (!isProFieldReadMode(props.mode))
@@ -61,31 +73,39 @@ export default defineComponent({
 
     return () => {
       if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <span>
-            {proFieldParsingText(props.text, objectToMap(props.valueEnum || optionsValueEnum.value))}
-          </span>
+        return (
+          <FieldCascaderRead
+            text={props.text}
+            mode={props.mode}
+            valueEnum={props.valueEnum}
+            optionsValueEnum={optionsValueEnum.value}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            emptyText={props.emptyText}
+          />
         )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <Cascader
-            placeholder={props.placeholder || '请选择'}
-            allowClear={props.fieldProps?.allowClear !== false}
-            loading={loading.value}
-            options={options.value}
-            {...props.fieldProps}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, options: options.value, loading: loading.value }, dom)
+        const editProps = {
+          text: props.text,
+          mode: props.mode,
+          placeholder: props.placeholder,
+          formItemRender: props.formItemRender,
+          label: props.label,
+          variant: props.variant,
+          fieldProps: props.fieldProps,
+          options: options.value,
+          loading: loading.value,
+          layoutClassName: 'ant-pro-field-cascader',
+          open,
+          cascaderRef,
         }
-        return dom
+
+        if (props.light)
+          return <FieldCascaderLightEdit {...editProps} />
+
+        return <FieldCascaderEdit {...editProps} />
       }
 
       return null

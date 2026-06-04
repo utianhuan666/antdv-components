@@ -1,10 +1,11 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { DatePicker, Tooltip } from 'antdv-next'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { defineComponent } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldFromNowEdit from './FieldFromNowEdit'
+import FieldFromNowRead from './FieldFromNowRead'
 
 dayjs.extend(relativeTime)
 
@@ -18,36 +19,32 @@ export default defineComponent({
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     format: { type: String as PropType<string>, default: undefined },
+    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
   },
   setup(props) {
     return () => {
       if (isProFieldReadMode(props.mode)) {
-        const formatStr = props.fieldProps?.format || props.format || 'YYYY-MM-DD HH:mm:ss'
-        const dom = (
-          <Tooltip title={dayjs(props.text).format(formatStr)}>
-            {dayjs(props.text).fromNow()}
-          </Tooltip>
+        return (
+          <FieldFromNowRead
+            text={props.text}
+            mode={props.mode}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            format={props.format}
+          />
         )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       if (isProFieldEditOrUpdateMode(props.mode)) {
-        const momentValue = props.fieldProps?.value ? dayjs(props.fieldProps.value) : undefined
-        const dom = (
-          <DatePicker
-            placeholder="请选择"
-            showTime
-            {...props.fieldProps}
-            value={momentValue}
+        return (
+          <FieldFromNowEdit
+            text={props.text}
+            mode={props.mode}
+            variant={props.variant}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
           />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       return null

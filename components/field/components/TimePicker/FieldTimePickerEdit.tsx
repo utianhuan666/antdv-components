@@ -1,8 +1,8 @@
 import type { PropType } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
 import { TimePicker } from 'antdv-next'
-import dayjs from 'dayjs'
 import { defineComponent } from 'vue'
+import { parseValueToDay } from '../DatePicker/datePickerUtils'
 
 export default defineComponent({
   name: 'FieldTimePickerEdit',
@@ -12,26 +12,19 @@ export default defineComponent({
     formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     format: { type: String, default: 'HH:mm:ss' },
+    finalFormat: { type: String, default: 'HH:mm:ss' },
+    variant: { type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>, default: undefined },
   },
   setup(props) {
     return () => {
-      const { value, defaultValue, valueFormat, ...restFieldProps } = props.fieldProps || {}
-      const mergedValue = value ?? props.text
-      const mergedValueFormat = valueFormat || props.format
-      const normalizeValue = (timeValue: any) => {
-        if (!timeValue)
-          return undefined
-        return dayjs.isDayjs(timeValue) ? timeValue.format(mergedValueFormat) : timeValue
-      }
+      const dayValue = parseValueToDay(props.fieldProps.value, props.finalFormat)
 
       const dom = (
         <TimePicker
           format={props.format}
-          valueFormat={mergedValueFormat}
-          placeholder="请选择"
-          {...restFieldProps}
-          value={normalizeValue(mergedValue)}
-          defaultValue={normalizeValue(defaultValue)}
+          {...props.fieldProps}
+          variant={props.variant ?? props.fieldProps?.variant}
+          value={dayValue}
         />
       )
       if (props.formItemRender) {

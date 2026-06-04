@@ -92,6 +92,19 @@ export const pureRenderEdit: ProFieldRenderText = (
   return <FieldText text={dataValue as string} {...props} />
 }
 
+/** Dispatch by mode for callers that use the render helper directly. */
+export const pureRenderText: ProFieldRenderText = (
+  dataValue,
+  valueType,
+  props,
+  valueTypeMap,
+) => {
+  const m = props.mode ?? 'read'
+  return m === 'edit' || m === 'update'
+    ? pureRenderEdit(dataValue, valueType, props, valueTypeMap)
+    : pureRenderRead(dataValue, valueType, props, valueTypeMap)
+}
+
 export const PureProField = createProField(
   { renderRead: pureRenderRead, renderEdit: pureRenderEdit },
   { pickProPropsWithValueTypeMap: false },

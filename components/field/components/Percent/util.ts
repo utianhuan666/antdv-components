@@ -24,8 +24,8 @@ export function getRealTextWithPrecision(
 
 /** Convert to number */
 export function toNumber(value: any): number {
-  if (typeof value === 'symbol') {
+  if (typeof value === 'symbol' || value instanceof Symbol)
     return Number.NaN
-  }
+
   return Number(value)
 }

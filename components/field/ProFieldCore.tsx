@@ -1,15 +1,54 @@
 import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCRenderProps, ProRenderFieldPropsType } from './context'
 import type { ProFieldFCMode } from './internal/fieldMode'
 import type {
+  ProFieldFCRenderProps,
   ProFieldRenderProps,
   ProFieldRequestData,
   ProFieldTextType,
   ProFieldValueTypeInput,
+  ProRenderFieldPropsType,
 } from './types'
-import { computed, defineComponent } from 'vue'
-import { useProConfig } from './context'
-import { omitUndefined, pickProProps } from './utils'
+import { computed, defineComponent, ref } from 'vue'
+import { useProConfig } from './types'
+
+type OmitUndefined<T> = { [P in keyof T]: NonNullable<T[P]> }
+
+export function omitUndefined<T extends Record<string, any>>(
+  obj: T,
+): OmitUndefined<T> {
+  const result = {} as Record<string, any> as T
+  if (!obj)
+    return result as OmitUndefined<T>
+  for (const key of Object.keys(obj)) {
+    if (obj[key] !== undefined)
+      (result as any)[key] = obj[key]
+  }
+  if (Object.keys(result as Record<string, any>).length < 1)
+    return undefined as any
+  return result as OmitUndefined<T>
+}
+
+const PRO_FIELD_PROPS = `valueType request formItemRender render text formItemProps valueEnum`
+const PRO_FORM_PROPS = `fieldProps isDefaultDom groupProps contentRender submitterProps submitter`
+const INTERNAL_PROP_SET = new Set(
+  `${PRO_FIELD_PROPS} ${PRO_FORM_PROPS}`.split(/[\s\n]+/),
+)
+
+export function pickProProps(
+  props: Record<string, any>,
+  customValueType = false,
+): Record<string, any> {
+  if (customValueType)
+    return { ...props }
+
+  const attrs: Record<string, any> = {}
+  for (const key of Object.keys(props || {})) {
+    if (INTERNAL_PROP_SET.has(key))
+      continue
+    attrs[key] = props[key]
+  }
+  return attrs
+}
 
 // ---------------------------------------------------------------------------
 // Render function signatures
@@ -99,17 +138,32 @@ export function createProField(
         type: [String, Array] as PropType<string | string[]>,
         default: undefined,
       },
+      label: {
+        type: [String, Number, Object] as PropType<VNodeChild>,
+        default: undefined,
+      },
+      light: { type: Boolean, default: false },
+      variant: {
+        type: String as PropType<'outlined' | 'borderless' | 'filled' | 'underlined'>,
+        default: undefined,
+      },
       request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
       open: { type: Boolean, default: undefined },
       onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
     },
-    setup(props, { attrs }) {
+    setup(props, { attrs, expose }) {
       const context = useProConfig()
+      const fieldRef = ref<any>()
+
+      expose({
+        field: fieldRef,
+        fetchData: (keyWord?: string) => fieldRef.value?.fetchData?.(keyWord),
+      })
 
       // -- merged fieldProps (value + onChange + user fieldProps) -----------
 
       const fieldProps = computed(() => {
-        const userFieldProps = omitUndefined(props.fieldProps ?? {})
+        const userFieldProps = omitUndefined(props.fieldProps ?? {}) || {}
 
         const merged: Record<string, any> = {
           ...userFieldProps,
@@ -168,6 +222,7 @@ export function createProField(
         const placeholderValue = props.placeholder ?? fieldProps.value?.placeholder
 
         const renderProps: ProFieldRenderProps = omitUndefined({
+          ref: fieldRef,
           ...attrs,
           mode: effectiveMode.value,
           formItemRender: props.formItemRender
@@ -187,6 +242,9 @@ export function createProField(
           valueEnum: props.valueEnum,
           request: props.request,
           emptyText: props.emptyText,
+          label: props.label,
+          light: props.light ? true : undefined,
+          variant: props.variant,
           open: props.open,
           onOpenChange: props.onOpenChange,
         }) as ProFieldRenderProps

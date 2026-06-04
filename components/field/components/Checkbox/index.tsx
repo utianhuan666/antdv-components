@@ -1,13 +1,25 @@
 import type { PropType, VNodeChild } from 'vue'
 import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldValueEnumType } from '../Select/types'
+import type { ProFieldRequestData, ProFieldValueEnumType } from '../Select/types'
 import type { FieldCheckboxProps } from './types'
-import { CheckboxGroup } from 'antdv-next'
-import { defineComponent } from 'vue'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { objectToMap, proFieldParsingText } from '../Select/utils'
+import { Spin } from 'antdv-next'
+import { computed, defineComponent } from 'vue'
+import { isProFieldReadMode } from '../../internal/fieldMode'
+import { useFieldFetchData } from '../Select'
+import FieldCheckboxEdit from './FieldCheckboxEdit'
+import FieldCheckboxRead from './FieldCheckboxRead'
 
 export type { FieldCheckboxProps }
+
+function buildOptionsValueEnum(options: any[] | undefined) {
+  if (!options?.length)
+    return undefined
+
+  return options.reduce<Record<string, any>>((pre, cur) => {
+    pre[cur?.value ?? ''] = cur?.label
+    return pre
+  }, {})
+}
 
 const FieldCheckbox = defineComponent({
   name: 'FieldCheckbox',
@@ -19,45 +31,51 @@ const FieldCheckbox = defineComponent({
     fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
     emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
     valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    options: { type: Array as PropType<Array<{ label: string, value: string | number, disabled?: boolean }>>, default: undefined },
+    options: { type: Array as PropType<any[]>, default: undefined },
+    request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
+    params: { type: Object as PropType<any>, default: undefined },
+    debounceTime: { type: Number, default: undefined },
+    defaultKeyWords: { type: String, default: undefined },
+    cacheForSwr: { type: Boolean, default: undefined },
     layout: { type: String as PropType<'horizontal' | 'vertical'>, default: 'horizontal' },
   },
-  setup(props) {
+  setup(props, { expose }) {
+    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
+    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
+    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+
+    expose({ fetchData })
+
     return () => {
-      // Build optionsValueEnum from options if provided
-      const optionsValueEnum = props.options?.length
-        ? props.options.reduce<Record<string, any>>((pre, cur) => {
-            pre[cur.value ?? ''] = cur.label
-            return pre
-          }, {})
-        : undefined
+      if (loading.value)
+        return <Spin size="small" />
 
       if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
-            {proFieldParsingText(
-              props.text,
-              objectToMap(props.valueEnum || optionsValueEnum),
-            )}
-          </div>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
-      }
-
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <CheckboxGroup
-            options={props.options}
-            {...props.fieldProps}
+        return (
+          <FieldCheckboxRead
+            text={props.text}
+            mode={props.mode}
+            valueEnum={props.valueEnum}
+            optionsValueEnum={optionsValueEnum.value}
+            render={props.render}
+            fieldProps={props.fieldProps}
+            emptyText={props.emptyText}
           />
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, options: props.options }, dom)
-        }
-        return dom
+      }
+
+      if (props.mode === 'edit') {
+        return (
+          <FieldCheckboxEdit
+            text={props.text}
+            mode={props.mode}
+            formItemRender={props.formItemRender}
+            fieldProps={props.fieldProps}
+            options={options.value}
+            loading={loading.value}
+            layout={props.layout}
+          />
+        )
       }
 
       return null

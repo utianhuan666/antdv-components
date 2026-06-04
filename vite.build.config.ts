@@ -6,9 +6,10 @@ import { defineConfig } from 'vite'
 import { tsxResolveTypes } from 'vite-plugin-tsx-resolve-types'
 import vueResolveTypes from 'vite-plugin-vue-resolve-types'
 
-const files = globSync(['./components/**/*.ts', './components/**/*.tsx', './components/**/*.vue']).map(
-  (file) => `./${file}`,
-)
+const files = globSync(
+  ['./components/**/*.ts', './components/**/*.tsx', './components/**/*.vue'],
+  { ignore: ['./components/**/__tests__/**'] },
+).map(file => `./${file}`)
 
 export default defineConfig({
   base: './',
