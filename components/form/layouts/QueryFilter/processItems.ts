@@ -2,6 +2,14 @@ import type { VNode, VNodeChild } from 'vue'
 import type { QueryFilterLayout } from './breakpoints'
 import { cloneVNode, Comment, Fragment, isVNode, Text } from 'vue'
 
+type QueryFilterItemProps = Record<string, unknown> & {
+  colSize?: number
+  formItemProps?: Record<string, unknown>
+  hidden?: boolean
+  name?: unknown
+  title?: unknown
+}
+
 export interface ProcessedQueryFilterItem {
   itemDom: VNode | null
   hidden: boolean
@@ -35,6 +43,23 @@ function isVisibleVNode(node: VNodeChild): node is VNode {
   return true
 }
 
+function getVNodeComponentName(node: VNode) {
+  if (!node.type || typeof node.type !== 'object')
+    return undefined
+  const type = node.type as { name?: string, displayName?: string }
+  return type.name || type.displayName
+}
+
+function getVNodeProps(node: VNode): QueryFilterItemProps {
+  return (node.props || {}) as QueryFilterItemProps
+}
+
+function getVNodeSlotChildren(node: VNode): VNodeChild {
+  if (node.children && typeof node.children === 'object' && 'default' in node.children)
+    return (node.children as { default?: () => VNodeChild }).default?.()
+  return node.children as VNodeChild
+}
+
 /**
  * 展开无 title 的 ProForm.Group，可选去除 rules，对应 React `flatMapQueryFilterItems`。
  */
@@ -48,11 +73,10 @@ export function flattenQueryFilterItems(items: VNodeChild, ignoreRules?: boolean
       result.push(...flattenQueryFilterItems(node.children as VNodeChild, ignoreRules))
       continue
     }
-    const componentName = (node.type as any)?.name || (node.type as any)?.displayName
-    const props = (node.props || {}) as Record<string, any>
+    const componentName = getVNodeComponentName(node)
+    const props = getVNodeProps(node)
     if (componentName === 'ProFormGroup' && !props.title) {
-      const groupChildren = (node.children as any)?.default?.() ?? node.children
-      result.push(...flattenQueryFilterItems(groupChildren as VNodeChild, ignoreRules))
+      result.push(...flattenQueryFilterItems(getVNodeSlotChildren(node), ignoreRules))
       continue
     }
     if (ignoreRules) {
@@ -79,7 +103,7 @@ export function processQueryFilterItems(
   let firstRowFull = false
 
   const processedList: ProcessedQueryFilterItem[] = flatItems.map((item, index) => {
-    const itemProps = (item.props || {}) as Record<string, any>
+    const itemProps = getVNodeProps(item)
     const colSize = Number(itemProps.colSize ?? 1) || 1
     const colSpan = Math.min(spanSize.span * colSize, 24)
 

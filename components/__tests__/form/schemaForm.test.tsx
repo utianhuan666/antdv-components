@@ -1,10 +1,10 @@
+import { BetaSchemaForm } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { BetaSchemaForm } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('SchemaForm', () => {
+describe('schemaForm', () => {
   it('supports columns and ignores table-only valueTypes', async () => {
     const wrapper = mountAttached({
       render: () => (
@@ -83,7 +83,12 @@ describe('SchemaForm', () => {
               columns: values => [
                 {
                   dataIndex: 'mode',
-                  title: () => <span id="dep-label">当前：{values.name}</span>,
+                  title: () => (
+                    <span id="dep-label">
+                      当前：
+                      {values.name}
+                    </span>
+                  ),
                 },
               ],
             },

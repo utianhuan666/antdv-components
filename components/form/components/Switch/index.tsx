@@ -1,16 +1,20 @@
-import { defineComponent } from 'vue'
+import type { SwitchProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-const ProFormSwitch = defineComponent({
-  name: 'ProFormSwitch',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="switch" valuePropName="checked" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormSwitchProps = Omit<ProFormFieldItemProps<SwitchProps>, 'emptyText'> & {
+  checkedChildren?: SwitchProps['checkedChildren']
+  unCheckedChildren?: SwitchProps['unCheckedChildren']
+}
+
+const ProFormSwitch: FunctionalComponent<ProFormSwitchProps> = (props, { slots }) => (
+  <ProFormField valueType="switch" valuePropName="checked" {...props}>
+    {slots.default?.()}
+  </ProFormField>
+)
+
+ProFormSwitch.displayName = 'ProFormSwitch'
+ProFormSwitch.inheritAttrs = false
 
 export default ProFormSwitch

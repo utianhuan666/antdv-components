@@ -1,6 +1,6 @@
-import type { PropType } from 'vue'
+import type { FunctionalComponent, VNodeChild } from 'vue'
 import type { NamePath } from '../../typing'
-import type { FormListActionGuard, FormListActionType, IconConfig, ProFormListCommonProps } from './typing'
+import type { FormListActionType, FormListRecord, ProFormListProps, ProFormListSlotProps } from './typing'
 import { computed, defineComponent, onMounted, watchEffect } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
@@ -8,6 +8,41 @@ import { useFormListContext } from './FormListContext'
 import { ProFormListContainer } from './ListContainer'
 
 export type { FormListActionGuard, FormListActionType, IconConfig, ProFormListCommonProps } from './typing'
+
+const proFormListPropNames = [
+  'name',
+  'label',
+  'tooltip',
+  'initialValue',
+  'creatorRecord',
+  'creatorButtonProps',
+  'copyIconProps',
+  'deleteIconProps',
+  'upIconProps',
+  'downIconProps',
+  'actionGuard',
+  'actionRef',
+  'actionRender',
+  'itemRender',
+  'itemContainerRender',
+  'fieldExtraRender',
+  'creatorButtonText',
+  'alwaysShowItemLabel',
+  'min',
+  'max',
+  'arrowSort',
+  'rules',
+  'required',
+  'readonly',
+  'isValidateList',
+  'emptyListMessage',
+  'colProps',
+  'rowProps',
+  'containerClassName',
+  'containerStyle',
+  'onAfterAdd',
+  'onAfterRemove',
+] as const
 
 function cloneValue<T>(value: T): T {
   if (Array.isArray(value))
@@ -23,6 +58,12 @@ function cloneValue<T>(value: T): T {
 
 function normalizeNamePath(name: NamePath): (string | number)[] {
   return Array.isArray(name) ? name : [name]
+}
+
+function normalizeBooleanProp(value: unknown, defaultValue = false) {
+  if (value === '')
+    return true
+  return typeof value === 'boolean' ? value : defaultValue
 }
 
 function getValueByNamePath(model: any, name: NamePath) {
@@ -60,41 +101,9 @@ function setValueByNamePath(model: any, name: NamePath, value: any) {
 const ProFormList = defineComponent({
   name: 'ProFormList',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, required: true },
-    label: { type: [String, Number, Object] as PropType<any>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<any>, default: undefined },
-    initialValue: { type: Array as PropType<Record<string, any>[]>, default: undefined },
-    creatorRecord: { type: [Object, Function] as PropType<Record<string, any> | (() => Record<string, any>)>, default: undefined },
-    creatorButtonProps: { type: [Object, Boolean] as PropType<ProFormListCommonProps['creatorButtonProps']>, default: () => ({}) },
-    copyIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
-    deleteIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
-    upIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
-    downIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: () => ({}) },
-    actionGuard: { type: Object as PropType<FormListActionGuard>, default: undefined },
-    actionRef: { type: Object as PropType<{ value?: FormListActionType }>, default: undefined },
-    actionRender: { type: Function as PropType<ProFormListCommonProps['actionRender']>, default: undefined },
-    itemRender: { type: Function as PropType<ProFormListCommonProps['itemRender']>, default: undefined },
-    itemContainerRender: { type: Function as PropType<ProFormListCommonProps['itemContainerRender']>, default: undefined },
-    fieldExtraRender: { type: Function as PropType<ProFormListCommonProps['fieldExtraRender']>, default: undefined },
-    creatorButtonText: { type: String, default: undefined },
-    alwaysShowItemLabel: { type: Boolean, default: false },
-    min: { type: Number, default: undefined },
-    max: { type: Number, default: undefined },
-    arrowSort: { type: Boolean, default: false },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    readonly: { type: Boolean, default: false },
-    isValidateList: { type: Boolean, default: false },
-    emptyListMessage: { type: String, default: '列表不能为空' },
-    colProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    rowProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    containerClassName: { type: String, default: undefined },
-    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
-    onAfterAdd: { type: Function as PropType<(defaultValue: any, insertIndex: number, count: number) => void>, default: undefined },
-    onAfterRemove: { type: Function as PropType<(index: number, count: number) => void>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: [...proFormListPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as unknown as ProFormListProps
     const fieldContext = useFieldContext()
     const parentListContext = useFormListContext()
 
@@ -109,12 +118,12 @@ const ProFormList = defineComponent({
       return [...parentListName, ...normalizeNamePath(props.name), index]
     }
 
-    function getList(): Record<string, any>[] {
+    function getList(): FormListRecord[] {
       const value = getValueByNamePath(fieldContext.model || {}, props.name)
       return Array.isArray(value) ? value : []
     }
 
-    function setList(value: Record<string, any>[]) {
+    function setList(value: FormListRecord[]) {
       setValueByNamePath(fieldContext.model || {}, props.name, value)
     }
 
@@ -183,12 +192,12 @@ const ProFormList = defineComponent({
 
     const finalRules = computed(() => {
       const rules = [...(props.rules || [])]
-      if (props.isValidateList || rules.some(rule => rule?.required)) {
+      if (normalizeBooleanProp(props.isValidateList) || rules.some(rule => rule?.required)) {
         rules.unshift({
           required: true,
           validator: async (_rule: any, value: any) => {
             if (!value || value.length === 0)
-              throw new Error(props.emptyListMessage)
+              throw new Error(props.emptyListMessage ?? '列表不能为空')
           },
         })
       }
@@ -205,7 +214,7 @@ const ProFormList = defineComponent({
             label={props.label}
             tooltip={props.tooltip}
             rules={finalRules.value}
-            required={props.required || props.rules?.some(rule => rule?.required)}
+            required={normalizeBooleanProp(props.required) || props.rules?.some(rule => rule?.required)}
             colProps={props.colProps}
             formItemProps={{ style: { marginBottom: 16 } }}
           >
@@ -215,7 +224,7 @@ const ProFormList = defineComponent({
               listName={getRowFieldPath}
               fields={fields}
               action={action}
-              readonly={props.readonly}
+              readonly={normalizeBooleanProp(props.readonly)}
               creatorRecord={props.creatorRecord}
               creatorButtonProps={props.creatorButtonProps}
               creatorButtonText={props.creatorButtonText}
@@ -228,10 +237,10 @@ const ProFormList = defineComponent({
               itemRender={props.itemRender}
               itemContainerRender={props.itemContainerRender}
               fieldExtraRender={props.fieldExtraRender}
-              alwaysShowItemLabel={props.alwaysShowItemLabel}
+              alwaysShowItemLabel={normalizeBooleanProp(props.alwaysShowItemLabel)}
               min={props.min}
               max={props.max}
-              arrowSort={props.arrowSort}
+              arrowSort={normalizeBooleanProp(props.arrowSort)}
               containerClassName={props.containerClassName}
               containerStyle={props.containerStyle}
             >
@@ -244,6 +253,8 @@ const ProFormList = defineComponent({
       )
     }
   },
-})
+}) as unknown as FunctionalComponent<ProFormListProps, {}, {
+  default?: (props: ProFormListSlotProps) => VNodeChild
+}>
 
 export default ProFormList

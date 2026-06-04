@@ -11,7 +11,7 @@ type Props = NonNullable<ProFieldFC<FieldDigitRangeProps>['__props']> & {
     updater:
       | ValuePair
       | undefined
-      | ((prev: ValuePair | undefined) => ValuePair | undefined)
+      | ((prev: ValuePair | undefined) => ValuePair | undefined),
   ) => void
   token: { colorBgContainer?: string }
   placeholderValue: string | string[]

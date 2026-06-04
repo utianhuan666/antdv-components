@@ -1,5 +1,5 @@
-import type { VNodeChild } from 'vue'
 import type { TreeSelectProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'
@@ -89,7 +89,13 @@ export function FieldTreeSelectLightEdit({
           const itemIndex = fieldProps?.value?.findIndex((value: any) =>
             value === item.value || value?.value === item.value,
           )
-          return <>{item.label} {itemIndex < valuesLength - 1 ? ',' : ''}</>
+          return (
+            <>
+              {item.label}
+              {' '}
+              {itemIndex < valuesLength - 1 ? ',' : ''}
+            </>
+          )
         }}
         treeData={options}
         showSearch={showSearch

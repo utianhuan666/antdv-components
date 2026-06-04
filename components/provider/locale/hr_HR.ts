@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const hrHR: ProLocale = {
   moneySymbol: 'kn',
@@ -74,6 +74,6 @@ const hrHR: ProLocale = {
     open: 'otvori',
     close: 'zatvori',
   },
-};
+}
 
-export default hrHR;
+export default hrHR

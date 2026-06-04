@@ -1,8 +1,8 @@
-import type { PropType } from 'vue'
-import type { NamePath } from '../../typing'
+import type { NamePath, ProFormDependencyProps } from '../../typing'
 import { computed, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import { useProFormContext } from '../../ProFormContext'
+import { proFormDependencyPropNames } from '../../typing'
 import { useFormListContext } from '../List/FormListContext'
 
 function getValueByNamePath(model: Record<string, any> | undefined, name: (string | number)[]) {
@@ -35,26 +35,24 @@ function setValueByNamePath(target: Record<string, any>, name: NamePath, value: 
  * 3. `originDependencies` 允许自定义在渲染出参中 values 的落点路径，默认与 `name` 一致。
  * 4. 默认插槽以 `(values, form)` 形式接收依赖值与 ProForm 实例。
  */
-const ProFormDependency = defineComponent({
+const ProFormDependencyImpl = defineComponent({
   name: 'ProFormDependency',
-  props: {
-    /** 依赖的字段路径列表，例如 `['name', ['name2', 'text']]` */
-    name: { type: Array as PropType<NamePath[]>, required: true },
-    /** 渲染出参 values 对应的落点路径，默认与 `name` 一致 */
-    originDependencies: { type: Array as PropType<NamePath[]>, default: undefined },
-    /** 在 ProFormList 内是否忽略行前缀，强制从表单根 model 取值 */
-    ignoreFormListField: { type: Boolean, default: false },
-  },
-  setup(props, { slots }) {
+  props: [...proFormDependencyPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as ProFormDependencyProps
     const fieldContext = useFieldContext()
     const proFormContext = useProFormContext()
     const formListContext = useFormListContext()
+
+    function resolveBoolean(value: unknown) {
+      return value === '' || value === true
+    }
 
     const flattenNames = computed<(string | number)[][]>(() => {
       return props.name.map((itemName) => {
         const path: any[] = [itemName]
         if (
-          !props.ignoreFormListField
+          !resolveBoolean(props.ignoreFormListField)
           && formListContext.name !== undefined
           && formListContext.listName?.length
         ) {
@@ -81,5 +79,9 @@ const ProFormDependency = defineComponent({
     return () => slots.default?.(values.value, proFormContext.formRef?.value) ?? null
   },
 })
+
+const ProFormDependency = ProFormDependencyImpl as typeof ProFormDependencyImpl & {
+  new(): { $props: ProFormDependencyProps }
+}
 
 export default ProFormDependency

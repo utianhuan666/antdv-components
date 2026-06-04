@@ -1,20 +1,16 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { NamePath } from '../../typing'
-import type { FormListActionType, FormListActionGuard, IconConfig, ProFormListCommonProps } from './typing'
+import type { Component, DefineComponent, VNode, VNodeChild } from 'vue'
+import type { FormListActionWithCurrentRow, IconConfig, ProFormListItemProps, ProFormListItemProviderProps } from './typing'
 import { ArrowDownOutlined, ArrowUpOutlined, CopyOutlined, DeleteOutlined } from '@antdv-next/icons'
 import { Space, Tooltip } from 'antdv-next'
 import { cloneVNode, Comment, computed, defineComponent, Fragment, h, isVNode, Text } from 'vue'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { provideFieldContext, useFieldContext } from '../../FieldContext'
-import { provideFormListContext, useFormListContext } from './FormListContext'
+import { provideFormListContext } from './FormListContext'
 
 export type ChildrenItemFunction = (
   field: { name: number, key: number },
   index: number,
-  action: FormListActionType & {
-    getCurrentRowData: () => any
-    setCurrentRowData: (data: Record<string, any>) => void
-  },
+  action: FormListActionWithCurrentRow,
   count: number,
 ) => VNodeChild
 
@@ -33,7 +29,7 @@ function normalizeChildren(children?: VNodeChild): VNode[] {
   })
 }
 
-function renderIcon(iconProps: IconConfig | false | undefined, fallback: any, className: string) {
+function renderIcon(iconProps: IconConfig | false | undefined, fallback: Component, className: string) {
   if (iconProps === false)
     return undefined
   const Icon = iconProps?.Icon || fallback
@@ -42,7 +38,7 @@ function renderIcon(iconProps: IconConfig | false | undefined, fallback: any, cl
 
 function renderActionIcon(options: {
   iconProps?: IconConfig | false
-  fallbackIcon: any
+  fallbackIcon: Component
   tooltipText: string
   className: string
   hidden?: boolean
@@ -56,14 +52,17 @@ function renderActionIcon(options: {
   return tooltipText ? <Tooltip title={tooltipText}>{node}</Tooltip> : node
 }
 
+const listItemProviderPropNames = [
+  'model',
+  'listName',
+  'name',
+] as const
+
 const ListItemProvider = defineComponent({
   name: 'ProFormListItemProvider',
-  props: {
-    model: { type: [Object, Array] as PropType<Record<string, any>>, required: true },
-    listName: { type: Array as PropType<(string | number)[]>, required: true },
-    name: { type: Number, required: true },
-  },
-  setup(props, { slots }) {
+  props: [...listItemProviderPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as unknown as ProFormListItemProviderProps
     const parentContext = useFieldContext()
     provideFieldContext({
       ...parentContext,
@@ -85,45 +84,54 @@ const ListItemProvider = defineComponent({
 
     return () => slots.default?.()
   },
-})
+}) as unknown as DefineComponent<ProFormListItemProviderProps>
+
+const proFormListItemPropNames = [
+  'field',
+  'index',
+  'record',
+  'fields',
+  'count',
+  'name',
+  'originName',
+  'listName',
+  'action',
+  'readonly',
+  'copyIconProps',
+  'deleteIconProps',
+  'upIconProps',
+  'downIconProps',
+  'arrowSort',
+  'actionRender',
+  'itemRender',
+  'itemContainerRender',
+  'alwaysShowItemLabel',
+  'min',
+  'max',
+  'containerClassName',
+  'containerStyle',
+] as const
+
+function normalizeBooleanProp(value: unknown, defaultValue = false) {
+  if (value === '')
+    return true
+  return typeof value === 'boolean' ? value : defaultValue
+}
 
 const ProFormListItem = defineComponent({
   name: 'ProFormListItem',
-  props: {
-    field: { type: Object as PropType<{ name: number, key: number }>, required: true },
-    index: { type: Number, required: true },
-    record: { type: [Object, Array] as PropType<Record<string, any>>, required: true },
-    fields: { type: Array as PropType<{ name: number, key: number }[]>, required: true },
-    count: { type: Number, required: true },
-    name: { type: [String, Number, Array] as PropType<NamePath>, required: true },
-    originName: { type: [String, Number, Array] as PropType<NamePath>, required: true },
-    listName: { type: Array as PropType<(string | number)[]>, required: true },
-    action: { type: Object as PropType<FormListActionType>, required: true },
-    readonly: { type: Boolean, default: false },
-    copyIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    deleteIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    upIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    downIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    arrowSort: { type: Boolean, default: false },
-    actionRender: { type: Function as PropType<ProFormListCommonProps['actionRender']>, default: undefined },
-    itemRender: { type: Function as PropType<ProFormListCommonProps['itemRender']>, default: undefined },
-    itemContainerRender: { type: Function as PropType<ProFormListCommonProps['itemContainerRender']>, default: undefined },
-    alwaysShowItemLabel: { type: Boolean, default: false },
-    min: { type: Number, default: undefined },
-    max: { type: Number, default: undefined },
-    containerClassName: { type: String, default: undefined },
-    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: [...proFormListItemPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as unknown as ProFormListItemProps
     const editContext = useEditOrReadOnly()
-    const parentListContext = useFormListContext()
-    const isReadMode = computed(() => props.readonly || editContext.readonly || editContext.mode === 'read')
+    const isReadMode = computed(() => normalizeBooleanProp(props.readonly) || editContext.readonly || editContext.mode === 'read')
+    const arrowSort = computed(() => normalizeBooleanProp(props.arrowSort))
 
-    function currentAction() {
+    function currentAction(): FormListActionWithCurrentRow {
       return {
         ...props.action,
         getCurrentRowData: () => props.record,
-        setCurrentRowData: (data: Record<string, any>) => {
+        setCurrentRowData: (data) => {
           Object.assign(props.record, data || {})
         },
       }
@@ -142,7 +150,6 @@ const ProFormListItem = defineComponent({
 
     return () => {
       const field = props.field
-      const action = currentAction()
       const rowMeta = {
         name: props.originName,
         field,
@@ -174,7 +181,7 @@ const ProFormListItem = defineComponent({
           fallbackIcon: ArrowUpOutlined,
           tooltipText: '向上排序',
           className: 'action-up',
-          hidden: isReadMode.value || !props.arrowSort || props.index <= 0,
+          hidden: isReadMode.value || !arrowSort.value || props.index <= 0,
           onClick: () => props.action.move(props.index, props.index - 1),
         }),
         renderActionIcon({
@@ -182,7 +189,7 @@ const ProFormListItem = defineComponent({
           fallbackIcon: ArrowDownOutlined,
           tooltipText: '向下排序',
           className: 'action-down',
-          hidden: isReadMode.value || !props.arrowSort || props.index + 1 >= props.count,
+          hidden: isReadMode.value || !arrowSort.value || props.index + 1 >= props.count,
           onClick: () => props.action.move(props.index, props.index + 1),
         }),
       ].filter(Boolean) as VNodeChild[]
@@ -203,7 +210,7 @@ const ProFormListItem = defineComponent({
         </div>
       )
       const content = props.itemRender?.({ listDom, action: actionDom }, rowMeta) ?? (
-        <div class={['ant-pro-form-list-item', { 'ant-pro-form-list-item-show-label': props.alwaysShowItemLabel }]}>
+        <div class={['ant-pro-form-list-item', { 'ant-pro-form-list-item-show-label': normalizeBooleanProp(props.alwaysShowItemLabel) }]}>
           {listDom}
           {actionDom}
         </div>
@@ -216,6 +223,6 @@ const ProFormListItem = defineComponent({
       )
     }
   },
-})
+}) as unknown as DefineComponent<ProFormListItemProps>
 
 export { ProFormListItem }

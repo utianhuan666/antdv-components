@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const ptBR: ProLocale = {
   moneySymbol: 'R$',
@@ -74,6 +74,6 @@ const ptBR: ProLocale = {
     open: 'abrir',
     close: 'fechar',
   },
-};
+}
 
-export default ptBR;
+export default ptBR

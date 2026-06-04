@@ -14,13 +14,13 @@ export type BaseProFieldFC = ProFieldFCRenderProps
 export type ProFieldFCProps<T = {}> = BaseProFieldFC & ProRenderFieldPropsType & T & Record<string, any>
 
 /** Default Field component contract. */
-export type ProFieldFC<T = {}> = {
+export interface ProFieldFC<T = {}> {
   (props: ProFieldFCProps<T>): any
   __props?: ProFieldFCProps<T>
 }
 
 /** Light filter props injected by ProFieldLightWrapper. */
-export type ProFieldLightProps = {
+export interface ProFieldLightProps {
   lightLabel?: {
     labelRef: { value: HTMLElement | null }
     clearRef: { value: HTMLElement | null }
@@ -100,6 +100,18 @@ export type ProFieldValueType
     | 'formSet'
     | 'divider'
     | 'dependency'
+
+export const PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES = [
+  'group',
+  'formList',
+  'formSet',
+  'divider',
+  'dependency',
+] as const
+
+export type ProFieldSchemaLayoutValueType = typeof PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES[number]
+
+export type ProFieldBuiltinValueType = Exclude<ProFieldValueType, ProFieldSchemaLayoutValueType>
 
 /** Object shorthand for certain valueTypes (progress / money / percent / image). */
 export interface ProFieldValueObjectType {

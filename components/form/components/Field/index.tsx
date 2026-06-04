@@ -1,11 +1,10 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldValueTypeInput } from '../../../field'
-import type { NamePath, ProFormFieldItemProps, ProFormItemCreateConfig } from '../../typing'
+import type { ProFormFieldProps } from '../../typing'
 import { Comment, computed, defineComponent, Fragment, onMounted, Text, watch } from 'vue'
 import { ProField } from '../../../field'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { useFieldContext } from '../../FieldContext'
 import LightWrapper from '../../layouts/LightFilter/LightWrapper'
+import { proFormFieldPropNames } from '../../typing'
 import ProFormItem from '../FormItem'
 
 /**
@@ -16,43 +15,23 @@ import ProFormItem from '../FormItem'
  *
  * 这里的 children/text 字段不展开，专注 valueType 渲染。
  */
-const ProFormField = defineComponent({
+const ProFormFieldImpl = defineComponent({
   name: 'ProFormField',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    valuePropName: { type: String, default: 'value' },
-    initialValue: { type: null as unknown as PropType<ProFormFieldItemProps['initialValue']>, default: undefined },
-    transform: { type: Function as PropType<NonNullable<ProFormFieldItemProps['transform']>>, default: undefined },
-    convertValue: { type: Function as PropType<NonNullable<ProFormFieldItemProps['convertValue']>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    value: { type: null as unknown as PropType<any>, default: undefined },
-    valueType: { type: [String, Object] as PropType<ProFieldValueTypeInput>, default: 'text' },
-    valueEnum: { type: [Object, Map] as PropType<ProFormFieldItemProps['valueEnum']>, default: undefined },
-    request: { type: Function as PropType<ProFormFieldItemProps['request']>, default: undefined },
-    params: { type: Object as PropType<Record<string, any>>, default: undefined },
-    placeholder: { type: [String, Array] as PropType<string | string[]>, default: undefined },
-    width: { type: [String, Number] as PropType<ProFormFieldItemProps['width']>, default: undefined },
-    readonly: { type: Boolean, default: undefined },
-    disabled: { type: Boolean, default: undefined },
-    allowClear: { type: Boolean, default: undefined },
-    proFieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild>, default: undefined },
-    fieldConfig: { type: Object as PropType<ProFormItemCreateConfig>, default: () => ({}) },
-    /** ignoreFormItem=true 表示当前组件不希望被 antdv FormItem 接管，常用于自定义渲染 */
-    ignoreFormItem: { type: Boolean, default: false },
-  },
+  props: [...proFormFieldPropNames],
   emits: ['change'],
-  setup(props, { emit, slots, attrs }) {
+  setup(rawProps, { emit, slots, attrs }) {
+    const props = rawProps as ProFormFieldProps
     const fieldContext = useFieldContext()
     const editContext = useEditOrReadOnly()
 
-    const finalReadonly = computed(() => Boolean(editContext.readonly ?? props.readonly))
+    function resolveBoolean(value: unknown, fallback?: boolean) {
+      if (value === undefined)
+        return fallback
+      return value === '' || value === true
+    }
+
+    const finalReadonly = computed(() => Boolean(editContext.readonly ?? resolveBoolean(props.readonly)))
 
     const widthStyle = computed(() => {
       const sizeMap: Record<string, number> = { xs: 104, sm: 216, md: 328, lg: 440, xl: 552 }
@@ -110,9 +89,9 @@ const ProFormField = defineComponent({
         ...(fieldContext.fieldProps || {}),
         ...(attrs || {}),
         ...(props.fieldProps || {}),
-        disabled: props.disabled ?? props.fieldProps?.disabled,
+        disabled: resolveBoolean(props.disabled, props.fieldProps?.disabled),
         id: props.fieldProps?.id ?? (typeof props.name === 'string' ? props.name : undefined),
-        allowClear: props.allowClear ?? props.fieldProps?.allowClear,
+        allowClear: resolveBoolean(props.allowClear, props.fieldProps?.allowClear),
         placeholder: props.placeholder ?? props.fieldProps?.placeholder,
         style: {
           ...(widthStyle.value ? { width: widthStyle.value } : {}),
@@ -126,7 +105,7 @@ const ProFormField = defineComponent({
           mode={finalReadonly.value ? 'read' : 'edit'}
           text={value}
           value={value}
-          valueType={props.valueType}
+          valueType={props.valueType ?? 'text'}
           valueEnum={props.valueEnum}
           request={props.request}
           formItemRender={props.formItemRender as any}
@@ -166,7 +145,7 @@ const ProFormField = defineComponent({
     return () => {
       const children = getValidSlotChildren()
       // ignoreFormItem 时不再包 antdv FormItem，外层一般已自定义包装
-      if (props.ignoreFormItem || !props.name) {
+      if (resolveBoolean(props.ignoreFormItem) || !props.name) {
         return children ?? renderProField()
       }
 
@@ -184,7 +163,7 @@ const ProFormField = defineComponent({
               variant={props.proFieldProps?.variant ?? props.fieldProps?.variant ?? 'outlined'}
               size={props.proFieldProps?.size}
               placeholder={Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder}
-              disabled={!!props.disabled}
+              disabled={!!resolveBoolean(props.disabled)}
               allowClear={props.allowClear !== false}
               placement={props.fieldProps?.placement ?? props.proFieldProps?.placement}
               valueType={typeof props.valueType === 'string' ? props.valueType : undefined}
@@ -203,14 +182,14 @@ const ProFormField = defineComponent({
           label={isLightMode ? undefined : props.label}
           tooltip={isLightMode ? undefined : props.tooltip}
           rules={props.rules}
-          required={props.required}
+          required={resolveBoolean(props.required)}
           initialValue={props.initialValue}
-          valueType={props.valueType}
+          valueType={props.valueType ?? 'text'}
           dataFormat={props.fieldProps?.format}
           transform={props.transform}
           convertValue={props.convertValue}
           formItemProps={{
-            valuePropName: props.valuePropName,
+            valuePropName: props.valuePropName ?? 'value',
             ...(fieldContext.formItemProps || {}),
             ...(props.formItemProps || {}),
           }}
@@ -221,5 +200,9 @@ const ProFormField = defineComponent({
     }
   },
 })
+
+const ProFormField = ProFormFieldImpl as typeof ProFormFieldImpl & {
+  new(): { $props: ProFormFieldProps }
+}
 
 export default ProFormField

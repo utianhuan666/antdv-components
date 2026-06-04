@@ -40,7 +40,7 @@ export interface ProFormColumnsType<T = Record<string, any>, ValueType = 'text'>
   render?: (dom: VNodeChild, entity: T, index: number, action: any, schema: ProFormColumnsType<T, ValueType>) => VNodeChild
   formItemRender?: (
     schema: ProFormColumnsType<T, ValueType>,
-    config: Record<string, any> & { defaultRender?: (schema?: ProFormColumnsType<T, ValueType>) => VNodeChild },
+    config: Record<string, any> & { defaultRender: (schema?: ProFormColumnsType<T, ValueType>) => VNodeChild },
     form: any,
   ) => VNodeChild | false
   request?: (params?: Record<string, any>, props?: Record<string, any>) => Promise<{ label?: VNodeChild, text?: VNodeChild, value: any }[]>
@@ -60,20 +60,38 @@ export interface ProFormColumnsType<T = Record<string, any>, ValueType = 'text'>
 
 export type SchemaLayoutType = ProFormLayoutType | 'StepForm' | 'Embed'
 
+export type SchemaFormStep = Record<string, any> & {
+  title?: VNodeChild
+}
+
+export interface SchemaFormRef<T = any> {
+  value?: T
+}
+
 export interface BetaSchemaFormProps<T = Record<string, any>, U = Record<string, any>, ValueType = 'text'> extends BaseFormProps<T, U> {
   layoutType?: SchemaLayoutType
   type?: string
-  steps?: Record<string, any>[]
+  steps?: SchemaFormStep[]
   columns?: ProFormColumnsType<T, ValueType>[] | ProFormColumnsType<T, ValueType>[][]
   shouldUpdate?: boolean | ((newValues: Record<string, any>, oldValues?: Record<string, any>) => boolean)
   title?: VNodeChild
-  action?: { value?: any }
-  formRef?: { value?: any }
+  action?: SchemaFormRef
+  formRef?: SchemaFormRef
   open?: boolean
   trigger?: VNodeChild
   modalProps?: Record<string, any>
   drawerProps?: Record<string, any>
   onCurrentChange?: (current: number) => void
+}
+
+export interface StepsSchemaFormProps<T = Record<string, any>, ValueType = 'text'> {
+  steps?: SchemaFormStep[]
+  columns?: ProFormColumnsType<T, ValueType>[][]
+  formRef?: SchemaFormRef
+  externalFormRef?: SchemaFormRef
+  onCurrentChange?: (current: number) => void
+  renderColumns: (columns: ProFormColumnsType<T, ValueType>[], form: any) => VNodeChild[]
+  onFinish?: (values: Record<string, any>) => any
 }
 
 export interface ItemType<T = Record<string, any>, ValueType = 'text'> extends ProFormColumnsType<T, ValueType> {
@@ -84,10 +102,10 @@ export interface ItemType<T = Record<string, any>, ValueType = 'text'> extends P
 }
 
 export interface ProFormRenderValueTypeHelpers<T = Record<string, any>, ValueType = 'text'> {
-  action?: { value?: any }
+  action?: SchemaFormRef
   type?: string
   originItem: ProFormColumnsType<T, ValueType>
-  formRef: { value?: any }
+  formRef: SchemaFormRef
   genItems: (items: ProFormColumnsType<T, any>[]) => VNodeChild[]
 }
 

@@ -1,8 +1,26 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { FunctionalComponent } from 'vue'
 import type { ProFormGroupProps } from '../../../typing'
 import { Col, Row, Space } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
 import { useGridHelpers } from '../../../helpers'
+
+const groupPropNames = [
+  'title',
+  'extra',
+  'collapsible',
+  'defaultCollapsed',
+  'labelLayout',
+  'style',
+  'grid',
+  'rowProps',
+  'colProps',
+] as const
+
+function resolveBoolean(value: unknown, fallback = false) {
+  if (value === '')
+    return true
+  return typeof value === 'boolean' ? value : fallback
+}
 
 /**
  * ProForm.Group – 对标 React `src/form/components/FormItem/Group/index.tsx`：
@@ -11,28 +29,19 @@ import { useGridHelpers } from '../../../helpers'
  */
 const Group = defineComponent({
   name: 'ProFormGroup',
-  props: {
-    title: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    extra: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    collapsible: { type: Boolean, default: false },
-    defaultCollapsed: { type: Boolean, default: false },
-    labelLayout: { type: String as PropType<NonNullable<ProFormGroupProps['labelLayout']>>, default: 'inline' },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-    grid: { type: Boolean, default: undefined },
-    rowProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    colProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: [...groupPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as Readonly<ProFormGroupProps>
     const { grid, rowProps } = useGridHelpers(props.colProps)
-    const collapsed = ref(props.defaultCollapsed)
+    const collapsed = ref(resolveBoolean(props.defaultCollapsed))
 
     function toggle() {
-      if (props.collapsible)
+      if (resolveBoolean(props.collapsible))
         collapsed.value = !collapsed.value
     }
 
     return () => {
-      const isGrid = props.grid ?? grid.value
+      const isGrid = props.grid === undefined ? grid.value : resolveBoolean(props.grid)
 
       const children = slots.default?.()
       const groupStyle = props.style || {}
@@ -76,7 +85,7 @@ const Group = defineComponent({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: 24,
-                cursor: props.collapsible ? 'pointer' : 'default',
+                cursor: resolveBoolean(props.collapsible) ? 'pointer' : 'default',
                 fontWeight: 'bold',
               }}
               onClick={toggle}
@@ -95,6 +104,6 @@ const Group = defineComponent({
       )
     }
   },
-})
+}) as unknown as FunctionalComponent<ProFormGroupProps>
 
 export default Group

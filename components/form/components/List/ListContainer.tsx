@@ -1,42 +1,51 @@
-import type { PropType } from 'vue'
-import type { FormListActionType, FormListActionGuard, IconConfig, ProFormListCommonProps } from './typing'
+import type { DefineComponent } from 'vue'
+import type { ProFormListContainerProps } from './typing'
 import { PlusOutlined } from '@antdv-next/icons'
 import { Button } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { ProFormListItem } from './ListItem'
 
+const proFormListContainerPropNames = [
+  'name',
+  'originName',
+  'listName',
+  'fields',
+  'action',
+  'readonly',
+  'creatorRecord',
+  'creatorButtonProps',
+  'creatorButtonText',
+  'copyIconProps',
+  'deleteIconProps',
+  'upIconProps',
+  'downIconProps',
+  'actionGuard',
+  'actionRender',
+  'itemRender',
+  'itemContainerRender',
+  'fieldExtraRender',
+  'alwaysShowItemLabel',
+  'min',
+  'max',
+  'arrowSort',
+  'containerClassName',
+  'containerStyle',
+] as const
+
+function normalizeBooleanProp(value: unknown, defaultValue = false) {
+  if (value === '')
+    return true
+  return typeof value === 'boolean' ? value : defaultValue
+}
+
 const ProFormListContainer = defineComponent({
   name: 'ProFormListContainer',
-  props: {
-    name: { type: [String, Number, Array], required: true },
-    originName: { type: [String, Number, Array], required: true },
-    listName: { type: Function as PropType<(index: number) => (string | number)[]>, required: true },
-    fields: { type: Array as PropType<{ name: number, key: number, record: Record<string, any> }[]>, required: true },
-    action: { type: Object as PropType<FormListActionType>, required: true },
-    readonly: { type: Boolean, default: false },
-    creatorRecord: { type: [Object, Function] as PropType<Record<string, any> | (() => Record<string, any>)>, default: undefined },
-    creatorButtonProps: { type: [Object, Boolean] as PropType<ProFormListCommonProps['creatorButtonProps']>, default: () => ({}) },
-    creatorButtonText: { type: String, default: undefined },
-    copyIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    deleteIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    upIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    downIconProps: { type: [Object, Boolean] as PropType<IconConfig | false>, default: undefined },
-    actionGuard: { type: Object as PropType<FormListActionGuard>, default: undefined },
-    actionRender: { type: Function as PropType<ProFormListCommonProps['actionRender']>, default: undefined },
-    itemRender: { type: Function as PropType<ProFormListCommonProps['itemRender']>, default: undefined },
-    itemContainerRender: { type: Function as PropType<ProFormListCommonProps['itemContainerRender']>, default: undefined },
-    fieldExtraRender: { type: Function as PropType<ProFormListCommonProps['fieldExtraRender']>, default: undefined },
-    alwaysShowItemLabel: { type: Boolean, default: false },
-    min: { type: Number, default: undefined },
-    max: { type: Number, default: undefined },
-    arrowSort: { type: Boolean, default: false },
-    containerClassName: { type: String, default: undefined },
-    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: [...proFormListContainerPropNames],
+  setup(rawProps, { slots }) {
+    const props = rawProps as unknown as ProFormListContainerProps
     const editContext = useEditOrReadOnly()
-    const isReadMode = computed(() => props.readonly || editContext.readonly || editContext.mode === 'read')
+    const isReadMode = computed(() => normalizeBooleanProp(props.readonly) || editContext.readonly || editContext.mode === 'read')
 
     function renderCreatorButton(position: 'top' | 'bottom') {
       if (props.creatorButtonProps === false || isReadMode.value)
@@ -79,16 +88,16 @@ const ProFormListContainer = defineComponent({
             originName={props.originName as any}
             listName={props.listName(index)}
             action={props.action}
-            readonly={props.readonly}
+            readonly={normalizeBooleanProp(props.readonly)}
             copyIconProps={props.copyIconProps}
             deleteIconProps={props.deleteIconProps}
             upIconProps={props.upIconProps}
             downIconProps={props.downIconProps}
-            arrowSort={props.arrowSort}
+            arrowSort={normalizeBooleanProp(props.arrowSort)}
             actionRender={props.actionRender}
             itemRender={props.itemRender}
             itemContainerRender={props.itemContainerRender}
-            alwaysShowItemLabel={props.alwaysShowItemLabel}
+            alwaysShowItemLabel={normalizeBooleanProp(props.alwaysShowItemLabel)}
             min={props.min}
             max={props.max}
             containerClassName={props.containerClassName}
@@ -104,6 +113,6 @@ const ProFormListContainer = defineComponent({
       </div>
     )
   },
-})
+}) as unknown as DefineComponent<ProFormListContainerProps>
 
 export { ProFormListContainer }

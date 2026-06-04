@@ -1,7 +1,7 @@
 import type { SetupContext, VNodeChild } from 'vue'
 import { isVNode } from 'vue'
 
-type IndexColumnProps = {
+interface IndexColumnProps {
   border?: boolean
   text?: number
 }
@@ -18,7 +18,7 @@ function getSlotText(children: VNodeChild[] | undefined, fallback: number) {
   return child
 }
 
-const FieldIndexColumn = (props: IndexColumnProps, { slots }: SetupContext) => {
+function FieldIndexColumn(props: IndexColumnProps, { slots }: SetupContext) {
   const text = props.text ?? 1
   const displayValue = getSlotText(slots.default?.(), text)
   const isTopThree = Number(displayValue) > 3

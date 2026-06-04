@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const ruRU: ProLocale = {
   moneySymbol: '₽',
@@ -74,6 +74,6 @@ const ruRU: ProLocale = {
     open: 'Открыть',
     close: 'Закрыть',
   },
-};
+}
 
-export default ruRU;
+export default ruRU

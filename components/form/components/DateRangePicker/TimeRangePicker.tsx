@@ -1,18 +1,18 @@
-import { defineComponent } from 'vue'
+import type { TimeRangePickerProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-export const ProFormTimeRangePicker = defineComponent({
-  name: 'ProFormTimeRangePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField
-        valueType="timeRange"
-        fieldConfig={{ valueType: 'timeRange', customLightMode: true }}
-        {...attrs}
-      >
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormTimeRangePickerProps = Omit<ProFormFieldItemProps<TimeRangePickerProps>, 'valueType' | 'fieldConfig'>
+
+const valueType = 'timeRange' as const
+
+export const ProFormTimeRangePicker: FunctionalComponent<ProFormTimeRangePickerProps> = (props, { slots }) => (
+  <ProFormField
+    valueType={valueType}
+    fieldConfig={{ valueType, customLightMode: true }}
+    {...props}
+  >
+    {slots.default?.()}
+  </ProFormField>
+)

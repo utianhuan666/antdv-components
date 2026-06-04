@@ -53,7 +53,8 @@ export function useDocPage() {
           title: header.title,
           href: header.link || `#${header.slug}`,
         }
-        if (header.children?.length) item.children = formatHeaders(header.children)
+        if (header.children?.length)
+          item.children = formatHeaders(header.children)
         return item
       })
     }

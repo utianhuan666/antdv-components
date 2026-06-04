@@ -28,9 +28,9 @@ import FieldText from './components/Text'
 import FieldTextArea from './components/TextArea'
 import FieldTimePicker, { FieldTimeRangePicker } from './components/TimePicker'
 import FieldTreeSelect from './components/TreeSelect'
-import './initDayjs'
 import { wrapProFieldLight } from './internal/ProFieldLightWrapper'
 import { pickProProps } from './ProFieldCore'
+import './initDayjs'
 
 function sameRenderPair(
   fn: (text: any, props: any) => VNodeChild,

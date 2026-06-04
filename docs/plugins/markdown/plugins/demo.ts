@@ -18,7 +18,8 @@ function flattenHeaders(headers: MarkdownItHeader[] = []) {
   const visit = (items: MarkdownItHeader[]) => {
     for (const item of items) {
       headerMap.set(item.slug, item)
-      if (item.children?.length) visit(item.children)
+      if (item.children?.length)
+        visit(item.children)
     }
   }
 
@@ -27,12 +28,13 @@ function flattenHeaders(headers: MarkdownItHeader[] = []) {
 }
 
 function getHeadingSlug(token: { attrs?: [string, string][] | null }) {
-  return token.attrs?.find((attr) => attr[0] === 'id')?.[1]
+  return token.attrs?.find(attr => attr[0] === 'id')?.[1]
 }
 
 function getHeadingLevel(token: { tag?: string }) {
   const match = token.tag?.match(/^h([2-6])$/)
-  if (!match) return null
+  if (!match)
+    return null
   return Number(match[1])
 }
 
@@ -45,13 +47,14 @@ export function replaceSrcPath(
 ) {
   function replaceSrcInTag(tagMatch: string, titleContent?: string) {
     return tagMatch.replace(/(\s|^)src=(['"])(.*?)\2/gi, (srcMatch, prefix, quote, srcValue) => {
-      if (!srcValue || srcValue.startsWith('/')) return srcMatch
+      if (!srcValue || srcValue.startsWith('/'))
+        return srcMatch
 
       const dir = pathe.dirname(id)
       const filePath = pathe.resolve(dir, srcValue)
       const relative = pathe.relative(root, filePath)
       const componentsArr = filePath.split('/')
-      const demoIndex = componentsArr.reverse().findIndex((dir) => dir.toLowerCase() === 'demo')
+      const demoIndex = componentsArr.reverse().findIndex(dir => dir.toLowerCase() === 'demo')
       const componentDemoPathArr = componentsArr.slice(0, demoIndex + 2)
       const componentDemoPath = componentDemoPathArr.reverse().join('/')
 
@@ -64,7 +67,8 @@ export function replaceSrcPath(
           link: `#${slug}`,
           children: [],
         }
-        if (parentHeader.children) parentHeader.children.push(item)
+        if (parentHeader.children)
+          parentHeader.children.push(item)
         else parentHeader.children = [item]
       }
 
@@ -78,10 +82,10 @@ export function replaceSrcPath(
   })
 
   const selfClosing = new RegExp(`<${wrapper}(?!-)\\b[^>]*/\\s*>`, 'gi')
-  result = result.replace(selfClosing, (tagMatch) => replaceSrcInTag(tagMatch))
+  result = result.replace(selfClosing, tagMatch => replaceSrcInTag(tagMatch))
 
   const openTag = new RegExp(`<${wrapper}(?!-)\\b[^>]*>`, 'gi')
-  return result.replace(openTag, (tagMatch) => replaceSrcInTag(tagMatch))
+  return result.replace(openTag, tagMatch => replaceSrcInTag(tagMatch))
 }
 
 export function demoPlugin(md: MarkdownIt, config: { root?: string } = {}) {
@@ -116,19 +120,21 @@ export function demoPlugin(md: MarkdownIt, config: { root?: string } = {}) {
       }
     }
 
-    for (const token of tokens as typeof tokens &
-      Array<{ type: string; tag?: string; attrs?: [string, string][] | null; content: string; children?: unknown[] }>) {
+    for (const token of tokens as typeof tokens
+      & Array<{ type: string, tag?: string, attrs?: [string, string][] | null, content: string, children?: unknown[] }>) {
       if (token.type === 'heading_open') {
         const headingLevel = getHeadingLevel(token)
         const headingSlug = getHeadingSlug(token)
 
         if (headingLevel && headingSlug) {
           for (const level of [...activeHeaders.keys()]) {
-            if (level >= headingLevel) activeHeaders.delete(level)
+            if (level >= headingLevel)
+              activeHeaders.delete(level)
           }
 
           const header = headerMap.get(headingSlug)
-          if (header) activeHeaders.set(headingLevel, header)
+          if (header)
+            activeHeaders.set(headingLevel, header)
         }
       }
 

@@ -6,6 +6,10 @@
 Password type, text is hidden by default in read mode, toggle visibility with the eye icon.
 </docs>
 
+<script setup lang="ts">
+import { FieldPassword } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -18,7 +22,3 @@ Password type, text is hidden by default in read mode, toggle visibility with th
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldPassword } from '@antdv/components'
-</script>

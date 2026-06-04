@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const svSE: ProLocale = {
   moneySymbol: 'SEK',
@@ -74,6 +74,6 @@ const svSE: ProLocale = {
     open: 'Öppna',
     close: 'Stäng',
   },
-};
+}
 
-export default svSE;
+export default svSE

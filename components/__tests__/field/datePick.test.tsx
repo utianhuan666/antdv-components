@@ -1,9 +1,9 @@
+import { ProField } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import dayjs from 'dayjs'
 import { describe, expect, it, vi } from 'vitest'
-import { ProField } from '@antdv/components'
 
-describe('DateField', () => {
+describe('dateField', () => {
   const datePickList = [
     'date',
     'dateWeek',

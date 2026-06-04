@@ -1,6 +1,6 @@
-import ProFormDependency from '../../Dependency'
 import type { NamePath } from '../../../typing'
 import type { ProSchemaRenderValueTypeFunction } from '../typing'
+import ProFormDependency from '../../Dependency'
 
 function normalizeDependencyNames(name?: NamePath[] | NamePath): NamePath[] {
   if (!name)

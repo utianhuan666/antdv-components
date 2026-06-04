@@ -4,7 +4,7 @@ import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/f
 import FieldRateEdit from './FieldRateEdit'
 import FieldRateRead from './FieldRateRead'
 
-type FieldRateFCProps = {
+interface FieldRateFCProps {
   text: string
   fieldProps?: RateProps
 }

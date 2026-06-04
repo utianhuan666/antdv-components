@@ -38,11 +38,11 @@ const preferredLocale = computed(() => {
 const description = computed(() => {
   const locales = demo.value?.locales ?? {}
   return (
-    locales[preferredLocale.value]?.html ||
-    locales['zh-CN']?.html ||
-    locales['en-US']?.html ||
-    Object.values(locales)[0]?.html ||
-    ''
+    locales[preferredLocale.value]?.html
+    || locales['zh-CN']?.html
+    || locales['en-US']?.html
+    || Object.values(locales)[0]?.html
+    || ''
   )
 })
 
@@ -61,7 +61,8 @@ const id = computed(() =>
 const hasJsSource = computed(() => Boolean(demo.value?.jsSource?.trim()))
 const activeCodeType = computed<'ts' | 'js'>({
   get() {
-    if (codeType.value === 'js' && hasJsSource.value) return 'js'
+    if (codeType.value === 'js' && hasJsSource.value)
+      return 'js'
     return 'ts'
   },
   set(value) {
@@ -69,11 +70,13 @@ const activeCodeType = computed<'ts' | 'js'>({
   },
 })
 const sourceCode = computed(() => {
-  if (activeCodeType.value === 'js') return demo.value?.jsSource || demo.value?.source || ''
+  if (activeCodeType.value === 'js')
+    return demo.value?.jsSource || demo.value?.source || ''
   return demo.value?.source || ''
 })
 const sourceHtml = computed(() => {
-  if (activeCodeType.value === 'js') return demo.value?.jsHtml || demo.value?.html || ''
+  if (activeCodeType.value === 'js')
+    return demo.value?.jsHtml || demo.value?.html || ''
   return demo.value?.html || ''
 })
 
@@ -89,7 +92,8 @@ const demoStyle = computed<CSSProperties>(() => {
     styles.padding = '0'
     styles.overflow = 'hidden'
   }
-  if (props.background === 'grey') styles.backgroundColor = 'var(--ant-color-bg-layout)'
+  if (props.background === 'grey')
+    styles.backgroundColor = 'var(--ant-color-bg-layout)'
   return styles
 })
 const cls = computed(() => ({

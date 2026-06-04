@@ -1,9 +1,9 @@
 import type { VNodeChild } from 'vue'
-import ProFormItem from '../../FormItem'
-import ProFormField from '../../Field'
-import ProFormDependency from '../../Dependency'
 import type { NamePath } from '../../../typing'
 import type { ItemType, ProFormColumnsType, ProSchemaRenderValueTypeFunction } from '../typing'
+import ProFormDependency from '../../Dependency'
+import ProFormField from '../../Field'
+import ProFormItem from '../../FormItem'
 
 function normalizeDependencyNames(name?: NamePath[] | NamePath): NamePath[] {
   if (!name)

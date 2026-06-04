@@ -5,7 +5,7 @@ import FieldSwitchEdit from './FieldSwitchEdit'
 import FieldSwitchLightEdit from './FieldSwitchLightEdit'
 import FieldSwitchRead from './FieldSwitchRead'
 
-type FieldSwitchFCProps = {
+interface FieldSwitchFCProps {
   text: boolean
   fieldProps?: SwitchProps & {
     variant?: 'outlined' | 'borderless' | 'filled'

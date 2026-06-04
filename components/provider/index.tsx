@@ -1,20 +1,20 @@
-import type { DefineComponent, InjectionKey, PropType, VNodeChild } from 'vue'
 import type { ConfigProviderProps, ThemeConfig } from 'antdv-next'
+import type { DefineComponent, InjectionKey, PropType, VNodeChild } from 'vue'
+import type { ProRenderFieldPropsType, ProSchemaValueEnumType } from '../field/types'
 import type { IntlType } from './intl'
 import type { DeepPartial, ProTokenType } from './typing/layoutToken'
 import type { ProAliasToken } from './useStyle'
-import type { ProRenderFieldPropsType, ProSchemaValueEnumType } from '../field/types'
-import { ConfigProvider, theme as antdTheme } from 'antdv-next'
-import { ThemeProvider } from 'antdv-style'
+import { theme as antdTheme, ConfigProvider } from 'antdv-next'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
 import zhCNLocale from 'antdv-next/locale/zh_CN'
+import { ThemeProvider } from 'antdv-style'
 import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
 import { computed, defineComponent, inject, provide, reactive, watchEffect } from 'vue'
 import { ProConfigKey } from '../field/types'
 import { findIntlKeyByAntdLocaleKey, intlMap, zhCNIntl } from './intl'
 import { getLayoutDesignToken } from './typing/layoutToken'
 import { shallowMergeOneLevel } from './utils/merge'
-import { useConfig } from 'antdv-next/dist/config-provider/context'
+import 'dayjs/locale/zh-cn'
 
 export * from './intl'
 export * from './useStyle'
@@ -24,9 +24,7 @@ type OmitUndefined<T> = {
   [P in keyof T]: NonNullable<T[P]>
 }
 
-const omitUndefined = <T extends Record<string, any>>(
-  obj: T,
-): OmitUndefined<T> | undefined => {
+function omitUndefined<T extends Record<string, any>>(obj: T): OmitUndefined<T> | undefined {
   const result = {} as Record<string, any>
 
   Object.keys(obj || {}).forEach((key) => {
@@ -40,7 +38,7 @@ const omitUndefined = <T extends Record<string, any>>(
   return result as OmitUndefined<T>
 }
 
-export const isNeedOpenHash = () => {
+export function isNeedOpenHash() {
   const currentProcess = (globalThis as any).process
   if (!currentProcess)
     return true
@@ -52,11 +50,7 @@ export const isNeedOpenHash = () => {
   return true
 }
 
-const resolveIntl = (
-  propsIntl: IntlType | undefined,
-  parentIntl: IntlType | undefined,
-  antdLocaleName: string | undefined,
-): IntlType => {
+function resolveIntl(propsIntl: IntlType | undefined, parentIntl: IntlType | undefined, antdLocaleName: string | undefined): IntlType {
   if (propsIntl)
     return propsIntl
 
@@ -83,7 +77,7 @@ export type ProSchemaValueEnumObj = Record<
   ProSchemaValueEnumType | VNodeChild
 >
 
-export type BaseProFieldFC = {
+export interface BaseProFieldFC {
   text: VNodeChild
   fieldProps?: any
   mode?: ProFieldFCMode
@@ -107,7 +101,7 @@ export type { ProRenderFieldPropsType }
 
 export type ParamsType = Record<string, any>
 
-export type ConfigContextPropsType = {
+export interface ConfigContextPropsType {
   intl?: IntlType
   valueTypeMap?: Record<string, ProRenderFieldPropsType>
   token: ProAliasToken
@@ -139,8 +133,9 @@ const defaultProConfigContext: ConfigContextPropsType = {
 export const ProProviderKey: InjectionKey<ConfigContextPropsType>
   = Symbol('ProProvider')
 
-export const useProProviderContext = (): ConfigContextPropsType =>
-  inject(ProProviderKey, defaultProConfigContext)
+export function useProProviderContext(): ConfigContextPropsType {
+  return inject(ProProviderKey, defaultProConfigContext)
+}
 
 export const ConfigConsumer = defineComponent({
   name: 'ProConfigConsumer',

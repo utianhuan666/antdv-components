@@ -9,7 +9,7 @@ const route = useRoute()
 const groups = computed<SidebarGroup[]>(() => {
   // 匹配最长前缀的 sidebar 配置
   const paths = Object.keys(siteConfig.sidebar).sort((a, b) => b.length - a.length)
-  const matched = paths.find((p) => route.path.startsWith(p))
+  const matched = paths.find(p => route.path.startsWith(p))
   return matched ? (siteConfig.sidebar[matched] ?? []) : []
 })
 

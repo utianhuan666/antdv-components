@@ -1,6 +1,6 @@
 import type { VNodeChild } from 'vue'
 
-export type PercentPropInt = {
+export interface PercentPropInt {
   prefix?: VNodeChild
   suffix?: VNodeChild
   text?: number | string

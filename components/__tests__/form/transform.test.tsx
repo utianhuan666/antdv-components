@@ -1,10 +1,10 @@
+import { ProForm, ProFormText } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import { ProForm, ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ProForm transform (docs + regression tests)', () => {
+describe('proForm transform (docs + regression tests)', () => {
   it('supports the "simple" pattern: transform={(v) => fn(v)} (return primitive)', async () => {
     const fn = vi.fn()
     const wrapper = mountAttached({

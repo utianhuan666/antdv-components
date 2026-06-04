@@ -1,16 +1,17 @@
-import { defineComponent } from 'vue'
+import type { CascaderProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-const ProFormCascader = defineComponent({
-  name: 'ProFormCascader',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="cascader" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormCascaderProps = ProFormFieldItemProps<CascaderProps>
+
+const ProFormCascader: FunctionalComponent<ProFormCascaderProps> = (props, { slots }) => (
+  <ProFormField valueType="cascader" {...props}>
+    {slots.default?.()}
+  </ProFormField>
+)
+
+ProFormCascader.displayName = 'ProFormCascader'
+ProFormCascader.inheritAttrs = false
 
 export default ProFormCascader

@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const roRO: ProLocale = {
   moneySymbol: 'RON',
@@ -74,6 +74,6 @@ const roRO: ProLocale = {
     open: 'Deschide',
     close: 'Închide',
   },
-};
+}
 
-export default roRO;
+export default roRO

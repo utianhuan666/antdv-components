@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const jaJP: ProLocale = {
   moneySymbol: '¥',
@@ -74,6 +74,6 @@ const jaJP: ProLocale = {
     open: '開く',
     close: '閉じる',
   },
-};
+}
 
-export default jaJP;
+export default jaJP

@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const arEG: ProLocale = {
   moneySymbol: '$',
@@ -74,6 +74,6 @@ const arEG: ProLocale = {
     open: 'مفتوح',
     close: 'غلق',
   },
-};
+}
 
-export default arEG;
+export default arEG

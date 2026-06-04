@@ -11,7 +11,8 @@ export function tablePlugin(md: MarkdownIt) {
 
       if (token.type === 'heading_open' && token.tag === 'h2') {
         const inlineToken = tokens[i + 1]
-        if (inlineToken?.type === 'inline') inApiSection = inlineToken.content.trim().toLowerCase() === 'api'
+        if (inlineToken?.type === 'inline')
+          inApiSection = inlineToken.content.trim().toLowerCase() === 'api'
       }
 
       if (inApiSection && token.type === 'table_open') {

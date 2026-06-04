@@ -1,16 +1,16 @@
-import { defineComponent } from 'vue'
+import type { WeekPickerProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import { BaseDatePicker } from './BaseDatePicker'
 
-const ProFormDatePickerWeek = defineComponent({
-  name: 'ProFormDatePickerWeek',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <BaseDatePicker valueType="dateWeek" {...attrs}>
-        {slots.default?.()}
-      </BaseDatePicker>
-    )
-  },
-})
+export type ProFormDatePickerWeekProps = Omit<ProFormFieldItemProps<WeekPickerProps>, 'valueType'>
+
+const valueType = 'dateWeek' as const
+
+const ProFormDatePickerWeek: FunctionalComponent<ProFormDatePickerWeekProps> = (props, { slots }) => (
+  <BaseDatePicker valueType={valueType} {...props}>
+    {slots.default?.()}
+  </BaseDatePicker>
+)
 
 export default ProFormDatePickerWeek

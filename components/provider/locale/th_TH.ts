@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const thTH: ProLocale = {
   moneySymbol: '฿',
@@ -74,6 +74,6 @@ const thTH: ProLocale = {
     open: 'เปิด',
     close: 'ปิด',
   },
-};
+}
 
-export default thTH;
+export default thTH

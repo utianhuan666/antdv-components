@@ -1,26 +1,26 @@
-import type { PropType } from 'vue'
-import type { ProFormColumnsType } from '../typing'
+import type { DefineComponent } from 'vue'
+import type { StepsSchemaFormProps } from '../typing'
 import { Button, Steps } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
 import ProForm from '../../../layouts/ProForm'
 
+const stepsSchemaFormPropNames = [
+  'steps',
+  'columns',
+  'formRef',
+  'externalFormRef',
+  'onCurrentChange',
+  'renderColumns',
+  'onFinish',
+] as const
+
 const StepsSchemaForm = defineComponent({
   name: 'SchemaStepsForm',
   inheritAttrs: false,
-  props: {
-    steps: { type: Array as PropType<Record<string, any>[]>, default: () => [] },
-    columns: { type: Array as PropType<ProFormColumnsType[][]>, default: () => [] },
-    formRef: { type: Object as PropType<{ value?: any }>, default: undefined },
-    externalFormRef: { type: Object as PropType<{ value?: any }>, default: undefined },
-    onCurrentChange: { type: Function as PropType<(current: number) => void>, default: undefined },
-    renderColumns: {
-      type: Function as PropType<(columns: ProFormColumnsType[], form: any) => any[]>,
-      required: true,
-    },
-    onFinish: { type: Function as PropType<(values: Record<string, any>) => any>, default: undefined },
-  },
+  props: [...stepsSchemaFormPropNames],
   emits: ['currentChange'],
-  setup(props, { attrs, emit }) {
+  setup(rawProps, { attrs, emit }) {
+    const props = rawProps as unknown as StepsSchemaFormProps
     const current = ref(0)
     const innerFormRef = ref<any>()
     const FormComponent = ProForm as any
@@ -43,17 +43,17 @@ const StepsSchemaForm = defineComponent({
         {...attrs}
         onFinish={props.onFinish as any}
       >
-        <Steps current={current.value} items={props.steps.map(item => ({ title: item.title }))} style={{ marginBottom: 24 }} />
-        {props.renderColumns(props.columns[current.value] || [], innerFormRef.value)}
+        <Steps current={current.value} items={(props.steps ?? []).map(item => ({ title: item.title as any }))} style={{ marginBottom: 24 }} />
+        {props.renderColumns((props.columns ?? [])[current.value] || [], innerFormRef.value)}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           {current.value > 0 ? <Button onClick={() => setCurrent(current.value - 1)}>上一步</Button> : null}
-          {current.value < props.columns.length - 1
+          {current.value < (props.columns ?? []).length - 1
             ? <Button type="primary" onClick={() => setCurrent(current.value + 1)}>下一步</Button>
             : <Button type="primary" htmlType="submit">提交</Button>}
         </div>
       </FormComponent>
     )
   },
-})
+}) as unknown as DefineComponent<StepsSchemaFormProps>
 
 export default StepsSchemaForm

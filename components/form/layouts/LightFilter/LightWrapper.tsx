@@ -1,9 +1,61 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
+import type { SizeType, TooltipPlacement } from 'antdv-next'
+import type { CSSProperties, VNode, VNodeChild } from 'vue'
 import type { FieldLabelVariant } from './FieldLabel'
 import type { FooterRender } from './FilterDropdown'
 import { cloneVNode, defineComponent, isVNode, ref, watch } from 'vue'
 import FieldLabel from './FieldLabel'
 import FilterDropdown from './FilterDropdown'
+
+type FieldPropsRecord = Record<string, unknown> & {
+  onChange?: (...args: unknown[]) => void
+}
+
+export interface LightWrapperProps {
+  label?: VNodeChild
+  value?: unknown
+  valuePropName?: string
+  disabled?: boolean
+  placeholder?: VNodeChild
+  size?: SizeType
+  variant?: FieldLabelVariant
+  allowClear?: boolean
+  valueType?: string
+  placement?: TooltipPlacement
+  footerRender?: FooterRender
+  labelFormatter?: (value: unknown) => VNodeChild
+  onChange?: (value?: unknown) => void
+  style?: CSSProperties
+}
+
+const lightWrapperPropNames = [
+  'label',
+  'value',
+  'valuePropName',
+  'disabled',
+  'placeholder',
+  'size',
+  'variant',
+  'allowClear',
+  'valueType',
+  'placement',
+  'footerRender',
+  'labelFormatter',
+  'onChange',
+  'style',
+] as const
+
+function resolveBoolean(value: unknown, fallback = false) {
+  if (value === undefined)
+    return fallback
+  return value === '' || value === true
+}
+
+function readEventValue(input: unknown) {
+  const target = input && typeof input === 'object' && 'target' in input
+    ? (input as { target?: { value?: unknown, checked?: unknown } }).target
+    : undefined
+  return target ? (target.value ?? target.checked) : input
+}
 
 /**
  * 对标 React `src/form/layouts/LightFilter/LightWrapper/index.tsx`：
@@ -17,25 +69,11 @@ import FilterDropdown from './FilterDropdown'
 const LightWrapper = defineComponent({
   name: 'ProLightWrapper',
   inheritAttrs: false,
-  props: {
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    value: { type: null as unknown as PropType<any>, default: undefined },
-    valuePropName: { type: String, default: 'value' },
-    disabled: { type: Boolean, default: false },
-    placeholder: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    size: { type: String as PropType<'small' | 'middle' | 'large'>, default: 'middle' },
-    variant: { type: String as PropType<FieldLabelVariant>, default: 'outlined' },
-    allowClear: { type: Boolean, default: true },
-    valueType: { type: String, default: undefined },
-    placement: { type: String as PropType<any>, default: 'bottomLeft' },
-    footerRender: { type: [Function, Boolean] as PropType<FooterRender>, default: undefined },
-    labelFormatter: { type: Function as PropType<(value: any) => VNodeChild>, default: undefined },
-    onChange: { type: Function as PropType<(value?: any) => void>, default: undefined },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
+  props: [...lightWrapperPropNames],
   emits: ['change'],
-  setup(props, { slots, emit }) {
-    const tempValue = ref<any>(props.value)
+  setup(rawProps, { slots, emit }) {
+    const props = rawProps as Readonly<LightWrapperProps>
+    const tempValue = ref<unknown>(props.value)
     const open = ref<boolean>(false)
 
     // Popover 关闭时同步外部最新值，避免临时态污染主表单。
@@ -47,7 +85,7 @@ const LightWrapper = defineComponent({
       },
     )
 
-    function commitChange(value: any) {
+    function commitChange(value: unknown) {
       props.onChange?.(value)
       emit('change', value)
     }
@@ -71,27 +109,26 @@ const LightWrapper = defineComponent({
 
     /** 把 popover 内部子节点的 value/onChange 改写到内部 tempValue 上，并强制 borderless 变体。 */
     function cloneInnerChild(child: VNode): VNode {
-      const childProps = (child.props || {}) as Record<string, any>
+      const childProps = (child.props || {}) as Record<string, unknown>
+      const childFieldProps = (childProps.fieldProps || {}) as FieldPropsRecord
       const innerFieldProps = {
-        ...(childProps.fieldProps || {}),
+        ...childFieldProps,
         variant: 'borderless' as const,
       }
       return cloneVNode(child, {
         ...childProps,
-        [props.valuePropName]: tempValue.value,
+        [props.valuePropName ?? 'value']: tempValue.value,
         value: tempValue.value,
         fieldProps: {
           ...innerFieldProps,
-          [props.valuePropName]: tempValue.value,
-          onChange: (...args: any[]) => {
-            const next = args[0]?.target
-              ? (args[0].target.value ?? args[0].target.checked)
-              : args[0]
-            tempValue.value = next
+          [props.valuePropName ?? 'value']: tempValue.value,
+          onChange: (...args: unknown[]) => {
+            tempValue.value = readEventValue(args[0])
+            childFieldProps.onChange?.(...args)
           },
         },
         variant: 'borderless',
-      } as Record<string, any>)
+      })
     }
 
     return () => {
@@ -105,8 +142,8 @@ const LightWrapper = defineComponent({
           variant={props.variant}
           value={props.value}
           placeholder={props.placeholder}
-          disabled={props.disabled}
-          allowClear={props.allowClear}
+          disabled={resolveBoolean(props.disabled)}
+          allowClear={resolveBoolean(props.allowClear, true)}
           formatter={props.labelFormatter}
           style={props.style}
           onClear={handleClear}
@@ -116,8 +153,8 @@ const LightWrapper = defineComponent({
       return (
         <FilterDropdown
           open={open.value}
-          placement={props.placement}
-          disabled={props.disabled}
+          placement={props.placement ?? 'bottomLeft'}
+          disabled={resolveBoolean(props.disabled)}
           label={labelNode}
           footerRender={props.footerRender}
           footer={{ onConfirm: handleConfirm, onClear: handleClear }}

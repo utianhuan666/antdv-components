@@ -32,17 +32,14 @@ import zhCN from './locale/zh_CN'
 import zhHK from './locale/zh_HK'
 import zhTW from './locale/zh_TW'
 
-export type IntlType = {
+export interface IntlType {
   locale: string
   getMessage: (id: string, defaultMessage: string) => string
 }
 
 const zhCNMessages: Record<string, any> = zhCN
 
-const getMessageByPath = (
-  messages: Record<string, any>,
-  id: string,
-): string => {
+function getMessageByPath(messages: Record<string, any>, id: string): string {
   const path = id.replace(/\[(\d+)\]/g, '.$1').split('.')
   let current: any = messages
 
@@ -55,23 +52,22 @@ const getMessageByPath = (
   return typeof current === 'string' ? current : ''
 }
 
-export const createIntl = (
-  locale: string,
-  localeMap: Record<string, any>,
-): IntlType => ({
-  getMessage: (id: string, defaultMessage: string) => {
-    const message = getMessageByPath(localeMap, id)
-    if (message)
-      return message
+export function createIntl(locale: string, localeMap: Record<string, any>): IntlType {
+  return {
+    getMessage: (id: string, defaultMessage: string) => {
+      const message = getMessageByPath(localeMap, id)
+      if (message)
+        return message
 
-    const localeKeyDashed = locale.replace('_', '-')
-    if (localeKeyDashed === 'zh-CN')
-      return defaultMessage
+      const localeKeyDashed = locale.replace('_', '-')
+      if (localeKeyDashed === 'zh-CN')
+        return defaultMessage
 
-    return getMessageByPath(zhCNMessages, id) || defaultMessage
-  },
-  locale,
-})
+      return getMessageByPath(zhCNMessages, id) || defaultMessage
+    },
+    locale,
+  }
+}
 
 const localeMessages = {
   mn_MN: mnMN,
@@ -114,8 +110,9 @@ type LocaleDashKey = LocaleUnderscoreKey extends `${infer A}_${infer B}`
   ? `${A}-${B}`
   : never
 
-const toDashKey = <K extends LocaleUnderscoreKey>(key: K) =>
-  key.replace('_', '-') as LocaleDashKey
+function toDashKey<K extends LocaleUnderscoreKey>(key: K) {
+  return key.replace('_', '-') as LocaleDashKey
+}
 
 const intlMap = Object.fromEntries(
   (Object.keys(localeMessages) as LocaleUnderscoreKey[]).map(key => [
@@ -126,9 +123,7 @@ const intlMap = Object.fromEntries(
 
 const intlMapKeys = Object.keys(intlMap) as LocaleDashKey[]
 
-export const findIntlKeyByAntdLocaleKey = <T extends string>(
-  localeKey?: T,
-): T => {
+export function findIntlKeyByAntdLocaleKey<T extends string>(localeKey?: T): T {
   const input = (localeKey || 'zh-CN').replace('_', '-').toLowerCase()
   const exact = intlMapKeys.find(key => key.toLowerCase() === input)
   if (exact)

@@ -17,7 +17,8 @@ async function getEslint() {
           fix: true,
           fixTypes: ['layout'],
         })
-      } catch {
+      }
+      catch {
         return null
       }
     })()
@@ -28,12 +29,14 @@ async function getEslint() {
 async function formatScript(code: string, lang: string) {
   try {
     const eslint = await getEslint()
-    if (!eslint) return code
+    if (!eslint)
+      return code
 
     const filePath = `virtual-demo-script.${lang === 'tsx' ? 'jsx' : 'js'}`
     const [result] = await eslint.lintText(code, { filePath })
     return result?.output ?? code
-  } catch {
+  }
+  catch {
     return code
   }
 }
@@ -86,7 +89,8 @@ export async function tsToJs(sourceCode: string) {
     try {
       const transpiledCode = await transpileScript(code, normalizedLang)
       nextSourceCode += `<script${nextAttrs}>\n${transpiledCode.trim()}\n</script>`
-    } catch {
+    }
+    catch {
       nextSourceCode += fullMatch
     }
 

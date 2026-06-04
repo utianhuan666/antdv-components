@@ -1,7 +1,7 @@
-// @ts-nocheck
+import type { ProFormData } from '@antdv/components'
+import { ProForm, ProFormMoney } from '@antdv/components'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProForm, ProFormMoney } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
 describe('💵 ProFormMoney', () => {
@@ -9,7 +9,7 @@ describe('💵 ProFormMoney', () => {
     const fn = vi.fn()
     const wrapper = mountAttached({
       render: () => (
-        <ProForm onFinish={(values: { amount: number }) => fn(values.amount)}>
+        <ProForm onFinish={(values: ProFormData) => fn(values.amount)}>
           <ProFormMoney name="amount" initialValue={44.33} />
         </ProForm>
       ),

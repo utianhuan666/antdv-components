@@ -1,6 +1,4 @@
-export const shallowMergeOneLevel = <T extends Record<string, any>>(
-  ...sources: any[]
-): T => {
+export function shallowMergeOneLevel<T extends Record<string, any>>(...sources: any[]): T {
   const result = {} as Record<string, any>
 
   for (const source of sources) {

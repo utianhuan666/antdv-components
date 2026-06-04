@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const faIR: ProLocale = {
   moneySymbol: 'تومان',
@@ -74,6 +74,6 @@ const faIR: ProLocale = {
     open: 'باز',
     close: 'بسته',
   },
-};
+}
 
-export default faIR;
+export default faIR

@@ -1,7 +1,6 @@
-import type { VNodeChild } from 'vue'
 import type { SelectProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 import type { ProFieldLightProps } from '../../../types'
-import type { RequestOptionsType } from '../types'
 import { SearchOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Input, Select } from 'antdv-next'

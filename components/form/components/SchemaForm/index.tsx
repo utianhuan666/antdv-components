@@ -1,9 +1,8 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { DefineComponent, VNodeChild } from 'vue'
 import type {
   BetaSchemaFormProps,
   ItemType,
   ProFormColumnsType,
-  SchemaLayoutType,
 } from './typing'
 import { Drawer, Modal } from 'antdv-next'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
@@ -12,6 +11,22 @@ import { Embed, StepsForm } from './layoutType'
 import { renderValueType } from './valueType'
 
 export * from './typing'
+
+const betaSchemaFormPropNames = [
+  'layoutType',
+  'type',
+  'steps',
+  'columns',
+  'shouldUpdate',
+  'title',
+  'action',
+  'formRef',
+  'open',
+  'trigger',
+  'modalProps',
+  'drawerProps',
+  'onCurrentChange',
+] as const
 
 function runFunction<T>(value: T | ((...args: any[]) => T), ...args: any[]): T {
   return typeof value === 'function' ? (value as (...args: any[]) => T)(...args) : value
@@ -25,10 +40,10 @@ function omitUndefined<T extends Record<string, any>>(value: T): T {
   }, {}) as T
 }
 
-function stringifyName(name: unknown, fallback: number) {
-  if (Array.isArray(name))
-    return name.join('_')
-  return name ?? fallback
+function normalizeBooleanProp(value: unknown, defaultValue = false) {
+  if (value === '')
+    return true
+  return typeof value === 'boolean' ? value : defaultValue
 }
 
 const layoutComponents = {
@@ -41,32 +56,22 @@ const layoutComponents = {
 const BetaSchemaForm = defineComponent({
   name: 'BetaSchemaForm',
   inheritAttrs: false,
-  props: {
-    layoutType: { type: String as PropType<SchemaLayoutType>, default: 'Form' },
-    type: { type: String, default: 'form' },
-    steps: { type: Array as PropType<Record<string, any>[]>, default: undefined },
-    columns: { type: Array as PropType<BetaSchemaFormProps['columns']>, default: () => [] },
-    shouldUpdate: { type: [Boolean, Function] as PropType<BetaSchemaFormProps['shouldUpdate']>, default: true },
-    title: { type: [String, Number, Object, Function] as PropType<VNodeChild>, default: undefined },
-    action: { type: Object as PropType<BetaSchemaFormProps['action']>, default: undefined },
-    formRef: { type: Object as PropType<BetaSchemaFormProps['formRef']>, default: undefined },
-    open: { type: Boolean, default: undefined },
-    trigger: { type: [String, Number, Object, Function] as PropType<VNodeChild>, default: undefined },
-    modalProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    drawerProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    onCurrentChange: { type: Function as PropType<BetaSchemaFormProps['onCurrentChange']>, default: undefined },
-  },
+  props: [...betaSchemaFormPropNames],
   emits: ['finish', 'currentChange'],
-  setup(props, { attrs, emit }) {
+  setup(rawProps, { attrs, emit }) {
+    const props = rawProps as unknown as BetaSchemaFormProps
     const formRef = shallowRef<any>()
     const innerOpen = ref(false)
     const renderTick = ref(0)
     const oldValuesRef = shallowRef<Record<string, any>>()
+    const layoutType = computed(() => props.layoutType ?? 'Form')
+    const formType = computed(() => props.type ?? 'form')
+    const columns = computed(() => props.columns ?? [])
 
     const flatColumns = computed(() => {
-      if (props.layoutType === 'StepsForm')
+      if (layoutType.value === 'StepsForm')
         return []
-      return props.columns as ProFormColumnsType[]
+      return columns.value as ProFormColumnsType[]
     })
 
     function getTitle(column: ProFormColumnsType) {
@@ -78,9 +83,9 @@ const BetaSchemaForm = defineComponent({
     }
 
     function genItems(columns: ProFormColumnsType[] = [], form = formRef.value): VNodeChild[] {
-      renderTick.value
+      void renderTick.value
       return columns
-        .filter(column => !(column.hideInForm && props.type === 'form'))
+        .filter(column => !(column.hideInForm && formType.value === 'form'))
         .sort((prev, next) => {
           if (prev.order || next.order)
             return (next.order || 0) - (prev.order || 0)
@@ -107,7 +112,7 @@ const BetaSchemaForm = defineComponent({
 
           return renderValueType(item, {
             action: props.action,
-            type: props.type,
+            type: formType.value,
             originItem,
             formRef,
             genItems: (items: ProFormColumnsType[]) => genItems(items, form),
@@ -117,8 +122,9 @@ const BetaSchemaForm = defineComponent({
     }
 
     function handleValuesChange(changedValues: Record<string, any>, values: Record<string, any>) {
-      const shouldRender = props.shouldUpdate === true
-        || (typeof props.shouldUpdate === 'function' && props.shouldUpdate(values, oldValuesRef.value))
+      const shouldUpdate = (props.shouldUpdate as unknown) === '' ? true : props.shouldUpdate ?? true
+      const shouldRender = shouldUpdate === true
+        || (typeof shouldUpdate === 'function' && shouldUpdate(values, oldValuesRef.value))
 
       if (shouldRender)
         renderTick.value += 1
@@ -145,7 +151,7 @@ const BetaSchemaForm = defineComponent({
       if (embed)
         return <Embed>{content}</Embed>
 
-      const FormComponent = (layoutComponents[props.layoutType as keyof typeof layoutComponents] || ProForm) as any
+      const FormComponent = (layoutComponents[layoutType.value as keyof typeof layoutComponents] || ProForm) as any
       return (
         <FormComponent
           ref={setFormRef}
@@ -159,14 +165,14 @@ const BetaSchemaForm = defineComponent({
     }
 
     return () => {
-      if (props.layoutType === 'Embed')
+      if (layoutType.value === 'Embed')
         return renderForm(true)
 
-      if (props.layoutType === 'StepsForm') {
+      if (layoutType.value === 'StepsForm') {
         return (
           <StepsForm
             {...attrs}
-            columns={props.columns as ProFormColumnsType[][]}
+            columns={columns.value as ProFormColumnsType[][]}
             steps={props.steps || []}
             formRef={formRef as any}
             externalFormRef={props.formRef}
@@ -180,10 +186,10 @@ const BetaSchemaForm = defineComponent({
         )
       }
 
-      const open = props.open ?? innerOpen.value
+      const open = props.open === undefined ? innerOpen.value : normalizeBooleanProp(props.open)
       const trigger = props.trigger ? <span onClick={() => (innerOpen.value = true)}>{props.trigger}</span> : null
 
-      if (props.layoutType === 'ModalForm') {
+      if (layoutType.value === 'ModalForm') {
         return (
           <>
             {trigger}
@@ -194,7 +200,7 @@ const BetaSchemaForm = defineComponent({
         )
       }
 
-      if (props.layoutType === 'DrawerForm') {
+      if (layoutType.value === 'DrawerForm') {
         return (
           <>
             {trigger}
@@ -208,6 +214,6 @@ const BetaSchemaForm = defineComponent({
       return renderForm()
     }
   },
-})
+}) as unknown as DefineComponent<BetaSchemaFormProps>
 
 export default BetaSchemaForm

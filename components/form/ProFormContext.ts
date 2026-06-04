@@ -1,15 +1,16 @@
 import type { InjectionKey, ShallowRef } from 'vue'
+import type { NamePath, ProFormData, ProFormInstance } from './typing'
 import { inject, provide } from 'vue'
 
-export interface ProFormContextValue {
-  formRef?: ShallowRef<any>
-  getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => Record<string, any>
-  getFieldFormatValue?: (name: string | number | (string | number)[], omitNil?: boolean) => any
-  getFieldFormatValueObject?: (name: string | number | (string | number)[], omitNil?: boolean) => Record<string, any>
+export interface ProFormContextValue<T = ProFormData> {
+  formRef?: ShallowRef<ProFormInstance<T> | undefined>
+  getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => T
+  getFieldFormatValue?: (name: NamePath, omitNil?: boolean) => any
+  getFieldFormatValueObject?: (name: NamePath, omitNil?: boolean) => Partial<T>
   validateFieldsReturnFormatValue?: (
-    nameList?: (string | number | (string | number)[])[],
+    nameList?: NamePath[],
     omitNil?: boolean,
-  ) => Promise<Record<string, any>>
+  ) => Promise<T>
 }
 
 export const ProFormContextKey: InjectionKey<ProFormContextValue> = Symbol('ProFormContext')

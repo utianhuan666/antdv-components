@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'vitest'
 import ProFormDatePicker, { ProFormDateTimePicker, ProFormTimePicker } from '../../form/components/DatePicker'
 import ProFormDateRangePicker, {
@@ -24,15 +23,15 @@ function renderDomProps(dom: any) {
   )
 }
 
-describe('ProForm date picker components', () => {
-  it('DatePicker exposes Week/Month/Quarter/Year sub components', () => {
+describe('proForm date picker components', () => {
+  it('datePicker exposes Week/Month/Quarter/Year sub components', () => {
     expect((ProFormDatePicker as any).Week.name).toBe('ProFormDatePickerWeek')
     expect((ProFormDatePicker as any).Month.name).toBe('ProFormDatePickerMonth')
     expect((ProFormDatePicker as any).Quarter.name).toBe('ProFormDatePickerQuarter')
     expect((ProFormDatePicker as any).Year.name).toBe('ProFormDatePickerYear')
   })
 
-  it('DatePicker sub components render expected picker props', () => {
+  it('datePicker sub components render expected picker props', () => {
     const WeekPicker = (ProFormDatePicker as any).Week
     const wrapper = mountAttached({
       render: () => (
@@ -54,7 +53,7 @@ describe('ProForm date picker components', () => {
     expect(wrapperWithRender.find('.date-render-props').text()).toBe('week||gggg-wo')
   })
 
-  it('DateTimePicker enables showTime by default', () => {
+  it('dateTimePicker enables showTime by default', () => {
     const wrapper = mountAttached({
       render: () => (
         <ProForm>
@@ -75,7 +74,7 @@ describe('ProForm date picker components', () => {
     expect(wrapperWithRender.find('.date-render-props').text()).toBe('|true|YYYY-MM-DD HH:mm:ss')
   })
 
-  it('DateRangePicker exports date and time range variants', () => {
+  it('dateRangePicker exports date and time range variants', () => {
     expect(ProFormDateRangePicker.name).toBe('ProFormDateRangePicker')
     expect(ProFormDateTimeRangePicker.name).toBe('ProFormDateTimeRangePicker')
     expect(ProFormDateWeekRangePicker.name).toBe('ProFormDateWeekRangePicker')
@@ -85,7 +84,7 @@ describe('ProForm date picker components', () => {
     expect(ProFormTimeRangePicker.name).toBe('ProFormTimeRangePicker')
   })
 
-  it('DateMonthRangePicker renders expected range picker props', () => {
+  it('dateMonthRangePicker renders expected range picker props', () => {
     const wrapper = mountAttached({
       render: () => (
         <ProForm>
@@ -106,7 +105,7 @@ describe('ProForm date picker components', () => {
     expect(wrapperWithRender.find('.date-render-props').text()).toBe('month|true|YYYY-MM')
   })
 
-  it('TimePicker exposes RangePicker sub component', () => {
+  it('timePicker exposes RangePicker sub component', () => {
     expect((ProFormTimePicker as any).RangePicker.name).toBe('ProFormTimeRangePicker')
   })
 })

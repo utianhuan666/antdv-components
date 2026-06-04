@@ -1,16 +1,20 @@
-import type { Ref, VNodeChild } from 'vue'
-import type { CommonFormProps, SubmitterProps } from '../../typing'
+import type { ComponentPublicInstance, Ref, VNodeChild } from 'vue'
+import type { CommonFormProps, FormData, FormRefLike, SubmitterProps } from '../../typing'
 import { cloneVNode, computed, h, isVNode, nextTick, ref, shallowRef, Teleport } from 'vue'
 
-export interface OverlayFormOptions<T = Record<string, any>> {
+type OverlayCloseHandler = {
+  bivarianceHack: (event?: MouseEvent | KeyboardEvent | Event) => void
+}['bivarianceHack']
+
+export interface OverlayFormOptions<T = FormData> {
   propsOpen?: boolean
   onOpenChange?: (open: boolean) => void
   emitOpenChange?: (open: boolean) => void
-  formRef: Ref<any>
+  formRef: Ref<FormRefLike | undefined>
   destroyOnHidden?: boolean
   submitTimeout?: number
-  onFinish?: (values: T) => Promise<any> | any
-  onCloseExtra?: (event?: any) => void
+  onFinish?: (values: T) => Promise<boolean | void> | boolean | void
+  onCloseExtra?: OverlayCloseHandler
   submitter?: CommonFormProps['submitter']
   searchConfig: {
     submitText: string
@@ -23,7 +27,7 @@ function isControlled(open: boolean | undefined) {
   return open !== undefined
 }
 
-export function useOverlayForm<T = Record<string, any>>(options: OverlayFormOptions<T>) {
+export function useOverlayForm<T = FormData>(options: OverlayFormOptions<T>) {
   const innerOpen = ref(false)
   const loading = ref(false)
   const footerRef = shallowRef<HTMLElement>()
@@ -53,13 +57,15 @@ export function useOverlayForm<T = Record<string, any>>(options: OverlayFormOpti
 
     const onClick = (event: MouseEvent) => {
       setOpen(!open.value)
-      if (isVNode(trigger))
-        (trigger.props as any)?.onClick?.(event)
+      if (isVNode(trigger)) {
+        const triggerProps = trigger.props as { onClick?: (event: MouseEvent) => void } | null
+        triggerProps?.onClick?.(event)
+      }
     }
 
     return isVNode(trigger)
       ? cloneVNode(trigger, { onClick })
-      : h('span', { onClick }, trigger as any)
+      : h('span', { onClick }, trigger)
   }
 
   const submitterConfig = computed<CommonFormProps['submitter']>(() => {
@@ -128,7 +134,7 @@ export function useOverlayForm<T = Record<string, any>>(options: OverlayFormOpti
     return result
   }
 
-  function setFooterRef(element: any) {
+  function setFooterRef(element: Element | ComponentPublicInstance | null) {
     footerRef.value = element instanceof HTMLElement ? element : undefined
     nextTick()
   }

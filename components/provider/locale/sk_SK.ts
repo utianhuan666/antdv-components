@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const skSK: ProLocale = {
   moneySymbol: '€',
@@ -74,6 +74,6 @@ const skSK: ProLocale = {
     open: 'otvoriť',
     close: 'zavrieť',
   },
-};
+}
 
-export default skSK;
+export default skSK

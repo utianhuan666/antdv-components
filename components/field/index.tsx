@@ -35,21 +35,24 @@ export type { FieldDigitRangeProps } from './components/DigitRange/types'
 export type { FieldMoneyProps } from './components/Money/types'
 export type { FieldSelectProps } from './components/Select/types'
 export type { FieldTreeSelectProps } from './components/TreeSelect/types'
+export { createProField, omitUndefined, pickProProps } from './ProFieldCore'
 export type {
+  ProConfigContextType,
+  ProFieldBuiltinValueType,
   ProFieldEmptyText,
   ProFieldFCRenderProps,
   ProFieldLightProps,
   ProFieldPropsType,
   ProFieldRenderProps,
+  ProFieldSchemaLayoutValueType,
   ProFieldTextType,
+  ProFieldValueObjectType,
   ProFieldValueType,
   ProFieldValueTypeFunction,
   ProFieldValueTypeInput,
   ProRenderFieldPropsType,
-  ProConfigContextType,
 } from './types'
-export { ProConfigKey, useProConfig } from './types'
-export { createProField, omitUndefined, pickProProps } from './ProFieldCore'
+export { PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES, ProConfigKey, useProConfig } from './types'
 
 const FieldModule = {
   install(app: App) {
@@ -92,8 +95,8 @@ export {
   FieldTreeSelect,
   ProField,
   ProFieldBadgeColor,
-  PureProField,
   proFieldParsingValueEnumToArray,
+  PureProField,
 }
 
 export default FieldModule

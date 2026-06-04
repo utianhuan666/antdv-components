@@ -1,10 +1,10 @@
+import { ProFormText, QueryFilter } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProFormText, QueryFilter } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('QueryFilter', () => {
+describe('queryFilter', () => {
   it('🕵️‍♀️ basic use', async () => {
     const onFinish = vi.fn()
     const wrapper = mountAttached({

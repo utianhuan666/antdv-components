@@ -1,5 +1,4 @@
 import ProFormDatePickerBase from './DatePicker'
-import { ProFormTimeRangePicker } from '../DateRangePicker'
 import ProFormDateTimePicker from './DateTimePicker'
 import ProFormDatePickerMonth from './MonthPicker'
 import ProFormDatePickerQuarter from './QuarterPicker'
@@ -14,18 +13,17 @@ const ProFormDatePicker = ProFormDatePickerBase as typeof ProFormDatePickerBase 
   Year: typeof ProFormDatePickerYear
 }
 
-;(ProFormDatePicker as any).Week = ProFormDatePickerWeek
-;(ProFormDatePicker as any).Month = ProFormDatePickerMonth
-;(ProFormDatePicker as any).Quarter = ProFormDatePickerQuarter
-;(ProFormDatePicker as any).Year = ProFormDatePickerYear
-;(ProFormTimePicker as any).RangePicker = ProFormTimeRangePicker
+ProFormDatePicker.Week = ProFormDatePickerWeek
+ProFormDatePicker.Month = ProFormDatePickerMonth
+ProFormDatePicker.Quarter = ProFormDatePickerQuarter
+ProFormDatePicker.Year = ProFormDatePickerYear
 
 export default ProFormDatePicker
 export {
-  ProFormDateTimePicker,
-  ProFormTimePicker,
   ProFormDatePickerMonth,
   ProFormDatePickerQuarter,
   ProFormDatePickerWeek,
   ProFormDatePickerYear,
+  ProFormDateTimePicker,
+  ProFormTimePicker,
 }

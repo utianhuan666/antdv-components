@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const esES: ProLocale = {
   moneySymbol: '€',
@@ -74,6 +74,6 @@ const esES: ProLocale = {
     open: 'abrir',
     close: 'cerrar',
   },
-};
+}
 
-export default esES;
+export default esES

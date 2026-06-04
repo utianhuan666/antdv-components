@@ -1,3 +1,4 @@
+export type { ProFormInstance, SubmitterContext, SubmitterProps } from '../typing'
 export { BaseForm, default } from './BaseForm'
 export {
   EditOrReadOnlyContextKey,

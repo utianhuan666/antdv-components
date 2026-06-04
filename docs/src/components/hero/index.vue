@@ -7,11 +7,11 @@ import { siteConfig } from '@/config'
 defineOptions({ name: 'SiteHero' })
 
 const internalButtons = computed(() =>
-  (siteConfig.hero.buttons as HeroButton[]).filter((button) => !isExternalLink(button.link)),
+  (siteConfig.hero.buttons as HeroButton[]).filter(button => !isExternalLink(button.link)),
 )
 
 const externalButtons = computed(() =>
-  (siteConfig.hero.buttons as HeroButton[]).filter((button) => isExternalLink(button.link)),
+  (siteConfig.hero.buttons as HeroButton[]).filter(button => isExternalLink(button.link)),
 )
 
 function isExternalLink(link: string) {

@@ -8,7 +8,8 @@ export function useCopyCode() {
       if (el.matches('div[class*="language-"] > button.copy')) {
         const parent = el.parentElement
         const sibling = el.nextElementSibling?.nextElementSibling
-        if (!parent || !sibling) return
+        if (!parent || !sibling)
+          return
 
         const isShell = /language-(?:shellscript|shell|bash|sh|zsh)/.test(parent.className)
 
@@ -16,11 +17,12 @@ export function useCopyCode() {
 
         // Clone the node and remove the ignored nodes
         const clone = sibling.cloneNode(true) as HTMLElement
-        clone.querySelectorAll(ignoredNodes.join(',')).forEach((node) => node.remove())
+        clone.querySelectorAll(ignoredNodes.join(',')).forEach(node => node.remove())
 
         let text = clone.textContent || ''
 
-        if (isShell) text = text.replace(/^ *(\$|>) /gm, '').trim()
+        if (isShell)
+          text = text.replace(/^ *(\$|>) /gm, '').trim()
 
         copyToClipboard(text).then(() => {
           el.classList.add('copied')
@@ -40,7 +42,8 @@ export function useCopyCode() {
 async function copyToClipboard(text: string) {
   try {
     return navigator.clipboard.writeText(text)
-  } catch {
+  }
+  catch {
     const element = document.createElement('textarea')
     const previouslyFocusedElement = document.activeElement
 

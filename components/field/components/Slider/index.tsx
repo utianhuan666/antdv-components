@@ -4,7 +4,7 @@ import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/f
 import FieldSliderEdit from './FieldSliderEdit'
 import FieldSliderRead from './FieldSliderRead'
 
-type FieldSliderFCProps = {
+interface FieldSliderFCProps {
   text: string
   fieldProps?: SliderProps
 }

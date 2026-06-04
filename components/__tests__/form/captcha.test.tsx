@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Button } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
@@ -7,7 +6,7 @@ import ProFormText from '../../form/components/Text'
 import ProForm from '../../form/layouts/ProForm'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ProFormCaptcha', () => {
+describe('proFormCaptcha', () => {
   it('supports onGetCaptcha with phoneName and custom text render', async () => {
     const onGetCaptcha = vi.fn().mockResolvedValue(undefined)
     const wrapper = mountAttached({

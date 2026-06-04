@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const plPL: ProLocale = {
   moneySymbol: 'zł',
@@ -74,6 +74,6 @@ const plPL: ProLocale = {
     open: 'otwierać',
     close: 'zamykać',
   },
-};
+}
 
-export default plPL;
+export default plPL

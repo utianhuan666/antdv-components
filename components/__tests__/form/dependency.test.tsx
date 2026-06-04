@@ -1,10 +1,10 @@
+import { ProForm, ProFormDependency, ProFormText } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProForm, ProFormDependency, ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ProForm Dependency component', () => {
+describe('proForm Dependency component', () => {
   it('⛲ shouldUpdate of ProFormDependency is Boolean', async () => {
     const wrapper = mountAttached({
       render: () => (

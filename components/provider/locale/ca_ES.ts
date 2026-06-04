@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const caES: ProLocale = {
   moneySymbol: '€',
@@ -34,10 +34,10 @@ const caES: ProLocale = {
     },
   },
   tableToolBar: {
-    leftPin: "Pin a l'esquerra",
+    leftPin: 'Pin a l\'esquerra',
     rightPin: 'Pin a la dreta',
     noPin: 'Sense Pin',
-    leftFixedTitle: "Fixat a l'esquerra",
+    leftFixedTitle: 'Fixat a l\'esquerra',
     rightFixedTitle: 'Fixat a la dreta',
     noFixedTitle: 'Sense fixar',
     reset: 'Reiniciar',
@@ -74,6 +74,6 @@ const caES: ProLocale = {
     open: 'obert',
     close: 'tancat',
   },
-};
+}
 
-export default caES;
+export default caES

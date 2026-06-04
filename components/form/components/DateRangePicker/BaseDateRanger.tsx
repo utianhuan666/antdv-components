@@ -1,13 +1,36 @@
-import type { PropType } from 'vue'
-import type { ProFieldValueTypeInput } from '../../../field'
-import type { NamePath } from '../../typing'
+import type { RangePickerProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
+import type { ProFieldValueType } from '../../../field'
+import type { NamePath, ProFormFieldItemProps } from '../../typing'
 import { DateRangePicker } from 'antdv-next'
 import dayjs from 'dayjs'
 import { computed, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
-const rangeConfig: Record<string, Record<string, any>> = {
+export type BaseDateRangerValueType = Extract<
+  ProFieldValueType,
+  | 'dateRange'
+  | 'dateTimeRange'
+  | 'dateWeekRange'
+  | 'dateMonthRange'
+  | 'dateQuarterRange'
+  | 'dateYearRange'
+  | 'timeRange'
+>
+
+export type BaseDateRangerProps = Omit<ProFormFieldItemProps<RangePickerProps>, 'valueType'> & {
+  valueType: BaseDateRangerValueType
+  formItemRender?: (text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild
+}
+
+interface RangeConfig {
+  format: string
+  showTime?: RangePickerProps['showTime']
+  picker?: RangePickerProps['picker']
+}
+
+const rangeConfig: Record<BaseDateRangerValueType, RangeConfig> = {
   dateRange: { format: 'YYYY-MM-DD' },
   dateTimeRange: { format: 'YYYY-MM-DD HH:mm:ss', showTime: true },
   dateWeekRange: { format: 'gggg-wo', picker: 'week', showTime: true },
@@ -42,16 +65,14 @@ function setValueByNamePath(model: Record<string, any>, name: NamePath | undefin
 export const BaseDateRanger = defineComponent({
   name: 'BaseProFormDateRanger',
   inheritAttrs: false,
-  props: {
-    valueType: { type: String as PropType<ProFieldValueTypeInput>, required: true },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-  },
-  setup(props, { attrs }) {
+  props: ['valueType', 'fieldProps', 'formItemRender'],
+  setup(rawProps, { attrs }) {
+    const props = rawProps as Readonly<BaseDateRangerProps>
     const fieldContext = useFieldContext()
+    const attrsProps = attrs as Partial<BaseDateRangerProps>
 
-    const name = computed(() => (attrs as Record<string, any>).name as NamePath | undefined)
-    const config = computed(() => rangeConfig[String(props.valueType)] || rangeConfig.dateRange)
+    const name = computed(() => attrsProps.name as NamePath | undefined)
+    const config = computed(() => rangeConfig[props.valueType] || rangeConfig.dateRange)
     const value = computed(() => getValueByNamePath(fieldContext.model || {}, name.value))
     const pickerValue = computed(() => {
       if (!Array.isArray(value.value))
@@ -87,18 +108,18 @@ export const BaseDateRanger = defineComponent({
       return (
         <ProFormItem
           name={name.value}
-          label={(attrs as any).label}
-          tooltip={(attrs as any).tooltip}
-          rules={(attrs as any).rules}
-          required={(attrs as any).required}
-          initialValue={(attrs as any).initialValue}
+          label={attrsProps.label}
+          tooltip={attrsProps.tooltip}
+          rules={attrsProps.rules}
+          required={attrsProps.required}
+          initialValue={attrsProps.initialValue}
           valueType={props.valueType}
           dataFormat={currentFieldProps.format}
-          transform={(attrs as any).transform}
-          convertValue={(attrs as any).convertValue}
+          transform={attrsProps.transform}
+          convertValue={attrsProps.convertValue}
           formItemProps={{
             ...(fieldContext.formItemProps || {}),
-            ...((attrs as any).formItemProps || {}),
+            ...(attrsProps.formItemProps || {}),
           }}
         >
           {child}

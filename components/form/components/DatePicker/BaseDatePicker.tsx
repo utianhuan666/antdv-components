@@ -1,13 +1,30 @@
-import type { PropType } from 'vue'
-import type { ProFieldValueTypeInput } from '../../../field'
-import type { NamePath } from '../../typing'
+import type { DatePickerProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
+import type { ProFieldValueType } from '../../../field'
+import type { NamePath, ProFormFieldItemProps } from '../../typing'
 import { DatePicker, TimePicker } from 'antdv-next'
 import dayjs from 'dayjs'
 import { computed, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
-const pickerConfig: Record<string, Record<string, any>> = {
+export type BaseDatePickerValueType = Extract<
+  ProFieldValueType,
+  'date' | 'dateTime' | 'dateWeek' | 'dateMonth' | 'dateQuarter' | 'dateYear' | 'time'
+>
+
+export type BaseDatePickerProps = Omit<ProFormFieldItemProps, 'valueType'> & {
+  valueType: BaseDatePickerValueType
+  formItemRender?: (text: any, props: Record<string, any>, dom: VNodeChild) => VNodeChild
+}
+
+interface PickerConfig {
+  format: string
+  showTime?: DatePickerProps['showTime']
+  picker?: DatePickerProps['picker']
+}
+
+const pickerConfig: Record<BaseDatePickerValueType, PickerConfig> = {
   date: { format: 'YYYY-MM-DD' },
   dateTime: { format: 'YYYY-MM-DD HH:mm:ss', showTime: true },
   dateWeek: { format: 'gggg-wo', picker: 'week' },
@@ -42,16 +59,14 @@ function setValueByNamePath(model: Record<string, any>, name: NamePath | undefin
 export const BaseDatePicker = defineComponent({
   name: 'BaseProFormDatePicker',
   inheritAttrs: false,
-  props: {
-    valueType: { type: String as PropType<ProFieldValueTypeInput>, required: true },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: any) => any>, default: undefined },
-  },
-  setup(props, { attrs }) {
+  props: ['valueType', 'fieldProps', 'formItemRender'],
+  setup(rawProps, { attrs }) {
+    const props = rawProps as Readonly<BaseDatePickerProps>
     const fieldContext = useFieldContext()
+    const attrsProps = attrs as Partial<BaseDatePickerProps>
 
-    const name = computed(() => (attrs as Record<string, any>).name as NamePath | undefined)
-    const config = computed(() => pickerConfig[String(props.valueType)] || pickerConfig.date)
+    const name = computed(() => attrsProps.name as NamePath | undefined)
+    const config = computed(() => pickerConfig[props.valueType] || pickerConfig.date)
     const value = computed(() => getValueByNamePath(fieldContext.model || {}, name.value))
     const pickerValue = computed(() => {
       const currentValue = value.value
@@ -67,7 +82,7 @@ export const BaseDatePicker = defineComponent({
 
     return () => {
       const currentConfig = config.value || {}
-      const currentFieldProps = {
+      const currentFieldProps: Record<string, any> = {
         ...currentConfig,
         ...(props.fieldProps || {}),
       }
@@ -89,18 +104,18 @@ export const BaseDatePicker = defineComponent({
       return (
         <ProFormItem
           name={name.value}
-          label={(attrs as any).label}
-          tooltip={(attrs as any).tooltip}
-          rules={(attrs as any).rules}
-          required={(attrs as any).required}
-          initialValue={(attrs as any).initialValue}
+          label={attrsProps.label}
+          tooltip={attrsProps.tooltip}
+          rules={attrsProps.rules}
+          required={attrsProps.required}
+          initialValue={attrsProps.initialValue}
           valueType={props.valueType}
           dataFormat={currentFieldProps.format}
-          transform={(attrs as any).transform}
-          convertValue={(attrs as any).convertValue}
+          transform={attrsProps.transform}
+          convertValue={attrsProps.convertValue}
           formItemProps={{
             ...(fieldContext.formItemProps || {}),
-            ...((attrs as any).formItemProps || {}),
+            ...(attrsProps.formItemProps || {}),
           }}
         >
           {child}

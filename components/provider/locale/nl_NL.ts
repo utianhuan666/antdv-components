@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const nlNL: ProLocale = {
   moneySymbol: '€',
@@ -74,6 +74,6 @@ const nlNL: ProLocale = {
     open: 'Openen',
     close: 'Sluiten',
   },
-};
+}
 
-export default nlNL;
+export default nlNL

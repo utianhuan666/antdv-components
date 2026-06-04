@@ -1,6 +1,6 @@
 import type { ProFieldFC } from '../../types'
-import type { RequestOptionsType } from './types'
 import type { FieldSelectFullProps } from './FieldSelectSearchEdit'
+import type { RequestOptionsType } from './types'
 import LightSelect from './LightSelect'
 
 export type FieldSelectLightEditProps = NonNullable<ProFieldFC<FieldSelectFullProps>['__props']> & {

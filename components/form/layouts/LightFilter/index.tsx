@@ -1,14 +1,22 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { CommonFormProps } from '../../typing'
+import type { FormProps, PopoverProps, SizeType, TooltipPlacement } from 'antdv-next'
+import type { Component, FunctionalComponent, VNode, VNodeChild } from 'vue'
+import type { CommonFormProps, FormData, FormRefLike } from '../../typing'
 import type { FieldLabelVariant } from './FieldLabel'
 import type { FooterRender } from './FilterDropdown'
 import { FilterOutlined } from '@antdv-next/icons'
-import { cloneVNode, Comment, computed, defineComponent, Fragment, isVNode, ref, shallowRef, Text } from 'vue'
+import { cloneVNode, Comment, computed, defineComponent, Fragment, h, isVNode, ref, shallowRef, Text } from 'vue'
 import { BaseForm } from '../../BaseForm'
 import ProFormCascader from '../../components/Cascader'
 import { ProFormCheckboxGroup } from '../../components/Checkbox'
 import ProFormDatePicker, { ProFormDateTimePicker, ProFormTimePicker } from '../../components/DatePicker'
-import ProFormDateRangePicker, { ProFormDateTimeRangePicker } from '../../components/DateRangePicker'
+import ProFormDateRangePicker, {
+  ProFormDateMonthRangePicker,
+  ProFormDateQuarterRangePicker,
+  ProFormDateTimeRangePicker,
+  ProFormDateWeekRangePicker,
+  ProFormDateYearRangePicker,
+  ProFormTimeRangePicker,
+} from '../../components/DateRangePicker'
 import ProFormDigit from '../../components/Digit'
 import ProFormDigitRange from '../../components/Digit/DigitRange'
 import ProFormFieldSet from '../../components/FieldSet'
@@ -21,15 +29,51 @@ import ProFormTreeSelect from '../../components/TreeSelect'
 import FieldLabel from './FieldLabel'
 import FilterDropdown from './FilterDropdown'
 
-export interface LightFilterProps extends CommonFormProps {
+type LightFilterChildProps = Record<string, unknown> & {
+  name?: string
+  secondary?: boolean
+  fieldProps?: Record<string, unknown>
+  proFieldProps?: Record<string, unknown>
+  valuePropName?: string
+}
+
+export type LightFilterProps<T = FormData, U = FormData> = Omit<FormProps, 'onFinish'> & CommonFormProps<T, U> & {
   collapse?: boolean
   collapseLabel?: VNodeChild
   variant?: FieldLabelVariant
-  size?: 'small' | 'middle' | 'large'
+  size?: SizeType
   ignoreRules?: boolean
   footerRender?: FooterRender
-  placement?: any
-  popoverProps?: Record<string, any>
+  placement?: TooltipPlacement
+  popoverProps?: Omit<PopoverProps, 'children' | 'content' | 'trigger' | 'open' | 'onOpenChange' | 'placement'>
+}
+
+const lightFilterPropNames = [
+  'collapse',
+  'collapseLabel',
+  'variant',
+  'size',
+  'ignoreRules',
+  'footerRender',
+  'placement',
+  'popoverProps',
+] as const
+
+function resolveBoolean(value: unknown, fallback = false) {
+  if (value === undefined)
+    return fallback
+  return value === '' || value === true
+}
+
+function getVNodeProps(node: VNode): LightFilterChildProps {
+  return (node.props || {}) as LightFilterChildProps
+}
+
+function readEventValue(input: unknown) {
+  const target = input && typeof input === 'object' && 'target' in input
+    ? (input as { target?: { value?: unknown, checked?: unknown } }).target
+    : undefined
+  return target ? (target.value ?? target.checked) : input
 }
 
 function isVisibleVNode(node: VNodeChild): node is VNode {
@@ -55,9 +99,13 @@ function flattenLightFilterItems(items: VNodeChild): VNode[] {
       result.push(...flattenLightFilterItems(node.children as VNodeChild))
       continue
     }
-    const componentName = (node.type as any)?.name
-    if (componentName === 'ProFormGroup' && !(node.props as any)?.title) {
-      const groupChildren = (node.children as any)?.default?.() ?? node.children
+    const componentName = node.type && typeof node.type === 'object' && 'name' in node.type
+      ? node.type.name
+      : undefined
+    if (componentName === 'ProFormGroup' && !getVNodeProps(node).title) {
+      const groupChildren = node.children && typeof node.children === 'object' && 'default' in node.children
+        ? (node.children as { default?: () => VNodeChild }).default?.()
+        : node.children
       result.push(...flattenLightFilterItems(groupChildren as VNodeChild))
       continue
     }
@@ -72,24 +120,16 @@ function flattenLightFilterItems(items: VNodeChild): VNode[] {
  * 2. `collapse=true` 时所有子项进入折叠区；否则按 `secondary` 划分外侧/折叠两组。
  * 3. 折叠区内部使用临时 `moreValues`，在底部 `确认` 后整体提交，`重置` 清空当前折叠字段。
  */
-const LightFilter = defineComponent({
+const LightFilterImpl = defineComponent({
   name: 'LightFilter',
   inheritAttrs: false,
-  props: {
-    collapse: { type: Boolean, default: false },
-    collapseLabel: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    variant: { type: String as PropType<FieldLabelVariant>, default: 'borderless' },
-    size: { type: String as PropType<LightFilterProps['size']>, default: 'middle' },
-    ignoreRules: { type: Boolean, default: undefined },
-    footerRender: { type: [Function, Boolean] as PropType<FooterRender>, default: undefined },
-    placement: { type: String as PropType<any>, default: 'bottomLeft' },
-    popoverProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props, { attrs, slots, expose }) {
-    const baseRef = shallowRef<any>()
+  props: [...lightFilterPropNames],
+  setup(rawProps, { attrs, slots, expose }) {
+    const props = rawProps as Readonly<LightFilterProps>
+    const baseRef = shallowRef<FormRefLike>()
     const popoverOpen = ref(false)
     /** 折叠区临时编辑值，确认后写回主 form */
-    const moreValues = ref<Record<string, any>>({})
+    const moreValues = ref<FormData>({})
 
     expose({
       get formInstance() {
@@ -100,11 +140,11 @@ const LightFilter = defineComponent({
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
     })
 
-    function getFormValues(): Record<string, any> {
+    function getFormValues(): FormData {
       return baseRef.value?.getFieldsValue?.() || {}
     }
 
-    function setFormValues(next: Record<string, any>) {
+    function setFormValues(next: FormData) {
       baseRef.value?.setFieldsValue?.(next)
     }
 
@@ -116,9 +156,9 @@ const LightFilter = defineComponent({
     }
 
     function clearCollapseFields(collapseItems: VNode[]) {
-      const next: Record<string, any> = {}
+      const next: FormData = {}
       collapseItems.forEach((item) => {
-        const name = (item.props as any)?.name
+        const name = getVNodeProps(item).name
         if (typeof name === 'string')
           next[name] = undefined
       })
@@ -130,36 +170,39 @@ const LightFilter = defineComponent({
     const collapseLabelNode = computed<VNodeChild>(() => {
       if (props.collapseLabel)
         return props.collapseLabel
-      if (props.collapse)
+      if (resolveBoolean(props.collapse))
         return <FilterOutlined class="ant-pro-form-light-filter-collapse-icon" />
       return (
         <FieldLabel
-          variant={props.variant}
-          size={props.size}
+          variant={props.variant ?? 'borderless'}
+          size={props.size ?? 'middle'}
           label="更多筛选"
         />
       )
     })
 
     function renderCollapseChild(child: VNode): VNode {
-      const name = (child.props as any)?.name as string | undefined
-      const newFieldProps = {
-        ...((child.props as any)?.fieldProps || {}),
-        onChange: (...args: any[]) => {
-          const value = args[0]?.target ? args[0].target.value ?? args[0].target.checked : args[0]
+      const childProps = getVNodeProps(child)
+      const name = childProps.name
+      const fieldProps = childProps.fieldProps || {}
+      const newFieldProps: Record<string, unknown> & { onChange: (...args: unknown[]) => boolean } = {
+        ...fieldProps,
+        onChange: (...args: unknown[]) => {
+          const value = readEventValue(args[0])
           if (name)
             moreValues.value = { ...moreValues.value, [name]: value }
+          ;(fieldProps.onChange as ((...args: unknown[]) => void) | undefined)?.(...args)
           return false
         },
       }
-      const valuePropName = (child.props as any)?.valuePropName || 'value'
+      const valuePropName = childProps.valuePropName || 'value'
       if (name && Object.prototype.hasOwnProperty.call(moreValues.value, name))
         newFieldProps[valuePropName] = moreValues.value[name]
       // 折叠区内部：禁用 light 模式（防止 LightFilter.xxx 命名组件叠加一层 popover），按普通字段渲染
       return cloneVNode(child, {
         fieldProps: { ...newFieldProps, placement: props.placement },
         proFieldProps: {
-          ...((child.props as any)?.proFieldProps || {}),
+          ...(childProps.proFieldProps || {}),
           light: false,
         },
       })
@@ -167,16 +210,17 @@ const LightFilter = defineComponent({
 
     function renderOutsideChild(child: VNode): VNode {
       // 外侧字段：开启 light，让 ProFormField/LightWrapper 接管 FilterDropdown + FieldLabel 渲染。
+      const childProps = getVNodeProps(child)
       return cloneVNode(child, {
         proFieldProps: {
-          ...((child.props as any)?.proFieldProps || {}),
+          ...(childProps.proFieldProps || {}),
           light: true,
-          variant: props.variant,
-          size: props.size,
+          variant: props.variant ?? 'borderless',
+          size: props.size ?? 'middle',
         },
         fieldProps: {
-          ...((child.props as any)?.fieldProps || {}),
-          placement: (child.props as any)?.fieldProps?.placement ?? props.placement,
+          ...(childProps.fieldProps || {}),
+          placement: childProps.fieldProps?.placement ?? props.placement,
         },
       })
     }
@@ -186,8 +230,8 @@ const LightFilter = defineComponent({
       const collapseItems: VNode[] = []
       const outsideItems: VNode[] = []
       flat.forEach((item) => {
-        const secondary = (item.props as any)?.secondary
-        if (props.collapse || secondary)
+        const secondary = getVNodeProps(item).secondary
+        if (resolveBoolean(props.collapse) || secondary)
           collapseItems.push(item)
         else
           outsideItems.push(item)
@@ -203,13 +247,13 @@ const LightFilter = defineComponent({
         <div
           class={[
             'ant-pro-form-light-filter',
-            `ant-pro-form-light-filter-${props.size}`,
+            `ant-pro-form-light-filter-${props.size ?? 'middle'}`,
             hasEffectiveValue ? 'ant-pro-form-light-filter-effective' : '',
           ].filter(Boolean).join(' ')}
         >
           <div class="ant-pro-form-light-filter-container">
             {outsideItems.map((child, index) => (
-              <div class="ant-pro-form-light-filter-item" key={(child.key as any) ?? index}>
+              <div class="ant-pro-form-light-filter-item" key={child.key ?? index}>
                 {renderOutsideChild(child)}
               </div>
             ))}
@@ -219,7 +263,7 @@ const LightFilter = defineComponent({
                     <FilterDropdown
                       open={popoverOpen.value}
                       onUpdate:open={(open: boolean) => (popoverOpen.value = open)}
-                      placement={props.placement}
+                      placement={props.placement ?? 'bottomLeft'}
                       popoverProps={props.popoverProps}
                       label={collapseLabelNode.value}
                       footerRender={props.footerRender}
@@ -229,7 +273,7 @@ const LightFilter = defineComponent({
                       }}
                     >
                       {collapseItems.map(child => (
-                        <div class="ant-pro-form-light-filter-line" key={(child.key as any) ?? (child.props as any)?.name}>
+                        <div class="ant-pro-form-light-filter-line" key={child.key ?? getVNodeProps(child).name}>
                           {renderCollapseChild(child)}
                         </div>
                       ))}
@@ -262,31 +306,31 @@ const LightFilter = defineComponent({
   },
 })
 
+const LightFilter = LightFilterImpl as unknown as FunctionalComponent<LightFilterProps>
+
 /**
  * 对标 React `lightFilterFieldComponents`，提供 `<LightFilterInput>` 等命名组件。
  * Vue 模板不支持 `Component.subComponent` 用法，因此以独立命名组件导出。
  */
-function createLightFilterField(Field: any, name: string) {
+function createLightFilterField(Field: Component, name: string) {
   return defineComponent({
     name,
     inheritAttrs: false,
     setup(_, { attrs, slots }) {
-      return () => (
-        <Field
-          {...attrs}
-          proFieldProps={{ light: true, ...(attrs as any).proFieldProps }}
-        >
-          {slots.default?.()}
-        </Field>
-      )
+      return () => h(Field, {
+        ...attrs,
+        proFieldProps: { light: true, ...((attrs as { proFieldProps?: Record<string, unknown> }).proFieldProps || {}) },
+      }, slots.default ? { default: () => slots.default?.() } : undefined)
     },
   })
 }
 
 export const LightFilterInput = createLightFilterField(ProFormText, 'LightFilterInput')
 export const LightFilterPassword = createLightFilterField(ProFormTextPassword, 'LightFilterPassword')
+export const LightFilterText = createLightFilterField(ProFormText, 'LightFilterText')
 export const LightFilterTextArea = createLightFilterField(ProFormTextArea, 'LightFilterTextArea')
 export const LightFilterSelect = createLightFilterField(ProFormSelect, 'LightFilterSelect')
+export const LightFilterSearchSelect = createLightFilterField(ProFormSelect.SearchSelect, 'LightFilterSearchSelect')
 export const LightFilterTreeSelect = createLightFilterField(ProFormTreeSelect, 'LightFilterTreeSelect')
 export const LightFilterCascader = createLightFilterField(ProFormCascader, 'LightFilterCascader')
 export const LightFilterDigit = createLightFilterField(ProFormDigit, 'LightFilterDigit')
@@ -295,8 +339,14 @@ export const LightFilterSlider = createLightFilterField(ProFormSlider, 'LightFil
 export const LightFilterDate = createLightFilterField(ProFormDatePicker, 'LightFilterDate')
 export const LightFilterDateTime = createLightFilterField(ProFormDateTimePicker, 'LightFilterDateTime')
 export const LightFilterTime = createLightFilterField(ProFormTimePicker, 'LightFilterTime')
+export const LightFilterTimeRange = createLightFilterField(ProFormTimeRangePicker, 'LightFilterTimeRange')
 export const LightFilterDateRange = createLightFilterField(ProFormDateRangePicker, 'LightFilterDateRange')
 export const LightFilterDateTimeRange = createLightFilterField(ProFormDateTimeRangePicker, 'LightFilterDateTimeRange')
+export const LightFilterWeekRange = createLightFilterField(ProFormDateWeekRangePicker, 'LightFilterWeekRange')
+export const LightFilterMonthRange = createLightFilterField(ProFormDateMonthRangePicker, 'LightFilterMonthRange')
+export const LightFilterQuarterRange = createLightFilterField(ProFormDateQuarterRangePicker, 'LightFilterQuarterRange')
+export const LightFilterYearRange = createLightFilterField(ProFormDateYearRangePicker, 'LightFilterYearRange')
+export const LightFilterTimePickerRange = createLightFilterField(ProFormTimePicker.RangePicker, 'LightFilterTimePickerRange')
 export const LightFilterCheckboxGroup = createLightFilterField(ProFormCheckboxGroup, 'LightFilterCheckboxGroup')
 export const LightFilterFieldSet = createLightFilterField(ProFormFieldSet, 'LightFilterFieldSet')
 export const LightFilterSwitch = createLightFilterField(ProFormSwitch, 'LightFilterSwitch')

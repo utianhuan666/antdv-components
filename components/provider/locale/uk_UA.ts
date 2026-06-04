@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const ukUA: ProLocale = {
   moneySymbol: '₴',
@@ -74,6 +74,6 @@ const ukUA: ProLocale = {
     open: 'Відкрито',
     close: 'Закрито',
   },
-};
+}
 
-export default ukUA;
+export default ukUA

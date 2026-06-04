@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const viVN: ProLocale = {
   moneySymbol: '₫',
@@ -74,6 +74,6 @@ const viVN: ProLocale = {
     open: 'mở',
     close: 'đóng',
   },
-};
+}
 
-export default viVN;
+export default viVN

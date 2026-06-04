@@ -1,8 +1,9 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { NamePath, ProFormFieldSetProps } from '../../typing'
+import type { VNode, VNodeChild } from 'vue'
+import type { ProFormFieldSetProps } from '../../typing'
 import { Space } from 'antdv-next'
 import { cloneVNode, Comment, computed, defineComponent, Fragment, isVNode, onMounted, Text, watch } from 'vue'
 import { useFieldContext } from '../../FieldContext'
+import { proFormFieldSetPropNames } from '../../typing'
 import ProFormItem from '../FormItem'
 
 function defaultGetValueFromEvent(valuePropName: string, ...args: any[]) {
@@ -29,29 +30,20 @@ function normalizeChildren(children?: VNodeChild): VNode[] {
   })
 }
 
-const ProFormFieldSet = defineComponent({
+const ProFormFieldSetImpl = defineComponent({
   name: 'ProFormFieldSet',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    valuePropName: { type: String, default: 'value' },
-    initialValue: { type: null as unknown as PropType<ProFormFieldSetProps['initialValue']>, default: undefined },
-    transform: { type: Function as PropType<NonNullable<ProFormFieldSetProps['transform']>>, default: undefined },
-    convertValue: { type: Function as PropType<NonNullable<ProFormFieldSetProps['convertValue']>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    value: { type: Array as PropType<any[]>, default: undefined },
-    space: { type: Object as PropType<Record<string, any>>, default: undefined },
-    type: { type: String as PropType<NonNullable<ProFormFieldSetProps['type']>>, default: 'space' },
-    ignoreFormItem: { type: Boolean, default: false },
-  },
+  props: [...proFormFieldSetPropNames],
   emits: ['change'],
-  setup(props, { emit, slots }) {
+  setup(rawProps, { emit, slots }) {
+    const props = rawProps as ProFormFieldSetProps
     const fieldContext = useFieldContext()
+
+    function resolveBoolean(value: unknown) {
+      if (value === undefined)
+        return undefined
+      return value === '' || value === true
+    }
 
     const values = computed<any[]>(() => {
       if (props.value)
@@ -123,7 +115,7 @@ const ProFormFieldSet = defineComponent({
       const children = renderChildren()
       const content = <Space {...spaceProps}>{children}</Space>
 
-      if (props.ignoreFormItem)
+      if (resolveBoolean(props.ignoreFormItem))
         return content
 
       return (
@@ -132,12 +124,12 @@ const ProFormFieldSet = defineComponent({
           label={props.label}
           tooltip={props.tooltip}
           rules={props.rules}
-          required={props.required}
+          required={resolveBoolean(props.required)}
           initialValue={props.initialValue}
           transform={props.transform}
           convertValue={props.convertValue}
           formItemProps={{
-            valuePropName: props.valuePropName,
+            valuePropName: props.valuePropName ?? 'value',
             ...(fieldContext.formItemProps || {}),
             ...(props.formItemProps || {}),
           }}
@@ -148,5 +140,9 @@ const ProFormFieldSet = defineComponent({
     }
   },
 })
+
+const ProFormFieldSet = ProFormFieldSetImpl as typeof ProFormFieldSetImpl & {
+  new(): { $props: ProFormFieldSetProps }
+}
 
 export default ProFormFieldSet

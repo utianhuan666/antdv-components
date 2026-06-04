@@ -1,8 +1,8 @@
-import type { CSSProperties, SetupContext, VNodeChild } from 'vue'
 import type { BadgeProps } from 'antdv-next'
+import type { CSSProperties, SetupContext, VNodeChild } from 'vue'
 import { Badge } from 'antdv-next'
 
-type StatusProps = {
+interface StatusProps {
   className?: string
   style?: CSSProperties
   children?: VNodeChild
@@ -38,7 +38,7 @@ export const StatusComponents = {
 
 export type ProFieldStatusType = keyof typeof StatusComponents
 
-export const ProFieldBadgeColor = (props: StatusColorProps, { slots }: SetupContext) => {
+export function ProFieldBadgeColor(props: StatusColorProps, { slots }: SetupContext) {
   return <Badge color={props.color ?? ''} text={(slots.default?.() ?? props.children) as BadgeProps['text']} />
 }
 ProFieldBadgeColor.displayName = 'ProFieldBadgeColor'

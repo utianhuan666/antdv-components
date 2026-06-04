@@ -1,6 +1,6 @@
+import { ProSkeleton } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { ProSkeleton } from '@antdv/components'
 
 describe('skeleton', () => {
   it('🥩 list base use', () => {

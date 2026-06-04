@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const zhHK: ProLocale = {
   moneySymbol: 'HK$',
@@ -74,6 +74,6 @@ const zhHK: ProLocale = {
     open: '打開',
     close: '關閉',
   },
-};
+}
 
-export default zhHK;
+export default zhHK

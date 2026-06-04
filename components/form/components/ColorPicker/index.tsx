@@ -1,16 +1,20 @@
-import { defineComponent } from 'vue'
+import type { ColorPickerProps, PopoverProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-const ProFormColorPicker = defineComponent({
-  name: 'ProFormColorPicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="color" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormColorPickerProps = ProFormFieldItemProps<ColorPickerProps> & {
+  popoverProps?: PopoverProps
+  colors?: string[]
+}
+
+const ProFormColorPicker: FunctionalComponent<ProFormColorPickerProps> = (props, { slots }) => (
+  <ProFormField valueType="color" {...props}>
+    {slots.default?.()}
+  </ProFormField>
+)
+
+ProFormColorPicker.displayName = 'ProFormColorPicker'
+ProFormColorPicker.inheritAttrs = false
 
 export default ProFormColorPicker

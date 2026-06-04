@@ -1,5 +1,5 @@
-import ProFormList from '../../List'
 import type { ProSchemaRenderValueTypeFunction } from '../typing'
+import ProFormList from '../../List'
 
 export const formList: ProSchemaRenderValueTypeFunction = (item, { genItems }) => {
   if (item.valueType !== 'formList')

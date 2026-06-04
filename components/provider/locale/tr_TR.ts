@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const trTR: ProLocale = {
   moneySymbol: '₺',
@@ -74,6 +74,6 @@ const trTR: ProLocale = {
     open: 'açık',
     close: 'Kapalı',
   },
-};
+}
 
-export default trTR;
+export default trTR

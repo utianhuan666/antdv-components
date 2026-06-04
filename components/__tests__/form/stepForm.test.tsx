@@ -1,11 +1,11 @@
+import { ProFormText } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { StepsForm } from '../../form/layouts'
-import { ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('StepsForm', () => {
+describe('stepsForm', () => {
   it('renders StepForm steps and submits merged values', async () => {
     const onFinish = vi.fn().mockResolvedValue(true)
     const onCurrentChange = vi.fn()

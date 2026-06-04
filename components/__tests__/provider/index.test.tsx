@@ -1,19 +1,19 @@
-import { ConfigProvider } from 'antdv-next'
 import { mount } from '@vue/test-utils'
+import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { ProField } from '../../field'
 import { ProForm, ProFormMoney } from '../../form'
 import {
-  ProConfigProvider,
   createIntl,
+  ProConfigProvider,
   useIntl,
   useProProviderContext,
   useStyle,
 } from '../../provider'
 import { waitFor } from '../testUtils'
 
-describe('ProConfigProvider', () => {
+describe('proConfigProvider', () => {
   it('token should be correct in useStyle', () => {
     const assertToken = vi.fn()
 

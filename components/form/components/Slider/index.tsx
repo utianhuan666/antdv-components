@@ -1,16 +1,24 @@
-import { defineComponent } from 'vue'
+import type { SliderProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-const ProFormSlider = defineComponent({
-  name: 'ProFormSlider',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="slider" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormSliderProps = ProFormFieldItemProps<SliderProps> & {
+  range?: SliderProps['range']
+  min?: SliderProps['min']
+  max?: SliderProps['max']
+  step?: SliderProps['step']
+  marks?: SliderProps['marks']
+  vertical?: SliderProps['vertical']
+}
+
+const ProFormSlider: FunctionalComponent<ProFormSliderProps> = (props, { slots }) => (
+  <ProFormField valueType="slider" {...props}>
+    {slots.default?.()}
+  </ProFormField>
+)
+
+ProFormSlider.displayName = 'ProFormSlider'
+ProFormSlider.inheritAttrs = false
 
 export default ProFormSlider

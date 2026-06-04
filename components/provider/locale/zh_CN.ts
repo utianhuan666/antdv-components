@@ -79,7 +79,7 @@ const zhCN = {
     open: '打开',
     close: '关闭',
   },
-} as const;
+} as const
 
 /** 所有 locale 共享的基准类型，由 zh-CN 推断得出。 */
 export type ProLocale = {
@@ -89,6 +89,6 @@ export type ProLocale = {
   >
     ? { -readonly [P in keyof (typeof zhCN)[K]]: any }
     : string;
-};
+}
 
-export default zhCN;
+export default zhCN

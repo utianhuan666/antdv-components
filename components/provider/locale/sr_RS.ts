@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const srRS: ProLocale = {
   moneySymbol: 'RSD',
@@ -74,6 +74,6 @@ const srRS: ProLocale = {
     open: 'Otvori',
     close: 'Zatvori',
   },
-};
+}
 
-export default srRS;
+export default srRS

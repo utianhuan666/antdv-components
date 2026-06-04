@@ -1,9 +1,9 @@
+import { ProForm, ProFormRadio } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it } from 'vitest'
-import { ProForm, ProFormRadio } from '@antdv/components'
 import { mountAttached } from '../testUtils'
 
-describe('ProFormRadio', () => {
+describe('proFormRadio', () => {
   it('📦 ProFormRadio should render correctly', () => {
     const wrapper = mountAttached({
       render: () => (

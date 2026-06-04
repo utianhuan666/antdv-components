@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const uzUZ: ProLocale = {
   moneySymbol: 'UZS',
@@ -75,6 +75,6 @@ const uzUZ: ProLocale = {
     open: 'Ochish',
     close: 'Yopish',
   },
-};
+}
 
-export default uzUZ;
+export default uzUZ

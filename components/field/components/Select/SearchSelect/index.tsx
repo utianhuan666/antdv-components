@@ -1,11 +1,11 @@
-import type { VNodeChild } from 'vue'
 import type { SelectProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 import type { RequestOptionsType } from '../types'
 import { clsx } from '@v-c/util'
 import { Select } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
 
-export type LabeledValue = {
+export interface LabeledValue {
   key?: string
   label: VNodeChild
   value: string | number
@@ -189,13 +189,13 @@ const SearchSelect = defineComponent({
         }
 
         return {
-          title: label,
+          'title': label,
           ...restItem,
-          data_title: label,
-          value: value ?? index,
+          'data_title': label,
+          'value': value ?? index,
           key,
           'data-item': item,
-          className: clsx('ant-pro-filed-search-select-option', itemClassName),
+          'className': clsx('ant-pro-filed-search-select-option', itemClassName),
           label,
         }
       })

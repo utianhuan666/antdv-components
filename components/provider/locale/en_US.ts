@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const enUS: ProLocale = {
   moneySymbol: '$',
@@ -74,6 +74,6 @@ const enUS: ProLocale = {
     open: 'open',
     close: 'close',
   },
-};
+}
 
-export default enUS;
+export default enUS

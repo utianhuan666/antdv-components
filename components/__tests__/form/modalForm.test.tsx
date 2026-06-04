@@ -1,12 +1,12 @@
+import { ProFormText } from '@antdv/components'
+import { Button } from 'antdv-next'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { Button } from 'antdv-next'
 import { ModalForm } from '../../form/layouts'
-import { ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ModalForm', () => {
+describe('modalForm', () => {
   it('opens from trigger and closes after successful submit', async () => {
     const onFinish = vi.fn().mockResolvedValue(true)
     const onOpenChange = vi.fn()

@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const koKR: ProLocale = {
   moneySymbol: '₩',
@@ -74,6 +74,6 @@ const koKR: ProLocale = {
     open: '열림',
     close: '닫힘',
   },
-};
+}
 
-export default koKR;
+export default koKR

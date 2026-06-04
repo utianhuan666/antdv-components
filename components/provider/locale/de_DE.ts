@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const deDE: ProLocale = {
   moneySymbol: '€',
@@ -74,6 +74,6 @@ const deDE: ProLocale = {
     open: 'offen',
     close: 'schließen',
   },
-};
+}
 
-export default deDE;
+export default deDE

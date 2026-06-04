@@ -1,5 +1,6 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { CommonFormProps, ProFormGridConfig } from '../../typing'
+import type { ColProps, FormItemProps, FormProps, RowProps } from 'antdv-next'
+import type { CSSProperties, FunctionalComponent, VNodeChild } from 'vue'
+import type { CommonFormProps, FormData, FormRefLike, ProFormGridConfig } from '../../typing'
 import type { CollapseRender } from './Actions'
 import type { QueryFilterLayout, SpanConfig } from './breakpoints'
 import { useResizeObserver } from '@vueuse/core'
@@ -10,7 +11,7 @@ import Actions from './Actions'
 import { getBreakpointsConfig, getSpanConfig } from './breakpoints'
 import { calcSubmitterOffset, processQueryFilterItems } from './processItems'
 
-export interface QueryFilterProps extends CommonFormProps, ProFormGridConfig {
+export interface BaseQueryFilterProps {
   layout?: QueryFilterLayout
   collapsed?: boolean
   defaultCollapsed?: boolean
@@ -26,13 +27,47 @@ export interface QueryFilterProps extends CommonFormProps, ProFormGridConfig {
   ignoreRules?: boolean
   showHiddenNum?: boolean
   collapseRender?: CollapseRender
-  submitterColSpanProps?: Record<string, any> & { span: number }
-  containerStyle?: Record<string, any>
-  optionRender?: false | ((searchConfig: any, props: any, dom: VNodeChild[]) => VNodeChild[])
+  submitterColSpanProps?: Omit<ColProps, 'span'> & { span: number }
+  containerStyle?: CSSProperties
+  optionRender?: false | ((
+    searchConfig: Omit<BaseQueryFilterProps, 'optionRender'>,
+    props: BaseQueryFilterProps,
+    dom: VNodeChild[],
+  ) => VNodeChild[])
   onCollapse?: (collapsed: boolean) => void
 }
 
+export type QueryFilterProps<T = FormData, U = FormData> = Omit<FormProps, 'onFinish'> & CommonFormProps<T, U> & ProFormGridConfig & BaseQueryFilterProps
+
 const defaultWidth = typeof window !== 'undefined' ? window.document?.body?.clientWidth || 1024 : 1024
+
+const queryFilterPropNames = [
+  'layout',
+  'collapsed',
+  'defaultCollapsed',
+  'defaultColsNumber',
+  'defaultFormItemsNumber',
+  'labelWidth',
+  'split',
+  'span',
+  'searchText',
+  'resetText',
+  'searchGutter',
+  'preserve',
+  'ignoreRules',
+  'showHiddenNum',
+  'collapseRender',
+  'submitterColSpanProps',
+  'containerStyle',
+  'optionRender',
+  'onCollapse',
+] as const
+
+function resolveBoolean(value: unknown, fallback?: boolean) {
+  if (value === undefined)
+    return fallback
+  return value === '' || value === true
+}
 
 /**
  * 对标 React `src/form/layouts/QueryFilter/index.tsx`：
@@ -40,43 +75,22 @@ const defaultWidth = typeof window !== 'undefined' ? window.document?.body?.clie
  * 2. 支持 `defaultCollapsed` / `defaultColsNumber` / `defaultFormItemsNumber` 控制折叠
  * 3. 通过 BaseForm.contentRender 注入 Row + Col 布局并附加 submitter
  */
-const QueryFilter = defineComponent({
+const QueryFilterImpl = defineComponent({
   name: 'QueryFilter',
   inheritAttrs: false,
-  props: {
-    layout: { type: String as PropType<QueryFilterLayout>, default: undefined },
-    collapsed: { type: Boolean, default: undefined },
-    defaultCollapsed: { type: Boolean, default: true },
-    defaultColsNumber: { type: Number, default: undefined },
-    defaultFormItemsNumber: { type: Number, default: undefined },
-    labelWidth: { type: [Number, String] as PropType<number | 'auto'>, default: 80 },
-    split: { type: Boolean, default: false },
-    span: { type: [Number, Object] as PropType<SpanConfig>, default: undefined },
-    searchText: { type: String, default: undefined },
-    resetText: { type: String, default: undefined },
-    searchGutter: { type: [Number, Array] as PropType<number | [number, number]>, default: 24 },
-    preserve: { type: Boolean, default: true },
-    ignoreRules: { type: Boolean, default: undefined },
-    showHiddenNum: { type: Boolean, default: false },
-    collapseRender: { type: [Function, Boolean] as PropType<CollapseRender>, default: undefined },
-    submitterColSpanProps: { type: Object as PropType<Record<string, any> & { span: number }>, default: undefined },
-    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
-    optionRender: {
-      type: [Function, Boolean] as PropType<QueryFilterProps['optionRender']>,
-      default: undefined,
-    },
-    onCollapse: { type: Function as PropType<(collapsed: boolean) => void>, default: undefined },
-  },
+  props: [...queryFilterPropNames],
   emits: ['collapse'],
-  setup(props, { attrs, slots, emit, expose }) {
-    const baseRef = shallowRef<any>()
+  setup(rawProps, { attrs, slots, emit, expose }) {
+    const props = rawProps as Readonly<QueryFilterProps>
+    const baseRef = shallowRef<FormRefLike>()
     const containerRef = ref<HTMLElement | null>(null)
     const width = ref<number>(defaultWidth)
-    const internalCollapsed = ref<boolean>(props.defaultCollapsed)
+    const internalCollapsed = ref<boolean>(resolveBoolean(props.defaultCollapsed, true)!)
     const hiddenNamePaths = shallowRef<(string | number)[][]>([])
 
     const isControlled = computed(() => props.collapsed !== undefined)
-    const collapsed = computed(() => (isControlled.value ? !!props.collapsed : internalCollapsed.value))
+    const collapsed = computed(() => (isControlled.value ? resolveBoolean(props.collapsed, false)! : internalCollapsed.value))
+    const preserve = computed(() => resolveBoolean(props.preserve, true)!)
 
     function setCollapsed(next: boolean) {
       if (!isControlled.value)
@@ -113,7 +127,7 @@ const QueryFilter = defineComponent({
     })
 
     const formItemFixStyle = computed(() => {
-      const labelWidth = props.labelWidth
+      const labelWidth = props.labelWidth ?? 80
       if (labelWidth && spanSize.value.layout !== 'vertical' && labelWidth !== 'auto') {
         return {
           labelCol: { flex: `0 0 ${labelWidth}px` },
@@ -131,7 +145,7 @@ const QueryFilter = defineComponent({
       submit: () => baseRef.value?.submit?.(),
       reset: () => baseRef.value?.reset?.(),
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
-      getFieldsFormatValue: (...args: any[]) => baseRef.value?.getFieldsFormatValue?.(...args),
+      getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
     })
 
     function normalizeNamePath(name: unknown): (string | number)[] | undefined {
@@ -140,26 +154,28 @@ const QueryFilter = defineComponent({
       return Array.isArray(name) ? name as (string | number)[] : [name as string | number]
     }
 
-    function deleteValueByNamePath(values: Record<string, any>, namePath: (string | number)[]) {
+    function deleteValueByNamePath(values: FormData, namePath: (string | number)[]) {
       const last = namePath[namePath.length - 1]
       if (last === undefined)
         return
-      const parent = namePath.slice(0, -1).reduce<any>((current, key) => current?.[key], values)
+      const parent = namePath.slice(0, -1).reduce<unknown>((current, key) => {
+        return current && typeof current === 'object' ? (current as FormData)[key] : undefined
+      }, values)
       if (parent && typeof parent === 'object')
-        delete parent[last]
+        delete (parent as FormData)[last]
     }
 
-    function filterHiddenValues(values: Record<string, any>) {
-      if (props.preserve !== false || hiddenNamePaths.value.length === 0)
+    function filterHiddenValues(values: FormData) {
+      if (preserve.value || hiddenNamePaths.value.length === 0)
         return values
       const nextValues = { ...(values || {}) }
       hiddenNamePaths.value.forEach(namePath => deleteValueByNamePath(nextValues, namePath))
       return nextValues
     }
 
-    async function handleFinish(values: Record<string, any>) {
+    async function handleFinish(values: FormData): Promise<boolean | void> {
       const filteredValues = filterHiddenValues(values)
-      return (attrs.onFinish as any)?.(filteredValues)
+      return (attrs.onFinish as ((values: FormData) => boolean | void | Promise<boolean | void>) | undefined)?.(filteredValues)
     }
 
     function renderContent(items: VNodeChild, submitter: VNodeChild | undefined) {
@@ -168,8 +184,8 @@ const QueryFilter = defineComponent({
         spanSize: spanSize.value,
         collapsed: collapsed.value,
         showLength: showLength.value,
-        preserve: props.preserve,
-        ignoreRules: props.ignoreRules,
+        preserve: preserve.value,
+        ignoreRules: resolveBoolean(props.ignoreRules),
       })
 
       hiddenNamePaths.value = processedList
@@ -179,7 +195,7 @@ const QueryFilter = defineComponent({
 
       let renderSpan = 0
       const doms = processedList.map((entry, index) => {
-        if (entry.hidden && !props.preserve)
+        if (entry.hidden && !preserve.value)
           return null
         const { itemDom, colSpan, hidden } = entry
         if (24 - (renderSpan % 24) < colSpan)
@@ -187,12 +203,12 @@ const QueryFilter = defineComponent({
         renderSpan += colSpan
 
         const isSplitLine
-          = props.split && renderSpan % 24 === 0 && index < processedList.length - 1
+          = resolveBoolean(props.split, false) && renderSpan % 24 === 0 && index < processedList.length - 1
 
         const colStyle = hidden ? { display: 'none' } : undefined
         return (
           <Col
-            key={(itemDom as any)?.key ?? index}
+            key={itemDom && typeof itemDom === 'object' && 'key' in itemDom ? itemDom.key ?? undefined : index}
             span={colSpan}
             class={[
               'ant-pro-query-filter-row-split',
@@ -205,7 +221,7 @@ const QueryFilter = defineComponent({
         )
       })
 
-      const hiddenNum = props.showHiddenNum
+      const hiddenNum = resolveBoolean(props.showHiddenNum, false)
         ? processedList.filter(entry => entry.hidden).length
         : false
       const needCollapseRender = totalSpan >= 24 && totalSize > showLength.value
@@ -216,7 +232,7 @@ const QueryFilter = defineComponent({
 
       return (
         <Row
-          gutter={props.searchGutter as any}
+          gutter={(props.searchGutter ?? 24) as RowProps['gutter']}
           justify="start"
           class="ant-pro-query-filter-row"
         >
@@ -251,7 +267,11 @@ const QueryFilter = defineComponent({
         onFinish: _onFinish,
         class: attrsClass,
         ...restAttrs
-      } = attrs as Record<string, any>
+      } = attrs as FormData
+      const baseFormAttrs = {
+        ...restAttrs,
+        class: ['ant-pro-query-filter', attrsClass].filter(Boolean).join(' '),
+      }
 
       return (
         <div
@@ -262,18 +282,17 @@ const QueryFilter = defineComponent({
           <BaseForm
             ref={baseRef}
             isKeyPressSubmit
-            layout={spanSize.value.layout as any}
+            layout={spanSize.value.layout as FormProps['layout']}
             fieldProps={{ style: { width: '100%' } }}
-            formItemProps={formItemFixStyle.value as any}
+            formItemProps={formItemFixStyle.value as FormItemProps | undefined}
             contentRender={(items, submitter) => renderContent(items, submitter)}
-            {...restAttrs}
+            {...baseFormAttrs as any}
             onFinish={handleFinish}
-            class={['ant-pro-query-filter', attrsClass].filter(Boolean).join(' ')}
           >
             {{
               default: () => slots.default?.(),
               submitter: slots.submitter
-                ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
+                ? (slotProps: FormData) => slots.submitter?.(slotProps)
                 : undefined,
             }}
           </BaseForm>
@@ -282,6 +301,8 @@ const QueryFilter = defineComponent({
     }
   },
 })
+
+const QueryFilter = QueryFilterImpl as unknown as FunctionalComponent<QueryFilterProps>
 
 export default QueryFilter
 export { QueryFilter }

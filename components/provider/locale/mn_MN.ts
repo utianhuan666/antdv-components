@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const mnMN: ProLocale = {
   moneySymbol: '₮',
@@ -74,6 +74,6 @@ const mnMN: ProLocale = {
     open: 'Нээх',
     close: 'Хаах',
   },
-};
+}
 
-export default mnMN;
+export default mnMN

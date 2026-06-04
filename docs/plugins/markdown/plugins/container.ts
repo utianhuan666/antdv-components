@@ -52,7 +52,8 @@ function createContainer(klass: string, defaultTitle: string, md: MarkdownIt): C
           const title = md.renderInline(info || defaultTitle, {
             references: (env as { references?: unknown }).references,
           })
-          if (klass === 'details') return `<details class="${klass} custom-block"${attrs}><summary>${title}</summary>\n`
+          if (klass === 'details')
+            return `<details class="${klass} custom-block"${attrs}><summary>${title}</summary>\n`
           return `<div class="${klass} custom-block"${attrs}><p class="custom-block-title">${title}</p>\n`
         }
         return klass === 'details' ? '</details>\n' : '</div>\n'
@@ -80,7 +81,8 @@ function createCodeGroup(options: Options): ContainerArgs {
               if (title) {
                 const id = nanoid(7)
                 tabs += `<input type="radio" name="group-${name}" id="tab-${id}" ${checked}><label for="tab-${id}">${title}</label>`
-                if (checked && !isHtml) token.info += ' active'
+                if (checked && !isHtml)
+                  token.info += ' active'
                 checked = ''
               }
             }

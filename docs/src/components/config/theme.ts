@@ -15,7 +15,8 @@ export function useTheme() {
           algorithm: [themeConfig.darkAlgorithm],
           cssVar: { prefix: 'ant' },
         }
-      } else {
+      }
+      else {
         theme.value = {
           cssVar: { prefix: 'ant' },
         }

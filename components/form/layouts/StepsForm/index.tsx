@@ -1,5 +1,6 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { SubmitterProps } from '../../typing'
+import type { StepsProps } from 'antdv-next'
+import type { CSSProperties, FunctionalComponent, VNode, VNodeChild } from 'vue'
+import type { FormData, FormRefLike, ProFormProps, SubmitterProps, ValueRef } from '../../typing'
 import type { StepFormProps } from './StepForm'
 import { Button, Col, Row, Space, Steps } from 'antdv-next'
 import { cloneVNode, computed, defineComponent, Fragment, h, inject, isVNode, nextTick, provide, ref, shallowRef } from 'vue'
@@ -23,27 +24,27 @@ export function useStepsFormContext() {
 }
 
 export interface StepsFormRef {
-  getAllFieldsValue: () => Record<string, any>
-  getAllFieldsFormatValue: (omitNil?: boolean) => Record<string, any>
+  getAllFieldsValue: () => FormData
+  getAllFieldsFormatValue: (omitNil?: boolean) => FormData
   getCurrentStep: () => number
   setCurrentStep: (stepIndex: number) => void
-  getStepFormInstance: (stepIndex: number) => any
+  getStepFormInstance: (stepIndex: number) => FormRefLike | undefined
   resetSteps: () => void
 }
 
-export interface StepsFormProps<T = Record<string, any>> {
+export interface StepsFormProps<T extends FormData = FormData> {
   onFinish?: (values: T) => Promise<boolean | void> | boolean | void
   current?: number
-  stepsProps?: Record<string, any>
-  formProps?: Record<string, any>
+  stepsProps?: StepsProps
+  formProps?: ProFormProps<T>
   onCurrentChange?: (current: number) => void
   stepsRender?: (
     steps: { key: string, title?: VNodeChild }[],
     defaultDom: VNodeChild,
   ) => VNodeChild
-  formRef?: { value?: any }
-  stepsFormRef?: { value?: StepsFormRef | null }
-  formMapRef?: { value?: any[] }
+  formRef?: ValueRef<FormRefLike | null>
+  stepsFormRef?: ValueRef<StepsFormRef | null>
+  formMapRef?: ValueRef<Array<FormRefLike | undefined>>
   allowStepSelect?: boolean
   stepFormRender?: (form: VNodeChild) => VNodeChild
   stepsFormRender?: (form: VNodeChild, submitter: VNodeChild) => VNodeChild
@@ -51,54 +52,67 @@ export interface StepsFormProps<T = Record<string, any>> {
     onSubmit?: () => void
     onReset?: () => void
   }) | false
-  containerStyle?: Record<string, any>
+  containerStyle?: CSSProperties
   layoutRender?: (layoutDom: { stepsDom: VNodeChild, formDom: VNodeChild }) => VNodeChild
+}
+
+const stepsFormPropNames = [
+  'onFinish',
+  'current',
+  'stepsProps',
+  'formProps',
+  'onCurrentChange',
+  'stepsRender',
+  'formRef',
+  'stepsFormRef',
+  'formMapRef',
+  'allowStepSelect',
+  'stepFormRender',
+  'stepsFormRender',
+  'submitter',
+  'containerStyle',
+  'layoutRender',
+] as const
+
+function resolveBoolean(value: unknown, fallback = false) {
+  if (value === undefined)
+    return fallback
+  return value === '' || value === true
 }
 
 function flattenChildren(children: VNodeChild): VNode[] {
   const list = Array.isArray(children) ? children : [children]
-  return list.flatMap((item: any): VNode[] => {
+  return list.flatMap((item): VNode[] => {
     if (!isVNode(item))
       return []
     if (item.type === Fragment)
-      return flattenChildren(item.children as any)
+      return flattenChildren(item.children as VNodeChild)
     return [item]
   })
 }
 
-function mergeValues(parts: Record<string, any>[]) {
-  return parts.reduce<Record<string, any>>((result, item) => ({ ...result, ...(item || {}) }), {})
+function mergeValues(parts: FormData[]) {
+  return parts.reduce<FormData>((result, item) => ({ ...result, ...(item || {}) }), {})
 }
 
 const StepsFormInner = defineComponent({
   name: 'StepsForm',
   inheritAttrs: false,
-  props: {
-    onFinish: { type: Function as PropType<StepsFormProps['onFinish']>, default: undefined },
-    current: { type: Number, default: undefined },
-    stepsProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    formProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    onCurrentChange: { type: Function as PropType<(current: number) => void>, default: undefined },
-    stepsRender: { type: Function as PropType<StepsFormProps['stepsRender']>, default: undefined },
-    formRef: { type: Object as PropType<StepsFormProps['formRef']>, default: undefined },
-    stepsFormRef: { type: Object as PropType<StepsFormProps['stepsFormRef']>, default: undefined },
-    formMapRef: { type: Object as PropType<StepsFormProps['formMapRef']>, default: undefined },
-    allowStepSelect: { type: Boolean, default: false },
-    stepFormRender: { type: Function as PropType<StepsFormProps['stepFormRender']>, default: undefined },
-    stepsFormRender: { type: Function as PropType<StepsFormProps['stepsFormRender']>, default: undefined },
-    submitter: { type: [Boolean, Object] as PropType<StepsFormProps['submitter']>, default: () => ({}) },
-    containerStyle: { type: Object as PropType<Record<string, any>>, default: undefined },
-    layoutRender: { type: Function as PropType<StepsFormProps['layoutRender']>, default: undefined },
-  },
+  props: [...stepsFormPropNames],
   emits: ['currentChange'],
-  setup(props, { slots, emit, expose }) {
+  setup(rawProps, { attrs, slots, emit, expose }) {
+    const props = rawProps as Readonly<StepsFormProps>
     const innerCurrent = ref(0)
-    const formValues = shallowRef(new Map<string, Record<string, any>>())
-    const formInstances = shallowRef<any[]>([])
+    const formValues = shallowRef(new Map<string, FormData>())
+    const formInstances = shallowRef<Array<FormRefLike | undefined>>([])
     const loading = ref(false)
 
     const current = computed(() => props.current ?? innerCurrent.value)
     const stepItems = computed(() => flattenChildren(slots.default?.() || []))
+    const onFinish = (values: FormData) => {
+      const handler = props.onFinish ?? (attrs.onFinish as StepsFormProps['onFinish'] | undefined)
+      return handler?.(values)
+    }
 
     function setCurrent(nextCurrent: number) {
       if (nextCurrent < 0 || nextCurrent >= stepItems.value.length)
@@ -109,7 +123,7 @@ const StepsFormInner = defineComponent({
       emit('currentChange', nextCurrent)
       nextTick(() => {
         if (props.formRef)
-        props.formRef.value = formInstances.value[nextCurrent]
+          props.formRef.value = formInstances.value[nextCurrent]
       })
     }
 
@@ -156,7 +170,7 @@ const StepsFormInner = defineComponent({
     if (props.stepsFormRef)
       props.stepsFormRef.value = stepsRef.value
 
-    function onFormReady(step: number, form: any) {
+    function onFormReady(step: number, form: FormRefLike) {
       formInstances.value[step] = form
       if (props.formMapRef)
         props.formMapRef.value = formInstances.value
@@ -164,7 +178,7 @@ const StepsFormInner = defineComponent({
         props.formRef.value = form
     }
 
-    async function onStepFinish(name: string, values: Record<string, any>) {
+    async function onStepFinish(name: string, values: FormData) {
       const nextValues = new Map(formValues.value)
       nextValues.set(name, values)
       formValues.value = nextValues
@@ -178,7 +192,7 @@ const StepsFormInner = defineComponent({
       loading.value = true
       try {
         const merged = mergeValues(Array.from(nextValues.values()))
-        const result = await props.onFinish?.(merged as any)
+        const result = await onFinish(merged)
         if (result)
           resetSteps()
       }
@@ -218,10 +232,10 @@ const StepsFormInner = defineComponent({
         >
           <Steps
             {...(props.stepsProps || {})}
-            items={items as any}
+            items={items}
             current={current.value}
             onChange={(nextStep: number) => {
-              if (props.allowStepSelect)
+              if (resolveBoolean(props.allowStepSelect))
                 setCurrent(nextStep)
               props.stepsProps?.onChange?.(nextStep)
             }}
@@ -251,7 +265,7 @@ const StepsFormInner = defineComponent({
       const buttons = [
         current.value > 0
           ? (
-              <Button key="pre" {...(submitter.resetButtonProps || {}) as any} onClick={prePage}>
+              <Button key="pre" {...(submitter.resetButtonProps || {})} onClick={prePage}>
                 {preText}
               </Button>
             )
@@ -260,7 +274,7 @@ const StepsFormInner = defineComponent({
           key="submit"
           type="primary"
           loading={loading.value}
-          {...(submitter.submitButtonProps || {}) as any}
+          {...(submitter.submitButtonProps || {})}
           onClick={submitCurrent}
         >
           {isLastStep ? submitText : nextText}
@@ -340,12 +354,12 @@ const StepsFormInner = defineComponent({
       const layoutDom = renderLayout(renderStepsDom(), formContainer)
       const content = props.stepsFormRender ? props.stepsFormRender(layoutDom, submitterDom) : layoutDom
 
-      return h('div', { class: 'ant-pro-steps-form' }, content as any)
+      return h('div', { class: 'ant-pro-steps-form' }, content ?? undefined)
     }
   },
 })
 
-const StepsForm = StepsFormInner as typeof StepsFormInner & {
+const StepsForm = StepsFormInner as unknown as FunctionalComponent<StepsFormProps> & {
   StepForm: typeof StepForm
 }
 

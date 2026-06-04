@@ -1,50 +1,67 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { CommonFormProps } from '../../typing'
+import type { FormProps, ModalProps } from 'antdv-next'
+import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { CommonFormProps, FormData, FormRefLike } from '../../typing'
 import { Modal } from 'antdv-next'
 import { defineComponent, shallowRef } from 'vue'
 import { BaseForm } from '../../BaseForm'
 import { useOverlayForm } from '../_shared/useOverlayForm'
 
-export interface ModalFormProps<T = Record<string, any>, U = Record<string, any>> extends CommonFormProps<T, U> {
+export type ModalFormProps<T = FormData, U = FormData> = Omit<FormProps, 'onFinish' | 'title'> & CommonFormProps<T, U> & {
+  onFinish?: (formData: T) => Promise<boolean | void> | boolean | void
   submitTimeout?: number
   trigger?: VNodeChild
-  open?: boolean
+  open?: ModalProps['open']
   onOpenChange?: (open: boolean) => void
-  modalProps?: Record<string, any>
-  title?: VNodeChild
-  width?: string | number
+  modalProps?: Omit<ModalProps, 'open'>
+  title?: ModalProps['title']
+  width?: ModalProps['width']
 }
 
-const ModalForm = defineComponent({
+const modalFormPropNames = [
+  'submitTimeout',
+  'trigger',
+  'open',
+  'onOpenChange',
+  'modalProps',
+  'title',
+  'width',
+  'submitter',
+  'onFinish',
+] as const
+
+function resolveBoolean(value: unknown, fallback?: boolean) {
+  if (value === undefined)
+    return fallback
+  return value === '' || value === true
+}
+
+const ModalFormImpl = defineComponent({
   name: 'ModalForm',
   inheritAttrs: false,
-  props: {
-    submitTimeout: { type: Number, default: undefined },
-    trigger: { type: null as unknown as PropType<VNodeChild>, default: undefined },
-    open: { type: Boolean, default: undefined },
-    onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-    modalProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    title: { type: null as unknown as PropType<VNodeChild>, default: undefined },
-    width: { type: [String, Number] as PropType<string | number>, default: undefined },
-    submitter: { type: [Boolean, Object] as PropType<CommonFormProps['submitter']>, default: () => ({}) },
-    onFinish: { type: Function as PropType<CommonFormProps['onFinish']>, default: undefined },
-  },
+  props: [...modalFormPropNames],
   emits: ['openChange'],
-  setup(props, { attrs, slots, emit, expose }) {
-    const baseRef = shallowRef<any>()
-    const overlay = useOverlayForm({
-      propsOpen: props.open,
+  setup(rawProps, { attrs, slots, emit, expose }) {
+    const props = rawProps as Readonly<ModalFormProps>
+    const baseRef = shallowRef<FormRefLike>()
+    const modalProps = () => props.modalProps || {}
+    const submitter = () => props.submitter ?? {}
+    const onFinish = (values: FormData): Promise<boolean | void> | boolean | void => {
+      const handler = props.onFinish ?? (attrs.onFinish as ModalFormProps['onFinish'] | undefined)
+      return handler?.(values)
+    }
+    const overlay = useOverlayForm<FormData>({
+      propsOpen: resolveBoolean(props.open),
       onOpenChange: props.onOpenChange,
       emitOpenChange: (open: boolean) => emit('openChange', open),
       formRef: baseRef,
-      destroyOnHidden: props.modalProps?.destroyOnHidden,
+      destroyOnHidden: modalProps().destroyOnHidden,
       submitTimeout: props.submitTimeout,
-      onFinish: props.onFinish as any,
-      onCloseExtra: props.modalProps?.onCancel,
-      submitter: props.submitter,
+      onFinish,
+      onCloseExtra: event => modalProps().onCancel?.(event as KeyboardEvent | MouseEvent),
+      submitter: submitter(),
       searchConfig: {
-        submitText: String(props.modalProps?.okText ?? '确认'),
-        resetText: String(props.modalProps?.cancelText ?? '取消'),
+        submitText: String(modalProps().okText ?? '确认'),
+        resetText: String(modalProps().cancelText ?? '取消'),
       },
       trigger: props.trigger,
     })
@@ -56,35 +73,35 @@ const ModalForm = defineComponent({
       submit: () => baseRef.value?.submit?.(),
       reset: () => baseRef.value?.reset?.(),
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
-      setFieldsValue: (values: Record<string, any>) => baseRef.value?.setFieldsValue?.(values),
+      setFieldsValue: (values: FormData) => baseRef.value?.setFieldsValue?.(values),
     })
 
     return () => {
-      const modalProps = props.modalProps || {}
-      const footer = props.submitter === false
+      const currentModalProps = modalProps()
+      const footer = submitter() === false
         ? null
         : <div ref={overlay.setFooterRef} style={{ display: 'flex', justifyContent: 'flex-end' }} />
 
       return (
         <>
           <Modal
-            title={props.title as any}
+            title={props.title}
             width={props.width || 800}
-            {...modalProps}
+            {...currentModalProps}
             open={overlay.open.value}
             footer={footer}
-            onCancel={(event: any) => {
+            onCancel={(event?: Event | KeyboardEvent | MouseEvent) => {
               if (props.submitTimeout && overlay.loading.value)
                 return
               overlay.setOpen(false)
-              modalProps.onCancel?.(event)
+              currentModalProps.onCancel?.(event as KeyboardEvent | MouseEvent)
             }}
             afterClose={() => {
-              if (modalProps.destroyOnHidden)
+              if (currentModalProps.destroyOnHidden)
                 overlay.resetFields()
               if (overlay.open.value)
                 overlay.setOpen(false)
-              modalProps.afterClose?.()
+              currentModalProps.afterClose?.()
             }}
           >
             <BaseForm
@@ -93,13 +110,13 @@ const ModalForm = defineComponent({
               layout="vertical"
               {...attrs}
               submitter={overlay.submitterConfig.value}
-              onFinish={overlay.onFinishHandle as any}
+              onFinish={overlay.onFinishHandle}
               contentRender={(items, submitter) => overlay.renderContent(items, submitter)}
             >
               {{
                 default: () => slots.default?.(),
                 submitter: slots.submitter
-                  ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
+                  ? (slotProps: FormData) => slots.submitter?.(slotProps)
                   : undefined,
               }}
             </BaseForm>
@@ -110,6 +127,8 @@ const ModalForm = defineComponent({
     }
   },
 })
+
+const ModalForm = ModalFormImpl as unknown as FunctionalComponent<ModalFormProps>
 
 export default ModalForm
 export { ModalForm }

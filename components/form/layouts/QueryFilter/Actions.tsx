@@ -1,11 +1,18 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import { DownOutlined } from '@antdv-next/icons'
 import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
 
 export interface ActionsCollapseProps {
-  collapsed: boolean
+  collapsed?: boolean
   hiddenNum?: number | false
+}
+
+export interface ActionsProps extends ActionsCollapseProps {
+  submitter?: VNodeChild
+  setCollapsed?: (collapsed: boolean) => void
+  collapseRender?: CollapseRender
+  style?: CSSProperties
 }
 
 export type CollapseRender
@@ -35,22 +42,15 @@ const defaultCollapseRender: Exclude<CollapseRender, false> = (collapsed, _, hid
  */
 const Actions = defineComponent({
   name: 'ProQueryFilterActions',
-  props: {
-    submitter: { type: null as unknown as PropType<VNodeChild>, default: undefined },
-    collapsed: { type: Boolean, default: false },
-    setCollapsed: { type: Function as PropType<(collapsed: boolean) => void>, required: true },
-    collapseRender: {
-      type: [Function, Boolean] as PropType<CollapseRender>,
-      default: undefined,
-    },
-    hiddenNum: { type: [Number, Boolean] as PropType<number | false>, default: false },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props) {
+  props: ['submitter', 'collapsed', 'setCollapsed', 'collapseRender', 'hiddenNum', 'style'],
+  setup(rawProps) {
+    const props = rawProps as Readonly<ActionsProps>
     return () => {
       const renderFn = typeof props.collapseRender === 'function'
         ? props.collapseRender
         : defaultCollapseRender
+      const collapsed = props.collapsed ?? false
+      const hiddenNum = props.hiddenNum ?? false
       return (
         <Space style={props.style} size={16}>
           {props.submitter}
@@ -58,9 +58,9 @@ const Actions = defineComponent({
             ? (
                 <a
                   class="ant-pro-query-filter-collapse-button"
-                  onClick={() => props.setCollapsed(!props.collapsed)}
+                  onClick={() => props.setCollapsed?.(!collapsed)}
                 >
-                  {renderFn(props.collapsed, { collapsed: props.collapsed, hiddenNum: props.hiddenNum }, props.hiddenNum)}
+                  {renderFn(collapsed, { collapsed, hiddenNum }, hiddenNum)}
                 </a>
               )
             : null}

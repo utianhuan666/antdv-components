@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const csCZ: ProLocale = {
   moneySymbol: 'Kč',
@@ -74,6 +74,6 @@ const csCZ: ProLocale = {
     open: 'Otevřít',
     close: 'Zavřít',
   },
-};
+}
 
-export default csCZ;
+export default csCZ

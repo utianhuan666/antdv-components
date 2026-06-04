@@ -1,32 +1,39 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { CommonFormProps } from '../../typing'
+import type { FormProps, StepsProps } from 'antdv-next'
+import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { CommonFormProps, FormData, FormRefLike } from '../../typing'
 import { defineComponent, shallowRef } from 'vue'
 import { BaseForm } from '../../BaseForm'
 
-export interface StepFormProps<T = Record<string, any>, U = Record<string, any>> extends CommonFormProps<T, U> {
+export type StepFormProps<T extends FormData = FormData, U = FormData> = Omit<FormProps, 'onFinish' | 'form'> & Omit<CommonFormProps<T, U>, 'submitter' | 'form'> & {
   step?: number
   title?: VNodeChild
-  stepProps?: Record<string, any>
+  stepProps?: NonNullable<StepsProps['items']>[number]
   active?: boolean
-  onStepFinish?: (name: string, values: Record<string, any>) => void
-  onFormReady?: (step: number, form: any) => void
+  onStepFinish?: (name: string, values: T) => void
+  onFormReady?: (step: number, form: FormRefLike) => void
 }
 
-const StepForm = defineComponent({
+const stepFormPropNames = [
+  'name',
+  'step',
+  'title',
+  'stepProps',
+  'active',
+  'onStepFinish',
+  'onFormReady',
+  'onFinish',
+] as const
+
+const StepFormImpl = defineComponent({
   name: 'StepForm',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number], default: undefined },
-    step: { type: Number, default: 0 },
-    title: { type: null as unknown as PropType<VNodeChild>, default: undefined },
-    stepProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    active: { type: Boolean, default: false },
-    onStepFinish: { type: Function as PropType<StepFormProps['onStepFinish']>, default: undefined },
-    onFormReady: { type: Function as PropType<StepFormProps['onFormReady']>, default: undefined },
-    onFinish: { type: Function as PropType<CommonFormProps['onFinish']>, default: undefined },
-  },
-  setup(props, { attrs, slots, expose }) {
-    const baseRef = shallowRef<any>()
+  props: [...stepFormPropNames],
+  setup(rawProps, { attrs, slots, expose }) {
+    const props = rawProps as Readonly<StepFormProps>
+    const baseRef = shallowRef<FormRefLike>()
+    const onFormReady = () => props.onFormReady ?? (attrs.onFormReady as StepFormProps['onFormReady'] | undefined)
+    const onStepFinish = () => props.onStepFinish ?? (attrs.onStepFinish as StepFormProps['onStepFinish'] | undefined)
+    const onFinish = () => props.onFinish ?? (attrs.onFinish as StepFormProps['onFinish'] | undefined)
 
     expose({
       get formInstance() {
@@ -36,7 +43,7 @@ const StepForm = defineComponent({
       reset: () => baseRef.value?.reset?.(),
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
       getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
-      setFieldsValue: (values: Record<string, any>) => baseRef.value?.setFieldsValue?.(values),
+      setFieldsValue: (values: FormData) => baseRef.value?.setFieldsValue?.(values),
     })
 
     return () => (
@@ -46,14 +53,14 @@ const StepForm = defineComponent({
         {...attrs}
         submitter={false}
         onInit={(values, form) => {
-          props.onFormReady?.(props.step, baseRef.value || form)
-          ;(attrs as any).onInit?.(values, form)
+          onFormReady()?.(props.step ?? 0, baseRef.value || form)
+          ;(attrs as { onInit?: CommonFormProps['onInit'] }).onInit?.(values, form)
         }}
-        onFinish={async (values: Record<string, any>) => {
-          const result = await props.onFinish?.(values as any)
+        onFinish={async (values: FormData) => {
+          const result = await (onFinish() as ((values: FormData) => ReturnType<NonNullable<CommonFormProps['onFinish']>>) | undefined)?.(values)
           if (result === false)
             return false
-          props.onStepFinish?.(String(props.name ?? props.step), values)
+          onStepFinish()?.(String(props.name ?? props.step), values)
           return result
         }}
       >
@@ -62,6 +69,8 @@ const StepForm = defineComponent({
     )
   },
 })
+
+const StepForm = StepFormImpl as unknown as FunctionalComponent<StepFormProps>
 
 export default StepForm
 export { StepForm }

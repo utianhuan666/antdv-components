@@ -13,7 +13,7 @@ type FieldFromNowProps = NonNullable<ProFieldFC<{
   variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
 }>['__props']>
 
-type FieldFromNowOwnProps = {
+interface FieldFromNowOwnProps {
   text: string
   format?: string
   variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'

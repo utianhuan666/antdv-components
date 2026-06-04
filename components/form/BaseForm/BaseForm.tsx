@@ -1,10 +1,11 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { BaseFormProps, SubmitterProps } from '../typing'
+import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { BaseFormProps, NamePath, ProFormData, ProFormInstance, SearchTransformKeyFn, SubmitterContext, SubmitterProps } from '../typing'
 import { Form, Row, Spin } from 'antdv-next'
 import { computed, defineComponent, nextTick, onMounted, reactive, shallowRef, watch } from 'vue'
 import { provideFieldContext } from '../FieldContext'
 import { provideGridContext } from '../helpers'
 import { provideProFormContext } from '../ProFormContext'
+import { baseFormPropNames } from '../typing'
 import { provideEditOrReadOnly } from './EditOrReadOnlyContext'
 import Submitter from './Submitter'
 
@@ -33,10 +34,20 @@ function writeUrlSearch(params: Record<string, any>) {
   window.history.replaceState(null, '', nextUrl)
 }
 
-function genUrlSyncParams(syncToUrl: BaseFormProps['syncToUrl'], params: Record<string, any>, type: 'get' | 'set') {
+function genUrlSyncParams(syncToUrl: BaseFormProps['syncToUrl'], params: ProFormData, type: 'get' | 'set') {
   if (syncToUrl === true)
     return params
   return typeof syncToUrl === 'function' ? syncToUrl(params, type) : {}
+}
+
+function toNamePath(name: NamePath): (string | number)[] {
+  return Array.isArray(name) ? name : [name]
+}
+
+interface FieldValueTypeConfig {
+  valueType?: unknown
+  dateFormat?: string
+  transform?: SearchTransformKeyFn
 }
 
 /**
@@ -46,70 +57,28 @@ function genUrlSyncParams(syncToUrl: BaseFormProps['syncToUrl'], params: Record<
  * 3. 处理 onFinish / submitter
  * 4. 支持 contentRender 让 layouts 自定义包装
  */
-const BaseForm = defineComponent({
+const BaseFormImpl = defineComponent({
   name: 'BaseProForm',
-  props: {
-    model: { type: Object as PropType<BaseFormProps['model']>, default: undefined },
-    initialValues: { type: Object as PropType<BaseFormProps['initialValues']>, default: () => ({}) },
-    layout: { type: String as PropType<BaseFormProps['layout']>, default: 'horizontal' },
-    name: { type: String, default: undefined },
-    labelCol: { type: Object as PropType<BaseFormProps['labelCol']>, default: undefined },
-    wrapperCol: { type: Object as PropType<BaseFormProps['wrapperCol']>, default: undefined },
-    grid: { type: Boolean, default: false },
-    rowProps: { type: Object as PropType<BaseFormProps['rowProps']>, default: undefined },
-    colProps: { type: Object as PropType<BaseFormProps['colProps']>, default: undefined },
-    submitter: { type: [Boolean, Object] as PropType<false | SubmitterProps>, default: () => ({}) },
-    loading: { type: Boolean, default: false },
-    readonly: { type: Boolean, default: false },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    proFieldProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-    request: { type: Function as PropType<BaseFormProps['request']>, default: undefined },
-    params: { type: Object as PropType<Record<string, any>>, default: undefined },
-    syncToUrl: { type: [Boolean, Function] as PropType<BaseFormProps['syncToUrl']>, default: false },
-    syncToUrlAsImportant: { type: Boolean, default: false },
-    extraUrlParams: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    syncToInitialValues: { type: Boolean, default: true },
-    omitNil: { type: Boolean, default: true },
-    dateFormatter: {
-      type: [String, Boolean, Function] as PropType<BaseFormProps['dateFormatter']>,
-      default: 'string',
-    },
-    isKeyPressSubmit: { type: Boolean, default: false },
-    autoFocusFirstInput: { type: Boolean, default: true },
-    formKey: { type: String, default: undefined },
-    formComponentType: { type: String as PropType<BaseFormProps['formComponentType']>, default: undefined },
-    contentRender: {
-      type: Function as PropType<NonNullable<BaseFormProps['contentRender']>>,
-      default: undefined,
-    },
-    onFinish: { type: Function as PropType<BaseFormProps['onFinish']>, default: undefined },
-    onReset: { type: Function as PropType<BaseFormProps['onReset']>, default: undefined },
-    onLoadingChange: { type: Function as PropType<BaseFormProps['onLoadingChange']>, default: undefined },
-    onInit: { type: Function as PropType<BaseFormProps['onInit']>, default: undefined },
-  },
+  props: [...baseFormPropNames],
   emits: ['finish', 'finishFailed', 'valuesChange', 'reset', 'update:loading'],
-  setup(props, { attrs, emit, slots, expose }) {
-    const formRef = shallowRef<any>()
+  setup(rawProps, { attrs, emit, slots, expose }) {
+    const props = rawProps as BaseFormProps
+    const formRef = shallowRef<ProFormInstance>()
     const urlParamsMergeInitialValues = props.syncToUrl && props.syncToInitialValues !== false
       ? genUrlSyncParams(props.syncToUrl, readUrlSearch(), 'get')
       : {}
 
     /** 内部 model：当外部未提供 model 时使用，初始值合并 initialValues */
-    const innerModel = reactive<Record<string, any>>(props.syncToUrlAsImportant
+    const innerModel = reactive<ProFormData>(props.syncToUrlAsImportant
       ? { ...(props.initialValues || {}), ...urlParamsMergeInitialValues }
       : { ...urlParamsMergeInitialValues, ...(props.initialValues || {}) })
-    const formModel = computed<Record<string, any>>(() => props.model ?? innerModel)
+    const formModel = computed<ProFormData>(() => props.model ?? innerModel)
 
-    const innerLoading = shallowRef<boolean>(props.loading)
+    const innerLoading = shallowRef<boolean>(Boolean(props.loading))
     const requestLoading = shallowRef<boolean>(false)
     const initialized = shallowRef(false)
-    const fieldsValueType = new Map<string, {
-      valueType?: unknown
-      dateFormat?: string
-      transform?: (value: any, namePath: (string | number)[]) => any
-    }>()
-    watch(() => props.loading, value => (innerLoading.value = value))
+    const fieldsValueType = new Map<string, FieldValueTypeConfig>()
+    watch(() => props.loading, value => (innerLoading.value = Boolean(value)))
 
     function setLoading(value: boolean) {
       innerLoading.value = value
@@ -252,7 +221,8 @@ const BaseForm = defineComponent({
     }
 
     function formatDateValue(value: any, valueType?: unknown, dateFormat?: string): any {
-      if (!isDateValueType(valueType) || props.dateFormatter === false || value == null)
+      const dateFormatter = props.dateFormatter ?? 'string'
+      if (!isDateValueType(valueType) || dateFormatter === false || value == null)
         return value
 
       if (Array.isArray(value))
@@ -261,17 +231,17 @@ const BaseForm = defineComponent({
       if (!value || typeof value !== 'object')
         return value
 
-      if (typeof props.dateFormatter === 'function')
-        return props.dateFormatter(value, String(valueType))
+      if (typeof dateFormatter === 'function')
+        return dateFormatter(value, String(valueType))
 
-      if (props.dateFormatter === 'number')
+      if (dateFormatter === 'number')
         return typeof value.valueOf === 'function' ? value.valueOf() : value
 
-      const format = dateFormat || (props.dateFormatter === 'string' ? 'YYYY-MM-DD' : props.dateFormatter)
+      const format = dateFormat || (dateFormatter === 'string' ? 'YYYY-MM-DD' : dateFormatter)
       return typeof value.format === 'function' ? value.format(format) : value
     }
 
-    function transformKey(values: Record<string, any>, omitNilParam = props.omitNil, parentKey: (string | number)[] = []) {
+    function transformKey(values: Record<string, any>, omitNilParam = props.omitNil !== false, parentKey: (string | number)[] = []) {
       const result = cloneValue(values || {})
       fieldsValueType.forEach((config, key) => {
         const namePath = [...parentKey, ...(JSON.parse(key) as (string | number)[])]
@@ -291,23 +261,23 @@ const BaseForm = defineComponent({
     }
 
     function getFieldsFormatValue(_allData?: true, omitNilParam?: boolean) {
-      return transformKey(getFieldsValue(), omitNilParam ?? props.omitNil)
+      return transformKey(getFieldsValue(), omitNilParam ?? props.omitNil !== false)
     }
 
-    function getFieldFormatValue(name: string | number | (string | number)[], omitNilParam?: boolean) {
-      const namePath = Array.isArray(name) ? name : [name]
+    function getFieldFormatValue(name: NamePath, omitNilParam?: boolean) {
+      const namePath = toNamePath(name)
       const value = getFieldValue(namePath)
-      const transformed = transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil)
+      const transformed = transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
       const result = getValueByNamePath(transformed, namePath)
       if (result && typeof result === 'object' && !Array.isArray(result))
         return Object.values(result)[0]
       return result
     }
 
-    function getFieldFormatValueObject(name: string | number | (string | number)[], omitNilParam?: boolean) {
-      const namePath = Array.isArray(name) ? name : [name]
+    function getFieldFormatValueObject(name: NamePath, omitNilParam?: boolean) {
+      const namePath = toNamePath(name)
       const value = getFieldValue(namePath)
-      return transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil)
+      return transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
     }
 
     async function handleFinish() {
@@ -349,8 +319,8 @@ const BaseForm = defineComponent({
       return { ...formModel.value }
     }
 
-    function getFieldValue(name: string | number | (string | number)[]) {
-      const namePath = Array.isArray(name) ? name : [name]
+    function getFieldValue(name: NamePath) {
+      const namePath = toNamePath(name)
       return getValueByNamePath(formModel.value, namePath)
     }
 
@@ -359,7 +329,7 @@ const BaseForm = defineComponent({
       formRef.value?.setFieldsValue?.(values)
     }
 
-    async function validateFieldsReturnFormatValue(nameList?: (string | number | (string | number)[])[], omitNilParam?: boolean) {
+    async function validateFieldsReturnFormatValue(nameList?: NamePath[], omitNilParam?: boolean) {
       await formRef.value?.validateFields?.(nameList as any)
       return getFieldsFormatValue(true, omitNilParam)
     }
@@ -455,20 +425,13 @@ const BaseForm = defineComponent({
       get loading() {
         return innerLoading.value
       },
-      setFieldValueType: (
-        name: (string | number)[],
-        config: {
-          valueType?: unknown
-          dateFormat?: string
-          transform?: (value: any, namePath: (string | number)[]) => any
-        },
-      ) => {
-        fieldsValueType.set(namePathKey(name), config)
+      setFieldValueType: (name: NamePath, config: FieldValueTypeConfig) => {
+        fieldsValueType.set(namePathKey(toNamePath(name)), config)
       },
-      clearFieldValueType: (name: (string | number)[]) => {
-        fieldsValueType.delete(namePathKey(name))
+      clearFieldValueType: (name: NamePath) => {
+        fieldsValueType.delete(namePathKey(toNamePath(name)))
       },
-    } as any)
+    })
 
     function renderSubmitter(): VNodeChild | undefined {
       if (props.submitter === false)
@@ -486,7 +449,7 @@ const BaseForm = defineComponent({
               }}
           resetButtonProps={submitterProps.resetButtonProps}
           render={slots.submitter
-            ? (submitterContext, doms) => slots.submitter?.({ props: submitterContext, doms })
+            ? (submitterContext: SubmitterContext, doms: VNodeChild[]) => slots.submitter?.({ props: submitterContext, doms })
             : submitterProps.render}
           onSubmit={() => {
             submitterProps.onSubmit?.(getFieldsFormatValue())
@@ -529,7 +492,7 @@ const BaseForm = defineComponent({
         <Form
           ref={formRef}
           model={formModel.value}
-          layout={props.layout as any}
+          layout={(props.layout ?? 'horizontal') as any}
           name={props.name}
           labelCol={props.labelCol as any}
           wrapperCol={props.wrapperCol as any}
@@ -545,6 +508,8 @@ const BaseForm = defineComponent({
     }
   },
 })
+
+const BaseForm = BaseFormImpl as unknown as FunctionalComponent<BaseFormProps>
 
 export default BaseForm
 export { BaseForm }

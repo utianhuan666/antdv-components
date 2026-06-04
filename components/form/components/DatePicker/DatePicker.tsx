@@ -1,16 +1,16 @@
-import { defineComponent } from 'vue'
+import type { DatePickerProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import { BaseDatePicker } from './BaseDatePicker'
 
-const ProFormDatePicker = defineComponent({
-  name: 'ProFormDatePicker',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <BaseDatePicker valueType="date" {...attrs}>
-        {slots.default?.()}
-      </BaseDatePicker>
-    )
-  },
-})
+export type ProFormDatePickerProps = Omit<ProFormFieldItemProps<DatePickerProps>, 'valueType'>
+
+const valueType = 'date' as const
+
+const ProFormDatePicker: FunctionalComponent<ProFormDatePickerProps> = (props, { slots }) => (
+  <BaseDatePicker valueType={valueType} {...props}>
+    {slots.default?.()}
+  </BaseDatePicker>
+)
 
 export default ProFormDatePicker

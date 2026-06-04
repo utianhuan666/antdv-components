@@ -1,10 +1,10 @@
+import { ProField } from '@antdv/components'
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick } from 'vue'
-import { ProField } from '@antdv/components'
 import { useFieldFetchData } from '../../field/components/Select'
 
-describe('Field', () => {
+describe('field', () => {
   it('🐴 base use', () => {
     const wrapper = mount({
       render: () => <ProField text="100" valueType="money" mode="edit" />,

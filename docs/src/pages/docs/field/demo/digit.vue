@@ -6,6 +6,10 @@
 Digit type, supports thousand separator formatting and precision control.
 </docs>
 
+<script setup lang="ts">
+import { FieldDigit, FieldDigitRange, FieldPercent } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -26,7 +30,3 @@ Digit type, supports thousand separator formatting and precision control.
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldDigit, FieldDigitRange, FieldPercent } from '@antdv/components'
-</script>

@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const msMY: ProLocale = {
   moneySymbol: 'RM',
@@ -74,6 +74,6 @@ const msMY: ProLocale = {
     open: 'Terbuka',
     close: 'Tutup',
   },
-};
+}
 
-export default msMY;
+export default msMY

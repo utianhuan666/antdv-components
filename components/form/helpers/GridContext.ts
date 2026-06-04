@@ -1,10 +1,12 @@
+import type { ColProps, RowProps } from 'antdv-next'
 import type { InjectionKey } from 'vue'
+import type { ProFormGridConfig } from '../typing'
 import { computed, inject, provide } from 'vue'
 
-export interface GridContextValue {
+export interface GridContextValue extends ProFormGridConfig {
   grid: boolean
-  rowProps?: Record<string, any>
-  colProps?: Record<string, any>
+  rowProps?: RowProps
+  colProps?: ColProps
 }
 
 export const GridContextKey: InjectionKey<GridContextValue> = Symbol('ProFormGridContext')
@@ -21,7 +23,7 @@ export function useGridContext(): GridContextValue {
 }
 
 /** 类似 React 版 useGridHelpers：给字段决定是否包 Col、用什么 colProps */
-export function useGridHelpers(itemColProps?: Record<string, any>) {
+export function useGridHelpers(itemColProps?: ColProps) {
   const ctx = useGridContext()
 
   const colProps = computed(() => ({

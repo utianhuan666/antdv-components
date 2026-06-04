@@ -1,6 +1,3 @@
-// @ts-nocheck
-import { describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 import {
   BetaSchemaForm,
   ProForm,
@@ -14,6 +11,9 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@antdv/components'
+// @ts-nocheck
+import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mountAttached, waitFor } from '../testUtils'
 
 async function readSchemaFieldsValue(columns: any[], initialValues: Record<string, any>) {
@@ -48,12 +48,12 @@ async function readImperativeFieldsValue(initialValues: Record<string, any>, chi
   await waitFor(() => {
     expect(readValues).toHaveBeenCalled()
   })
-  const values = readValues.mock.calls.at(-1)?.[0]
+  const values = readValues.mock.calls[readValues.mock.calls.length - 1]?.[0]
   wrapper.unmount()
   return values
 }
 
-describe('Schema vs imperative alignment', () => {
+describe('schema vs imperative alignment', () => {
   it('text column (valueType text) matches ProFormText', async () => {
     const initialValues = { fieldA: 'hello' }
     const schemaValues = await readSchemaFieldsValue(

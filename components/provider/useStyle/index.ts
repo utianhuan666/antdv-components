@@ -1,26 +1,26 @@
-import type { VNodeChild } from 'vue'
 import type { GlobalToken } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 import type { ProTokenType } from '../typing/layoutToken'
 import { theme as antdTheme } from 'antdv-next'
-import { createGlobalStyle } from 'antdv-style'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
+import { createGlobalStyle } from 'antdv-style'
 import { useProProviderContext } from '../index'
 
 export type CSSObject = Record<string, any>
-export type CSSInterpolation =
-  | CSSObject
-  | CSSInterpolation[]
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
+export type CSSInterpolation
+  = | CSSObject
+    | CSSInterpolation[]
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
 export type GenerateStyle<
   ComponentToken extends object = GlobalToken,
   ReturnType = CSSInterpolation,
 > = (token: ComponentToken, ...rest: any[]) => ReturnType
 
-type RGB = { r: number, g: number, b: number, a?: number }
+interface RGB { r: number, g: number, b: number, a?: number }
 
 function parseColor(color: string): RGB | undefined {
   const value = color.trim()
@@ -52,10 +52,11 @@ function parseColor(color: string): RGB | undefined {
   return { r: parts[0]!, g: parts[1]!, b: parts[2]!, a: parts[3] }
 }
 
-const toHex = (value: number) =>
-  Math.round(Math.min(255, Math.max(0, value))).toString(16).padStart(2, '0')
+function toHex(value: number) {
+  return Math.round(Math.min(255, Math.max(0, value))).toString(16).padStart(2, '0')
+}
 
-export const setAlpha = (baseColor: string, alpha: number) => {
+export function setAlpha(baseColor: string, alpha: number) {
   const rgb = parseColor(baseColor)
   if (!rgb)
     return baseColor
@@ -63,7 +64,7 @@ export const setAlpha = (baseColor: string, alpha: number) => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
 }
 
-export const lighten = (baseColor: string, brightness: number) => {
+export function lighten(baseColor: string, brightness: number) {
   const rgb = parseColor(baseColor)
   if (!rgb)
     return baseColor
@@ -76,45 +77,49 @@ export const lighten = (baseColor: string, brightness: number) => {
 
 export const proTheme = antdTheme as any
 
-export type UseStyleResult = {
+export interface UseStyleResult {
   wrapSSR: (node: VNodeChild) => VNodeChild
   hashId: string
 }
 
-export type ProAliasToken = GlobalToken &
-  ProTokenType & {
+export type ProAliasToken = GlobalToken
+  & ProTokenType & {
     themeId: number
     proComponentsCls: string
     antCls: string
   }
 
-export const resetComponent = (token: ProAliasToken): CSSObject => ({
-  boxSizing: 'border-box',
-  margin: 0,
-  padding: 0,
-  color: token.colorText,
-  fontSize: token.fontSize,
-  lineHeight: token.lineHeight,
-  listStyle: 'none',
-  '*, *::before, *::after': {
-    boxSizing: 'border-box',
-  },
-})
+export function resetComponent(token: ProAliasToken): CSSObject {
+  return {
+    'boxSizing': 'border-box',
+    'margin': 0,
+    'padding': 0,
+    'color': token.colorText,
+    'fontSize': token.fontSize,
+    'lineHeight': token.lineHeight,
+    'listStyle': 'none',
+    '*, *::before, *::after': {
+      boxSizing: 'border-box',
+    },
+  }
+}
 
-export const operationUnit = (token: ProAliasToken): CSSObject => ({
-  color: token.colorLink,
-  outline: 'none',
-  cursor: 'pointer',
-  transition: `color ${token.motionDurationSlow}`,
-  '&:focus, &:hover': {
-    color: token.colorLinkHover,
-  },
-  '&:active': {
-    color: token.colorLinkActive,
-  },
-})
+export function operationUnit(token: ProAliasToken): CSSObject {
+  return {
+    'color': token.colorLink,
+    'outline': 'none',
+    'cursor': 'pointer',
+    'transition': `color ${token.motionDurationSlow}`,
+    '&:focus, &:hover': {
+      color: token.colorLinkHover,
+    },
+    '&:active': {
+      color: token.colorLinkActive,
+    },
+  }
+}
 
-const hashString = (input: string): string => {
+function hashString(input: string): string {
   let hash = 5381
   for (let i = 0; i < input.length; i += 1)
     hash = (hash * 33) ^ input.charCodeAt(i)
@@ -122,7 +127,7 @@ const hashString = (input: string): string => {
   return (hash >>> 0).toString(36)
 }
 
-const getProTokenKey = (token: ProAliasToken): string => {
+function getProTokenKey(token: ProAliasToken): string {
   try {
     return hashString(JSON.stringify(token))
   }

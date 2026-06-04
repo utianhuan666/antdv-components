@@ -1,10 +1,10 @@
+import { ProForm, ProFormFieldSet, ProFormText } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProForm, ProFormFieldSet, ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ProFormFieldSet', () => {
+describe('proFormFieldSet', () => {
   it('😊 ProFormFieldSet should render', () => {
     const wrapper = mountAttached({
       render: () => (

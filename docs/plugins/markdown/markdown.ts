@@ -55,7 +55,8 @@ export function loadShiki(md: MarkdownItAsync, cls = 'ant-doc-code') {
         {
           name: 'remove:clean-up',
           code(element) {
-            if (element.tagName === 'code' && element.properties.class) delete element.properties.class
+            if (element.tagName === 'code' && element.properties.class)
+              delete element.properties.class
           },
           pre(element) {
             delete element.properties.tabindex
@@ -94,7 +95,7 @@ function withPlugins(md: MarkdownItAsync, options: CreateMarkdownOptions) {
       renderAttrs: (slug, state) => {
         const idx = state.tokens.findIndex((token) => {
           const attrs = token.attrs
-          const id = attrs?.find((attr) => attr[0] === 'id')
+          const id = attrs?.find(attr => attr[0] === 'id')
           return id && slug === id[1]
         })
         const title = state.tokens[idx + 1]?.content || ''
@@ -118,7 +119,8 @@ export function createMarkdown() {
   let md: MarkdownItAsync | undefined
 
   return (options: CreateMarkdownOptions = {}) => {
-    if (md) return md
+    if (md)
+      return md
 
     md = MarkdownIt({
       html: true,
@@ -127,7 +129,8 @@ export function createMarkdown() {
     })
 
     options.preConfig?.(md)
-    if (options.withPlugin !== false) withPlugins(md, options)
+    if (options.withPlugin !== false)
+      withPlugins(md, options)
     options.config?.(md)
 
     return md

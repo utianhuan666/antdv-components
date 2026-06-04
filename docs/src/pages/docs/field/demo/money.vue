@@ -6,6 +6,10 @@
 Money type, automatically formats currency symbol and thousand separators.
 </docs>
 
+<script setup lang="ts">
+import { FieldMoney } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -18,7 +22,3 @@ Money type, automatically formats currency symbol and thousand separators.
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldMoney } from '@antdv/components'
-</script>

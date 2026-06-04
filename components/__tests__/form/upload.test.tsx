@@ -1,11 +1,11 @@
+import { ProForm, ProFormUploadButton, ProFormUploadDragger } from '@antdv/components'
 // @ts-nocheck
 import { Upload } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProForm, ProFormUploadButton, ProFormUploadDragger } from '@antdv/components'
 import { mountAttached } from '../testUtils'
 
-describe('ProFormUpload', () => {
+describe('proFormUpload', () => {
   it('🏐 ProFormUploadButton support onChange', async () => {
     const onChange = vi.fn()
     const wrapper = mountAttached({

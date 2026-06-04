@@ -1,47 +1,76 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { NamePath, ProFormUploadDraggerProps } from '../../typing'
+import type { UploadDraggerProps as AntUploadDraggerProps, UploadChangeParam, UploadFile, UploadProps } from 'antdv-next'
+import type { FunctionalComponent, VNode } from 'vue'
+import type { ProFormUploadDraggerProps as BaseProFormUploadDraggerProps } from '../../typing'
 import { InboxOutlined } from '@antdv-next/icons'
-import { Upload } from 'antdv-next'
+import { UploadDragger } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 import { useEditOrReadOnly } from '../../BaseForm'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
-const UploadDragger = (Upload as any).Dragger
+const UploadDraggerComponent = UploadDragger as unknown as (
+  props: AntUploadDraggerProps & {
+    style?: Record<string, unknown>
+    onChange?: (info: UploadChangeParam<UploadFile>) => void
+  },
+) => VNode
 
-const ProFormUploadDragger = defineComponent({
+type UploadFileList = NonNullable<UploadProps['fileList']>
+
+type ProFormUploadDraggerComponentProps = BaseProFormUploadDraggerProps<AntUploadDraggerProps> & {
+  value?: UploadProps['fileList']
+  action?: UploadProps['action']
+  accept?: UploadProps['accept']
+}
+
+const uploadDraggerPropNames = [
+  'name',
+  'label',
+  'tooltip',
+  'rules',
+  'required',
+  'initialValue',
+  'transform',
+  'convertValue',
+  'formItemProps',
+  'fieldProps',
+  'value',
+  'action',
+  'accept',
+  'title',
+  'icon',
+  'description',
+  'max',
+  'readonly',
+  'proFieldProps',
+  'ignoreFormItem',
+]
+
+function isEnabledProp(value: unknown) {
+  return value === true || value === ''
+}
+
+function getNumberProp(value: unknown) {
+  if (value === undefined)
+    return undefined
+  const numberValue = Number(value)
+  return Number.isNaN(numberValue) ? undefined : numberValue
+}
+
+const ProFormUploadDraggerImpl = defineComponent({
   name: 'ProFormUploadDragger',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    initialValue: { type: null as unknown as PropType<ProFormUploadDraggerProps['initialValue']>, default: undefined },
-    transform: { type: Function as PropType<NonNullable<ProFormUploadDraggerProps['transform']>>, default: undefined },
-    convertValue: { type: Function as PropType<NonNullable<ProFormUploadDraggerProps['convertValue']>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    value: { type: Array as PropType<any[]>, default: undefined },
-    action: { type: [String, Function] as PropType<any>, default: undefined },
-    accept: { type: String, default: undefined },
-    title: { type: [String, Number, Object] as PropType<VNodeChild>, default: '单击或拖动文件到此区域进行上传' },
-    icon: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    description: { type: [String, Number, Object] as PropType<VNodeChild>, default: '支持单次或批量上传' },
-    max: { type: Number, default: undefined },
-    readonly: { type: Boolean, default: undefined },
-    proFieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    ignoreFormItem: { type: Boolean, default: false },
-  },
+  props: uploadDraggerPropNames,
   emits: ['change'],
-  setup(props, { emit, slots, attrs }) {
+  setup(rawProps, { emit, slots, attrs }) {
+    const props = rawProps as unknown as ProFormUploadDraggerComponentProps
     const fieldContext = useFieldContext()
     const editContext = useEditOrReadOnly()
 
-    const finalReadonly = computed(() => Boolean(props.proFieldProps?.readonly ?? editContext.readonly ?? props.readonly))
+    const finalReadonly = computed(() => isEnabledProp(props.proFieldProps?.readonly ?? editContext.readonly ?? props.readonly))
+    const ignoreFormItem = computed(() => isEnabledProp(props.ignoreFormItem))
 
-    const fileList = computed<any[]>(() => {
+    const fileList = computed<UploadFileList>(() => {
       if (props.value)
         return props.value
       if (props.name === undefined)
@@ -51,7 +80,7 @@ const ProFormUploadDragger = defineComponent({
       return Array.isArray(value) ? value : []
     })
 
-    function setCellValue(value: any[]) {
+    function setCellValue(value: UploadProps['fileList']) {
       if (props.name === undefined)
         return
       const path = Array.isArray(props.name) ? props.name : [props.name]
@@ -66,7 +95,7 @@ const ProFormUploadDragger = defineComponent({
       parent[last] = value
     }
 
-    function handleChange(info: Record<string, any>) {
+    function handleChange(info: UploadChangeParam<UploadFile>) {
       const nextFileList = info.fileList || []
       setCellValue(nextFileList)
       emit('change', info)
@@ -75,9 +104,13 @@ const ProFormUploadDragger = defineComponent({
 
     const renderDragger = () => {
       const { id: _id, onChange: _onChange, style, ...uploadFieldProps } = props.fieldProps || {}
-      const showUploadButton = (props.max === undefined || fileList.value.length < props.max) && !finalReadonly.value
+      const max = getNumberProp(props.max)
+      const showUploadButton = (max === undefined || fileList.value.length < max) && !finalReadonly.value
+      const title = props.title ?? '单击或拖动文件到此区域进行上传'
+      const icon = props.icon ?? <InboxOutlined />
+      const description = props.description ?? '支持单次或批量上传'
       const draggerNode = (
-        <UploadDragger
+        <UploadDraggerComponent
           {...attrs}
           {...uploadFieldProps}
           name={uploadFieldProps.name ?? 'files'}
@@ -92,16 +125,16 @@ const ProFormUploadDragger = defineComponent({
             display: showUploadButton ? style?.display || 'flex' : 'none',
           }}
         >
-          <p class="ant-upload-drag-icon">{props.icon ?? <InboxOutlined />}</p>
-          <p class="ant-upload-text">{props.title}</p>
-          <p class="ant-upload-hint">{props.description}</p>
+          <p class="ant-upload-drag-icon">{icon}</p>
+          <p class="ant-upload-text">{title}</p>
+          <p class="ant-upload-hint">{description}</p>
           {slots.default?.()?.length
             ? <div class="ant-upload-extra" style={{ padding: '16px' }}>{slots.default?.()}</div>
             : null}
-        </UploadDragger>
+        </UploadDraggerComponent>
       )
 
-      if (props.ignoreFormItem)
+      if (ignoreFormItem.value)
         return draggerNode
 
       return (
@@ -127,5 +160,7 @@ const ProFormUploadDragger = defineComponent({
     return renderDragger
   },
 })
+
+const ProFormUploadDragger = ProFormUploadDraggerImpl as unknown as FunctionalComponent<ProFormUploadDraggerComponentProps>
 
 export default ProFormUploadDragger

@@ -1,9 +1,9 @@
+import { ProForm, ProFormSegmented } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it } from 'vitest'
-import { ProForm, ProFormSegmented } from '@antdv/components'
 import { mountAttached } from '../testUtils'
 
-describe('ProFormSegmented', () => {
+describe('proFormSegmented', () => {
   it('📦 ProFormSegmented supports fieldProps.options', () => {
     const wrapper = mountAttached({
       render: () => (

@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const itIT: ProLocale = {
   moneySymbol: '€',
@@ -74,6 +74,6 @@ const itIT: ProLocale = {
     open: 'Apri',
     close: 'Chiudi',
   },
-};
+}
 
-export default itIT;
+export default itIT

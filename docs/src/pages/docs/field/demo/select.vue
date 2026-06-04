@@ -6,6 +6,10 @@
 Select type, supports valueEnum for static options and request for remote fetching.
 </docs>
 
+<script setup lang="ts">
+import { FieldSelect } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -18,7 +22,3 @@ Select type, supports valueEnum for static options and request for remote fetchi
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldSelect } from '@antdv/components'
-</script>

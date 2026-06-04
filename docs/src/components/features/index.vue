@@ -25,13 +25,13 @@ const featureItems = siteConfig.features as FeatureItem[]
             <div class="site-feature-icon-container" :data-role="feature.link ? 'link' : ''">
               <img
                 v-if="
-                  feature.icon &&
-                  (feature.icon.startsWith('http') || feature.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i))
+                  feature.icon
+                    && (feature.icon.startsWith('http') || feature.icon.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i))
                 "
                 :src="feature.icon"
                 :alt="feature.title"
                 class="site-feature-icon-img"
-              />
+              >
               <span v-else class="site-feature-icon-img">{{ feature.icon }}</span>
             </div>
 
@@ -44,7 +44,9 @@ const featureItems = siteConfig.features as FeatureItem[]
             </p>
 
             <div v-if="feature.link" class="site-feature-link">
-              <RouterLink v-if="!feature.openExternal" :to="feature.link"> 立即了解 → </RouterLink>
+              <RouterLink v-if="!feature.openExternal" :to="feature.link">
+                立即了解 →
+              </RouterLink>
               <a v-else :href="feature.link" target="_blank" rel="noopener noreferrer"> 立即了解 → </a>
             </div>
           </div>

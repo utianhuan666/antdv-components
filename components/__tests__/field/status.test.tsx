@@ -1,12 +1,12 @@
+import { ProField } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { ProField } from '@antdv/components'
 
 function textContent(wrapper: ReturnType<typeof mount>) {
   return wrapper.text().replace(/\s/g, '')
 }
 
-describe('Field Status', () => {
+describe('field Status', () => {
   const statusList = [
     'Success',
     'Error',

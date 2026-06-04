@@ -1,10 +1,9 @@
-// @ts-nocheck
+import { ProForm, ProFormList, ProFormText } from '@antdv/components'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ProForm, ProFormList, ProFormText } from '@antdv/components'
 import { mountAttached, waitFor } from '../testUtils'
 
-describe('ProForm List', () => {
+describe('proForm List', () => {
   it('submits initial list values', async () => {
     const onFinish = vi.fn()
     const wrapper = mountAttached({
@@ -80,7 +79,10 @@ describe('ProForm List', () => {
             initialValue={[{ name: '1111', nickName: '1111' }]}
           >
             {{
-              default: ({ index, action }) => (
+              default: ({ index, action }: {
+                index: number
+                action: { setCurrentRowData: (data: Record<string, unknown>) => void }
+              }) => (
                 <div>
                   <ProFormText name="name" />
                   <ProFormText name="nickName" />

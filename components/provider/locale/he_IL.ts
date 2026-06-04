@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const heIL: ProLocale = {
   moneySymbol: '₪',
@@ -74,6 +74,6 @@ const heIL: ProLocale = {
     open: 'פתח',
     close: 'סגור',
   },
-};
+}
 
-export default heIL;
+export default heIL

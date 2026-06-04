@@ -1,9 +1,9 @@
+import { LightFilter, ProFormText } from '@antdv/components'
 // @ts-nocheck
 import { describe, expect, it } from 'vitest'
-import { LightFilter, ProFormText } from '@antdv/components'
 import { mountAttached } from '../testUtils'
 
-describe('LightFilter', () => {
+describe('lightFilter', () => {
   it(' 🪕 should render basic structure', () => {
     const wrapper = mountAttached({
       render: () => (

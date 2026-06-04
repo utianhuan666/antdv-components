@@ -1,17 +1,23 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { ButtonProps, InputProps, InputRef } from 'antdv-next'
+import type { FunctionalComponent, VNodeChild } from 'vue'
 import type { NamePath, ProFormFieldItemProps } from '../../typing'
 import { Button, Input } from 'antdv-next'
 import { computed, defineComponent, onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
-export interface ProFormCaptchaProps extends ProFormFieldItemProps {
+type CaptFieldRefHolder = { value?: CaptFieldRef } | { current?: CaptFieldRef }
+
+export type ProFormCaptchaProps = Omit<ProFormFieldItemProps<InputProps>, 'fieldRef'> & {
   countDown?: number
   phoneName?: NamePath
   onGetCaptcha: (mobile: string) => Promise<void>
   onTiming?: (count: number) => void
   captchaTextRender?: (timing: boolean, count: number) => VNodeChild
-  captchaProps?: Record<string, any>
+  captchaProps?: ButtonProps & Record<string, any>
+  value?: InputProps['value']
+  onChange?: InputProps['onChange']
+  fieldRef?: CaptFieldRefHolder
 }
 
 export interface CaptFieldRef {
@@ -39,41 +45,51 @@ function setValueByNamePath(model: Record<string, any>, name: NamePath, value: a
   parent[last] = value
 }
 
-const ProFormCaptcha = defineComponent({
+const captchaPropNames = [
+  'name',
+  'label',
+  'tooltip',
+  'rules',
+  'required',
+  'initialValue',
+  'transform',
+  'convertValue',
+  'formItemProps',
+  'fieldProps',
+  'captchaProps',
+  'countDown',
+  'phoneName',
+  'onGetCaptcha',
+  'onTiming',
+  'captchaTextRender',
+  'fieldRef',
+  'ignoreFormItem',
+]
+
+function isEnabledProp(value: unknown) {
+  return value === true || value === ''
+}
+
+function getCountDown(value: unknown) {
+  const count = Number(value ?? 60)
+  return Number.isNaN(count) ? 60 : count
+}
+
+const ProFormCaptchaImpl = defineComponent({
   name: 'ProFormCaptcha',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    initialValue: { type: null as unknown as PropType<ProFormFieldItemProps['initialValue']>, default: undefined },
-    transform: { type: Function as PropType<NonNullable<ProFormFieldItemProps['transform']>>, default: undefined },
-    convertValue: { type: Function as PropType<NonNullable<ProFormFieldItemProps['convertValue']>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    captchaProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    countDown: { type: Number, default: 60 },
-    phoneName: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    onGetCaptcha: { type: Function as PropType<(mobile: string) => Promise<void>>, required: true },
-    onTiming: { type: Function as PropType<(count: number) => void>, default: undefined },
-    captchaTextRender: {
-      type: Function as PropType<(timing: boolean, count: number) => VNodeChild>,
-      default: undefined,
-    },
-    fieldRef: { type: Object as PropType<Record<string, any>>, default: undefined },
-    ignoreFormItem: { type: Boolean, default: false },
-  },
+  props: captchaPropNames,
   emits: ['change'],
-  setup(props, { emit, attrs, expose }) {
+  setup(rawProps, { emit, attrs, expose }) {
+    const props = rawProps as unknown as ProFormCaptchaProps
     const fieldContext = useFieldContext()
     const containerRef = ref<HTMLDivElement>()
-    const inputRef = ref<any>()
-    const count = ref(props.countDown)
+    const inputRef = ref<InputRef>()
+    const count = ref(getCountDown(props.countDown))
     const timing = ref(false)
     const loading = ref(false)
     let timer: number | undefined
+    const ignoreFormItem = computed(() => isEnabledProp(props.ignoreFormItem))
 
     const value = computed(() => {
       if (props.name === undefined)
@@ -93,13 +109,13 @@ const ProFormCaptcha = defineComponent({
       timer = undefined
       timing.value = false
       if (resetCount)
-        count.value = props.countDown
+        count.value = getCountDown(props.countDown)
     }
 
     function startTiming() {
       stopTimer(false)
       timing.value = true
-      count.value = props.countDown
+      count.value = getCountDown(props.countDown)
       timer = window.setInterval(() => {
         if (count.value <= 1) {
           stopTimer()
@@ -110,7 +126,7 @@ const ProFormCaptcha = defineComponent({
     }
 
     async function handleCaptchaClick(event: MouseEvent) {
-      props.captchaProps?.onClick?.(event)
+      props.captchaProps?.onClick?.(event as Parameters<NonNullable<ButtonProps['onClick']>>[0])
       const mobile = props.phoneName === undefined
         ? ''
         : getValueByNamePath(fieldContext.model || {}, props.phoneName)
@@ -124,8 +140,8 @@ const ProFormCaptcha = defineComponent({
       }
     }
 
-    function handleChange(event: any) {
-      const nextValue = event?.target?.value ?? event
+    function handleChange(event: Parameters<NonNullable<InputProps['onChange']>>[0]) {
+      const nextValue = (event as { target?: { value?: unknown } })?.target?.value ?? event
       setCellValue(nextValue)
       emit('change', event)
       props.fieldProps?.onChange?.(event)
@@ -156,7 +172,7 @@ const ProFormCaptcha = defineComponent({
         return
       if ('value' in props.fieldRef)
         props.fieldRef.value = captchaApi
-      else
+      else if ('current' in props.fieldRef)
         props.fieldRef.current = captchaApi
     })
     expose(captchaApi)
@@ -165,11 +181,13 @@ const ProFormCaptcha = defineComponent({
       isTiming ? `${currentCount} 秒后重新获取` : '获取验证码'
 
     return () => {
+      const fieldProps = props.fieldProps || {}
+      const captchaProps = props.captchaProps || {}
       const {
         onChange: _onChange,
         style: fieldStyle,
         ...inputProps
-      } = props.fieldProps || {}
+      } = fieldProps
       const captchaTextRender = props.captchaTextRender || defaultCaptchaTextRender
       const captchaNode = (
         <div
@@ -194,9 +212,9 @@ const ProFormCaptcha = defineComponent({
             onChange={handleChange}
           />
           <Button
-            {...props.captchaProps}
-            disabled={timing.value || props.captchaProps?.disabled}
-            loading={loading.value || props.captchaProps?.loading}
+            {...captchaProps}
+            disabled={timing.value || isEnabledProp(captchaProps.disabled)}
+            loading={loading.value || captchaProps.loading}
             onClick={handleCaptchaClick}
           >
             {captchaTextRender(timing.value, count.value)}
@@ -204,7 +222,7 @@ const ProFormCaptcha = defineComponent({
         </div>
       )
 
-      if (props.ignoreFormItem || props.name === undefined)
+      if (ignoreFormItem.value || props.name === undefined)
         return captchaNode
 
       return (
@@ -228,5 +246,7 @@ const ProFormCaptcha = defineComponent({
     }
   },
 })
+
+const ProFormCaptcha = ProFormCaptchaImpl as unknown as FunctionalComponent<ProFormCaptchaProps>
 
 export default ProFormCaptcha

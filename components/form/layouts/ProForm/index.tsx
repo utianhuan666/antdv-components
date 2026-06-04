@@ -1,9 +1,15 @@
-import type { PropType } from 'vue'
-import type { ProFormProps } from '../../typing'
+import type { FormProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormProps as BaseProFormProps, FormData, FormRefLike, NamePath } from '../../typing'
 import { defineComponent, shallowRef } from 'vue'
 import { BaseForm } from '../../BaseForm'
 import ProFormItem from '../../components/FormItem'
 import ProFormGroup from '../../components/FormItem/Group'
+
+type ProFormLayoutProps<T = FormData, U = FormData> = Omit<FormProps, 'onFinish'> & BaseProFormProps<T, U>
+type ProFormPropName = 'layout'
+
+const proFormPropNames: ProFormPropName[] = ['layout']
 
 /**
  * 对标 React `src/form/layouts/ProForm/index.tsx`：
@@ -16,14 +22,13 @@ import ProFormGroup from '../../components/FormItem/Group'
  * </ProForm>
  * ```
  */
-const ProForm = defineComponent({
+const InternalProForm = defineComponent({
   name: 'ProForm',
   inheritAttrs: false,
-  props: {
-    layout: { type: String as PropType<ProFormProps['layout']>, default: 'vertical' },
-  },
-  setup(props, { attrs, slots, expose }) {
-    const baseRef = shallowRef<any>()
+  props: proFormPropNames,
+  setup(rawProps, { attrs, slots, expose }) {
+    const props = rawProps as Readonly<Pick<ProFormLayoutProps, typeof proFormPropNames[number]>>
+    const baseRef = shallowRef<FormRefLike>()
     expose({
       get formInstance() {
         return baseRef.value?.formInstance
@@ -31,17 +36,17 @@ const ProForm = defineComponent({
       submit: () => baseRef.value?.submit?.(),
       reset: () => baseRef.value?.reset?.(),
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
-      getFieldValue: (name: any) => baseRef.value?.getFieldValue?.(name),
+      getFieldValue: (name: NamePath) => baseRef.value?.getFieldValue?.(name),
       getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
-      getFieldFormatValue: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValue?.(name, omitNil),
-      getFieldFormatValueObject: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValueObject?.(name, omitNil),
-      validateFieldsReturnFormatValue: (nameList?: any[], omitNil?: boolean) => baseRef.value?.validateFieldsReturnFormatValue?.(nameList, omitNil),
-      setFieldsValue: (values: Record<string, any>) => baseRef.value?.setFieldsValue?.(values),
+      getFieldFormatValue: (name: NamePath, omitNil?: boolean) => baseRef.value?.getFieldFormatValue?.(name, omitNil),
+      getFieldFormatValueObject: (name: NamePath, omitNil?: boolean) => baseRef.value?.getFieldFormatValueObject?.(name, omitNil),
+      validateFieldsReturnFormatValue: (nameList?: NamePath[], omitNil?: boolean) => baseRef.value?.validateFieldsReturnFormatValue?.(nameList, omitNil),
+      setFieldsValue: (values: FormData) => baseRef.value?.setFieldsValue?.(values),
     })
     return () => (
       <BaseForm
         ref={baseRef}
-        layout={props.layout as any}
+        layout={(props.layout ?? 'vertical') as FormProps['layout']}
         contentRender={(items, submitter) => (
           <>
             {items}
@@ -53,7 +58,7 @@ const ProForm = defineComponent({
         {{
           default: () => slots.default?.(),
           submitter: slots.submitter
-            ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
+            ? (slotProps: FormData) => slots.submitter?.(slotProps)
             : undefined,
         }}
       </BaseForm>
@@ -61,8 +66,14 @@ const ProForm = defineComponent({
   },
 })
 
-;(ProForm as any).Group = ProFormGroup
-;(ProForm as any).Item = ProFormItem
+const ProForm = InternalProForm as unknown as FunctionalComponent<ProFormLayoutProps> & {
+  Group: typeof ProFormGroup
+  Item: typeof ProFormItem
+}
 
-export default ProForm as typeof ProForm & { Group: typeof ProFormGroup, Item: typeof ProFormItem }
+ProForm.Group = ProFormGroup
+ProForm.Item = ProFormItem
+
+export default ProForm
 export { ProForm }
+export type { ProFormLayoutProps }

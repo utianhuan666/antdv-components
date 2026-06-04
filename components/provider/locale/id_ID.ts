@@ -1,4 +1,4 @@
-import type { ProLocale } from './zh_CN';
+import type { ProLocale } from './zh_CN'
 
 const idID: ProLocale = {
   moneySymbol: 'RP',
@@ -74,6 +74,6 @@ const idID: ProLocale = {
     open: 'buka',
     close: 'tutup',
   },
-};
+}
 
-export default idID;
+export default idID

@@ -1,7 +1,7 @@
 import type { InputNumberProps } from 'antdv-next'
 import type { VNodeChild } from 'vue'
 
-export type FieldMoneyProps = {
+export interface FieldMoneyProps {
   text: number
   moneySymbol?: boolean
   locale?: string

@@ -1,6 +1,6 @@
 import { setAlpha } from '../useStyle'
 
-export type BaseLayoutDesignToken = {
+export interface BaseLayoutDesignToken {
   hashId: string
   colorPrimary: string
   colorBgAppListIconHover: string
@@ -59,10 +59,7 @@ export type DeepPartial<T> = T extends object
 
 export type LayoutDesignToken = BaseLayoutDesignToken
 
-export const getLayoutDesignToken = (
-  designTokens: DeepPartial<LayoutDesignToken>,
-  antdToken: Record<string, any>,
-): LayoutDesignToken => {
+export function getLayoutDesignToken(designTokens: DeepPartial<LayoutDesignToken>, antdToken: Record<string, any>): LayoutDesignToken {
   const finalDesignTokens = { ...designTokens }
   const defaultColorBgHeader = setAlpha(antdToken.colorBgElevated, 0.6)
 
@@ -123,6 +120,6 @@ export const getLayoutDesignToken = (
   } as LayoutDesignToken
 }
 
-export type ProTokenType = {
+export interface ProTokenType {
   layout?: DeepPartial<LayoutDesignToken>
 }

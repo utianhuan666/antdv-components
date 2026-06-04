@@ -1,5 +1,5 @@
 /** @deprecated use FieldSecondProps */
-export type FieldDigitProps = {
+export interface FieldDigitProps {
   text: number
   placeholder?: string
 }

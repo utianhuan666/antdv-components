@@ -1,17 +1,20 @@
-import { defineComponent } from 'vue'
+import type { InputNumberProps } from 'antdv-next'
+import type { FunctionalComponent } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
 import ProFormField from '../Field'
 
-/** 对标 React `ProFormDigit`：valueType=digit */
-const ProFormDigit = defineComponent({
-  name: 'ProFormDigit',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="digit" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormDigitProps = ProFormFieldItemProps<InputNumberProps> & {
+  min?: InputNumberProps['min']
+  max?: InputNumberProps['max']
+}
+
+const ProFormDigit: FunctionalComponent<ProFormDigitProps> = (props, { slots }) => (
+  <ProFormField valueType="digit" {...props}>
+    {slots.default?.()}
+  </ProFormField>
+)
+
+ProFormDigit.displayName = 'ProFormDigit'
+ProFormDigit.inheritAttrs = false
 
 export default ProFormDigit
