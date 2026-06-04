@@ -3,6 +3,7 @@ import { version } from '../package.json'
 import { Button } from './button'
 import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
+import { ProConfigProvider } from './provider'
 import { ProSkeleton } from './skeleton'
 
 export default {
@@ -12,11 +13,12 @@ export default {
     app.use(ProSkeleton as any)
     app.use(FieldModule)
     app.use(ProFormModule)
+    app.component(ProConfigProvider.name!, ProConfigProvider)
   },
   version,
 }
 
-export { Button, Form, FormItem, ProField, ProSkeleton, PureProField, version }
+export { Button, Form, FormItem, ProConfigProvider, ProField, ProSkeleton, PureProField, version }
 export {
   defaultRenderText,
   FieldCascader,
@@ -66,6 +68,7 @@ export type {
   ProFieldValueTypeInput,
   ProRenderFieldPropsType,
 } from './field'
+
 export {
   BaseForm,
   BetaSchemaForm,
@@ -149,6 +152,70 @@ export type {
   SpanConfigObject,
   SubmitterProps,
 } from './form'
+export {
+  arEGIntl,
+  caESIntl,
+  ConfigConsumer,
+  createIntl,
+  csCZIntl,
+  deDEIntl,
+  enGBIntl,
+  enUSIntl,
+  esESIntl,
+  faIRIntl,
+  findIntlKeyByAntdLocaleKey,
+  frFRIntl,
+  heILIntl,
+  hrHRIntl,
+  idIDIntl,
+  intlMap,
+  intlMapKeys,
+  isNeedOpenHash,
+  itITIntl,
+  jaJPIntl,
+  koKRIntl,
+  lighten,
+  mnMNIntl,
+  msMYIntl,
+  nlNLIntl,
+  operationUnit,
+  plPLIntl,
+  ProProvider,
+  proTheme,
+  ptBRIntl,
+  resetComponent,
+  roROIntl,
+  ruRUIntl,
+  setAlpha,
+  skSKIntl,
+  srRSIntl,
+  svSEIntl,
+  thTHIntl,
+  trTRIntl,
+  ukUAIntl,
+  useIntl,
+  useProProviderContext,
+  useStyle,
+  uzUZIntl,
+  viVNIntl,
+  zhCNIntl,
+  zhHKIntl,
+  zhTWIntl,
+} from './provider'
+export type {
+  BaseProFieldFC,
+  ConfigContextPropsType,
+  DeepPartial,
+  IntlType,
+  ParamsType,
+  ProAliasToken,
+  ProFieldFCMode,
+  ProSchemaValueEnumMap,
+  ProSchemaValueEnumObj,
+  ProTokenType,
+  ProFieldFCRenderProps as ProviderProFieldFCRenderProps,
+  ProRenderFieldPropsType as ProviderProRenderFieldPropsType,
+} from './provider'
 export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
 export { ListPageSkeleton, ListSkeleton, ListSkeletonItem, ListToolbarSkeleton, PageHeaderSkeleton } from './skeleton'
 export { ResultPageSkeleton } from './skeleton'

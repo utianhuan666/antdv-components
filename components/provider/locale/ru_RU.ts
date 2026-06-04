@@ -1,0 +1,79 @@
+import type { ProLocale } from './zh_CN';
+
+const ruRU: ProLocale = {
+  moneySymbol: '₽',
+  deleteThisLine: 'Удалить эту строку',
+  copyThisLine: 'Копировать эту строку',
+  form: {
+    lightFilter: {
+      more: 'Еще',
+      clear: 'Очистить',
+      confirm: 'ОК',
+      itemUnit: 'Позиции',
+    },
+  },
+  tableForm: {
+    search: 'Найти',
+    reset: 'Сброс',
+    submit: 'Отправить',
+    collapsed: 'Развернуть',
+    expand: 'Свернуть',
+    inputPlaceholder: 'Введите значение',
+    selectPlaceholder: 'Выберите значение',
+  },
+  alert: {
+    clear: 'Очистить',
+    selected: 'Выбрано',
+    item: 'элементов',
+  },
+  pagination: {
+    total: {
+      range: ' ',
+      total: 'из',
+      item: 'элементов',
+    },
+  },
+  tableToolBar: {
+    leftPin: 'Закрепить слева',
+    rightPin: 'Закрепить справа',
+    noPin: 'Открепить',
+    leftFixedTitle: 'Закреплено слева',
+    rightFixedTitle: 'Закреплено справа',
+    noFixedTitle: 'Не закреплено',
+    reset: 'Сброс',
+    columnDisplay: 'Отображение столбца',
+    columnSetting: 'Настройки',
+    fullScreen: 'Полный экран',
+    exitFullScreen: 'Выйти из полноэкранного режима',
+    reload: 'Обновить',
+    density: 'Размер',
+    densityDefault: 'По умолчанию',
+    densityLarger: 'Большой',
+    densityMiddle: 'Средний',
+    densitySmall: 'Сжатый',
+  },
+  stepsForm: {
+    next: 'Следующий',
+    prev: 'Предыдущий',
+    submit: 'Завершить',
+  },
+  loginForm: {
+    submitText: 'Вход',
+  },
+  editableTable: {
+    onlyOneLineEditor: 'Одновременно можно редактировать только одну строку',
+    onlyAddOneLine: 'Одновременно можно добавить только одну строку',
+    action: {
+      save: 'Сохранить',
+      cancel: 'Отменить',
+      delete: 'Удалить',
+      add: 'добавить ряд данных',
+    },
+  },
+  switch: {
+    open: 'Открыть',
+    close: 'Закрыть',
+  },
+};
+
+export default ruRU;

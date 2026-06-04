@@ -58,6 +58,7 @@
     "@antdv-next/icons": "^1.0.4",
     "@v-c/util": "^1.0.19",
     "@vueuse/core": "^14.2.1",
+    "antdv-style": "1.0.0-rc.1",
     "antdv-next": "^1.1.2",
     "dayjs": "^1.11.19",
     "es-toolkit": "^1.47.0",

@@ -1,0 +1,79 @@
+import type { ProLocale } from './zh_CN';
+
+const plPL: ProLocale = {
+  moneySymbol: 'zł',
+  deleteThisLine: 'Usuń ten wiersz',
+  copyThisLine: 'Kopiuj ten wiersz',
+  form: {
+    lightFilter: {
+      more: 'Więcej',
+      clear: 'Wyczyść',
+      confirm: 'Potwierdź',
+      itemUnit: 'Ilość',
+    },
+  },
+  tableForm: {
+    search: 'Szukaj',
+    reset: 'Reset',
+    submit: 'Zatwierdź',
+    collapsed: 'Pokaż wiecej',
+    expand: 'Pokaż mniej',
+    inputPlaceholder: 'Proszę podać',
+    selectPlaceholder: 'Proszę wybrać',
+  },
+  alert: {
+    clear: 'Wyczyść',
+    selected: 'Wybrane',
+    item: 'Wpis',
+  },
+  pagination: {
+    total: {
+      range: ' ',
+      total: 'z',
+      item: 'Wpisów',
+    },
+  },
+  tableToolBar: {
+    leftPin: 'Przypnij do lewej',
+    rightPin: 'Przypnij do prawej',
+    noPin: 'Odepnij',
+    leftFixedTitle: 'Przypięte do lewej',
+    rightFixedTitle: 'Przypięte do prawej',
+    noFixedTitle: 'Nieprzypięte',
+    reset: 'Reset',
+    columnDisplay: 'Wyświetlane wiersze',
+    columnSetting: 'Ustawienia',
+    fullScreen: 'Pełen ekran',
+    exitFullScreen: 'Zamknij pełen ekran',
+    reload: 'Odśwież',
+    density: 'Odstęp',
+    densityDefault: 'Standard',
+    densityLarger: 'Wiekszy',
+    densityMiddle: 'Sredni',
+    densitySmall: 'Kompaktowy',
+  },
+  stepsForm: {
+    next: 'Dalej',
+    prev: 'Wstecz',
+    submit: 'Zakończ',
+  },
+  loginForm: {
+    submitText: 'Zaloguj się',
+  },
+  editableTable: {
+    onlyOneLineEditor: 'Można edytować tylko jeden wiersz naraz',
+    onlyAddOneLine: 'Można dodać tylko jeden wiersz naraz',
+    action: {
+      save: 'Zapisz',
+      cancel: 'Anuluj',
+      delete: 'Usuń',
+      add: 'dodawanie wiersza danych',
+    },
+  },
+  switch: {
+    open: 'otwierać',
+    close: 'zamykać',
+  },
+};
+
+export default plPL;
