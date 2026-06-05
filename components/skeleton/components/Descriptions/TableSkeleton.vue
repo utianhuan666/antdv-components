@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { Card, Skeleton } from 'antdv-next'
+import { Card, Skeleton, SkeletonButton } from 'antdv-next'
 import TableItemSkeleton from './TableItemSkeleton.vue'
 
 defineOptions({ name: 'TableSkeleton' })
 
 withDefaults(defineProps<{
-  active?: boolean
+  active: boolean
   size?: number
 }>(), {
-  active: true,
   size: 4,
 })
 </script>
 
 <template>
   <Card variant="borderless">
-    <Skeleton.Button
+    <SkeletonButton
       :active="active"
       size="small"
       :style="{ width: '100px', marginBlockEnd: '16px' }"
     />
-    <TableItemSkeleton :active="active" :header="true" />
+    <TableItemSkeleton header :active="active" />
     <TableItemSkeleton
-      v-for="i in size"
-      :key="i"
+      v-for="index in size"
+      :key="index"
       :active="active"
     />
     <div style="display: flex; justify-content: flex-end; padding-block-start: 16px;">

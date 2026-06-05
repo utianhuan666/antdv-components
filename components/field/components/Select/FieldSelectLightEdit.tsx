@@ -1,5 +1,5 @@
-import type { ProFieldFC } from '../../types'
 import type { IntlType } from '../../../provider'
+import type { ProFieldFC } from '../../types'
 import type { FieldSelectFullProps } from './FieldSelectSearchEdit'
 import type { RequestOptionsType } from './types'
 import LightSelect from './LightSelect'

@@ -1,6 +1,6 @@
 import type { App } from 'vue'
 import { version } from '../package.json'
-import { Button } from './button'
+import { CardModule, CheckCard, ProCard, Statistic, StatisticCard } from './card'
 import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
 import { ProConfigProvider } from './provider'
@@ -9,17 +9,26 @@ import './theme/augmentComponentTokenMap'
 
 export default {
   install(app: App) {
-    app.use(Button as any)
     app.use(Form as any)
     app.use(ProSkeleton as any)
     app.use(FieldModule)
     app.use(ProFormModule)
+    app.use(CardModule)
     app.component(ProConfigProvider.name!, ProConfigProvider)
   },
   version,
 }
 
-export { Button, Form, FormItem, ProConfigProvider, ProField, ProSkeleton, PureProField, version }
+export { CheckCard, Form, FormItem, ProCard, ProConfigProvider, ProField, ProSkeleton, PureProField, Statistic, StatisticCard, version }
+export { CardModule } from './card'
+export type {
+  CheckCardGroupProps,
+  CheckCardProps,
+  ProCardProps,
+  ProCardTabsProps,
+  StatisticCardProps,
+  StatisticProps,
+} from './card'
 export {
   defaultRenderText,
   FieldCascader,

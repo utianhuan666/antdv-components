@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Divider } from 'antdv-next'
 
+defineOptions({ name: 'SkeletonLine' })
+
 withDefaults(defineProps<{
   padding?: string | number
 }>(), {

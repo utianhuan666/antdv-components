@@ -1,4 +1,4 @@
-import type { NamePath, ProFormDependencyProps } from '../../typing'
+import type { ProFormDependencyProps } from '../../typing'
 import { computed, defineComponent } from 'vue'
 import { getValueByNamePath, setValueByNamePath, useProFormContext } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'

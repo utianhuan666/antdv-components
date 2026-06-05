@@ -30,12 +30,12 @@ import FieldTimePicker, { FieldTimeRangePicker } from './components/TimePicker'
 import FieldTreeSelect from './components/TreeSelect'
 import { PureProField } from './PureProField'
 
+export { omitUndefined, pickProProps } from '../utils'
 export type { FieldCascaderProps } from './components/Cascader/types'
 export type { FieldDigitRangeProps } from './components/DigitRange/types'
 export type { FieldMoneyProps } from './components/Money/types'
 export type { FieldSelectProps } from './components/Select/types'
 export type { FieldTreeSelectProps } from './components/TreeSelect/types'
-export { omitUndefined, pickProProps } from '../utils'
 export { createProField } from './ProFieldCore'
 export type {
   ProConfigContextType,

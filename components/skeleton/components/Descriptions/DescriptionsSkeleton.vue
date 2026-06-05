@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { Card, Skeleton } from 'antdv-next'
+import { Card, SkeletonButton } from 'antdv-next'
 import DescriptionsItemSkeleton from './DescriptionsItemSkeleton.vue'
 import DescriptionsLargeItemSkeleton from './DescriptionsLargeItemSkeleton.vue'
 
 defineOptions({ name: 'DescriptionsSkeleton' })
 
-withDefaults(defineProps<{
-  active?: boolean
-}>(), {
-  active: true,
-})
+defineProps<{
+  active: boolean
+}>()
 </script>
 
 <template>
@@ -17,7 +15,7 @@ withDefaults(defineProps<{
     variant="borderless"
     :style="{ borderStartEndRadius: 0, borderTopLeftRadius: 0 }"
   >
-    <Skeleton.Button
+    <SkeletonButton
       :active="active"
       size="small"
       :style="{ width: '100px', marginBlockEnd: '16px' }"

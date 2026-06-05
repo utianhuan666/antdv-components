@@ -8,19 +8,19 @@ defineOptions({ name: 'ProSkeleton' })
 withDefaults(defineProps<{
   type?: 'list' | 'result' | 'descriptions'
   active?: boolean
-  pageHeader?: boolean
+  pageHeader?: false
   statistic?: number | false
-  actionButton?: boolean
-  toolbar?: boolean
+  actionButton?: false
+  toolbar?: false
   list?: number | false
 }>(), {
   type: 'list',
   active: true,
-  pageHeader: true,
-  statistic: 2,
-  actionButton: true,
-  toolbar: true,
-  list: 5,
+  pageHeader: undefined,
+  statistic: undefined,
+  actionButton: undefined,
+  toolbar: undefined,
+  list: undefined,
 })
 </script>
 

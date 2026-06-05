@@ -1,10 +1,10 @@
 import type { ProFieldRenderText } from './ProFieldCore'
 import type { ProFieldRenderProps, ProFieldTextType } from './types'
+import { pickProProps } from '../utils'
 import FieldImage from './components/Image'
 import FieldMoney from './components/Money'
 import FieldPercent from './components/Percent'
 import FieldProgress from './components/Progress'
-import { pickProProps } from '../utils'
 import { createProField } from './ProFieldCore'
 import ValueTypeToComponentMap from './ValueTypeToComponent'
 

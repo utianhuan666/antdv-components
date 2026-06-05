@@ -1,6 +1,6 @@
 import type { TreeSelectProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { VNodeChild } from 'vue'
+import type { IntlType } from '../../../provider'
 import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'

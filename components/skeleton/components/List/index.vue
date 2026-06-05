@@ -9,18 +9,18 @@ defineOptions({ name: 'ListPageSkeleton' })
 
 withDefaults(defineProps<{
   active?: boolean
-  pageHeader?: boolean
+  pageHeader?: false
   statistic?: number | false
-  actionButton?: boolean
-  toolbar?: boolean
+  actionButton?: false
+  toolbar?: false
   list?: number | false
 }>(), {
   active: true,
-  pageHeader: true,
-  statistic: 2,
-  actionButton: true,
-  toolbar: true,
-  list: 5,
+  pageHeader: undefined,
+  statistic: undefined,
+  actionButton: undefined,
+  toolbar: undefined,
+  list: undefined,
 })
 </script>
 
@@ -42,7 +42,7 @@ withDefaults(defineProps<{
         v-if="list !== false"
         :size="typeof list === 'number' ? list : 5"
         :active="active"
-        :action-button="actionButton !== false"
+        :action-button="actionButton"
       />
     </Card>
   </div>

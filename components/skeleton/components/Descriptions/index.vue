@@ -8,10 +8,12 @@ defineOptions({ name: 'DescriptionsPageSkeleton' })
 
 withDefaults(defineProps<{
   active?: boolean
-  pageHeader?: boolean
+  pageHeader?: false
   list?: number | false
 }>(), {
   active: true,
+  pageHeader: undefined,
+  list: undefined,
 })
 </script>
 

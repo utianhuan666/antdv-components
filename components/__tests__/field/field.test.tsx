@@ -1,5 +1,4 @@
 import {
-  Button,
   FieldSelect,
   FieldStatus,
   FieldTimePicker,
@@ -12,6 +11,13 @@ import { defineComponent, nextTick, ref } from 'vue'
 import { useFieldFetchData } from '../../field/components/Select'
 import { mountAttached, waitFor } from '../testUtils'
 import { TreeSelectDemo } from './fixtures/treeSelectDemo'
+
+const Button = defineComponent({
+  name: 'FieldTestButton',
+  setup(_, { slots }) {
+    return () => <button>{slots.default?.()}</button>
+  },
+})
 
 describe('field', () => {
   const statusValueEnum = {

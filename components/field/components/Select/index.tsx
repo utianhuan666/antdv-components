@@ -1,6 +1,6 @@
 import type { SelectProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { Ref, VNodeChild } from 'vue'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, ProFieldValueEnumType, RequestOptionsType } from './types'
 import { Badge, useConfig } from 'antdv-next'

@@ -1,1 +1,4 @@
-export { default as ResultPageSkeleton } from './index.vue'
+import ResultPageSkeleton from './index.vue'
+
+export { ResultPageSkeleton }
+export default ResultPageSkeleton

@@ -1,4 +1,7 @@
-export { default as DescriptionsSkeleton } from './DescriptionsSkeleton.vue'
-export { default as DescriptionsPageSkeleton } from './index.vue'
-export { default as TableItemSkeleton } from './TableItemSkeleton.vue'
-export { default as TableSkeleton } from './TableSkeleton.vue'
+import DescriptionsSkeleton from './DescriptionsSkeleton.vue'
+import DescriptionsPageSkeleton from './index.vue'
+import TableItemSkeleton from './TableItemSkeleton.vue'
+import TableSkeleton from './TableSkeleton.vue'
+
+export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton }
+export default DescriptionsPageSkeleton

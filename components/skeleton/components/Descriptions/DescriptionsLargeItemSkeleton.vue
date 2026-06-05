@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { Skeleton } from 'antdv-next'
+import { Skeleton, SkeletonButton } from 'antdv-next'
 
 defineOptions({ name: 'DescriptionsLargeItemSkeleton' })
 
-withDefaults(defineProps<{
+defineProps<{
   active?: boolean
-}>(), {
-  active: true,
-})
+}>()
 </script>
 
 <template>
-  <div style="margin-block-start: 32px;">
-    <Skeleton.Button
+  <div :style="{ marginBlockStart: '32px' }">
+    <SkeletonButton
       :active="active"
       size="small"
       :style="{ width: '100px', marginBlockEnd: '16px' }"

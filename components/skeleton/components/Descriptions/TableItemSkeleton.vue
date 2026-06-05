@@ -5,12 +5,12 @@ import SkeletonLine from '../List/SkeletonLine.vue'
 
 defineOptions({ name: 'TableItemSkeleton' })
 
-const { active, header } = defineProps<{
-  active?: boolean
+defineProps<{
+  active: boolean
   header?: boolean
 }>()
 
-const responsiveArray = ['xxxl', 'xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+const responsiveArray = ['xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
 
 const MediaQueryKeyEnum: Record<string, number> = {
   xs: 1,
@@ -18,16 +18,15 @@ const MediaQueryKeyEnum: Record<string, number> = {
   md: 3,
   lg: 3,
   xl: 3,
-  xxl: 3,
-  xxxl: 4,
+  xxl: 4,
 }
 
 const screens = useBreakpoint()
 
 const arraySize = computed(() => {
-  const s = screens.value ?? {}
-  const colSize = responsiveArray.find(key => s[key] === true) ?? 'md'
-  return MediaQueryKeyEnum[colSize] ?? 3
+  const colSize = responsiveArray.find(key => screens.value?.[key] === true) || 'md'
+
+  return MediaQueryKeyEnum[colSize] || 3
 })
 
 const items = computed(() => Array.from({ length: arraySize.value }))
@@ -43,11 +42,11 @@ const items = computed(() => Array.from({ length: arraySize.value }))
       }"
     >
       <div
-        v-for="(_, i) in items"
-        :key="i"
+        v-for="(_, index) in items"
+        :key="index"
         :style="{
           flex: 1,
-          paddingInlineStart: header && i === 0 ? 0 : '20px',
+          paddingInlineStart: header && index === 0 ? 0 : '20px',
           paddingInlineEnd: '32px',
         }"
       >
@@ -58,7 +57,7 @@ const items = computed(() => Array.from({ length: arraySize.value }))
           :styles="{ title: { margin: 0, height: '24px' } }"
         />
       </div>
-      <div style="flex: 3; padding-inline-start: 32px">
+      <div style="flex: 3; padding-inline-start: 32px;">
         <Skeleton
           :active="active"
           :paragraph="false"

@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { Card, Skeleton, useBreakpoint } from 'antdv-next'
+import { Card, Skeleton, SkeletonButton, useBreakpoint } from 'antdv-next'
 import { computed } from 'vue'
 
 defineOptions({ name: 'StatisticSkeleton' })
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   size?: number
   active?: boolean
-}>(), {
-  active: true,
-})
+}>()
 
-const responsiveArray = ['xxxl', 'xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+const responsiveArray = ['xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
 
 const MediaQueryKeyEnum: Record<string, number> = {
   xs: 2,
@@ -20,31 +18,26 @@ const MediaQueryKeyEnum: Record<string, number> = {
   lg: 4,
   xl: 6,
   xxl: 6,
-  xxxl: 6,
 }
 
 const screens = useBreakpoint()
 
 const arraySize = computed(() => {
-  if (props.size !== undefined) {
+  if (props.size !== undefined)
     return props.size
-  }
 
-  const s = screens.value ?? {}
-  const colSize = responsiveArray.find(key => s[key] === true) ?? 'md'
+  const colSize = responsiveArray.find(key => screens.value?.[key] === true) || 'md'
 
-  return MediaQueryKeyEnum[colSize] ?? 6
+  return MediaQueryKeyEnum[colSize] || 6
 })
 
 const items = computed(() => Array.from({ length: arraySize.value }))
 
 function firstWidth(index: number) {
-  if (index === 0) {
+  if (index === 0)
     return 0
-  }
-  if (arraySize.value > 2) {
+  if (arraySize.value > 2)
     return 42
-  }
   return 16
 }
 </script>
@@ -56,13 +49,13 @@ function firstWidth(index: number) {
   >
     <div style="width: 100%; justify-content: space-between; display: flex;">
       <div
-        v-for="(_, i) in items"
-        :key="i"
+        v-for="(_, index) in items"
+        :key="index"
         :style="{
-          borderInlineStart: arraySize > 2 && i === 1 ? '1px solid rgba(0,0,0,0.06)' : undefined,
-          paddingInlineStart: `${firstWidth(i)}px`,
+          borderInlineStart: arraySize > 2 && index === 1 ? '1px solid rgba(0,0,0,0.06)' : undefined,
+          paddingInlineStart: `${firstWidth(index)}px`,
           flex: 1,
-          marginInlineEnd: i === 0 ? '16px' : 0,
+          marginInlineEnd: index === 0 ? '16px' : 0,
         }"
       >
         <Skeleton
@@ -71,7 +64,7 @@ function firstWidth(index: number) {
           :title="{ width: 100 }"
           :styles="{ title: { marginBlockStart: 0 } }"
         />
-        <Skeleton.Button
+        <SkeletonButton
           :active="active"
           :style="{ height: '48px' }"
         />

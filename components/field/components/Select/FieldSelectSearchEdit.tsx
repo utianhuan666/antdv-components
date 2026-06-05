@@ -1,5 +1,5 @@
-import type { ProFieldFC } from '../../types'
 import type { IntlType } from '../../../provider'
+import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from './types'
 import { Spin } from 'antdv-next'
 import SearchSelect from './SearchSelect'

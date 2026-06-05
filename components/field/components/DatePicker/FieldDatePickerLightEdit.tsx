@@ -1,5 +1,5 @@
-import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import type { IntlType } from '../../../provider'
+import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { DatePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
 import { parseValueToDay } from './datePickerUtils'

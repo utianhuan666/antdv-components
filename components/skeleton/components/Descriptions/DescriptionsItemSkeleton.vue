@@ -4,14 +4,12 @@ import { computed } from 'vue'
 
 defineOptions({ name: 'DescriptionsItemSkeleton' })
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   size?: number
   active?: boolean
-}>(), {
-  active: true,
-})
+}>()
 
-const responsiveArray = ['xxxl', 'xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
+const responsiveArray = ['xxl', 'xl', 'lg', 'md', 'sm', 'xs'] as const
 
 const MediaQueryKeyEnum: Record<string, number> = {
   xs: 1,
@@ -20,20 +18,17 @@ const MediaQueryKeyEnum: Record<string, number> = {
   lg: 3,
   xl: 3,
   xxl: 4,
-  xxxl: 4,
 }
 
 const screens = useBreakpoint()
 
 const arraySize = computed(() => {
-  if (props.size !== undefined) {
+  if (props.size !== undefined)
     return props.size
-  }
 
-  const s = screens.value ?? {}
-  const colSize = responsiveArray.find(key => s[key] === true) ?? 'md'
+  const colSize = responsiveArray.find(key => screens.value?.[key] === true) || 'md'
 
-  return MediaQueryKeyEnum[colSize] ?? 3
+  return MediaQueryKeyEnum[colSize] || 3
 })
 
 const items = computed(() => Array.from({ length: arraySize.value }))
@@ -42,12 +37,12 @@ const items = computed(() => Array.from({ length: arraySize.value }))
 <template>
   <div style="width: 100%; justify-content: space-between; display: flex;">
     <div
-      v-for="(_, i) in items"
-      :key="i"
+      v-for="(_, index) in items"
+      :key="index"
       :style="{
         flex: 1,
-        paddingInlineStart: i === 0 ? 0 : '24px',
-        paddingInlineEnd: i === arraySize - 1 ? 0 : '24px',
+        paddingInlineStart: index === 0 ? 0 : '24px',
+        paddingInlineEnd: index === arraySize - 1 ? 0 : '24px',
       }"
     >
       <Skeleton

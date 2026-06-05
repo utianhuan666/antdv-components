@@ -1,5 +1,5 @@
-import type { ProFieldFC } from '../../types'
 import type { IntlType } from '../../../provider'
+import type { ProFieldFC } from '../../types'
 import { DatePicker } from 'antdv-next'
 import { parseValueToDay } from './datePickerUtils'
 

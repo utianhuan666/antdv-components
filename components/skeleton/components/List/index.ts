@@ -1,6 +1,8 @@
-export { default as ListPageSkeleton } from './index.vue'
-export { default as ListSkeleton } from './ListSkeleton.vue'
-export { default as ListSkeletonItem } from './ListSkeletonItem.vue'
-export { default as ListToolbarSkeleton } from './ListToolbarSkeleton.vue'
-export { default as PageHeaderSkeleton } from './PageHeaderSkeleton.vue'
-export { default as SkeletonLine } from './SkeletonLine.vue'
+import ListPageSkeleton from './index.vue'
+import ListSkeleton from './ListSkeleton.vue'
+import ListSkeletonItem from './ListSkeletonItem.vue'
+import ListToolbarSkeleton from './ListToolbarSkeleton.vue'
+import PageHeaderSkeleton from './PageHeaderSkeleton.vue'
+
+export { ListPageSkeleton, ListSkeleton, ListSkeletonItem, ListToolbarSkeleton, PageHeaderSkeleton }
+export default ListPageSkeleton

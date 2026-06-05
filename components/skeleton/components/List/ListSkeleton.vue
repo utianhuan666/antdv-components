@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { Card, Skeleton } from 'antdv-next'
+import { Card, SkeletonButton } from 'antdv-next'
 import ListSkeletonItem from './ListSkeletonItem.vue'
 
 defineOptions({ name: 'ListSkeleton' })
 
 withDefaults(defineProps<{
-  size?: number
+  size: number
   active?: boolean
-  actionButton?: boolean
+  actionButton?: false
 }>(), {
-  size: 5,
   active: true,
-  actionButton: true,
+  actionButton: undefined,
 })
 </script>
 
@@ -21,9 +20,9 @@ withDefaults(defineProps<{
     :styles="{ body: { padding: 0 } }"
   >
     <ListSkeletonItem
-      v-for="i in size"
-      :key="i"
-      :active="active"
+      v-for="index in size"
+      :key="index"
+      :active="!!active"
     />
     <Card
       v-if="actionButton !== false"
@@ -31,7 +30,7 @@ withDefaults(defineProps<{
       :style="{ borderStartEndRadius: 0, borderTopLeftRadius: 0 }"
       :styles="{ body: { display: 'flex', alignItems: 'center', justifyContent: 'center' } }"
     >
-      <Skeleton.Button
+      <SkeletonButton
         :style="{ width: '102px' }"
         :active="active"
         size="small"
