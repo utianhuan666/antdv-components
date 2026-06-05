@@ -5,6 +5,7 @@ import type { NamePath, ProFormFieldItemProps } from '../../typing'
 import { DateRangePicker } from 'antdv-next'
 import dayjs from 'dayjs'
 import { computed, defineComponent } from 'vue'
+import { getValueByNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
@@ -38,28 +39,6 @@ const rangeConfig: Record<BaseDateRangerValueType, RangeConfig> = {
   dateQuarterRange: { format: 'YYYY-[Q]Q', picker: 'quarter', showTime: true },
   dateYearRange: { format: 'YYYY', picker: 'year', showTime: true },
   timeRange: { format: 'HH:mm:ss' },
-}
-
-function getValueByNamePath(model: Record<string, any>, name?: NamePath) {
-  if (name === undefined)
-    return undefined
-  const path = Array.isArray(name) ? name : [name]
-  return path.reduce<any>((current, key) => current?.[key], model)
-}
-
-function setValueByNamePath(model: Record<string, any>, name: NamePath | undefined, value: any) {
-  if (name === undefined)
-    return
-  const path = Array.isArray(name) ? name : [name]
-  const last = path[path.length - 1]
-  if (last === undefined)
-    return
-  const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-    if (!current[key] || typeof current[key] !== 'object')
-      current[key] = {}
-    return current[key]
-  }, model)
-  parent[last] = value
 }
 
 export const BaseDateRanger = defineComponent({

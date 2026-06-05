@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import type { IntlType } from '../../../provider'
 import type { FieldSelectProps, RequestOptionsType } from './types'
 import { Spin } from 'antdv-next'
 import SearchSelect from './SearchSelect'
@@ -8,9 +9,7 @@ const SearchSelectComponent = SearchSelect as any
 export type FieldSelectFullProps = FieldSelectProps
 
 export type FieldSelectSearchEditProps = NonNullable<ProFieldFC<FieldSelectFullProps>['__props']> & {
-  intl: {
-    getMessage: (id: string, defaultMessage: string) => string
-  }
+  intl: IntlType
   loading: boolean
   options: RequestOptionsType[]
   fetchData: (keyWord?: string) => void

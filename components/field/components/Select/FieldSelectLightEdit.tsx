@@ -1,12 +1,11 @@
 import type { ProFieldFC } from '../../types'
+import type { IntlType } from '../../../provider'
 import type { FieldSelectFullProps } from './FieldSelectSearchEdit'
 import type { RequestOptionsType } from './types'
 import LightSelect from './LightSelect'
 
 export type FieldSelectLightEditProps = NonNullable<ProFieldFC<FieldSelectFullProps>['__props']> & {
-  intl: {
-    getMessage: (id: string, defaultMessage: string) => string
-  }
+  intl: IntlType
   loading: boolean
   options: RequestOptionsType[]
   fetchData: (keyWord?: string) => void

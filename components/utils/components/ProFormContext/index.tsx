@@ -4,14 +4,14 @@ import type { NamePath } from '../../typing'
 import { inject, provide } from 'vue'
 
 export interface ProFormInstanceType<T> {
-  getFieldsFormatValue?: (nameList?: true, omitNil?: boolean) => T
-  getFieldFormatValue?: (nameList?: NamePath) => T
-  getFieldFormatValueObject?: (nameList?: NamePath) => T
-  validateFieldsReturnFormatValue?: (nameList?: NamePath[]) => Promise<T>
+  getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => T
+  getFieldFormatValue?: (name: NamePath, omitNil?: boolean) => any
+  getFieldFormatValueObject?: (name: NamePath, omitNil?: boolean) => Partial<T>
+  validateFieldsReturnFormatValue?: (nameList?: NamePath[], omitNil?: boolean) => Promise<T>
 }
 
 export type ProFormContextValue<T = any> = ProFormInstanceType<T> & {
-  formRef?: Ref<FormInstance | undefined>
+  formRef?: Ref<(Partial<FormInstance> & Record<string, any>) | undefined>
 }
 
 export const ProFormContext: InjectionKey<ProFormContextValue<any>> = Symbol('ProFormContext')

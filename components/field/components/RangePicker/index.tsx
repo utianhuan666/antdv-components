@@ -1,4 +1,5 @@
 import type { RangePickerProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
@@ -21,7 +22,8 @@ type FieldRangePickerProps = {
 
 type FieldRangePickerFieldProps = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']>
 
-const intl = {
+const intl: IntlType = {
+  locale: 'default',
   getMessage: (_id: string, defaultMessage: string) => defaultMessage,
 }
 

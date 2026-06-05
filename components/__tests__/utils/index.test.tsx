@@ -16,7 +16,9 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import {
   conversionSubmitValue,
   dateArrayFormatter,
+  deleteValueByNamePath,
   DropdownFooter,
+  getValueByNamePath,
   InlineErrorFormItem,
   isDeepEqualReact,
   isDropdownValueType,
@@ -29,6 +31,7 @@ import {
   parseValueToDay,
   pickProProps,
   setAlpha,
+  setValueByNamePath,
   stringify,
   transformKeySubmitValue,
   useDebounceFn,
@@ -177,6 +180,41 @@ describe('utils', () => {
     expect(fn).toHaveBeenCalledTimes(5)
     debouncedWrapper.unmount()
     expect(fn).toHaveBeenCalledTimes(5)
+  })
+
+  it('pickProProps filters internal pro props unless custom valueType', () => {
+    const props = {
+      id: 'field',
+      valueType: 'text',
+      fieldProps: { allowClear: true },
+      formItemProps: { required: true },
+      placeholder: 'input',
+    }
+
+    expect(pickProProps(props)).toEqual({
+      id: 'field',
+      placeholder: 'input',
+    })
+    expect(pickProProps(props, true)).toEqual(props)
+  })
+
+  it('name path helpers read write and delete nested values', () => {
+    const model: Record<string, any> = {
+      user: { name: 'Ada' },
+      list: [{ id: 1 }],
+    }
+
+    expect(getValueByNamePath(model, ['user', 'name'])).toBe('Ada')
+    expect(getValueByNamePath(model, ['missing', 'value'])).toBeUndefined()
+
+    setValueByNamePath(model, ['user', 'age'], 37)
+    setValueByNamePath(model, ['list', 0, 'title'], 'first')
+
+    expect(model.user.age).toBe(37)
+    expect(model.list[0].title).toBe('first')
+
+    deleteValueByNamePath(model, ['user', 'name'])
+    expect(model.user.name).toBeUndefined()
   })
 
   it('📅 useDebounceFn execution has errors', async () => {

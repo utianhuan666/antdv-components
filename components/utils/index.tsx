@@ -13,7 +13,7 @@ export { FieldLabel } from './components/FieldLabel'
 export { FilterDropdown } from './components/FilterDropdown'
 export { InlineErrorFormItem } from './components/InlineErrorFormItem'
 export { LabelIconTip } from './components/LabelIconTip'
-export type { ProFormInstanceType } from './components/ProFormContext'
+export type { ProFormContextValue, ProFormInstanceType } from './components/ProFormContext'
 export { ProFormContext, provideProFormContext, useProFormContext } from './components/ProFormContext'
 export {
   conversionMomentValue,
@@ -56,6 +56,13 @@ export { omitBoolean } from './omitBoolean'
 export { omitUndefined } from './omitUndefined'
 export { omitUndefinedAndEmptyArr } from './omitUndefinedAndEmptyArr'
 export { parseValueToDay } from './parseValueToMoment'
+export {
+  deleteValueByNamePath,
+  getValueByNamePath,
+  namePathKey,
+  normalizeNamePath,
+  setValueByNamePath,
+} from './path'
 export { pickProFormItemProps } from './pickProFormItemProps'
 export { pickProProps } from './pickProProps'
 export { objectToMap, ProFieldBadgeColor, proFieldParsingText } from './proFieldParsingText'

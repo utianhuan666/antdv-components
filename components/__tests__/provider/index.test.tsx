@@ -1,7 +1,8 @@
+import type { ComponentTokenMap } from 'antdv-next/dist/theme/interface/components'
 import { mount } from '@vue/test-utils'
 import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { ProField } from '../../field'
 import { ProForm, ProFormMoney } from '../../form'
 import {
@@ -11,6 +12,7 @@ import {
   useProProviderContext,
   useStyle,
 } from '../../provider'
+import { genProStyleHooks } from '../../theme/genProStyleUtils'
 import { waitFor } from '../testUtils'
 
 describe('proConfigProvider', () => {
@@ -78,6 +80,53 @@ describe('proConfigProvider', () => {
     expect(wrapper.find('.pro-provider-demo').text()).toBe('wrapped')
     expect(wrapper.find('.pro-provider-demo').attributes('data-hash-id')).toBe('')
     expect(assertToken).toHaveBeenCalledWith('.ant-pro', '.ant')
+  })
+
+  it('genProStyleHooks registers pro component styles', () => {
+    const assertToken = vi.fn()
+    const useProGridContentStyle = genProStyleHooks(
+      'ProGridContent',
+      (token) => {
+        assertToken(token.componentCls, token.wideMaxWidth)
+        return {
+          [token.componentCls]: {
+            maxWidth: token.wideMaxWidth,
+          },
+        }
+      },
+      { wideMaxWidth: 1200 },
+    )
+
+    const Demo = defineComponent({
+      setup() {
+        const [hashId] = useProGridContentStyle(ref('ant-pro-grid-content'))
+        return () => (
+          <div class="ant-pro-grid-content" data-hash-id={hashId.value}>
+            grid
+          </div>
+        )
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ProConfigProvider>
+        <Demo />
+      </ProConfigProvider>
+    ))
+
+    expect(wrapper.find('.ant-pro-grid-content').text()).toBe('grid')
+    expect(assertToken).toHaveBeenCalledWith(
+      '.ant-pro-grid-content',
+      'var(--ant-pro-grid-content-wide-max-width)',
+    )
+  })
+
+  it('augments ProGridContent component token type', () => {
+    const token: NonNullable<ComponentTokenMap['ProGridContent']> = {
+      wideMaxWidth: 1200,
+    }
+
+    expect(token.wideMaxWidth).toBe(1200)
   })
 
   it('custom translations should be respected', async () => {

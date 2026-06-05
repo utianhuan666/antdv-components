@@ -1,4 +1,5 @@
 import type { TreeSelectProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { TreeSelectFieldProps } from './types'
@@ -134,7 +135,8 @@ const FieldTreeSelect = defineComponent({
     const [loading, options, fetchData] = useFieldFetchData(fetchProps)
     const open = ref(false)
     const searchValue = ref<string | undefined>(props.fieldProps?.searchValue)
-    const intl = {
+    const intl: IntlType = {
+      locale: 'default',
       getMessage: (_id: string, defaultMessage: string) => defaultMessage,
     }
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {

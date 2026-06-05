@@ -1,6 +1,7 @@
 import type { ProFormItemProps } from '../../typing'
 import { Col, FormItem } from 'antdv-next'
 import { cloneVNode, defineComponent, isVNode, onMounted, onUnmounted, watch } from 'vue'
+import { getValueByNamePath, normalizeNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import { useGridHelpers } from '../../helpers'
 import { proFormItemPropNames } from '../../typing'
@@ -32,7 +33,7 @@ const ProFormItemImpl = defineComponent({
     function registerFieldValueType() {
       if (!props.name)
         return
-      const namePath = Array.isArray(props.name) ? props.name : [props.name]
+      const namePath = normalizeNamePath(props.name)
       fieldContext.setFieldValueType?.(namePath, {
         valueType: props.valueType,
         dateFormat: props.dataFormat,
@@ -43,7 +44,7 @@ const ProFormItemImpl = defineComponent({
     function clearFieldValueType() {
       if (!props.name)
         return
-      const namePath = Array.isArray(props.name) ? props.name : [props.name]
+      const namePath = normalizeNamePath(props.name)
       fieldContext.clearFieldValueType?.(namePath)
     }
 
@@ -54,24 +55,18 @@ const ProFormItemImpl = defineComponent({
     function toNamePath() {
       if (!props.name)
         return []
-      return Array.isArray(props.name) ? props.name : [props.name]
+      return normalizeNamePath(props.name)
     }
 
     function getFieldValue() {
-      return toNamePath().reduce<any>((current, key) => current?.[key], fieldContext.model || {})
+      return getValueByNamePath(fieldContext.model || {}, toNamePath())
     }
 
     function setFieldValue(value: any) {
       const path = toNamePath()
-      const last = path[path.length - 1]
-      if (last === undefined)
+      if (!path.length)
         return
-      const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-        if (!current[key] || typeof current[key] !== 'object')
-          current[key] = {}
-        return current[key]
-      }, fieldContext.model || {})
-      parent[last] = value
+      setValueByNamePath(fieldContext.model || {}, path, value)
     }
 
     function readEventValue(input: unknown) {

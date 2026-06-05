@@ -1,4 +1,5 @@
 import type { TreeSelectProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { VNodeChild } from 'vue'
 import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
@@ -24,9 +25,7 @@ export interface FieldTreeSelectLightEditProps {
   open: boolean
   setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   treeSelectRef: any
-  intl: {
-    getMessage: (id: string, defaultMessage: string) => string
-  }
+  intl: IntlType
   loading: boolean
   options: NonNullable<TreeSelectProps['treeData']>
   fetchData: (keyWord?: string) => void

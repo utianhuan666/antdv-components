@@ -28,8 +28,8 @@ import FieldText from './components/Text'
 import FieldTextArea from './components/TextArea'
 import FieldTimePicker, { FieldTimeRangePicker } from './components/TimePicker'
 import FieldTreeSelect from './components/TreeSelect'
+import { pickProProps } from '../utils'
 import { wrapProFieldLight } from './internal/ProFieldLightWrapper'
-import { pickProProps } from './ProFieldCore'
 import './initDayjs'
 
 function sameRenderPair(

@@ -1,32 +1,9 @@
 import type { NamePath, ProFormDependencyProps } from '../../typing'
 import { computed, defineComponent } from 'vue'
+import { getValueByNamePath, setValueByNamePath, useProFormContext } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
-import { useProFormContext } from '../../ProFormContext'
 import { proFormDependencyPropNames } from '../../typing'
 import { useFormListContext } from '../List/FormListContext'
-
-function getValueByNamePath(model: Record<string, any> | undefined, name: (string | number)[]) {
-  if (!model)
-    return undefined
-  return name.reduce<any>((current, key) => current?.[key], model)
-}
-
-function setValueByNamePath(target: Record<string, any>, name: NamePath, value: any) {
-  const path = Array.isArray(name) ? name : [name]
-  const last = path[path.length - 1]
-  if (last === undefined)
-    return
-  if (path.length === 1) {
-    target[last] = value
-    return
-  }
-  const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-    if (!current[key] || typeof current[key] !== 'object')
-      current[key] = {}
-    return current[key]
-  }, target)
-  parent[last] = value
-}
 
 /**
  * ProFormDependency 对标 React `src/form/components/Dependency/index.tsx`：

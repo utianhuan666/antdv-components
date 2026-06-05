@@ -5,6 +5,7 @@ import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
 import { ProConfigProvider } from './provider'
 import { ProSkeleton } from './skeleton'
+import './theme/augmentComponentTokenMap'
 
 export default {
   install(app: App) {
@@ -52,6 +53,7 @@ export {
   FieldTreeSelect,
   ProFieldBadgeColor,
 } from './field'
+
 export type {
   FieldCascaderProps,
   FieldDigitRangeProps,
@@ -68,7 +70,6 @@ export type {
   ProFieldValueTypeInput,
   ProRenderFieldPropsType,
 } from './field'
-
 export {
   BaseForm,
   BetaSchemaForm,
@@ -158,6 +159,7 @@ export {
   useGridHelpers,
   useProFormContext,
 } from './form'
+
 export type {
   BaseFormProps,
   BetaSchemaFormProps,
@@ -253,3 +255,8 @@ export type {
 export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
 export { ListPageSkeleton, ListSkeleton, ListSkeletonItem, ListToolbarSkeleton, PageHeaderSkeleton } from './skeleton'
 export { ResultPageSkeleton } from './skeleton'
+export {
+  genProComponentStyleHook,
+  genProStyleHooks,
+  genProSubStyleComponent,
+} from './theme/genProStyleUtils'

@@ -6,6 +6,7 @@ import type { QueryFilterLayout, SpanConfig } from './breakpoints'
 import { useResizeObserver } from '@vueuse/core'
 import { Col, FormItem, Row } from 'antdv-next'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
+import { deleteValueByNamePath, normalizeNamePath } from '../../../utils'
 import { BaseForm } from '../../BaseForm'
 import Actions from './Actions'
 import { getBreakpointsConfig, getSpanConfig } from './breakpoints'
@@ -148,23 +149,6 @@ const QueryFilterImpl = defineComponent({
       getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
     })
 
-    function normalizeNamePath(name: unknown): (string | number)[] | undefined {
-      if (name === undefined || name === null)
-        return undefined
-      return Array.isArray(name) ? name as (string | number)[] : [name as string | number]
-    }
-
-    function deleteValueByNamePath(values: FormData, namePath: (string | number)[]) {
-      const last = namePath[namePath.length - 1]
-      if (last === undefined)
-        return
-      const parent = namePath.slice(0, -1).reduce<unknown>((current, key) => {
-        return current && typeof current === 'object' ? (current as FormData)[key] : undefined
-      }, values)
-      if (parent && typeof parent === 'object')
-        delete (parent as FormData)[last]
-    }
-
     function filterHiddenValues(values: FormData) {
       if (preserve.value || hiddenNamePaths.value.length === 0)
         return values
@@ -190,7 +174,7 @@ const QueryFilterImpl = defineComponent({
 
       hiddenNamePaths.value = processedList
         .filter(entry => entry.hidden && entry.name !== undefined)
-        .map(entry => normalizeNamePath(entry.name))
+        .map(entry => normalizeNamePath(entry.name as string | number | (string | number)[]))
         .filter(Boolean) as (string | number)[][]
 
       let renderSpan = 0

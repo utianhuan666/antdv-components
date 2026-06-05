@@ -35,7 +35,8 @@ export type { FieldDigitRangeProps } from './components/DigitRange/types'
 export type { FieldMoneyProps } from './components/Money/types'
 export type { FieldSelectProps } from './components/Select/types'
 export type { FieldTreeSelectProps } from './components/TreeSelect/types'
-export { createProField, omitUndefined, pickProProps } from './ProFieldCore'
+export { omitUndefined, pickProProps } from '../utils'
+export { createProField } from './ProFieldCore'
 export type {
   ProConfigContextType,
   ProFieldBuiltinValueType,

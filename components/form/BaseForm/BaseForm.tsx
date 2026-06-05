@@ -2,9 +2,16 @@ import type { FunctionalComponent, VNodeChild } from 'vue'
 import type { BaseFormProps, NamePath, ProFormData, ProFormInstance, SearchTransformKeyFn, SubmitterContext, SubmitterProps } from '../typing'
 import { Form, Row, Spin } from 'antdv-next'
 import { computed, defineComponent, nextTick, onMounted, reactive, shallowRef, watch } from 'vue'
+import {
+  deleteValueByNamePath,
+  getValueByNamePath,
+  namePathKey,
+  normalizeNamePath,
+  provideProFormContext,
+  setValueByNamePath,
+} from '../../utils'
 import { provideFieldContext } from '../FieldContext'
 import { provideGridContext } from '../helpers'
-import { provideProFormContext } from '../ProFormContext'
 import { baseFormPropNames } from '../typing'
 import { provideEditOrReadOnly } from './EditOrReadOnlyContext'
 import Submitter from './Submitter'
@@ -38,10 +45,6 @@ function genUrlSyncParams(syncToUrl: BaseFormProps['syncToUrl'], params: ProForm
   if (syncToUrl === true)
     return params
   return typeof syncToUrl === 'function' ? syncToUrl(params, type) : {}
-}
-
-function toNamePath(name: NamePath): (string | number)[] {
-  return Array.isArray(name) ? name : [name]
 }
 
 interface FieldValueTypeConfig {
@@ -133,36 +136,6 @@ const BaseFormImpl = defineComponent({
       },
       { immediate: true, deep: true },
     )
-
-    function namePathKey(name: (string | number)[]) {
-      return JSON.stringify(name)
-    }
-
-    function getValueByNamePath(values: Record<string, any>, namePath: (string | number)[]) {
-      return namePath.reduce<any>((current, key) => current?.[key], values)
-    }
-
-    function setValueByNamePath(values: Record<string, any>, namePath: (string | number)[], value: any) {
-      const last = namePath[namePath.length - 1]
-      if (last === undefined)
-        return values
-      const parent = namePath.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-        if (!current[key] || typeof current[key] !== 'object')
-          current[key] = {}
-        return current[key]
-      }, values)
-      parent[last] = value
-      return values
-    }
-
-    function deleteValueByNamePath(values: Record<string, any>, namePath: (string | number)[]) {
-      const last = namePath[namePath.length - 1]
-      if (last === undefined)
-        return
-      const parent = namePath.slice(0, -1).reduce<any>((current, key) => current?.[key], values)
-      if (parent && typeof parent === 'object')
-        delete parent[last]
-    }
 
     function cloneValue<T>(value: T): T {
       if (Array.isArray(value))
@@ -265,7 +238,7 @@ const BaseFormImpl = defineComponent({
     }
 
     function getFieldFormatValue(name: NamePath, omitNilParam?: boolean) {
-      const namePath = toNamePath(name)
+      const namePath = normalizeNamePath(name)!
       const value = getFieldValue(namePath)
       const transformed = transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
       const result = getValueByNamePath(transformed, namePath)
@@ -275,7 +248,7 @@ const BaseFormImpl = defineComponent({
     }
 
     function getFieldFormatValueObject(name: NamePath, omitNilParam?: boolean) {
-      const namePath = toNamePath(name)
+      const namePath = normalizeNamePath(name)!
       const value = getFieldValue(namePath)
       return transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
     }
@@ -327,7 +300,7 @@ const BaseFormImpl = defineComponent({
     }
 
     function getFieldValue(name: NamePath) {
-      const namePath = toNamePath(name)
+      const namePath = normalizeNamePath(name)!
       return getValueByNamePath(formModel.value, namePath)
     }
 
@@ -446,10 +419,10 @@ const BaseFormImpl = defineComponent({
         return innerLoading.value
       },
       setFieldValueType: (name: NamePath, config: FieldValueTypeConfig) => {
-        fieldsValueType.set(namePathKey(toNamePath(name)), config)
+        fieldsValueType.set(namePathKey(name), config)
       },
       clearFieldValueType: (name: NamePath) => {
-        fieldsValueType.delete(namePathKey(toNamePath(name)))
+        fieldsValueType.delete(namePathKey(name))
       },
       onValuesChange: handleValuesChange,
     })

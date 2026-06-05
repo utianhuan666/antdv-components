@@ -1,8 +1,9 @@
 import type { RadioChangeEvent, RadioGroupProps, RadioProps } from 'antdv-next'
 import type { FunctionalComponent } from 'vue'
-import type { NamePath, ProFormFieldItemProps } from '../../typing'
+import type { ProFormFieldItemProps } from '../../typing'
 import { Radio } from 'antdv-next'
 import { computed, defineComponent, onMounted, watch } from 'vue'
+import { getValueByNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import ProFormField from '../Field'
 import ProFormItem from '../FormItem'
@@ -19,10 +20,6 @@ export type ProFormRadioGroupProps = ProFormFieldItemProps<RadioGroupProps> & {
 
 export type ProFormRadioButtonProps = ProFormFieldItemProps<RadioProps>
 
-interface ProFormRadioEmits {
-  change: [event: RadioChangeEvent]
-}
-
 const radioPropNames = [
   'name',
   'label',
@@ -38,30 +35,8 @@ const radioPropNames = [
   'ignoreFormItem',
 ] satisfies (keyof ProFormRadioProps)[]
 
-function isModelRecord(value: unknown): value is ModelRecord {
-  return typeof value === 'object' && value !== null
-}
-
-function getValueByNamePath(model: ModelRecord, name: NamePath) {
-  const path = Array.isArray(name) ? name : [name]
-  return path.reduce<unknown>((current, key) => {
-    if (!isModelRecord(current))
-      return undefined
-    return current[key]
-  }, model)
-}
-
-function setValueByNamePath(model: ModelRecord, name: NamePath, value: unknown) {
-  const path = Array.isArray(name) ? name : [name]
-  const last = path[path.length - 1]
-  if (last === undefined)
-    return
-  const parent = path.slice(0, -1).reduce<ModelRecord>((current, key) => {
-    if (!isModelRecord(current[key]))
-      current[key] = {}
-    return current[key] as ModelRecord
-  }, model)
-  parent[last] = value
+interface ProFormRadioEmits {
+  change: [event: RadioChangeEvent]
 }
 
 const ProFormRadio = defineComponent<ProFormRadioProps, ProFormRadioEmits>((props, { attrs, emit, slots }) => {

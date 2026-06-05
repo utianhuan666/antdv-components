@@ -1,4 +1,5 @@
 import type { CascaderProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { LoadingOutlined } from '@antdv-next/icons'
@@ -13,9 +14,7 @@ type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   open: boolean
   setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   cascaderRef: any
-  intl: {
-    getMessage: (id: string, defaultMessage: string) => string
-  }
+  intl: IntlType
 }
 
 export function FieldCascaderLightEdit(props: Props) {

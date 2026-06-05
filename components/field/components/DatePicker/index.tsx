@@ -1,4 +1,5 @@
 import type { DatePickerProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
@@ -24,7 +25,8 @@ type FieldDatePickerProps = {
 
 type FieldDatePickerFieldProps = NonNullable<ProFieldFC<FieldDatePickerProps>['__props']>
 
-const intl = {
+const intl: IntlType = {
+  locale: 'default',
   getMessage: (_id: string, defaultMessage: string) => defaultMessage,
 }
 

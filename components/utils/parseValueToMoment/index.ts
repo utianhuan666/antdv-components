@@ -1,10 +1,19 @@
+import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
+import advancedFormat from 'dayjs/plugin/advancedFormat'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+import weekOfYear from 'dayjs/plugin/weekOfYear'
+import weekYear from 'dayjs/plugin/weekYear'
 import { isNil } from '../isNil'
 
 dayjs.extend(customParseFormat)
+dayjs.extend(advancedFormat)
+dayjs.extend(weekOfYear)
+dayjs.extend(weekYear)
+dayjs.extend(quarterOfYear)
 
-type DateValue = dayjs.Dayjs | dayjs.Dayjs[] | string | string[] | number | number[] | Date
+type DateValue = Dayjs | Dayjs[] | string | string[] | number | number[] | Date
 
 const isMoment = (value: any): boolean => Boolean(value?._isAMomentObject)
 
@@ -12,7 +21,7 @@ function hasOwn(source: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(source, key)
 }
 
-export function normalizeSerializedDayjsLike(value: unknown): dayjs.Dayjs | null {
+export function normalizeSerializedDayjsLike(value: unknown): Dayjs | null {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     return null
   const rec = value as Record<string, unknown>
@@ -33,11 +42,11 @@ export function normalizeSerializedDayjsLike(value: unknown): dayjs.Dayjs | null
   return null
 }
 
-export function parseValueToDay(value: DateValue, formatter?: string): dayjs.Dayjs | dayjs.Dayjs[] | null | undefined {
+export function parseValueToDay(value: DateValue, formatter?: string): Dayjs | Dayjs[] | null | undefined {
   if (isNil(value))
     return value as null | undefined
   if (Array.isArray(value))
-    return (value as any[]).map(v => parseValueToDay(v, formatter) as dayjs.Dayjs)
+    return (value as any[]).map(v => parseValueToDay(v, formatter) as Dayjs)
   if (isMoment(value))
     return dayjs(value as any)
 
@@ -46,7 +55,7 @@ export function parseValueToDay(value: DateValue, formatter?: string): dayjs.Day
     return serialized
 
   if (dayjs.isDayjs(value)) {
-    const d = value as dayjs.Dayjs
+    const d = value as Dayjs
     if (typeof d.clone === 'function' && d.isValid())
       return d
     const ms = typeof (d as any).valueOf === 'function' ? Number((d as any).valueOf()) : Number.NaN
@@ -64,6 +73,10 @@ export function parseValueToDay(value: DateValue, formatter?: string): dayjs.Day
     return dayjs(value)
   if (typeof value === 'string') {
     const parsed = formatter ? dayjs(value, formatter) : dayjs(value)
+    if (formatter && parsed.isValid()) {
+      const normalized = dayjs(parsed.format(formatter), formatter)
+      return normalized.isValid() ? normalized : parsed
+    }
     return parsed.isValid() ? parsed : null
   }
 

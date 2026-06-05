@@ -1,4 +1,5 @@
 import type { CascaderProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { GroupProps } from './types'
@@ -91,7 +92,8 @@ const FieldCascader = defineComponent({
     const props = withFieldCascaderDefaults(rawProps as unknown as FieldCascaderComponentProps)
     const cascaderRef = ref<any>(null)
     const open = ref(false)
-    const intl = {
+    const intl: IntlType = {
+      locale: 'default',
       getMessage: (_id: string, defaultMessage: string) => defaultMessage,
     }
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {

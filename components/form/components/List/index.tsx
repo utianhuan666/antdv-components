@@ -1,7 +1,7 @@
 import type { FunctionalComponent, VNodeChild } from 'vue'
-import type { NamePath } from '../../typing'
 import type { FormListActionType, FormListRecord, ProFormListProps, ProFormListSlotProps } from './typing'
 import { computed, defineComponent, onMounted, watchEffect } from 'vue'
+import { getValueByNamePath, normalizeNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 import { useFormListContext } from './FormListContext'
@@ -56,46 +56,10 @@ function cloneValue<T>(value: T): T {
   return value
 }
 
-function normalizeNamePath(name: NamePath): (string | number)[] {
-  return Array.isArray(name) ? name : [name]
-}
-
 function normalizeBooleanProp(value: unknown, defaultValue = false) {
   if (value === '')
     return true
   return typeof value === 'boolean' ? value : defaultValue
-}
-
-function getValueByNamePath(model: any, name: NamePath) {
-  const path = normalizeNamePath(name)
-  if (!path.length)
-    return model
-  return path.reduce<any>((current, key) => current?.[key], model)
-}
-
-function setValueByNamePath(model: any, name: NamePath, value: any) {
-  const path = normalizeNamePath(name)
-  if (!path.length) {
-    if (Array.isArray(model)) {
-      model.splice(0, model.length, ...(Array.isArray(value) ? value : []))
-      return
-    }
-    if (model && typeof model === 'object') {
-      Object.keys(model).forEach(key => delete model[key])
-      Object.assign(model, value || {})
-    }
-    return
-  }
-
-  const last = path[path.length - 1]
-  if (last === undefined)
-    return
-  const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-    if (!current[key] || typeof current[key] !== 'object')
-      current[key] = {}
-    return current[key]
-  }, model)
-  parent[last] = value
 }
 
 const ProFormList = defineComponent({

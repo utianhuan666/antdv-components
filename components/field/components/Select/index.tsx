@@ -1,4 +1,5 @@
 import type { SelectProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { Ref, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, ProFieldValueEnumType, RequestOptionsType } from './types'
@@ -388,7 +389,8 @@ const FieldSelect = defineComponent({
     const selectRef = ref<any>(null)
     const [loading, options, fetchData, resetData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
     const { componentSize } = useConfig()
-    const intl = {
+    const intl: IntlType = {
+      locale: 'default',
       getMessage: (_id: string, defaultMessage: string) => defaultMessage,
     }
 

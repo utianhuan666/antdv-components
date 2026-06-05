@@ -6,6 +6,7 @@ import type {
 } from './typing'
 import { Drawer, Modal } from 'antdv-next'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
+import { omitUndefined, runFunction } from '../../../utils'
 import { LightFilter, ProForm, QueryFilter } from '../../layouts'
 import { Embed, StepsForm } from './layoutType'
 import { renderValueType } from './valueType'
@@ -27,18 +28,6 @@ const betaSchemaFormPropNames = [
   'drawerProps',
   'onCurrentChange',
 ] as const
-
-function runFunction<T>(value: T | ((...args: any[]) => T), ...args: any[]): T {
-  return typeof value === 'function' ? (value as (...args: any[]) => T)(...args) : value
-}
-
-function omitUndefined<T extends Record<string, any>>(value: T): T {
-  return Object.keys(value).reduce<Record<string, any>>((result, key) => {
-    if (value[key] !== undefined)
-      result[key] = value[key]
-    return result
-  }, {}) as T
-}
 
 function normalizeBooleanProp(value: unknown, defaultValue = false) {
   if (value === '')

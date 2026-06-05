@@ -3,6 +3,7 @@ import type { FunctionalComponent, VNodeChild } from 'vue'
 import type { NamePath, ProFormFieldItemProps } from '../../typing'
 import { Button, Input } from 'antdv-next'
 import { computed, defineComponent, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { getValueByNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
 
@@ -25,24 +26,6 @@ export interface CaptFieldRef {
   focus: () => void
   startTiming: () => void
   endTiming: () => void
-}
-
-function getValueByNamePath(model: Record<string, any>, name: NamePath) {
-  const path = Array.isArray(name) ? name : [name]
-  return path.reduce<any>((current, key) => current?.[key], model)
-}
-
-function setValueByNamePath(model: Record<string, any>, name: NamePath, value: any) {
-  const path = Array.isArray(name) ? name : [name]
-  const last = path[path.length - 1]
-  if (last === undefined)
-    return
-  const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
-    if (!current[key] || typeof current[key] !== 'object')
-      current[key] = {}
-    return current[key]
-  }, model)
-  parent[last] = value
 }
 
 const captchaPropNames = [

@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import type { IntlType } from '../../../provider'
 import { DatePicker } from 'antdv-next'
 import { parseValueToDay } from './datePickerUtils'
 
@@ -12,7 +13,7 @@ type Props = NonNullable<
   }>['__props']
 > & {
   format: string
-  intl: { getMessage: (id: string, defaultMessage: string) => string }
+  intl: IntlType
 }
 
 export function FieldDatePickerEdit(props: Props) {

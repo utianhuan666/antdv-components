@@ -1,4 +1,5 @@
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
+import type { IntlType } from '../../../provider'
 import { CloseCircleFilled } from '@antdv-next/icons'
 import { TimePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
@@ -19,7 +20,7 @@ type Props = NonNullable<
   format: string
   open: boolean
   setOpen: SetOpen
-  intl: { getMessage: (id: string, defaultMessage: string) => string }
+  intl: IntlType
 }
 
 export function FieldTimePickerLightEdit(props: Props) {

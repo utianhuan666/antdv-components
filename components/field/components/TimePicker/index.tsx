@@ -1,4 +1,5 @@
 import type { TimePickerProps, TimeRangePickerProps } from 'antdv-next'
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
@@ -32,7 +33,8 @@ type FieldTimeRangePickerProps = {
 
 type FieldTimeRangePickerFieldProps = NonNullable<ProFieldFC<FieldTimeRangePickerProps>['__props']>
 
-const intl = {
+const intl: IntlType = {
+  locale: 'default',
   getMessage: (_id: string, defaultMessage: string) => defaultMessage,
 }
 

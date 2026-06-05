@@ -57,6 +57,18 @@ export function isPlainObject(value: { constructor: any }): boolean {
 
 const isMoment = (value: any): boolean => Boolean(value?._isAMomentObject)
 
+function formatWithQuarterFallback(value: Dayjs, formatter: string): string {
+  const formatted = value.format(formatter)
+  if (!formatter.includes('Q') || !formatted.includes('Q'))
+    return formatted
+
+  const quarter = typeof (value as any).quarter === 'function'
+    ? (value as any).quarter()
+    : Math.floor(value.month() / 3) + 1
+
+  return formatted.replace(/QQ/g, `Q${quarter}`)
+}
+
 export function convertMoment(value: Dayjs, dateFormatter: DateFormatter, valueType: string) {
   if (!dateFormatter)
     return value
@@ -71,9 +83,9 @@ export function convertMoment(value: Dayjs, dateFormatter: DateFormatter, valueT
     if (dateFormatter === 'number')
       return target.valueOf()
     if (dateFormatter === 'string')
-      return target.format(dateFormatterMap[valueType as 'date'] || 'YYYY-MM-DD HH:mm:ss')
+      return formatWithQuarterFallback(target, dateFormatterMap[valueType as 'date'] || 'YYYY-MM-DD HH:mm:ss')
     if (typeof dateFormatter === 'string' && dateFormatter !== 'string')
-      return target.format(dateFormatter)
+      return formatWithQuarterFallback(target, dateFormatter)
     if (typeof dateFormatter === 'function')
       return dateFormatter(target, valueType)
   }
