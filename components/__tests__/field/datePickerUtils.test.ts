@@ -2,12 +2,15 @@ import { ProField } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
+import { formatDate } from '../../field/components/DatePicker/datePickerUtils'
 
 describe('formatDate', () => {
   it('formats ISO string', () => {
     const iso = '2024-05-10T12:00:00.000Z'
-    const wrapper = mount({
-      render: () => <ProField text={iso} valueType="date" mode="read" />,
+    expect(formatDate(iso, 'YYYY-MM-DD')).toBe(dayjs(iso).format('YYYY-MM-DD'))
+
+    const wrapper = mount(ProField as any, {
+      props: { text: iso, valueType: 'date', mode: 'read' },
     })
 
     expect(wrapper.text()).toContain(dayjs(iso).format('YYYY-MM-DD'))
@@ -22,8 +25,10 @@ describe('formatDate', () => {
       $M: 5,
       $D: 1,
     }
-    const wrapper = mount({
-      render: () => <ProField text={plain} valueType="date" mode="read" />,
+    expect(formatDate(plain, 'YYYY-MM-DD')).toBe(dayjs(raw).format('YYYY-MM-DD'))
+
+    const wrapper = mount(ProField as any, {
+      props: { text: plain, valueType: 'date', mode: 'read' },
     })
 
     expect(wrapper.text()).toContain(dayjs(raw).format('YYYY-MM-DD'))
@@ -35,8 +40,10 @@ describe('formatDate', () => {
       $isDayjsObject: true,
       valueOf: () => ms,
     }
-    const wrapper = mount({
-      render: () => <ProField text={foreign} valueType="date" mode="read" />,
+    expect(formatDate(foreign, 'YYYY-MM-DD')).toBe(dayjs(ms).format('YYYY-MM-DD'))
+
+    const wrapper = mount(ProField as any, {
+      props: { text: foreign, valueType: 'date', mode: 'read' },
     })
 
     expect(wrapper.text()).toContain(dayjs(ms).format('YYYY-MM-DD'))

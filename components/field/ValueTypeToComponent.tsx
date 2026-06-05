@@ -45,17 +45,17 @@ const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
   progress: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldProgress mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldProgress {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   money: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldMoney mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldMoney {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   percent: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldPercent mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldPercent {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   image: sameRenderPair((text, props) => <FieldImage {...props} text={text} />),
   date: sameRenderPair((text, props) =>
@@ -149,7 +149,7 @@ const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
         ? props.placeholder
         : undefined
     const textValue = typeof text === 'number' ? text : Number(text) || 0
-    return <FieldDigit text={textValue} placeholder={placeholder} mode={props.mode} fieldProps={fieldProps} />
+    return <FieldDigit {...props} text={textValue} placeholder={placeholder} mode={props.mode} fieldProps={fieldProps} />
   }),
   digitRange: sameRenderPair((text, props) => <FieldDigitRange {...props} text={text} />),
   second: sameRenderPair((text, props) => <FieldSecond {...props} text={text} placeholder={props.placeholder as string} />),

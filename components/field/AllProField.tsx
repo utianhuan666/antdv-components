@@ -32,7 +32,18 @@ function defaultRenderTextByObject(
 
 function renderDefaultValueTypeLeaf(dataValue: ProFieldTextType, valueType: string, props: ProFieldRenderProps) {
   const renderer = ValueTypeToComponentMap[valueType] ?? ValueTypeToComponentMap.text!
-  return renderer.render?.(dataValue, props as any, <>{dataValue as any}</>)
+  const { render, emptyText, ...restProps } = props
+  const dom = renderer.render?.(dataValue, restProps as any, <>{dataValue as any}</>)
+
+  if (render && (props.mode ?? 'read') === 'read') {
+    return render(
+      dataValue,
+      { text: dataValue, ...restProps } as any,
+      dom as any,
+    ) ?? emptyText ?? null
+  }
+
+  return dom
 }
 
 /** Read: empty text, context valueTypeMap, built-in valueType */
@@ -53,12 +64,10 @@ export const defaultRenderRead: ProFieldRenderText = (
     if (typeof dataValue !== 'boolean' && typeof dataValue !== 'number' && !dataValue) {
       const { fieldProps, render } = props
       if (render)
-        return render(dataValue, { mode, ...fieldProps }, <>{emptyText}</>)
+        return render(dataValue, { mode, ...fieldProps }, <>{emptyText}</>) ?? emptyText
       return <>{emptyText}</>
     }
   }
-
-  delete props.emptyText
 
   if (typeof valueType === 'object') {
     return defaultRenderTextByObject(dataValue, valueType, props)
@@ -87,8 +96,6 @@ export const defaultRenderEdit: ProFieldRenderText = (
   props,
   valueTypeMap,
 ) => {
-  delete props.emptyText
-
   if (typeof valueType === 'object') {
     return defaultRenderTextByObject(dataValue, valueType, props)
   }

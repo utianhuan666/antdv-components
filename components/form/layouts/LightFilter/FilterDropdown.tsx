@@ -43,7 +43,7 @@ function resolveBoolean(value: unknown, fallback = false) {
 /**
  * 对标 React `src/utils/components/FilterDropdown/index.tsx`：
  * Popover 包裹的轻量筛选下拉，触发器为 `label`，内容由 default 插槽提供，
- * 可附加默认或自定义底部按钮（`确认`/`重置`）。
+ * 可附加默认或自定义底部按钮（`确认`/`清除`）。
  */
 const FilterDropdown = defineComponent({
   name: 'ProFilterDropdown',
@@ -62,7 +62,7 @@ const FilterDropdown = defineComponent({
       return (
         <div class="ant-pro-core-field-dropdown-footer">
           <Button size="small" type="link" onClick={(event: MouseEvent) => onClear?.(event)}>
-            重置
+            清除
           </Button>
           <Button size="small" type="primary" onClick={(event: MouseEvent) => onConfirm?.(event)}>
             确认

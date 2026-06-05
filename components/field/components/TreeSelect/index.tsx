@@ -80,6 +80,7 @@ const fieldTreeSelectPropNames = [
   'valueEnum',
   'debounceTime',
   'request',
+  'options',
   'params',
   'fieldProps',
   'render',
@@ -123,10 +124,14 @@ const FieldTreeSelect = defineComponent({
   setup(rawProps, { expose }) {
     const props = withFieldTreeSelectDefaults(rawProps as unknown as FieldTreeSelectComponentProps)
     const treeSelectRef = ref<any>(null)
-    const [loading, options, fetchData] = useFieldFetchData({
-      ...props,
-      defaultKeyWords: props.fieldProps?.searchValue ?? props.defaultKeyWords,
-    } as Parameters<typeof useFieldFetchData>[0])
+    const fetchProps = new Proxy(props, {
+      get(target, key: string) {
+        if (key === 'defaultKeyWords')
+          return target.fieldProps?.searchValue ?? target.defaultKeyWords
+        return (target as unknown as Record<string, unknown>)[key]
+      },
+    }) as Parameters<typeof useFieldFetchData>[0]
+    const [loading, options, fetchData] = useFieldFetchData(fetchProps)
     const open = ref(false)
     const searchValue = ref<string | undefined>(props.fieldProps?.searchValue)
     const intl = {

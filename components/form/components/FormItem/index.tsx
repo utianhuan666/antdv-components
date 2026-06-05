@@ -1,6 +1,6 @@
 import type { ProFormItemProps } from '../../typing'
 import { Col, FormItem } from 'antdv-next'
-import { defineComponent, onMounted, onUnmounted, watch } from 'vue'
+import { cloneVNode, defineComponent, isVNode, onMounted, onUnmounted, watch } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import { useGridHelpers } from '../../helpers'
 import { proFormItemPropNames } from '../../typing'
@@ -51,6 +51,69 @@ const ProFormItemImpl = defineComponent({
     onUnmounted(clearFieldValueType)
     watch(() => [props.name, props.transform] as const, registerFieldValueType)
 
+    function toNamePath() {
+      if (!props.name)
+        return []
+      return Array.isArray(props.name) ? props.name : [props.name]
+    }
+
+    function getFieldValue() {
+      return toNamePath().reduce<any>((current, key) => current?.[key], fieldContext.model || {})
+    }
+
+    function setFieldValue(value: any) {
+      const path = toNamePath()
+      const last = path[path.length - 1]
+      if (last === undefined)
+        return
+      const parent = path.slice(0, -1).reduce<Record<string, any>>((current, key) => {
+        if (!current[key] || typeof current[key] !== 'object')
+          current[key] = {}
+        return current[key]
+      }, fieldContext.model || {})
+      parent[last] = value
+    }
+
+    function readEventValue(input: unknown) {
+      const target = input && typeof input === 'object' && 'target' in input
+        ? (input as { target?: { value?: unknown, checked?: unknown } }).target
+        : undefined
+      return target ? (target.value ?? target.checked) : input
+    }
+
+    function shouldInjectControl(node: any) {
+      const nodeProps = (node?.props || {}) as Record<string, any>
+      const componentName = node?.type && typeof node.type === 'object' && 'name' in node.type
+        ? node.type.name
+        : undefined
+      return props.name !== undefined
+        && componentName !== 'ProField'
+        && componentName !== 'ProFieldCore'
+        && nodeProps.valueType === undefined
+    }
+
+    function renderControlledChildren(children: any): any {
+      if (!children)
+        return children
+      return children.map((node: any) => {
+        if (!isVNode(node))
+          return node
+        if (!shouldInjectControl(node))
+          return node
+
+        const nodeProps = (node.props || {}) as Record<string, any>
+        return cloneVNode(node, {
+          'value': nodeProps.value ?? getFieldValue(),
+          'onChange': (...args: any[]) => {
+            setFieldValue(readEventValue(args[0]))
+          },
+          'onUpdate:value': (value: any) => {
+            setFieldValue(value)
+          },
+        })
+      })
+    }
+
     return () => {
       if (resolveBoolean(props.ignoreFormItem))
         return slots.default?.() ?? null
@@ -67,7 +130,7 @@ const ProFormItemImpl = defineComponent({
           {...(props.formItemProps || {})}
           {...attrs}
         >
-          {slots.default?.()}
+          {renderControlledChildren(slots.default?.())}
         </FormItem>
       )
 

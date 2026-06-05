@@ -302,7 +302,14 @@ const BaseFormImpl = defineComponent({
     }
 
     function handleValuesChange(changedValues: Record<string, any>, allValues: Record<string, any>) {
-      emit('valuesChange', transformKey(changedValues), transformKey(allValues))
+      const transformedChangedValues = transformKey(changedValues)
+      const transformedAllValues = transformKey(allValues)
+      emit('valuesChange', transformedChangedValues, transformedAllValues)
+      ;(attrs.onValuesChange as ((changedValues: Record<string, any>, allValues: Record<string, any>) => void) | undefined)
+        ?.(
+          transformedChangedValues,
+          transformedAllValues,
+        )
     }
 
     function handleKeydown(event: KeyboardEvent) {
@@ -379,6 +386,19 @@ const BaseFormImpl = defineComponent({
 
     onMounted(triggerInit)
     watch(requestLoading, triggerInit)
+    watch(
+      () => props.autoFocusFirstInput,
+      (enabled) => {
+        if (!enabled)
+          return
+        nextTick(() => {
+          const rootElement = (formRef.value as any)?.$el as HTMLElement | undefined
+          const input = rootElement?.querySelector<HTMLElement>('input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+          input?.focus?.()
+        })
+      },
+      { immediate: true },
+    )
 
     /**
      * 注入只读上下文。使用 reactive 对象 + watch 保持响应式，
@@ -431,6 +451,7 @@ const BaseFormImpl = defineComponent({
       clearFieldValueType: (name: NamePath) => {
         fieldsValueType.delete(namePathKey(toNamePath(name)))
       },
+      onValuesChange: handleValuesChange,
     })
 
     function renderSubmitter(): VNodeChild | undefined {

@@ -4,6 +4,10 @@ import dayjs from 'dayjs'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('dateField', () => {
+  async function closePicker(wrapper: ReturnType<typeof mount>, index = 0) {
+    await wrapper.findAll('input')[index]?.trigger('blur')
+  }
+
   const datePickList = [
     'date',
     'dateWeek',
@@ -16,6 +20,7 @@ describe('dateField', () => {
 
   datePickList.forEach((valueType) => {
     it(`📅 ${valueType} base use`, async () => {
+      const onChange = vi.fn()
       const openChangeFn = vi.fn()
       const wrapper = mount({
         render: () => (
@@ -26,6 +31,7 @@ describe('dateField', () => {
               value: dayjs('2024-06-04 12:30:45'),
               onOpenChange: openChangeFn,
             }}
+            onChange={onChange}
             text="100"
             label={valueType}
             light
@@ -37,6 +43,14 @@ describe('dateField', () => {
       await wrapper.find('.ant-pro-core-field-label').trigger('click')
 
       expect(openChangeFn).toHaveBeenCalledWith(true)
+
+      await closePicker(wrapper)
+      expect(openChangeFn).toHaveBeenCalledWith(false)
+
+      const clear = wrapper.find('.ant-picker-clear')
+      expect(clear.exists()).toBe(true)
+      await clear.trigger('click')
+      expect(onChange).toHaveBeenCalled()
     })
   })
 
@@ -52,6 +66,7 @@ describe('dateField', () => {
 
   dateRangePickList.forEach((valueType) => {
     it(`📅 ${valueType} base use`, async () => {
+      const onChange = vi.fn()
       const openChangeFn = vi.fn()
       const wrapper = mount({
         render: () => (
@@ -65,6 +80,7 @@ describe('dateField', () => {
               ],
               onOpenChange: openChangeFn,
             }}
+            onChange={onChange}
             text="100"
             label={valueType}
             light
@@ -76,6 +92,15 @@ describe('dateField', () => {
       await wrapper.find('.ant-pro-core-field-label').trigger('click')
 
       expect(openChangeFn).toHaveBeenCalledWith(true)
+
+      await wrapper.findAll('input')[1]?.trigger('click')
+      await closePicker(wrapper)
+      expect(openChangeFn).toHaveBeenCalledWith(false)
+
+      const clear = wrapper.find('.ant-picker-clear')
+      expect(clear.exists()).toBe(true)
+      await clear.trigger('click')
+      expect(onChange).toHaveBeenCalled()
     })
   })
 

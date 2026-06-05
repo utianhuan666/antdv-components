@@ -179,6 +179,10 @@ export function createProField(
           originalOnChange?.(...args)
           props.onChange?.(...args)
         }
+        merged['onUpdate:value'] = (value: any) => {
+          userFieldProps['onUpdate:value']?.(value)
+          props.onChange?.(value)
+        }
 
         return merged
       })
@@ -229,6 +233,12 @@ export function createProField(
             ? (curText: any, innerProps: ProFieldFCRenderProps, dom: JSX.Element) => {
                 const { placeholder: _ph, ...restInner } = innerProps
                 return props.formItemRender!(curText, restInner as any, dom)
+              }
+            : undefined,
+          render: props.render
+            ? (curText: any, innerProps: ProFieldFCRenderProps, dom: JSX.Element) => {
+                const { placeholder: _ph, ...restInner } = innerProps
+                return props.render!(curText, restInner as any, dom)
               }
             : undefined,
           placeholder: props.formItemRender ? undefined : placeholderValue,

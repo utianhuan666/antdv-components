@@ -139,7 +139,9 @@ const LightSelect = defineComponent({
     return () => {
       const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
       const displayValue = getValueOrLabel(valueMap.value, props.value)
-      const hasValue = displayValue !== undefined && displayValue !== null && displayValue !== '' && (!Array.isArray(displayValue) || displayValue.length > 0)
+      const hasRawValue = props.value !== undefined && props.value !== null && props.value !== '' && (!Array.isArray(props.value) || props.value.length > 0)
+      const hasDisplayValue = displayValue !== undefined && displayValue !== null && displayValue !== '' && (!Array.isArray(displayValue) || displayValue.length > 0)
+      const hasValue = hasRawValue || hasDisplayValue
 
       const selectDom = hasValue || mergedOpen.value
         ? (

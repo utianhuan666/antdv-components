@@ -1,4 +1,5 @@
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
+import { CloseCircleFilled } from '@antdv-next/icons'
 import { TimePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
 import { parseValueToDay } from '../DatePicker/datePickerUtils'
@@ -43,20 +44,42 @@ export function FieldTimePickerLightEdit(props: Props) {
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
+  const handleBlur = (...args: any[]) => {
+    setOpen(false)
+    fieldProps?.onOpenChange?.(false)
+    fieldProps?.onBlur?.(...args)
+  }
+  const handleClear = (event: MouseEvent) => {
+    event.stopPropagation()
+    fieldProps?.onChange?.(undefined)
+    setOpen(false)
+  }
   const pickerDom = dayValue || open
     ? (
-        <TimePicker
-          format={format}
-          {...fieldProps}
-          variant={variant ?? fieldProps?.variant}
-          placeholder={fieldProps?.placeholder ?? intl.getMessage('tableForm.selectPlaceholder', '请选择')}
-          value={dayValue}
-          onOpenChange={(nextOpen: boolean) => {
-            setOpen(nextOpen)
-            fieldProps?.onOpenChange?.(nextOpen)
-          }}
-          open={open}
-        />
+        <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <TimePicker
+            format={format}
+            {...fieldProps}
+            allowClear={false}
+            variant={variant ?? fieldProps?.variant}
+            placeholder={fieldProps?.placeholder ?? intl.getMessage('tableForm.selectPlaceholder', '请选择')}
+            value={dayValue}
+            onOpenChange={(nextOpen: boolean) => {
+              setOpen(nextOpen)
+              fieldProps?.onOpenChange?.(nextOpen)
+            }}
+            onBlur={handleBlur}
+            open={open}
+          />
+          {dayValue
+            ? (
+                <CloseCircleFilled
+                  class="ant-picker-clear"
+                  onClick={handleClear}
+                />
+              )
+            : null}
+        </span>
       )
     : undefined
 

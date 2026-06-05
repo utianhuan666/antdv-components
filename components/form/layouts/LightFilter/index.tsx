@@ -118,7 +118,7 @@ function flattenLightFilterItems(items: VNodeChild): VNode[] {
  * LightFilter – 对标 React `src/form/layouts/LightFilter/index.tsx`：
  * 1. 主体走 BaseForm，子项默认以 popover 形式渲染（FilterDropdown）。
  * 2. `collapse=true` 时所有子项进入折叠区；否则按 `secondary` 划分外侧/折叠两组。
- * 3. 折叠区内部使用临时 `moreValues`，在底部 `确认` 后整体提交，`重置` 清空当前折叠字段。
+ * 3. 折叠区内部使用临时 `moreValues`，在底部 `确认` 后整体提交，`清除` 清空当前折叠字段。
  */
 const LightFilterImpl = defineComponent({
   name: 'LightFilter',

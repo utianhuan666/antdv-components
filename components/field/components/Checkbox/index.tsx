@@ -36,6 +36,7 @@ const FieldCheckbox = defineComponent({
     'debounceTime',
     'defaultKeyWords',
     'cacheForSwr',
+    'proFieldKey',
     'layout',
   ],
   setup(rawProps, { expose }) {

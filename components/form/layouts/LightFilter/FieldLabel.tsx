@@ -88,6 +88,10 @@ const FieldLabel = defineComponent({
 
       const disabled = resolveBoolean(props.disabled)
       const clearable = resolveBoolean(props.allowClear, true) && hasValue && !disabled
+      const formattedValue = hasValue ? formatValue(props.value) : undefined
+      const formattedTitle = typeof formattedValue === 'string' || typeof formattedValue === 'number'
+        ? String(formattedValue)
+        : undefined
 
       return (
         <span
@@ -113,12 +117,12 @@ const FieldLabel = defineComponent({
               )
             : null}
           {hasValue
-            ? <span class="ant-pro-core-field-label-value">{formatValue(props.value)}</span>
+            ? <span class="ant-pro-core-field-label-value" title={formattedTitle}>{formattedValue}</span>
             : <span class="ant-pro-core-field-label-placeholder">{props.placeholder ?? props.label}</span>}
           {clearable
             ? (
                 <CloseCircleFilled
-                  class="ant-pro-core-field-label-clear"
+                  class="ant-pro-core-field-label-clear ant-pro-core-field-label-close"
                   onClick={(event: MouseEvent) => {
                     event.stopPropagation()
                     props.onClear?.()

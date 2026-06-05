@@ -35,6 +35,7 @@ const FieldRadio = defineComponent({
     'debounceTime',
     'defaultKeyWords',
     'cacheForSwr',
+    'proFieldKey',
     'radioType',
     'layout',
   ],

@@ -40,6 +40,7 @@ export interface FieldContextValue {
   getPopupContainer?: (trigger: HTMLElement) => HTMLElement | ParentNode
   /** 当前 BaseForm 是否处于 loading */
   loading?: boolean
+  onValuesChange?: (changedValues: ProFormData, allValues: ProFormData) => void
   setFieldValueType?: (
     name: NamePath,
     config: {

@@ -45,6 +45,11 @@ export function FieldDatePickerLightEdit(props: Props) {
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
+  const handleBlur = (...args: any[]) => {
+    setOpen(false)
+    fieldProps?.onOpenChange?.(false)
+    fieldProps?.onBlur?.(...args)
+  }
 
   const pickerDom = dayValue || open
     ? (
@@ -60,6 +65,7 @@ export function FieldDatePickerLightEdit(props: Props) {
             setOpen(nextOpen)
             fieldProps?.onOpenChange?.(nextOpen)
           }}
+          onBlur={handleBlur}
           open={open}
         />
       )

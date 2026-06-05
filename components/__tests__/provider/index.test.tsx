@@ -47,6 +47,39 @@ describe('proConfigProvider', () => {
     expect(assertToken).toHaveBeenCalledWith('#ff0000', '#00ff00', '#0000ff')
   })
 
+  it('useStyle respects hashed=false', () => {
+    const assertToken = vi.fn()
+
+    const Demo = defineComponent({
+      setup() {
+        const style = useStyle('ProProviderDemo', (token) => {
+          assertToken(token.proComponentsCls, token.antCls)
+          return {
+            '.pro-provider-demo': {
+              color: token.colorPrimary,
+            },
+          }
+        })
+
+        return () => (
+          <div class="pro-provider-demo" data-hash-id={style.hashId}>
+            wrapped
+          </div>
+        )
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ProConfigProvider hashed={false}>
+        <Demo />
+      </ProConfigProvider>
+    ))
+
+    expect(wrapper.find('.pro-provider-demo').text()).toBe('wrapped')
+    expect(wrapper.find('.pro-provider-demo').attributes('data-hash-id')).toBe('')
+    expect(assertToken).toHaveBeenCalledWith('.ant-pro', '.ant')
+  })
+
   it('custom translations should be respected', async () => {
     const wrapper = mount(() => (
       <ConfigProvider>

@@ -22,6 +22,7 @@ export interface FieldSelectProps<FieldProps = Record<string, any>> extends ProF
   debounceTime?: number
   request?: ProFieldRequestData
   params?: any
+  options?: RequestOptionsType[]
   fieldProps?: FieldProps
   defaultKeyWords?: string
   variant?: 'outlined' | 'filled' | 'borderless' | 'underlined'

@@ -113,4 +113,34 @@ describe('queryFilter', () => {
 
     expect(wrapper.find('.ant-pro-query-filter-collapse-button').text()).toContain('close')
   })
+
+  it(' ✔️ QueryFilter resize', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <QueryFilter>
+          <ProFormText name="name1" label="名称" />
+        </QueryFilter>
+      ),
+    })
+
+    await nextTick()
+
+    const container = wrapper.find('.ant-pro-query-filter-container').element as HTMLElement
+    container.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      bottom: 0,
+      height: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+      width: 200,
+      toJSON: () => {},
+    })
+
+    window.dispatchEvent(new Event('resize'))
+    await nextTick()
+
+    expect(wrapper.find('form.ant-pro-query-filter').exists()).toBe(true)
+  })
 })

@@ -1,7 +1,9 @@
-import { LightFilter, ProFormText } from '@antdv/components'
+// eslint-disable-next-line ts/ban-ts-comment
 // @ts-nocheck
+import { LightFilter, LightFilterInput, ProFormText } from '@antdv/components'
 import { describe, expect, it } from 'vitest'
-import { mountAttached } from '../testUtils'
+import { nextTick } from 'vue'
+import { mountAttached, waitFor } from '../testUtils'
 
 describe('lightFilter', () => {
   it(' 🪕 should render basic structure', () => {
@@ -39,5 +41,54 @@ describe('lightFilter', () => {
     })
 
     expect(wrapper.find('.ant-pro-core-field-label').classes().join(' ')).toContain('outlined')
+  })
+
+  it(' ✔️ clear input values', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <LightFilter>
+          <LightFilterInput
+            name="name1"
+            label="名称"
+            fieldProps={{ role: 'name_input' }}
+          />
+        </LightFilter>
+      ),
+    })
+
+    await wrapper.find('.ant-pro-core-field-label').trigger('click')
+
+    await waitFor(() => {
+      expect(document.body.querySelector('[role="name_input"]')).not.toBeNull()
+    })
+
+    const input = document.body.querySelector<HTMLInputElement>('[role="name_input"]')!
+    input.value = 'qixian'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+    await nextTick()
+
+    document.body.querySelector<HTMLButtonElement>('.ant-popover .ant-btn-primary')?.click()
+
+    await waitFor(() => {
+      expect(document.body.querySelector('[title="qixian"]')).not.toBeNull()
+    })
+
+    await wrapper.find('.ant-pro-core-field-label').trigger('click')
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('清除')
+    })
+
+    Array
+      .from(document.body.querySelectorAll<HTMLButtonElement>('.ant-popover button'))
+      .find(button => button.textContent?.includes('清除'))
+      ?.click()
+    document.body.querySelector<HTMLButtonElement>('.ant-popover .ant-btn-primary')?.click()
+
+    await waitFor(() => {
+      expect(wrapper.text()).toContain('名称')
+      expect(document.body.querySelector('[title="qixian"]')).toBeNull()
+    })
   })
 })

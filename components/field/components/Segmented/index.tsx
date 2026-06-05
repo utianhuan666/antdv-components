@@ -35,6 +35,7 @@ const FieldSegmented = defineComponent({
     'debounceTime',
     'defaultKeyWords',
     'cacheForSwr',
+    'proFieldKey',
     'options',
     'render',
     'formItemRender',

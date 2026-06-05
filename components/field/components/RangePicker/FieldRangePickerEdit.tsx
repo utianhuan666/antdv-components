@@ -27,6 +27,18 @@ export function FieldRangePickerEdit(props: Props) {
     variant: propsVariant,
   } = props
   const fieldProps = props.fieldProps || {}
+  const {
+    placeholder: fieldPlaceholder,
+    ...restFieldProps
+  } = fieldProps
+  const placeholder = Array.isArray(fieldPlaceholder)
+    ? fieldPlaceholder
+    : fieldPlaceholder
+      ? [fieldPlaceholder, fieldPlaceholder]
+      : [
+          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+        ]
   const parsedValue = parseValueToDay(fieldProps.value, format)
   const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
     ? [parsedValue[0], parsedValue[1]] as [any, any]
@@ -36,11 +48,8 @@ export function FieldRangePickerEdit(props: Props) {
       picker={picker}
       showTime={showTime}
       format={format}
-      placeholder={[
-        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-      ]}
-      {...fieldProps}
+      {...restFieldProps}
+      placeholder={placeholder}
       variant={propsVariant ?? fieldProps?.variant}
       value={dayValue}
     />

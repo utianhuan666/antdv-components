@@ -43,11 +43,16 @@ export function FieldRangePickerLightEdit(props: Props) {
     : undefined
   const {
     disabled,
-    placeholder = [
-      intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-      intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-    ],
+    placeholder: rawPlaceholder,
   } = fieldProps
+  const placeholder = Array.isArray(rawPlaceholder)
+    ? rawPlaceholder
+    : rawPlaceholder
+      ? [rawPlaceholder, rawPlaceholder]
+      : [
+          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+        ]
   const handleLabelClick = () => {
     if (disabled)
       return
@@ -58,6 +63,11 @@ export function FieldRangePickerLightEdit(props: Props) {
     fieldProps?.onChange?.(nextValue)
     if (!nextValue)
       setOpen(false)
+  }
+  const handleBlur = (...args: any[]) => {
+    setOpen(false)
+    fieldProps?.onOpenChange?.(false)
+    fieldProps?.onBlur?.(...args)
   }
   const pickerDom = dayValue || open
     ? (
@@ -74,6 +84,7 @@ export function FieldRangePickerLightEdit(props: Props) {
             fieldProps?.onOpenChange?.(nextOpen)
           }}
           onChange={handleRangeChange}
+          onBlur={handleBlur}
           open={open}
         />
       )

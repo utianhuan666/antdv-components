@@ -45,7 +45,7 @@ export function objectToMap(value: ProFieldValueEnumType): Map<any, any> {
 
 export function proFieldParsingText(text: any, valueEnumParams: ProFieldValueEnumType): any {
   if (Array.isArray(text))
-    return text.map(value => proFieldParsingText(value, valueEnumParams)).join(', ')
+    return text.map(value => proFieldParsingText(value, valueEnumParams)).join(',')
 
   const valueEnum = objectToMap(valueEnumParams)
   if (!valueEnum.has(text) && !valueEnum.has(`${text}`))
@@ -206,7 +206,7 @@ export function useFieldFetchData(
 
   const getDefaultOptions = () => {
     const fieldProps = props.fieldProps
-    const data = fieldProps?.options || fieldProps?.treeData
+    const data = props.options || fieldProps?.options || fieldProps?.treeData
     return normalizeFieldNamesOptions(data, fieldProps?.fieldNames)
   }
 
@@ -337,6 +337,7 @@ const fieldSelectPropNames = [
   'valueEnum',
   'debounceTime',
   'request',
+  'options',
   'params',
   'fieldProps',
   'render',

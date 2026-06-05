@@ -71,7 +71,7 @@ const LightWrapper = defineComponent({
   inheritAttrs: false,
   props: [...lightWrapperPropNames],
   emits: ['change'],
-  setup(rawProps, { slots, emit }) {
+  setup(rawProps, { attrs, slots, emit }) {
     const props = rawProps as Readonly<LightWrapperProps>
     const tempValue = ref<unknown>(props.value)
     const open = ref<boolean>(false)
@@ -86,7 +86,11 @@ const LightWrapper = defineComponent({
     )
 
     function commitChange(value: unknown) {
-      props.onChange?.(value)
+      const onChange = props.onChange ?? attrs.onChange
+      if (typeof onChange === 'function')
+        onChange(value)
+      else if (Array.isArray(onChange))
+        onChange.forEach(fn => typeof fn === 'function' && fn(value))
       emit('change', value)
     }
 
@@ -122,9 +126,13 @@ const LightWrapper = defineComponent({
         fieldProps: {
           ...innerFieldProps,
           [props.valuePropName ?? 'value']: tempValue.value,
-          onChange: (...args: unknown[]) => {
+          'onChange': (...args: unknown[]) => {
             tempValue.value = readEventValue(args[0])
             childFieldProps.onChange?.(...args)
+          },
+          'onUpdate:value': (value: unknown) => {
+            tempValue.value = value
+            ;(childFieldProps['onUpdate:value'] as ((value: unknown) => void) | undefined)?.(value)
           },
         },
         variant: 'borderless',

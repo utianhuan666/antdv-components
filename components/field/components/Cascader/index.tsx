@@ -45,6 +45,7 @@ const fieldCascaderPropNames = [
   'valueEnum',
   'debounceTime',
   'request',
+  'options',
   'params',
   'fieldProps',
   'render',
