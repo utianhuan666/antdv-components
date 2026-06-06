@@ -18,7 +18,6 @@ ProSkeleton provides three pre-built page-level skeletons that match the layouts
   <demo src="./demo/list-static.vue">List with statistics</demo>
   <demo src="./demo/result.vue">Result page</demo>
   <demo src="./demo/descriptions.vue">Descriptions page</demo>
-  <demo src="./demo/active.vue">Animation effect</demo>
 </demo-group>
 
 ## API
@@ -44,8 +43,6 @@ ProSkeleton provides three pre-built page-level skeletons that match the layouts
 | `ListSkeletonItem`        | Single list row skeleton            |
 | `ListToolbarSkeleton`     | List toolbar skeleton               |
 | `PageHeaderSkeleton`      | Page header skeleton                |
-| `DescriptionsPageSkeleton`| Full descriptions page skeleton     |
 | `DescriptionsSkeleton`    | Descriptions area skeleton          |
 | `TableItemSkeleton`       | Table row skeleton                  |
 | `TableSkeleton`           | Table skeleton                      |
-| `ResultPageSkeleton`      | Full result page skeleton           |

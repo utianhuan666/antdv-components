@@ -322,16 +322,15 @@ export type {
   ParamsType,
   ProAliasToken,
   ProFieldFCMode,
-  ProSchemaValueEnumType,
   ProSchemaValueEnumMap,
   ProSchemaValueEnumObj,
+  ProSchemaValueEnumType,
   ProTokenType,
   ProFieldFCRenderProps as ProviderProFieldFCRenderProps,
   ProRenderFieldPropsType as ProviderProRenderFieldPropsType,
 } from './provider'
-export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
+export { DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
 export { ListPageSkeleton, ListSkeleton, ListSkeletonItem, ListToolbarSkeleton, PageHeaderSkeleton } from './skeleton'
-export { ResultPageSkeleton } from './skeleton'
 export { TableModule } from './table'
 export type {
   ActionType,

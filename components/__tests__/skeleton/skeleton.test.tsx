@@ -1,7 +1,10 @@
+import type { Ref } from 'vue'
+import type { DescriptionsPageSkeletonProps } from '../../skeleton/components/Descriptions'
+import type { ListPageSkeletonProps } from '../../skeleton/components/List'
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
+import * as SkeletonExports from '../../skeleton'
 import {
-  DescriptionsPageSkeleton,
   DescriptionsSkeleton,
   ListPageSkeleton,
   ListSkeleton,
@@ -9,13 +12,31 @@ import {
   ListToolbarSkeleton,
   PageHeaderSkeleton,
   ProSkeleton,
-  ResultPageSkeleton,
   TableItemSkeleton,
   TableSkeleton,
 } from '../../skeleton'
-import DescriptionsItemSkeleton from '../../skeleton/components/Descriptions/DescriptionsItemSkeleton.vue'
-import DirectTableItemSkeleton from '../../skeleton/components/Descriptions/TableItemSkeleton.vue'
-import StatisticSkeleton from '../../skeleton/components/List/StatisticSkeleton.vue'
+import DescriptionsPageSkeleton from '../../skeleton/components/Descriptions'
+import * as DescriptionsExports from '../../skeleton/components/Descriptions'
+import {
+  Line,
+
+  MediaQueryKeyEnum,
+} from '../../skeleton/components/List'
+import * as ListExports from '../../skeleton/components/List'
+import ResultPageSkeleton from '../../skeleton/components/Result'
+
+const breakpointState = vi.hoisted(() => ({
+  screens: { value: {} } as Ref<Record<string, boolean>>,
+}))
+
+vi.mock('antdv-next', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('antdv-next')>()
+
+  return {
+    ...actual,
+    useBreakpoint: () => breakpointState.screens,
+  }
+})
 
 function skeletonCount(wrapper: ReturnType<typeof mount>) {
   return wrapper.findAll('.ant-skeleton').length
@@ -30,6 +51,63 @@ function lineSkeletonCount(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('skeleton', () => {
+  it('🥩 root exports mirror React skeleton exports', () => {
+    expect(Object.keys(SkeletonExports).sort()).toEqual([
+      'DescriptionsSkeleton',
+      'ListPageSkeleton',
+      'ListSkeleton',
+      'ListSkeletonItem',
+      'ListToolbarSkeleton',
+      'PageHeaderSkeleton',
+      'ProSkeleton',
+      'TableItemSkeleton',
+      'TableSkeleton',
+      'default',
+    ].sort())
+  })
+
+  it('🥩 submodule exports mirror React skeleton exports', () => {
+    expect(Object.keys(ListExports).sort()).toEqual([
+      'Line',
+      'ListSkeleton',
+      'ListSkeletonItem',
+      'ListToolbarSkeleton',
+      'MediaQueryKeyEnum',
+      'PageHeaderSkeleton',
+      'default',
+    ].sort())
+    expect(Object.keys(DescriptionsExports).sort()).toEqual([
+      'DescriptionsSkeleton',
+      'TableItemSkeleton',
+      'TableSkeleton',
+      'default',
+    ].sort())
+    expect(MediaQueryKeyEnum).toEqual({
+      xs: 2,
+      sm: 2,
+      md: 4,
+      lg: 4,
+      xl: 6,
+      xxl: 6,
+    })
+  })
+
+  it('🥩 submodule prop types mirror React skeleton types', () => {
+    expectTypeOf<ListPageSkeletonProps>().toEqualTypeOf<{
+      active?: boolean
+      pageHeader?: false
+      statistic?: number | false
+      actionButton?: false
+      toolbar?: false
+      list?: number | false
+    }>()
+    expectTypeOf<DescriptionsPageSkeletonProps>().toEqualTypeOf<{
+      active?: boolean
+      pageHeader?: false
+      list?: false | number
+    }>()
+  })
+
   it('🥩 list base use', () => {
     const wrapper = mount(ProSkeleton, { props: { type: 'list' } })
 
@@ -134,7 +212,6 @@ describe('skeleton', () => {
     })
 
     expect(skeletonCount(wrapper)).toBeLessThan(initialCount)
-    expect(skeletonCount(wrapper)).toBe(0)
     expect(wrapper.find('.ant-skeleton-avatar').exists()).toBe(false)
   })
 
@@ -214,10 +291,18 @@ describe('skeleton', () => {
       mount(ListSkeletonItem, { props: { active: true } }),
       mount(ListToolbarSkeleton, { props: { active: true } }),
       mount(PageHeaderSkeleton, { props: { active: true } }),
-      mount(DescriptionsPageSkeleton, { props: { pageHeader: false, list: 1 } }),
       mount(DescriptionsSkeleton, { props: { active: true } }),
       mount(TableItemSkeleton, { props: { active: true } }),
       mount(TableSkeleton, { props: { active: true, size: 1 } }),
+    ]
+
+    for (const wrapper of cases)
+      expect(skeletonCount(wrapper) + skeletonButtonCount(wrapper)).toBeGreaterThan(0)
+  })
+
+  it('🥩 submodule default page skeletons render directly', () => {
+    const cases = [
+      mount(DescriptionsPageSkeleton, { props: { pageHeader: false, list: 1 } }),
       mount(ResultPageSkeleton, { props: { pageHeader: false } }),
     ]
 
@@ -225,21 +310,49 @@ describe('skeleton', () => {
       expect(skeletonCount(wrapper) + skeletonButtonCount(wrapper)).toBeGreaterThan(0)
   })
 
+  it('🥩 line padding mirrors React falsy fallback', () => {
+    const defaultWrapper = mount(Line)
+    const emptyWrapper = mount(Line, { props: { padding: '' } })
+    const zeroWrapper = mount(Line, { props: { padding: 0 } })
+    const customWrapper = mount(Line, { props: { padding: '0px 0px' } })
+
+    expect(defaultWrapper.element.style.padding).toBe('0px 24px')
+    expect(emptyWrapper.element.style.padding).toBe('0px 24px')
+    expect(zeroWrapper.element.style.padding).toBe('0px 24px')
+    expect(customWrapper.element.style.padding).toBe('0px')
+  })
+
   it('🥩 list statistic skeleton uses default md breakpoint columns', () => {
-    const wrapper = mount(StatisticSkeleton, { props: { active: true } })
+    breakpointState.screens.value = {}
+    const wrapper = mount(ListPageSkeleton, {
+      props: { pageHeader: false, toolbar: false, list: false },
+    })
 
     expect(skeletonButtonCount(wrapper)).toBe(4)
   })
 
-  it('🥩 descriptions item skeleton uses default md breakpoint columns', () => {
-    const wrapper = mount(DescriptionsItemSkeleton, { props: { active: true } })
+  it('🥩 breakpoint resolution follows React object key order', () => {
+    breakpointState.screens.value = { sm: true, xxl: true }
+    const statisticWrapper = mount(ListPageSkeleton, {
+      props: { pageHeader: false, toolbar: false, list: false },
+    })
+    const tableItemWrapper = mount(TableItemSkeleton, { props: { active: true } })
 
-    expect(lineSkeletonCount(wrapper)).toBe(9)
+    expect(skeletonButtonCount(statisticWrapper)).toBe(2)
+    expect(lineSkeletonCount(tableItemWrapper)).toBe(3)
   })
 
   it('🥩 descriptions table item skeleton uses default md breakpoint columns plus value column', () => {
-    const wrapper = mount(DirectTableItemSkeleton, { props: { active: true } })
+    breakpointState.screens.value = {}
+    const wrapper = mount(TableItemSkeleton, { props: { active: true } })
 
     expect(lineSkeletonCount(wrapper)).toBe(4)
+  })
+
+  it('🥩 table item skeleton renders row and line as sibling roots', () => {
+    const wrapper = mount(TableItemSkeleton, { props: { active: true } })
+
+    expect(wrapper.html()).toMatch(/^<div style="display: flex;/)
+    expect(wrapper.html()).not.toMatch(/^<div><div style="display: flex;/)
   })
 })

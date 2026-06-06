@@ -1,7 +1,13 @@
 import type { ComponentTokenMap } from 'antdv-next/dist/theme/interface/components'
-import { mount } from '@vue/test-utils'
+import type { VNodeChild } from 'vue'
+import type {
+  ProFieldFCRenderProps,
+  ProSchemaValueEnumType,
+  ProRenderFieldPropsType as ProviderProRenderFieldPropsType,
+} from '../../provider'
 import { TinyColor } from '@ctrl/tinycolor'
-import { ConfigProvider, theme as antdTheme } from 'antdv-next'
+import { mount } from '@vue/test-utils'
+import { theme as antdTheme, ConfigProvider } from 'antdv-next'
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import { ProField } from '../../field'
@@ -9,19 +15,13 @@ import { useFieldFetchData } from '../../field/components/Select'
 import { ProForm, ProFormMoney } from '../../form'
 import {
   createIntl,
+  lighten,
   ProConfigProvider,
   ProProvider,
-  lighten,
   setAlpha,
   useIntl,
   useProProviderContext,
   useStyle,
-} from '../../provider'
-import type { VNodeChild } from 'vue'
-import type {
-  ProFieldFCRenderProps,
-  ProRenderFieldPropsType as ProviderProRenderFieldPropsType,
-  ProSchemaValueEnumType,
 } from '../../provider'
 import { genProStyleHooks } from '../../theme/genProStyleUtils'
 import { waitFor } from '../testUtils'
@@ -128,7 +128,7 @@ describe('proConfigProvider', () => {
     expect(lighten('rgba(22, 119, 255, 0.8)', 20)).toBe(new TinyColor('rgba(22, 119, 255, 0.8)').lighten(20).toHexString())
   })
 
-  it('ProProvider facade provides and consumes context value', () => {
+  it('proProvider facade provides and consumes context value', () => {
     const token = {
       ...antdTheme.getDesignToken(),
       proComponentsCls: '.custom-pro',

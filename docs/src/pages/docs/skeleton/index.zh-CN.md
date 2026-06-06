@@ -18,7 +18,6 @@ ProSkeleton 提供了三种预设的页面级骨架屏，与 ProList、ProDescri
   <demo src="./demo/list-static.vue">带统计的列表</demo>
   <demo src="./demo/result.vue">结果页</demo>
   <demo src="./demo/descriptions.vue">详情页</demo>
-  <demo src="./demo/active.vue">动画效果</demo>
 </demo-group>
 
 ## API
@@ -44,8 +43,6 @@ ProSkeleton 提供了三种预设的页面级骨架屏，与 ProList、ProDescri
 | `ListSkeletonItem`        | 列表单行骨架屏                  |
 | `ListToolbarSkeleton`     | 列表工具栏骨架屏                |
 | `PageHeaderSkeleton`      | 页头骨架屏                      |
-| `DescriptionsPageSkeleton`| 详情页骨架屏（完整）            |
 | `DescriptionsSkeleton`    | 详情描述区骨架屏                |
 | `TableItemSkeleton`       | 表格行骨架屏                    |
 | `TableSkeleton`           | 表格骨架屏                      |
-| `ResultPageSkeleton`      | 结果页骨架屏（完整）            |

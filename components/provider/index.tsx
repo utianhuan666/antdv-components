@@ -67,7 +67,7 @@ function resolveIntl(propsIntl: IntlType | undefined, parentIntl: IntlType | und
   return zhCNIntl
 }
 
-export type ProSchemaValueEnumType = {
+export interface ProSchemaValueEnumType {
   text: VNodeChild
   status?: string
   color?: string
@@ -104,7 +104,7 @@ export type ProFieldFCRenderProps = {
   onChange?: (...rest: any[]) => void
 } & BaseProFieldFC
 
-export type ProRenderFieldPropsType = {
+export interface ProRenderFieldPropsType {
   render?:
     | ((
       text: any,
