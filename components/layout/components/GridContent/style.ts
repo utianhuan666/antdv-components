@@ -1,19 +1,20 @@
-import type { GenerateStyle, ProAliasToken } from '../../../provider'
-import { useStyle as useAntdStyle } from '../../../provider'
+import type { CSSObject } from '@antdv-next/cssinjs'
+import type { AliasToken } from 'antdv-next/dist/theme/interface/alias'
+import type { Ref } from 'vue'
+import { genProStyleHooks } from '../../../theme/genProStyleUtils'
+import { proLayoutVar } from '../../style'
 
-interface ProGridContentToken extends ProAliasToken {
+type ProGridContentToken = AliasToken & {
   componentCls: string
 }
 
-const contentFixedMaxWidth = '--pro-layout-content-fixed-max-width'
-
-const genGridContentStyle: GenerateStyle<ProGridContentToken> = (token) => {
+function genGridContentStyle(token: ProGridContentToken): CSSObject {
   return {
     [token.componentCls]: {
       'boxSizing': 'border-box',
       'width': '100%',
       '&-wide': {
-        width: `min(100%, var(${contentFixedMaxWidth}))`,
+        width: `min(100%, var(${proLayoutVar.contentFixedMaxWidth}))`,
         marginInline: 'auto',
       },
       [`${token.componentCls}-children`]: {
@@ -24,13 +25,12 @@ const genGridContentStyle: GenerateStyle<ProGridContentToken> = (token) => {
   }
 }
 
-export function useStyle(prefixCls: string) {
-  return useAntdStyle('ProGridContent', (token) => {
-    const gridContentToken: ProGridContentToken = {
-      ...token,
-      componentCls: `.${prefixCls}`,
-    }
+export const useProGridContentStyle = genProStyleHooks(
+  'ProGridContent',
+  genGridContentStyle,
+)
 
-    return [genGridContentStyle(gridContentToken)]
-  })
+export function useStyle(prefixCls: Ref<string>) {
+  const [hashId, cssVarCls] = useProGridContentStyle(prefixCls)
+  return { hashId, cssVarCls }
 }

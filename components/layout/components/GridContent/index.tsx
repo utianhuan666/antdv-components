@@ -2,7 +2,7 @@ import type { CSSProperties, PropType } from 'vue'
 import type { ContentWidth } from '../PageContainer/context'
 import { clsx } from '@v-c/util'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
-import { defineComponent } from 'vue'
+import { computed, defineComponent } from 'vue'
 import { useRouteContext } from '../PageContainer/context'
 import { useStyle } from './style'
 
@@ -25,9 +25,9 @@ export const GridContent = defineComponent({
   setup(props, { slots }) {
     const routeContext = useRouteContext()
     const config = useConfig()
-    const prefixCls = props.prefixCls || config.value.getPrefixCls('pro')
-    const className = `${prefixCls}-grid-content`
-    const { hashId } = useStyle(className)
+    const prefixCls = computed(() => props.prefixCls || config.value.getPrefixCls('pro'))
+    const className = computed(() => `${prefixCls.value}-grid-content`)
+    const { hashId, cssVarCls } = useStyle(className)
 
     return () => {
       const contentWidth = props.contentWidth || routeContext.contentWidth
@@ -35,14 +35,14 @@ export const GridContent = defineComponent({
 
       return (
         <div
-          class={clsx(className, hashId, props.class, props.className, {
-            [`${className}-wide`]: isWide,
-          })}
+          class={clsx(className.value, hashId.value, props.class, props.className, {
+            [`${className.value}-wide`]: isWide,
+          }, cssVarCls.value)}
           style={props.style}
           data-testid="pro-grid-content"
         >
           <div
-            class={clsx(`${prefixCls}-grid-content-children`, hashId)}
+            class={clsx(`${prefixCls.value}-grid-content-children`, hashId.value, cssVarCls.value)}
             data-testid="pro-grid-content-children"
           >
             {slots.default?.()}
