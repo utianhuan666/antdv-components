@@ -5,6 +5,7 @@ import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { TreeSelectFieldProps } from './types'
 import { omit } from '@v-c/util'
 import { computed, defineComponent, ref } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldTreeSelectEdit from './FieldTreeSelectEdit'
@@ -124,6 +125,7 @@ const FieldTreeSelect = defineComponent({
   props: fieldTreeSelectPropNames,
   setup(rawProps, { expose }) {
     const props = withFieldTreeSelectDefaults(rawProps as unknown as FieldTreeSelectComponentProps)
+    const prefixCls = useProPrefixCls('pro-field-tree-select')
     const treeSelectRef = ref<any>(null)
     const fetchProps = new Proxy(props, {
       get(target, key: string) {
@@ -231,7 +233,7 @@ const FieldTreeSelect = defineComponent({
           onClear,
           treeSelectOnChange,
           onBlur,
-          layoutClassName: 'ant-pro-field-tree-select',
+          layoutClassName: prefixCls.value,
         }
 
         if (props.light)

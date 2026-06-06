@@ -5,8 +5,10 @@ import { DescriptionsModule, ProDescriptions } from './descriptions'
 import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
 import { LayoutModule, ProLayout } from './layout'
+import { BaseProList, ListModule, ProList } from './list'
 import { ProConfigProvider } from './provider'
 import { ProSkeleton } from './skeleton'
+import { DragSortTable, EditableProTable, ListToolBar, ProTable, Search, TableDropdown, TableModule } from './table'
 import './theme/augmentComponentTokenMap'
 
 export default {
@@ -18,12 +20,14 @@ export default {
     app.use(CardModule)
     app.use(DescriptionsModule)
     app.use(LayoutModule)
+    app.use(TableModule)
+    app.use(ListModule)
     app.component(ProConfigProvider.name!, ProConfigProvider)
   },
   version,
 }
 
-export { CheckCard, DescriptionsModule, Form, FormItem, LayoutModule, ProCard, ProConfigProvider, ProDescriptions, ProField, ProLayout, ProSkeleton, PureProField, Statistic, StatisticCard, version }
+export { BaseProList, CheckCard, DescriptionsModule, DragSortTable, EditableProTable, Form, FormItem, LayoutModule, ListModule, ListToolBar, ProCard, ProConfigProvider, ProDescriptions, ProField, ProLayout, ProList, ProSkeleton, ProTable, PureProField, Search, Statistic, StatisticCard, TableDropdown, version }
 export { CardModule } from './card'
 export type {
   CheckCardGroupProps,
@@ -35,13 +39,13 @@ export type {
 } from './card'
 export type {
   DescriptionsItemProps,
+  RowEditableConfig as DescriptionsRowEditableConfig,
   ProDescriptionsActionType,
   ProDescriptionsColumn,
   ProDescriptionsItemProps,
   ProDescriptionsProps,
   ProDescriptionsRequestResult,
   RequestData,
-  RowEditableConfig,
 } from './descriptions'
 export {
   defaultRenderText,
@@ -199,6 +203,7 @@ export type {
   ProFormFieldSetProps,
   ProFormGridConfig,
   ProFormGroupProps,
+  ProFormInstance,
   ProFormItemCreateConfig,
   ProFormItemProps,
   ProFormLayoutType,
@@ -249,6 +254,16 @@ export type {
   Settings,
   SiderMenuProps,
 } from './layout'
+export type {
+  BaseProListMetas,
+  GetComponentProps,
+  ProListItemRender,
+  Key as ProListKey,
+  ProListMeta,
+  ProListMetas,
+  ProListProps,
+  TriggerEventHandler,
+} from './list'
 export {
   arEGIntl,
   caESIntl,
@@ -316,6 +331,19 @@ export type {
 export { DescriptionsPageSkeleton, DescriptionsSkeleton, TableItemSkeleton, TableSkeleton } from './skeleton'
 export { ListPageSkeleton, ListSkeleton, ListSkeletonItem, ListToolbarSkeleton, PageHeaderSkeleton } from './skeleton'
 export { ResultPageSkeleton } from './skeleton'
+export { TableModule } from './table'
+export type {
+  ActionType,
+  ColumnsState,
+  DragTableProps,
+  EditableFormInstance,
+  EditableProTableProps,
+  ProColumns,
+  ProColumnType,
+  ProTableProps,
+  RequestData as ProTableRequestData,
+  RowEditableConfig,
+} from './table'
 export {
   genProComponentStyleHook,
   genProStyleHooks,

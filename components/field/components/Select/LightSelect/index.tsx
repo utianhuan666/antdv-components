@@ -5,7 +5,8 @@ import { SearchOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Input, Select } from 'antdv-next'
 import { computed, defineComponent, ref } from 'vue'
-import FieldLabel from '../../../../form/layouts/LightFilter/FieldLabel'
+import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
+import FieldLabel from '../../../../utils/components/FieldLabel'
 
 function getValueOrLabel(valueMap: Record<string, VNodeChild>, value: LightSelectProps['value']): VNodeChild {
   if (Array.isArray(value))
@@ -98,6 +99,7 @@ const LightSelect = defineComponent({
     const selectRef = ref<any>(null)
     const open = ref(false)
     const keyword = ref('')
+    const prefixCls = useProPrefixCls('pro-field-select-light-select')
 
     expose({ selectRef })
 
@@ -135,6 +137,13 @@ const LightSelect = defineComponent({
         return (attrs as Record<string, unknown>).open as boolean | undefined
       return open.value
     })
+
+    const syncLightLabelRef = (instance: any) => {
+      if (!props.lightLabel)
+        return
+      props.lightLabel.labelRef.value = instance?.labelRef?.value ?? instance?.labelRef ?? null
+      props.lightLabel.clearRef.value = instance?.clearRef?.value ?? instance?.clearRef ?? null
+    }
 
     return () => {
       const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
@@ -218,9 +227,9 @@ const LightSelect = defineComponent({
       return (
         <span
           class={clsx(
-            'ant-pro-field-select-light-select',
-            props.showSearch ? 'ant-pro-field-select-light-select-searchable' : '',
-            `ant-pro-field-select-light-select-container-${props.placement}`,
+            prefixCls.value,
+            props.showSearch ? `${prefixCls.value}-searchable` : '',
+            `${prefixCls.value}-container-${props.placement}`,
             props.className,
           )}
           style={props.style}
@@ -235,6 +244,7 @@ const LightSelect = defineComponent({
           }}
         >
           <FieldLabel
+            ref={syncLightLabelRef}
             ellipsis
             label={props.label}
             placeholder={props.placeholder ?? props.label}
@@ -247,7 +257,7 @@ const LightSelect = defineComponent({
               props.fetchData?.(undefined)
               keyword.value = ''
             }}
-            onLabelClick={() => {
+            onClick={() => {
               if (props.disabled)
                 return
               open.value = !open.value

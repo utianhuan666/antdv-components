@@ -1,6 +1,8 @@
 import type { HeaderViewProps } from '../SiderMenu/types'
+import { clsx } from '@v-c/util'
 import { LayoutHeader } from 'antdv-next'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { GlobalHeader } from '../GlobalHeader'
 import { TopNavHeader } from '../TopNavHeader'
 
@@ -22,12 +24,14 @@ export const DefaultHeader = defineComponent<HeaderViewProps>({
     'headerMenuRender',
     'menuData',
     'matchMenuKeys',
+    'isFixedHeaderScroll',
+    'stylish',
   ] as any,
   setup(props) {
-    const isFixedHeaderScroll = ref(false)
-    const prefixCls = computed(() => props.prefixCls || 'ant-pro')
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-layout-header`)
     const needFixedHeader = computed(() => props.fixedHeader || (props.splitMenus && props.layout === 'side' && !props.isMobile))
+    const hashId = ''
 
     const renderContent = () => {
       const isTop = props.layout === 'top'
@@ -57,15 +61,17 @@ export const DefaultHeader = defineComponent<HeaderViewProps>({
           ? <LayoutHeader style={{ height: '56px', lineHeight: '56px', backgroundColor: 'transparent', zIndex: 19, ...(props.style || {}) }} />
           : null}
         <LayoutHeader
-          class={[
+          class={clsx(
             props.className,
+            hashId,
             baseClassName.value,
             needFixedHeader.value && `${baseClassName.value}-fixed-header`,
-            isFixedHeaderScroll.value && `${baseClassName.value}-fixed-header-scroll`,
+            (props as any).isFixedHeaderScroll && `${baseClassName.value}-fixed-header-scroll`,
             !props.collapsed && `${baseClassName.value}-fixed-header-action`,
             props.layout === 'top' && `${baseClassName.value}-top-menu`,
             `${baseClassName.value}-header`,
-          ]}
+            (props as any).stylish && `${baseClassName.value}-stylish`,
+          )}
           style={props.style}
           data-testid="pro-layout-header"
         >

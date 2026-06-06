@@ -221,7 +221,7 @@ const BaseFormImpl = defineComponent({
         const value = getValueByNamePath(values, namePath)
         const formattedValue = formatDateValue(value, config.valueType, config.dateFormat)
         const transformed = config.transform
-          ? config.transform(formattedValue, namePath)
+          ? config.transform(formattedValue, namePath, values)
           : formattedValue
         deleteValueByNamePath(result, namePath)
         if (transformed && typeof transformed === 'object' && !Array.isArray(transformed))
@@ -264,6 +264,9 @@ const BaseFormImpl = defineComponent({
           const allFieldKeys = Object.keys(getFieldsFormatValue(true, false))
           onUrlSyncFinish(finalValues, allFieldKeys)
         }
+      }
+      catch {
+        setLoading(false)
       }
       finally {
         setLoading(false)
@@ -327,6 +330,10 @@ const BaseFormImpl = defineComponent({
     expose({
       get formInstance() {
         return formRef.value
+      },
+      get nativeElement() {
+        const nativeElement = (formRef.value as any)?.nativeElement
+        return nativeElement && 'value' in nativeElement ? nativeElement.value : nativeElement
       },
       submit,
       reset,

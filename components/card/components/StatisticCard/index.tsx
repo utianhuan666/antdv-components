@@ -3,6 +3,7 @@ import type { CardProps } from '../../typing'
 import type { StatisticProps } from '../Statistic'
 import { clsx } from '@v-c/util'
 import { defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import Card from '../Card'
 import Divider from '../Divider'
 import Operation from '../Operation'
@@ -62,7 +63,8 @@ const StatisticCardBase = defineComponent({
   emits: ['collapse', 'click', 'checked'],
   setup(rawProps, { attrs, emit, slots }) {
     const props = rawProps as StatisticCardProps
-    const { wrapSSR, hashId } = useStyle('ant-pro-statistic-card')
+    const prefixCls = useProPrefixCls('pro-statistic-card')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
       const statistic = props.statistic
@@ -73,17 +75,17 @@ const StatisticCardBase = defineComponent({
       const chartDom = chart
         ? (
             <div
-              class={clsx('ant-pro-statistic-card-chart', {
-                'ant-pro-statistic-card-chart-left': props.chartPlacement === 'left' && statistic,
-                'ant-pro-statistic-card-chart-right': props.chartPlacement === 'right' && statistic,
+              class={clsx(`${prefixCls.value}-chart`, {
+                [`${prefixCls.value}-chart-left`]: props.chartPlacement === 'left' && statistic,
+                [`${prefixCls.value}-chart-right`]: props.chartPlacement === 'right' && statistic,
               })}
             >
               {chart}
             </div>
           )
         : null
-      const contentCls = clsx('ant-pro-statistic-card-content', {
-        'ant-pro-statistic-card-content-horizontal': props.chartPlacement === 'left' || props.chartPlacement === 'right',
+      const contentCls = clsx(`${prefixCls.value}-content`, {
+        [`${prefixCls.value}-content-horizontal`]: props.chartPlacement === 'left' || props.chartPlacement === 'right',
       })
       const contentDom = (chartDom || statistic)
         ? (
@@ -98,14 +100,14 @@ const StatisticCardBase = defineComponent({
         <Card
           {...attrs}
           {...props}
-          class={clsx('ant-pro-statistic-card', hashId, props.class, props.className)}
+          class={clsx(prefixCls.value, hashId, props.class, props.className)}
           onCollapse={(value: boolean) => emit('collapse', value)}
           onClick={(event: MouseEvent) => emit('click', event)}
           onChecked={(event: MouseEvent) => emit('checked', event)}
         >
           {contentDom}
           {slots.default?.()}
-          {footer != null ? <div class="ant-pro-statistic-card-footer">{footer}</div> : null}
+          {footer != null ? <div class={`${prefixCls.value}-footer`}>{footer}</div> : null}
         </Card>,
       )
     }

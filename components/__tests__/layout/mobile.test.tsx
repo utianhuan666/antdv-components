@@ -1,7 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent } from 'vue'
+import { ProLayout, useRouteContext } from '../../layout'
 import { GlobalHeader } from '../../layout/components/GlobalHeader'
 import { SiderMenu } from '../../layout/components/SiderMenu'
+import { waitFor } from '../testUtils'
 
 describe('mobile BasicLayout', () => {
   afterEach(() => {
@@ -108,5 +111,59 @@ describe('mobile BasicLayout', () => {
 
     await wrapper.get('[data-testid="pro-layout-global-header-collapsed-button"]').trigger('click')
     expect(onCollapse).toHaveBeenCalledWith(true)
+  })
+
+  it('📱 ProLayout follows breakpoint and disableMobile', async () => {
+    const originalMatchMedia = window.matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn((query: string) => ({
+        matches: query.includes('max-width: 575px'),
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    })
+
+    const Child = defineComponent({
+      setup() {
+        const context = useRouteContext()
+        return () => <span id="is-mobile">{String(context.isMobile)}</span>
+      },
+    })
+
+    try {
+      const wrapper = mount(ProLayout, {
+        attachTo: document.body,
+        props: {
+          route: { children: mobileMenuData },
+          getContainer: false,
+        },
+        slots: { default: () => <Child /> },
+      })
+
+      await waitFor(() => {
+        expect(wrapper.get('#is-mobile').text()).toBe('true')
+      })
+      expect(wrapper.find('.ant-pro-drawer-sider').exists()).toBe(true)
+
+      await wrapper.setProps({ disableMobile: true })
+      await waitFor(() => {
+        expect(wrapper.get('#is-mobile').text()).toBe('false')
+      })
+      expect(wrapper.find('.ant-pro-drawer-sider').exists()).toBe(false)
+    }
+    finally {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      })
+    }
   })
 })

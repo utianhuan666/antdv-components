@@ -4,6 +4,7 @@ import type { RequestOptionsType } from '../types'
 import { clsx } from '@v-c/util'
 import { Select } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
+import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
 
 export interface LabeledValue {
   key?: string
@@ -110,6 +111,7 @@ const searchSelectPropNames = [
   'optionLabelProp',
   'labelInValue',
   'fieldNames',
+  'prefixCls',
   'mode',
   'onSearch',
   'onChange',
@@ -151,6 +153,7 @@ const SearchSelect = defineComponent({
     const props = withSearchSelectDefaults(rawProps as unknown as SearchSelectProps)
     const selectRef = ref<any>(null)
     const innerSearchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
+    const prefixCls = useProPrefixCls('pro-filed-search-select', computed(() => props.prefixCls))
 
     expose({ selectRef })
 
@@ -195,7 +198,7 @@ const SearchSelect = defineComponent({
           'value': value ?? index,
           key,
           'data-item': item,
-          'className': clsx('ant-pro-filed-search-select-option', itemClassName),
+          'className': clsx(`${prefixCls.value}-option`, itemClassName),
           label,
         }
       })

@@ -5,6 +5,7 @@ import { InfoCircleOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Tooltip } from 'antdv-next'
 import { defineComponent, isVNode } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export const LabelIconTip = defineComponent({
   name: 'ProLabelIconTip',
@@ -16,6 +17,7 @@ export const LabelIconTip = defineComponent({
       tooltip?: string | LabelTooltipType
       ellipsis?: ProEllipsis
     }
+    const prefixCls = useProPrefixCls('pro-core-label-tip')
 
     return () => {
       const { label, tooltip, ellipsis, subTitle } = props
@@ -29,17 +31,17 @@ export const LabelIconTip = defineComponent({
 
       return (
         <div
-          class="ant-pro-core-label-tip"
+          class={prefixCls.value}
           onMousedown={(event: MouseEvent) => event.stopPropagation()}
           onMouseleave={(event: MouseEvent) => event.stopPropagation()}
           onMousemove={(event: MouseEvent) => event.stopPropagation()}
         >
-          <div class={clsx('ant-pro-core-label-tip-title', { 'ant-pro-core-label-tip-title-ellipsis': ellipsis })}>{label}</div>
-          {subTitle ? <div class="ant-pro-core-label-tip-subtitle">{subTitle}</div> : null}
+          <div class={clsx(`${prefixCls.value}-title`, { [`${prefixCls.value}-title-ellipsis`]: ellipsis })}>{label}</div>
+          {subTitle ? <div class={`${prefixCls.value}-subtitle`}>{subTitle}</div> : null}
           {tooltip
             ? (
                 <Tooltip {...tooltipProps}>
-                  <span class="ant-pro-core-label-tip-icon">{icon}</span>
+                  <span class={`${prefixCls.value}-icon`}>{icon}</span>
                 </Tooltip>
               )
             : null}

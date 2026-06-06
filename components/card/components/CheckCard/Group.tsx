@@ -4,6 +4,7 @@ import { clsx } from '@v-c/util'
 import { Skeleton } from 'antdv-next'
 import { computed, defineComponent, provide, ref } from 'vue'
 import { ProConfigProvider } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import CheckCard from './index'
 import { useStyle } from './style'
 
@@ -68,8 +69,9 @@ export const CardLoading = defineComponent({
   props: ['prefixCls'],
   setup(rawProps) {
     const props = rawProps as { prefixCls?: string }
+    const prefixCls = useProPrefixCls('pro-checkcard', computed(() => props.prefixCls))
     return () => (
-      <div class={clsx(`${props.prefixCls || 'ant-pro-checkcard'}-loading-content`)}>
+      <div class={clsx(`${prefixCls.value}-loading-content`)}>
         <Skeleton loading active paragraph={{ rows: 4 }} title={false} />
       </div>
     )
@@ -81,7 +83,8 @@ const SubCheckCardGroup = defineComponent({
   props: ['title', 'prefix'],
   setup(props, { slots }) {
     const collapse = ref(false)
-    const baseCls = computed(() => `${props.prefix || 'ant-pro-checkcard-group'}-sub-check-card`)
+    const prefixCls = useProPrefixCls('pro-checkcard-group', computed(() => props.prefix))
+    const baseCls = computed(() => `${prefixCls.value}-sub-check-card`)
 
     return () => (
       <div class={baseCls.value}>
@@ -117,7 +120,8 @@ const CheckCardGroupBase = defineComponent({
   emits: ['change', 'update:value'],
   setup(rawProps, { attrs, emit, slots }) {
     const props = rawProps as CheckCardGroupProps
-    const { wrapSSR, hashId } = useStyle(props.prefixCls || 'ant-pro-checkcard')
+    const prefixCls = useProPrefixCls('pro-checkcard', computed(() => props.prefixCls))
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
     const innerValue = ref<CheckGroupValueType>(props.defaultValue)
     const registeredValues = new Map<CheckCardValueType, true>()
     const controlledValue = computed(() => hasOwn(rawProps, 'value') && props.value !== undefined)
@@ -188,6 +192,7 @@ const CheckCardGroupBase = defineComponent({
 
         return (
           <CheckCard
+            prefixCls={prefixCls.value}
             key={String(option.value)}
             disabled={option.disabled}
             size={option.size ?? props.size}
@@ -206,11 +211,10 @@ const CheckCardGroupBase = defineComponent({
     }
 
     return () => {
-      const prefixCls = props.prefixCls || 'ant-pro-checkcard'
-      const groupPrefixCls = `${prefixCls}-group`
+      const groupPrefixCls = `${prefixCls.value}-group`
       const options = getOptions()
       const children = props.loading
-        ? Array.from({ length: options.length || slots.default?.().length || 1 }).map((_, index) => <CheckCard key={index} loading />)
+        ? Array.from({ length: options.length || slots.default?.().length || 1 }).map((_, index) => <CheckCard key={index} prefixCls={prefixCls.value} loading />)
         : options.length
           ? renderOptions(options, groupPrefixCls)
           : slots.default?.()

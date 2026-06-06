@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { Spin } from 'antdv-next'
 import { computed, defineComponent, ref } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldRadioEdit from './FieldRadioEdit'
@@ -41,6 +42,7 @@ const FieldRadio = defineComponent({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps as RadioFieldProps
+    const prefixCls = useProPrefixCls('pro-field-radio')
     const radioRef = ref<unknown>(null)
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
@@ -78,7 +80,7 @@ const FieldRadio = defineComponent({
           options: options.value,
           loading: loading.value,
           radioRef,
-          layoutClassName: 'ant-pro-field-radio',
+          layoutClassName: prefixCls.value,
           wrapSSR,
           hashId,
           status,

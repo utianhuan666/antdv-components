@@ -3,6 +3,7 @@ import type { FormListActionWithCurrentRow, IconConfig, ProFormListItemProps, Pr
 import { ArrowDownOutlined, ArrowUpOutlined, CopyOutlined, DeleteOutlined } from '@antdv-next/icons'
 import { Space, Tooltip } from 'antdv-next'
 import { cloneVNode, Comment, computed, defineComponent, Fragment, h, isVNode, Text } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { provideFieldContext, useFieldContext } from '../../FieldContext'
 import { provideFormListContext } from './FormListContext'
@@ -41,13 +42,14 @@ function renderActionIcon(options: {
   fallbackIcon: Component
   tooltipText: string
   className: string
+  prefixCls: string
   hidden?: boolean
   onClick: () => void | Promise<void>
 }) {
   if (options.iconProps === false || options.hidden)
     return null
   const tooltipText = options.iconProps?.tooltipText ?? options.tooltipText
-  const icon = renderIcon(options.iconProps, options.fallbackIcon, `ant-pro-form-list-action-icon ${options.className}`)
+  const icon = renderIcon(options.iconProps, options.fallbackIcon, `${options.prefixCls}-action-icon ${options.className}`)
   const node = <span onClick={options.onClick as any}>{icon}</span>
   return tooltipText ? <Tooltip title={tooltipText}>{node}</Tooltip> : node
 }
@@ -123,6 +125,7 @@ const ProFormListItem = defineComponent({
   props: [...proFormListItemPropNames],
   setup(rawProps, { slots }) {
     const props = rawProps as unknown as ProFormListItemProps
+    const prefixCls = useProPrefixCls('pro-form-list')
     const editContext = useEditOrReadOnly()
     const isReadMode = computed(() => normalizeBooleanProp(props.readonly) || editContext.readonly || editContext.mode === 'read')
     const arrowSort = computed(() => normalizeBooleanProp(props.arrowSort))
@@ -165,6 +168,7 @@ const ProFormListItem = defineComponent({
           fallbackIcon: CopyOutlined,
           tooltipText: '复制此项',
           className: 'action-copy',
+          prefixCls: prefixCls.value,
           hidden: isReadMode.value || (props.max !== undefined && props.count >= props.max),
           onClick: () => props.action.add(props.record, props.count),
         }),
@@ -173,6 +177,7 @@ const ProFormListItem = defineComponent({
           fallbackIcon: DeleteOutlined,
           tooltipText: '删除此项',
           className: 'action-remove',
+          prefixCls: prefixCls.value,
           hidden: isReadMode.value || (props.min !== undefined && props.count <= props.min),
           onClick: () => props.action.remove(field.name),
         }),
@@ -181,6 +186,7 @@ const ProFormListItem = defineComponent({
           fallbackIcon: ArrowUpOutlined,
           tooltipText: '向上排序',
           className: 'action-up',
+          prefixCls: prefixCls.value,
           hidden: isReadMode.value || !arrowSort.value || props.index <= 0,
           onClick: () => props.action.move(props.index, props.index - 1),
         }),
@@ -189,13 +195,14 @@ const ProFormListItem = defineComponent({
           fallbackIcon: ArrowDownOutlined,
           tooltipText: '向下排序',
           className: 'action-down',
+          prefixCls: prefixCls.value,
           hidden: isReadMode.value || !arrowSort.value || props.index + 1 >= props.count,
           onClick: () => props.action.move(props.index, props.index + 1),
         }),
       ].filter(Boolean) as VNodeChild[]
       const actions = props.actionRender?.(field, props.action, defaultActionDom, props.count) ?? defaultActionDom
       const actionDom = actions.length && !isReadMode.value
-        ? <div class="ant-pro-form-list-action"><Space size={8}>{actions}</Space></div>
+        ? <div class={`${prefixCls.value}-action`}><Space size={8}>{actions}</Space></div>
         : null
 
       const children = (
@@ -205,12 +212,12 @@ const ProFormListItem = defineComponent({
       )
       const itemContainer = props.itemContainerRender?.(children, rowMeta) ?? children
       const listDom = (
-        <div class={['ant-pro-form-list-container', props.containerClassName]} style={props.containerStyle}>
+        <div class={[`${prefixCls.value}-container`, props.containerClassName]} style={props.containerStyle}>
           {itemContainer}
         </div>
       )
       const content = props.itemRender?.({ listDom, action: actionDom }, rowMeta) ?? (
-        <div class={['ant-pro-form-list-item', { 'ant-pro-form-list-item-show-label': normalizeBooleanProp(props.alwaysShowItemLabel) }]}>
+        <div class={[`${prefixCls.value}-item`, { [`${prefixCls.value}-item-show-label`]: normalizeBooleanProp(props.alwaysShowItemLabel) }]}>
           {listDom}
           {actionDom}
         </div>

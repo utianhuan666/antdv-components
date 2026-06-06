@@ -4,6 +4,7 @@ import type { FormData, FormRefLike, ProFormProps, SubmitterProps, ValueRef } fr
 import type { StepFormProps } from './StepForm'
 import { Button, Col, Row, Space, Steps } from 'antdv-next'
 import { cloneVNode, computed, defineComponent, Fragment, h, inject, isVNode, nextTick, provide, ref, shallowRef } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import StepForm from './StepForm'
 
 export interface StepsFormContextValue {
@@ -102,6 +103,7 @@ const StepsFormInner = defineComponent({
   emits: ['currentChange'],
   setup(rawProps, { attrs, slots, emit, expose }) {
     const props = rawProps as Readonly<StepsFormProps>
+    const prefixCls = useProPrefixCls('pro-steps-form')
     const innerCurrent = ref(0)
     const formValues = shallowRef(new Map<string, FormData>())
     const formInstances = shallowRef<Array<FormRefLike | undefined>>([])
@@ -179,8 +181,9 @@ const StepsFormInner = defineComponent({
     }
 
     async function onStepFinish(name: string, values: FormData) {
+      const currentFormValues = formInstances.value[current.value]?.getFieldsFormatValue?.() || values
       const nextValues = new Map(formValues.value)
-      nextValues.set(name, values)
+      nextValues.set(name, currentFormValues)
       formValues.value = nextValues
 
       const isLastStep = current.value === stepItems.value.length - 1
@@ -227,7 +230,7 @@ const StepsFormInner = defineComponent({
 
       const dom = (
         <div
-          class="ant-pro-steps-form-steps-container"
+          class={`${prefixCls.value}-steps-container`}
           style={{ maxWidth: `${Math.min(items.length * 320, 1160)}px` }}
         >
           <Steps
@@ -307,8 +310,8 @@ const StepsFormInner = defineComponent({
           <div
             key={name}
             class={[
-              'ant-pro-steps-form-step',
-              active ? 'ant-pro-steps-form-step-active' : '',
+              `${prefixCls.value}-step`,
+              active ? `${prefixCls.value}-step-active` : '',
             ]}
             style={{ display: active ? undefined : 'none' }}
           >
@@ -346,7 +349,7 @@ const StepsFormInner = defineComponent({
     return () => {
       const submitterDom = renderSubmitter()
       const formContainer = (
-        <div class="ant-pro-steps-form-container" style={props.containerStyle}>
+        <div class={`${prefixCls.value}-container`} style={props.containerStyle}>
           {renderForms()}
           {props.stepsFormRender ? null : <Space>{submitterDom}</Space>}
         </div>
@@ -354,7 +357,7 @@ const StepsFormInner = defineComponent({
       const layoutDom = renderLayout(renderStepsDom(), formContainer)
       const content = props.stepsFormRender ? props.stepsFormRender(layoutDom, submitterDom) : layoutDom
 
-      return h('div', { class: 'ant-pro-steps-form' }, content ?? undefined)
+      return h('div', { class: prefixCls.value }, content ?? undefined)
     }
   },
 })

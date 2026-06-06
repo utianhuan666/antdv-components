@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldCheckboxProps, GroupProps } from './types'
 import { Spin } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldCheckboxEdit from './FieldCheckboxEdit'
@@ -41,6 +42,7 @@ const FieldCheckbox = defineComponent({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps as CheckboxFieldProps
+    const prefixCls = useProPrefixCls('pro-field-checkbox')
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
     const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
@@ -77,7 +79,7 @@ const FieldCheckbox = defineComponent({
           options: options.value,
           loading: loading.value,
           layout: fieldProps.layout ?? 'horizontal',
-          layoutClassName: 'ant-pro-field-checkbox',
+          layoutClassName: prefixCls.value,
           wrapSSR,
           hashId,
           status,

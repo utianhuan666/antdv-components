@@ -237,13 +237,85 @@ describe('descriptions', () => {
               },
             },
           ]}
-          dataSource={defaultData}
+          dataSource={createDefaultData()}
         />
       ),
     })
 
     expect(wrapper.find('input.ant-input').exists()).toBeTruthy()
     expect(wrapper.find('.ant-form-item').exists()).toBeTruthy()
+  })
+
+  it('📝 formItemRender receives editable form as third argument', async () => {
+    const formSpy = vi.fn()
+    const wrapper = mountAttached({
+      render: () => (
+        <ProDescriptions
+          editable={{
+            editableKeys: ['title'],
+          }}
+          columns={[
+            {
+              dataIndex: 'title',
+              formItemRender: (_item: any, config: any, form: any) => {
+                formSpy(form)
+                return config.defaultRender()
+              },
+            },
+          ]}
+          dataSource={createDefaultData()}
+        />
+      ),
+    })
+
+    await waitFor(() => {
+      expect(wrapper.find('input.ant-input').exists()).toBeTruthy()
+      expect(formSpy).toHaveBeenCalled()
+      const lastForm = formSpy.mock.calls[formSpy.mock.calls.length - 1]?.[0]
+      expect(lastForm?.resetFields).toEqual(expect.any(Function))
+      expect(lastForm?.validateFields).toEqual(expect.any(Function))
+    })
+  })
+
+  it('📝 formItemRender form.resetFields resets editable value', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ProDescriptions
+          editable={{
+            editableKeys: ['title'],
+          }}
+          columns={[
+            {
+              dataIndex: 'title',
+              formItemRender: (_item: any, config: any, form: any) => (
+                <span>
+                  {config.defaultRender()}
+                  <button id="reset_form" onClick={() => form.resetFields()}>
+                    reset
+                  </button>
+                </span>
+              ),
+            },
+          ]}
+          dataSource={defaultData}
+        />
+      ),
+    })
+
+    await waitFor(() => {
+      expect((wrapper.find('input.ant-input').element as HTMLInputElement).value).toBe(defaultData.title)
+    })
+
+    await wrapper.find('input.ant-input').setValue('changed title')
+    await waitFor(() => {
+      expect((wrapper.find('input.ant-input').element as HTMLInputElement).value).toBe('changed title')
+    })
+
+    await wrapper.find('#reset_form').trigger('click')
+
+    await waitFor(() => {
+      expect((wrapper.find('input.ant-input').element as HTMLInputElement).value).toBe(defaultData.title)
+    })
   })
 
   it('📝 columns support editable test', async () => {

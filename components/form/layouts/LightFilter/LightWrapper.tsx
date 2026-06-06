@@ -3,6 +3,7 @@ import type { CSSProperties, VNode, VNodeChild } from 'vue'
 import type { FieldLabelVariant } from './FieldLabel'
 import type { FooterRender } from './FilterDropdown'
 import { cloneVNode, defineComponent, isVNode, ref, watch } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import FieldLabel from './FieldLabel'
 import FilterDropdown from './FilterDropdown'
 
@@ -73,6 +74,7 @@ const LightWrapper = defineComponent({
   emits: ['change'],
   setup(rawProps, { attrs, slots, emit }) {
     const props = rawProps as Readonly<LightWrapperProps>
+    const prefixCls = useProPrefixCls('pro-form')
     const tempValue = ref<unknown>(props.value)
     const open = ref<boolean>(false)
 
@@ -168,7 +170,7 @@ const LightWrapper = defineComponent({
           footer={{ onConfirm: handleConfirm, onClear: handleClear }}
           onUpdate:open={handleOpenChange}
         >
-          <div class="ant-pro-form-light-wrapper-content">
+          <div class={`${prefixCls.value}-light-wrapper-content`}>
             {validChildren.map(node => (isVNode(node) ? cloneInnerChild(node as VNode) : node))}
           </div>
         </FilterDropdown>

@@ -4,12 +4,35 @@ import type { IntlType } from '../../../provider'
 import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'
+import { defineComponent, nextTick, onMounted, onUpdated, ref } from 'vue'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
 
 type TreeSelectShowSearchObject = Exclude<
   TreeSelectProps['showSearch'],
   boolean | undefined
 >
+
+const TreeSelectInputIdBridge = defineComponent({
+  name: 'TreeSelectInputIdBridge',
+  props: ['id'],
+  setup(props, { slots }) {
+    const rootRef = ref<HTMLElement>()
+    const sync = () => {
+      if (props.id === undefined || props.id === null)
+        return
+      nextTick(() => {
+        rootRef.value
+          ?.querySelector<HTMLInputElement>('input.ant-select-input')
+          ?.setAttribute('id', String(props.id))
+      })
+    }
+
+    onMounted(sync)
+    onUpdated(sync)
+
+    return () => <span ref={rootRef}>{slots.default?.()}</span>
+  },
+})
 
 export interface FieldTreeSelectLightEditProps {
   text: string
@@ -131,6 +154,14 @@ export function FieldTreeSelectLightEdit({
       />
     </Spin>
   )
+
+  if (fieldProps?.id !== undefined) {
+    dom = (
+      <TreeSelectInputIdBridge id={fieldProps.id}>
+        {dom}
+      </TreeSelectInputIdBridge>
+    )
+  }
 
   if (formItemRender) {
     dom = formItemRender(

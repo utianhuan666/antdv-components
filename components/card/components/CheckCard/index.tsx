@@ -3,6 +3,7 @@ import type { CheckCardGroupProps, CheckCardValueType } from './Group'
 import { clsx } from '@v-c/util'
 import { Avatar } from 'antdv-next'
 import { computed, defineComponent, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import ProCardActions from '../Actions'
 import CheckCardGroup, { CardLoading, CheckCardGroupContext } from './Group'
 import { useStyle } from './style'
@@ -74,7 +75,8 @@ const CheckCard = defineComponent({
   emits: ['change', 'click', 'mouseenter', 'mouseleave'],
   setup(rawProps, { attrs, emit, slots }) {
     const props = rawProps as CheckCardProps
-    const { wrapSSR, hashId } = useStyle(props.prefixCls || 'ant-pro-checkcard')
+    const mergedPrefixCls = useProPrefixCls('pro-checkcard', computed(() => props.prefixCls))
+    const { wrapSSR, hashId } = useStyle(mergedPrefixCls.value)
     const group = inject(CheckCardGroupContext, null)
     const innerChecked = ref(!!props.defaultChecked)
     const controlledChecked = computed(() => hasOwn(rawProps, 'checked') && props.checked !== undefined)
@@ -105,7 +107,7 @@ const CheckCard = defineComponent({
     )
 
     return () => {
-      const prefixCls = props.prefixCls || 'ant-pro-checkcard'
+      const prefixCls = mergedPrefixCls.value
       const disabled = !!(props.disabled || group?.disabled.value)
       const loading = !!(props.loading || group?.loading.value)
       const bordered = props.bordered ?? group?.bordered.value ?? true

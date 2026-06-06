@@ -2,7 +2,8 @@ import type { CSSProperties, VNode } from 'vue'
 import type { Breakpoint, CardProps, ColSpanType, Gutter, ProCardTabItem } from '../../typing'
 import { RightOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
-import { Tabs } from 'antdv-next'
+import { Tabs, useBreakpoint } from 'antdv-next'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { computed, defineComponent, ref } from 'vue'
 import LabelIconTip from '../../../utils/components/LabelIconTip'
 import Actions from '../Actions'
@@ -15,26 +16,34 @@ function hasOwn(target: object, key: string) {
   return Object.prototype.hasOwnProperty.call(target, key)
 }
 
-function normalizeGutter(gutter: Gutter | Gutter[] | undefined): [number, number] {
+function getResponsiveValue<T>(
+  value: T | Partial<Record<Breakpoint, T>> | undefined,
+  screens: Partial<Record<Breakpoint, boolean>> | undefined,
+): T | undefined {
+  if (value && typeof value === 'object') {
+    const key = responsiveArray.find(name => screens?.[name] && (value as Partial<Record<Breakpoint, T>>)[name] != null)
+    return key ? (value as Partial<Record<Breakpoint, T>>)[key] : undefined
+  }
+  return value as T | undefined
+}
+
+function normalizeGutter(
+  gutter: Gutter | Gutter[] | undefined,
+  screens: Partial<Record<Breakpoint, boolean>> | undefined,
+): [number, number] {
   const normalized = Array.isArray(gutter) ? gutter : [gutter || 0, 0]
   return normalized.map((value) => {
     if (typeof value === 'number')
       return value
-    if (value && typeof value === 'object') {
-      const key = responsiveArray.find(name => value[name] != null)
-      return key ? (value[key] as number) : 0
-    }
-    return 0
+    return getResponsiveValue(value, screens) ?? 0
   }) as [number, number]
 }
 
-function normalizeColSpan(colSpan: CardProps['colSpan']) {
-  let span: ColSpanType | undefined = colSpan as ColSpanType | undefined
-  if (colSpan && typeof colSpan === 'object') {
-    const key = responsiveArray.find(name => colSpan[name] != null)
-    span = key ? colSpan[key] : undefined
-  }
-
+function normalizeColSpan(
+  colSpan: CardProps['colSpan'],
+  screens: Partial<Record<Breakpoint, boolean>> | undefined,
+) {
+  const span = getResponsiveValue<ColSpanType>(colSpan as any, screens)
   const isFixedWidth = typeof span === 'string' && /\d%|\dpx/i.test(span)
   return {
     span,
@@ -97,7 +106,10 @@ const Card = defineComponent({
   emits: ['collapse', 'click', 'checked'],
   setup(rawProps, { attrs, emit, slots }) {
     const props = rawProps as CardProps
-    const { wrapSSR, hashId } = useStyle(props.prefixCls || 'ant-pro-card')
+    const config = useConfig()
+    const screens = useBreakpoint()
+    const prefixCls = computed(() => props.prefixCls || config.value.getPrefixCls('pro-card'))
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
     const innerCollapsed = ref(!!props.defaultCollapsed)
 
     const controlledCollapsed = computed(() => hasOwn(rawProps, 'collapsed') && props.collapsed !== undefined)
@@ -124,7 +136,7 @@ const Card = defineComponent({
         <span
           role="button"
           tabindex={props.collapsible === 'icon' ? 0 : undefined}
-          class="ant-pro-card-collapsible-icon"
+          class={`${prefixCls.value}-collapsible-icon`}
           onClick={handleCollapsibleIconClick}
           onKeydown={(event: KeyboardEvent) => {
             if (props.collapsible === 'icon' && (event.key === 'Enter' || event.key === ' ')) {
@@ -143,7 +155,8 @@ const Card = defineComponent({
     const renderChildren = () => {
       const children = slots.default?.() || []
       let containProCard = false
-      const [horizontalGutter, verticalGutter] = normalizeGutter(props.gutter)
+      const currentScreens = (screens.value ?? undefined) as Partial<Record<Breakpoint, boolean>> | undefined
+      const [horizontalGutter, verticalGutter] = normalizeGutter(props.gutter, currentScreens)
 
       const nodes = children.map((node, index) => {
         if (!isProCardVNode(node))
@@ -151,11 +164,11 @@ const Card = defineComponent({
 
         containProCard = true
         const childProps = (node.props || {}) as CardProps
-        const { span, colSpanStyle } = normalizeColSpan(childProps.colSpan)
-        const columnClassName = clsx('ant-pro-card-col', {
-          'ant-pro-card-split-vertical': props.split === 'vertical' && index !== children.length - 1,
-          'ant-pro-card-split-horizontal': props.split === 'horizontal' && index !== children.length - 1,
-          [`ant-pro-card-col-${span}`]: typeof span === 'number' && span >= 0 && span <= 24,
+        const { span, colSpanStyle } = normalizeColSpan(childProps.colSpan, currentScreens)
+        const columnClassName = clsx(`${prefixCls.value}-col`, hashId, {
+          [`${prefixCls.value}-split-vertical`]: props.split === 'vertical' && index !== children.length - 1,
+          [`${prefixCls.value}-split-horizontal`]: props.split === 'horizontal' && index !== children.length - 1,
+          [`${prefixCls.value}-col-${span}`]: typeof span === 'number' && span >= 0 && span <= 24,
         })
 
         return (
@@ -198,41 +211,50 @@ const Card = defineComponent({
       const cover = slots.cover?.() ?? props.cover
       const actions = slots.actions?.() ?? props.actions
       const collapsibleButton = renderCollapsibleButton()
+      const loadingPadding = styles.body
+        ? 24
+        : undefined
       const loadingDom = typeof props.loading === 'boolean'
-        ? <Loading prefix="ant-pro-card" />
+        ? loadingPadding != null
+          ? (
+              <div class={`${prefixCls.value}-loading-content`} style={`padding: ${loadingPadding}px;`}>
+                <Loading prefix={prefixCls.value} />
+              </div>
+            )
+          : <Loading prefix={prefixCls.value} />
         : props.loading
 
       const cardCls = clsx(
-        'ant-pro-card',
+        prefixCls.value,
         hashId,
         props.class,
         props.className,
         props.rootClassName,
         classNames.root,
         {
-          'ant-pro-card-border': variant === 'outlined',
-          'ant-pro-card-box-shadow': props.boxShadow,
-          'ant-pro-card-contain-card': childrenResult.containProCard,
-          'ant-pro-card-loading': props.loading,
-          'ant-pro-card-split': props.split === 'vertical' || props.split === 'horizontal',
-          'ant-pro-card-ghost': props.ghost,
-          'ant-pro-card-hoverable': props.hoverable,
-          [`ant-pro-card-size-${props.size}`]: props.size,
-          [`ant-pro-card-type-${props.type}`]: props.type,
-          'ant-pro-card-collapse': collapsed,
-          'ant-pro-card-checked': props.checked,
+          [`${prefixCls.value}-border`]: variant === 'outlined',
+          [`${prefixCls.value}-box-shadow`]: props.boxShadow,
+          [`${prefixCls.value}-contain-card`]: childrenResult.containProCard,
+          [`${prefixCls.value}-loading`]: props.loading,
+          [`${prefixCls.value}-split`]: props.split === 'vertical' || props.split === 'horizontal',
+          [`${prefixCls.value}-ghost`]: props.ghost,
+          [`${prefixCls.value}-hoverable`]: props.hoverable,
+          [`${prefixCls.value}-size-${props.size}`]: props.size,
+          [`${prefixCls.value}-type-${props.type}`]: props.type,
+          [`${prefixCls.value}-collapse`]: collapsed,
+          [`${prefixCls.value}-checked`]: props.checked,
         },
       )
 
-      const bodyCls = clsx('ant-pro-card-body', classNames.body, {
-        'ant-pro-card-body-center': props.layout === 'center',
-        'ant-pro-card-body-direction-column': props.split === 'horizontal' || props.direction === 'column',
-        'ant-pro-card-body-wrap': props.wrap && childrenResult.containProCard,
+      const bodyCls = clsx(`${prefixCls.value}-body`, classNames.body, {
+        [`${prefixCls.value}-body-center`]: props.layout === 'center',
+        [`${prefixCls.value}-body-direction-column`]: props.split === 'horizontal' || props.direction === 'column',
+        [`${prefixCls.value}-body-wrap`]: props.wrap && childrenResult.containProCard,
       })
 
-      const headerCls = clsx('ant-pro-card-header', classNames.header, {
-        'ant-pro-card-header-border': props.headerBordered || props.type === 'inner',
-        'ant-pro-card-header-collapsible': collapsibleButton,
+      const headerCls = clsx(`${prefixCls.value}-header`, classNames.header, {
+        [`${prefixCls.value}-header-border`]: props.headerBordered || props.type === 'inner',
+        [`${prefixCls.value}-header-collapsible`]: collapsibleButton,
       })
 
       const header = (title != null || extra != null || collapsibleButton)
@@ -245,14 +267,14 @@ const Card = defineComponent({
                   setCollapsed(!collapsed)
               }}
             >
-              <div class={clsx('ant-pro-card-title', classNames.title)} style={styles.title}>
+              <div class={clsx(`${prefixCls.value}-title`, classNames.title)} style={styles.title}>
                 {collapsibleButton}
                 <LabelIconTip label={title} tooltip={props.tooltip} subTitle={props.subTitle} />
               </div>
               {extra != null
                 ? (
                     <div
-                      class={clsx('ant-pro-card-extra', classNames.extra)}
+                      class={clsx(`${prefixCls.value}-extra`, classNames.extra)}
                       style={styles.extra}
                       onClick={(event: MouseEvent) => event.stopPropagation()}
                     >
@@ -267,7 +289,7 @@ const Card = defineComponent({
       const tabs = props.tabs
       const tabDom = tabs
         ? (
-            <div class="ant-pro-card-tabs">
+            <div class={`${prefixCls.value}-tabs`}>
               {props.loading
                 ? loadingDom
                 : (
@@ -293,14 +315,14 @@ const Card = defineComponent({
         >
           {header}
           {cover != null && !collapsed
-            ? <div class={clsx('ant-pro-card-cover', classNames.cover)} style={styles.cover}>{cover}</div>
+            ? <div class={clsx(`${prefixCls.value}-cover`, classNames.cover)} style={styles.cover}>{cover}</div>
             : null}
           {tabDom ?? (
             <div class={bodyCls} style={styles.body}>
               {props.loading ? loadingDom : childrenResult.nodes}
             </div>
           )}
-          {actions ? <Actions actions={actions} prefixCls="ant-pro-card" /> : null}
+          {actions ? <Actions actions={actions} prefixCls={prefixCls.value} className={classNames.actions} style={styles.actions} /> : null}
         </div>,
       )
     }

@@ -1,10 +1,13 @@
 import type { HeaderViewProps, SiderMenuProps } from './types'
+import { clsx } from '@v-c/util'
 import { Avatar, Drawer, LayoutSider, Space } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { AppsLogoComponents, defaultRenderLogo } from '../AppsLogoComponents'
 import { CollapsedIcon } from '../CollapsedIcon'
 import { BaseMenu } from './BaseMenu'
 import { ProLayoutNavMenu } from './ProLayoutNavMenu'
+import { getProLayoutSiderCssVarsStyle } from './style/menu'
 
 export type HeaderRenderKey = 'menuHeaderRender' | 'headerTitleRender'
 
@@ -81,9 +84,11 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
     'onSelect',
   ] as any,
   setup(props) {
-    const prefixCls = computed(() => props.prefixCls || 'ant-pro')
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-sider`)
+    const linkMenuBaseClassName = computed(() => `${prefixCls.value}-base-menu-sider`)
     const collapsedWidth = computed(() => props.menu?.collapsedWidth ?? 64)
+    const hashId = ''
     const triggerCollapse = (next: boolean) => {
       const handler = Array.isArray(props.onCollapse)
         ? props.onCollapse[props.onCollapse.length - 1]
@@ -92,6 +97,9 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
     }
 
     return () => {
+      const hideMenuWhenCollapsedClassName = props.menu?.hideMenuWhenCollapsed && props.collapsed
+        ? `${baseClassName.value}-hide-menu-collapsed`
+        : null
       const headerDom = renderLogoAndTitle(props, props.menuHeaderRender !== undefined ? 'menuHeaderRender' : 'headerTitleRender')
       const extraDom = props.menuExtraRender && props.menuExtraRender(props)
       const menuDom = props.menuContentRender !== false && !(props.collapsed && props.menu?.hideMenuWhenCollapsed)
@@ -103,7 +111,7 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
                 width: '100%',
                 minWidth: props.collapsed ? undefined : (props.siderWidth ?? 240) - 16,
               }}
-              className={`${baseClassName.value}-menu`}
+              className={clsx(`${baseClassName.value}-menu`, hashId)}
               data-testid="pro-layout-sider-menu"
             />
           )
@@ -113,14 +121,14 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
         kind: 'item' as const,
         key: `link-${index}`,
         raw: { key: `link-${index}` },
-        label: <span class={`${baseClassName.value}-link`} data-testid="pro-layout-sider-link">{node}</span>,
+        label: <span class={clsx(`${baseClassName.value}-link`, hashId)} data-testid="pro-layout-sider-link">{node}</span>,
       }))
       const avatarDom = (() => {
         if (!props.avatarProps)
           return null
         const { title, render, ...rest } = props.avatarProps as any
         const dom = (
-          <div class={`${baseClassName.value}-actions-avatar`} data-testid="pro-layout-sider-actions-avatar">
+          <div class={clsx(`${baseClassName.value}-actions-avatar`, hashId)} data-testid="pro-layout-sider-actions-avatar">
             {(rest.src || rest.srcSet || rest.icon || rest.children) ? <Avatar size={28} {...rest} /> : null}
             {title && !props.collapsed ? <span>{title}</span> : null}
           </div>
@@ -133,11 +141,11 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
               align="center"
               size={4}
               direction={props.collapsed ? 'vertical' : 'horizontal'}
-              class={[`${baseClassName.value}-actions-list`, props.collapsed && `${baseClassName.value}-actions-list-collapsed`]}
+              class={clsx(`${baseClassName.value}-actions-list`, hashId, props.collapsed && `${baseClassName.value}-actions-list-collapsed`)}
               data-testid="pro-layout-sider-actions-list"
             >
               {[props.actionsRender(props as HeaderViewProps)].flat(1).map((item, index) => (
-                <div key={index} class={`${baseClassName.value}-actions-list-item`} data-testid="pro-layout-sider-actions-list-item">
+                <div key={index} class={clsx(`${baseClassName.value}-actions-list-item`, hashId)} data-testid="pro-layout-sider-actions-list-item">
                   {item}
                 </div>
               ))}
@@ -147,7 +155,7 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
       const actionAreaDom = props.actionsPlacement === 'header' || (!avatarDom && !actionsDom)
         ? null
         : (
-            <div class={[`${baseClassName.value}-actions`, props.collapsed && `${baseClassName.value}-actions-collapsed`]} data-testid="pro-layout-sider-actions">
+            <div class={clsx(`${baseClassName.value}-actions`, hashId, props.collapsed && `${baseClassName.value}-actions-collapsed`)} data-testid="pro-layout-sider-actions">
               {avatarDom}
               {actionsDom}
             </div>
@@ -167,23 +175,13 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
             return props.collapsedButtonRender ? props.collapsedButtonRender(props.collapsed, dom) : dom
           })()
       const menuFooterDom = props.menuFooterRender && props.menuFooterRender(props)
-
-      return (
-        <LayoutSider
-          collapsible
-          collapsed={props.collapsed}
-          collapsedWidth={collapsedWidth.value}
-          width={props.siderWidth ?? 240}
-          theme={props.theme || 'light'}
-          class={[baseClassName.value, props.className, props.collapsed && `${baseClassName.value}-collapsed`, `${baseClassName.value}-light`]}
-          style={props.style}
-          data-testid="pro-layout-sider"
-        >
+      const menuDomItems = (
+        <>
           {headerDom
             ? (
                 <div
                   data-testid="pro-layout-sider-logo"
-                  class={[`${baseClassName.value}-logo`, props.collapsed && `${baseClassName.value}-logo-collapsed`]}
+                  class={clsx(`${baseClassName.value}-logo`, hashId, props.collapsed && `${baseClassName.value}-logo-collapsed`)}
                   onClick={(event: MouseEvent) => !props.isMobile && props.onMenuHeaderClick?.(event)}
                   id="logo"
                   style={props.logoStyle}
@@ -195,25 +193,25 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
             : null}
           {extraDom
             ? (
-                <div class={[`${baseClassName.value}-extra`, !headerDom && `${baseClassName.value}-extra-no-logo`]} data-testid="pro-layout-sider-extra">
+                <div class={clsx(`${baseClassName.value}-extra`, hashId, !headerDom && `${baseClassName.value}-extra-no-logo`)} data-testid="pro-layout-sider-extra">
                   {extraDom}
                 </div>
               )
             : null}
-          <div class={`${baseClassName.value}-menu-scroll`} data-testid="pro-layout-sider-menu-content">
+          <div class={clsx(`${baseClassName.value}-menu-scroll`, hashId)} data-testid="pro-layout-sider-menu-content">
             {menuRenderDom}
           </div>
           {props.links
             ? (
-                <div class={`${baseClassName.value}-links`} data-testid="pro-layout-sider-links">
+                <div class={clsx(`${baseClassName.value}-links`, hashId)} data-testid="pro-layout-sider-links">
                   <ProLayoutNavMenu
-                    baseClassName={`${prefixCls.value}-base-menu-sider`}
+                    baseClassName={linkMenuBaseClassName.value}
                     mode="vertical"
                     collapsed={props.collapsed}
                     selectedKeys={[]}
                     openKeys={[]}
                     nodes={linksNodes}
-                    className={`${baseClassName.value}-link-menu`}
+                    className={clsx(`${baseClassName.value}-link-menu`, hashId)}
                     data-testid="pro-layout-sider-link-menu"
                   />
                 </div>
@@ -222,13 +220,66 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
           {actionAreaDom}
           {menuFooterDom
             ? (
-                <div class={[`${baseClassName.value}-footer`, props.collapsed && `${baseClassName.value}-footer-collapsed`]} data-testid="pro-layout-sider-footer">
+                <div class={clsx(`${baseClassName.value}-footer`, hashId, props.collapsed && `${baseClassName.value}-footer-collapsed`)} data-testid="pro-layout-sider-footer">
                   {menuFooterDom}
                 </div>
               )
             : null}
-          {collapsedDom}
-        </LayoutSider>
+        </>
+      )
+
+      return (
+        <>
+          {props.fixSiderbar && !props.isMobile && !hideMenuWhenCollapsedClassName
+            ? (
+                <div
+                  style={{
+                    ...getProLayoutSiderCssVarsStyle(),
+                    width: props.collapsed ? collapsedWidth.value : (props.siderWidth ?? 240),
+                    overflow: 'hidden',
+                    flex: `0 0 ${props.collapsed ? collapsedWidth.value : (props.siderWidth ?? 240)}px`,
+                    maxWidth: props.collapsed ? collapsedWidth.value : (props.siderWidth ?? 240),
+                    minWidth: props.collapsed ? collapsedWidth.value : (props.siderWidth ?? 240),
+                    transition: 'all 0.2s ease 0s',
+                    ...props.style,
+                  }}
+                />
+              )
+            : null}
+          <LayoutSider
+            collapsible
+            collapsed={props.collapsed}
+            collapsedWidth={collapsedWidth.value}
+            width={props.siderWidth ?? 240}
+            theme={props.theme || 'light'}
+            class={clsx(
+              baseClassName.value,
+              hashId,
+              props.className,
+              props.fixSiderbar && `${baseClassName.value}-fixed`,
+              props.collapsed && `${baseClassName.value}-collapsed`,
+              props.layout && !props.isMobile && `${baseClassName.value}-layout-${props.layout}`,
+              `${baseClassName.value}-light`,
+              props.stylish && `${baseClassName.value}-stylish`,
+              hideMenuWhenCollapsedClassName,
+            )}
+            style={{ ...getProLayoutSiderCssVarsStyle(), ...props.style }}
+            data-testid="pro-layout-sider"
+          >
+            {hideMenuWhenCollapsedClassName
+              ? (
+                  <div
+                    class={clsx(`${baseClassName.value}-hide-when-collapsed`, hashId)}
+                    data-testid="pro-layout-sider-hide-when-collapsed"
+                    style={{ height: '100%', width: '100%', opacity: 0 }}
+                  >
+                    {menuDomItems}
+                  </div>
+                )
+              : menuDomItems}
+            {collapsedDom}
+          </LayoutSider>
+        </>
       )
     }
   },
@@ -239,6 +290,7 @@ export const SiderMenu = defineComponent<SiderMenuProps>({
   inheritAttrs: false,
   props: (SiderMenuInner as any).props,
   setup(props, { attrs }) {
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const triggerCollapse = (next: boolean) => {
       const handler = Array.isArray(props.onCollapse)
         ? props.onCollapse[props.onCollapse.length - 1]
@@ -249,12 +301,11 @@ export const SiderMenu = defineComponent<SiderMenuProps>({
     return () => {
       if (props.hide)
         return null
-      const prefixCls = props.prefixCls || 'ant-pro'
       if (props.isMobile) {
         return (
           <Drawer
             placement="left"
-            class={`${prefixCls}-drawer-sider`}
+            class={`${prefixCls.value}-drawer-sider`}
             data-testid="pro-layout-sider"
             open={!props.collapsed}
             onClose={() => triggerCollapse(true)}
@@ -263,11 +314,11 @@ export const SiderMenu = defineComponent<SiderMenuProps>({
             size={props.siderWidth ?? 240}
             styles={{ body: { height: '100vh', padding: 0, display: 'flex', flexDirection: 'row' } }}
           >
-            <SiderMenuInner {...attrs} {...props} isMobile collapsed={false} originCollapsed={props.collapsed} />
+            <SiderMenuInner {...attrs} {...props} prefixCls={prefixCls.value} isMobile collapsed={false} originCollapsed={props.collapsed} />
           </Drawer>
         )
       }
-      return <SiderMenuInner {...attrs} {...props} originCollapsed={props.collapsed} />
+      return <SiderMenuInner {...attrs} {...props} prefixCls={prefixCls.value} originCollapsed={props.collapsed} />
     }
   },
 })

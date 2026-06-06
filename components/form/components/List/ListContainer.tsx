@@ -3,6 +3,7 @@ import type { ProFormListContainerProps } from './typing'
 import { PlusOutlined } from '@antdv-next/icons'
 import { Button } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { ProFormListItem } from './ListItem'
 
@@ -44,6 +45,7 @@ const ProFormListContainer = defineComponent({
   props: [...proFormListContainerPropNames],
   setup(rawProps, { slots }) {
     const props = rawProps as unknown as ProFormListContainerProps
+    const prefixCls = useProPrefixCls('pro-form-list')
     const editContext = useEditOrReadOnly()
     const isReadMode = computed(() => normalizeBooleanProp(props.readonly) || editContext.readonly || editContext.mode === 'read')
 
@@ -61,7 +63,7 @@ const ProFormListContainer = defineComponent({
       const index = position === 'top' ? 0 : props.fields.length
       return (
         <Button
-          class={`ant-pro-form-list-creator-button-${position}`}
+          class={`${prefixCls.value}-creator-button-${position}`}
           type={creatorButtonProps.type || 'dashed'}
           block={creatorButtonProps.block ?? true}
           style={creatorButtonProps.style}

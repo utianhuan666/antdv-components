@@ -2,6 +2,7 @@ import type { SizeType } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
 import { CloseCircleFilled, DownOutlined } from '@antdv-next/icons'
 import { defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export type FieldLabelVariant = 'outlined' | 'borderless' | 'filled' | 'underlined'
 export type FieldLabelValue = VNodeChild | { label?: VNodeChild }
@@ -55,6 +56,7 @@ const FieldLabel = defineComponent({
   emits: ['clear'],
   setup(rawProps, { emit }) {
     const props = rawProps as Readonly<FieldLabelProps>
+    const prefixCls = useProPrefixCls('pro-core-field-label')
     function isValueEmpty(value: FieldLabelProps['value']) {
       if (value === undefined || value === null || value === '')
         return true
@@ -84,7 +86,7 @@ const FieldLabel = defineComponent({
       const hasValue = !isValueEmpty(props.value)
       const downIconNode = props.downIcon === false
         ? null
-        : (props.downIcon as VNodeChild) ?? <DownOutlined class="ant-pro-core-field-label-arrow" />
+        : (props.downIcon as VNodeChild) ?? <DownOutlined class={`${prefixCls.value}-arrow`} />
 
       const disabled = resolveBoolean(props.disabled)
       const clearable = resolveBoolean(props.allowClear, true) && hasValue && !disabled
@@ -96,11 +98,11 @@ const FieldLabel = defineComponent({
       return (
         <span
           class={[
-            'ant-pro-core-field-label',
-            `ant-pro-core-field-label-${props.size ?? 'middle'}`,
-            `ant-pro-core-field-label-${props.variant ?? 'outlined'}`,
-            hasValue ? 'ant-pro-core-field-label-active' : '',
-            disabled ? 'ant-pro-core-field-label-disabled' : '',
+            prefixCls.value,
+            `${prefixCls.value}-${props.size ?? 'middle'}`,
+            `${prefixCls.value}-${props.variant ?? 'outlined'}`,
+            hasValue ? `${prefixCls.value}-active` : '',
+            disabled ? `${prefixCls.value}-disabled` : '',
           ].filter(Boolean).join(' ')}
           style={props.style}
           onClick={() => {
@@ -110,19 +112,19 @@ const FieldLabel = defineComponent({
         >
           {props.label !== undefined
             ? (
-                <span class="ant-pro-core-field-label-text">
+                <span class={`${prefixCls.value}-text`}>
                   {props.label}
                   {hasValue ? ': ' : ''}
                 </span>
               )
             : null}
           {hasValue
-            ? <span class="ant-pro-core-field-label-value" title={formattedTitle}>{formattedValue}</span>
-            : <span class="ant-pro-core-field-label-placeholder">{props.placeholder ?? props.label}</span>}
+            ? <span class={`${prefixCls.value}-value`} title={formattedTitle}>{formattedValue}</span>
+            : <span class={`${prefixCls.value}-placeholder`}>{props.placeholder ?? props.label}</span>}
           {clearable
             ? (
                 <CloseCircleFilled
-                  class="ant-pro-core-field-label-clear ant-pro-core-field-label-close"
+                  class={`${prefixCls.value}-clear ${prefixCls.value}-close`}
                   onClick={(event: MouseEvent) => {
                     event.stopPropagation()
                     props.onClear?.()

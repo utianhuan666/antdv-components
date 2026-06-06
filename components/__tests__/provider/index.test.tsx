@@ -2,7 +2,7 @@ import type { ComponentTokenMap } from 'antdv-next/dist/theme/interface/componen
 import { mount } from '@vue/test-utils'
 import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, nextTick, ref } from 'vue'
 import { ProField } from '../../field'
 import { ProForm, ProFormMoney } from '../../form'
 import {
@@ -210,5 +210,70 @@ describe('proConfigProvider', () => {
     ))
 
     expect(wrapper.text()).toBe('$$')
+  })
+
+  it('respects custom prefixCls and antd prefixCls in context tokens', () => {
+    const Demo = defineComponent({
+      setup() {
+        const context = useProProviderContext()
+        return () => (
+          <span
+            data-pro={context.token.proComponentsCls}
+            data-ant={context.token.antCls}
+            data-prefix={context.prefixCls}
+          />
+        )
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ConfigProvider prefixCls="acme">
+        <ProConfigProvider prefixCls="acme-pro">
+          <Demo />
+        </ProConfigProvider>
+      </ConfigProvider>
+    ))
+
+    const node = wrapper.find('span')
+    expect(node.attributes('data-pro')).toBe('.acme-pro')
+    expect(node.attributes('data-ant')).toBe('.acme')
+    expect(node.attributes('data-prefix')).toBe('acme-pro')
+  })
+
+  it('updates dark and token values dynamically', async () => {
+    const dark = ref(false)
+    const colorPrimary = ref('#1677ff')
+
+    const Demo = defineComponent({
+      setup() {
+        const context = useProProviderContext()
+        return () => (
+          <span
+            data-dark={String(context.dark)}
+            data-color={context.token.colorPrimary}
+          />
+        )
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ConfigProvider theme={{ token: { colorPrimary: colorPrimary.value } }}>
+        <ProConfigProvider dark={dark.value}>
+          <Demo />
+        </ProConfigProvider>
+      </ConfigProvider>
+    ))
+
+    expect(wrapper.find('span').attributes('data-dark')).toBe('false')
+    expect(wrapper.find('span').attributes('data-color')).toBe('#1677ff')
+
+    dark.value = true
+    colorPrimary.value = '#ff4d4f'
+    await nextTick()
+
+    await waitFor(() => {
+      expect(wrapper.find('span').attributes('data-dark')).toBe('true')
+      expect(wrapper.find('span').attributes('data-color')).not.toBe('#1677ff')
+    })
   })
 })

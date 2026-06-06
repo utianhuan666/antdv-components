@@ -8,7 +8,7 @@ import type {
   ProFieldValueTypeInput,
   ProRenderFieldPropsType,
 } from './types'
-import { computed, defineComponent, ref } from 'vue'
+import { cloneVNode, computed, defineComponent, isVNode, ref } from 'vue'
 import { useProProviderContext } from '../provider'
 import { omitUndefined, pickProProps } from '../utils'
 
@@ -194,7 +194,14 @@ export function createProField(
           formItemRender: props.formItemRender
             ? (curText: any, innerProps: ProFieldFCRenderProps, dom: JSX.Element) => {
                 const { placeholder: _ph, ...restInner } = innerProps
-                return props.formItemRender!(curText, restInner as any, dom)
+                const newDom = props.formItemRender!(curText, restInner as any, dom)
+                if (isVNode(newDom)) {
+                  return cloneVNode(newDom, {
+                    ...fieldProps.value,
+                    ...(newDom.props || {}),
+                  })
+                }
+                return newDom
               }
             : undefined,
           render: props.render

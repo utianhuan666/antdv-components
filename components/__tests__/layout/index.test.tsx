@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { ConfigProvider } from 'antdv-next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import { ProLayout, useRouteContext } from '../../layout'
@@ -139,6 +140,17 @@ describe('basicLayout', () => {
     expect(wrapper.get('#test_log').text()).toEqual('Logo')
   })
 
+  it('🥩 render default Logo when logo is undefined', () => {
+    const wrapper = mount(ProLayout, {
+      attachTo: document.body,
+      props: {
+        route: { children: [{ path: '/welcome', name: '欢迎' }] },
+      },
+    })
+
+    expect(wrapper.find('[data-testid="pro-layout-sider-logo"] svg[viewBox="0 0 200 200"]').exists()).toBe(true)
+  })
+
   it('🥩 onCollapse', async () => {
     const onCollapse = vi.fn()
     const wrapper = mount(ProLayout, {
@@ -210,6 +222,17 @@ describe('basicLayout', () => {
     expect(wrapper.find('[data-testid="pro-layout-sider-collapsed-button"]').exists()).toBe(true)
   })
 
+  it('🥩 mix layout follows side layout class semantics', () => {
+    const wrapper = mount(ProLayout, {
+      attachTo: document.body,
+      props: { layout: 'mix' },
+    })
+
+    const layout = wrapper.get('[data-testid="pro-layout"]')
+    expect(layout.classes()).toContain('ant-pro-layout-side')
+    expect(layout.classes()).not.toContain('ant-pro-layout-mix')
+  })
+
   it('🥩 set page title render', async () => {
     const pageTitleRender = vi.fn((_props, _pageName, info) => info?.pageName || 'ant')
     mount(ProLayout, {
@@ -261,6 +284,22 @@ describe('basicLayout', () => {
 
     await waitFor(() => {
       expect(renderPageTitle).toHaveBeenCalled()
+    })
+  })
+
+  it('🥩 pageTitleRender non-string falls back to default page title', async () => {
+    mount(ProLayout, {
+      attachTo: document.body,
+      props: {
+        title: 'Ant Design Pro',
+        route: { children: [{ path: '/welcome', name: '欢迎' }] },
+        location: { pathname: '/welcome' },
+        pageTitleRender: () => 1221 as any,
+      },
+    })
+
+    await waitFor(() => {
+      expect(document.title).toBe('欢迎 - Ant Design Pro')
     })
   })
 
@@ -769,6 +808,24 @@ describe('basicLayout', () => {
     expect(wrapper.find('.ant-pro-layout-header-fixed-header').exists()).toBe(true)
   })
 
+  it('🥩 fixed header responds to target scroll state', async () => {
+    const wrapper = mount(ProLayout, {
+      attachTo: document.body,
+      props: { fixedHeader: true },
+    })
+    const container = wrapper.get('[data-testid="pro-layout-container"]').element as HTMLElement
+
+    container.scrollTop = 400
+    container.dispatchEvent(new Event('scroll'))
+    await nextTick()
+    expect(wrapper.find('.ant-pro-layout-header-fixed-header-scroll').exists()).toBe(true)
+
+    container.scrollTop = 0
+    container.dispatchEvent(new Event('scroll'))
+    await nextTick()
+    expect(wrapper.find('.ant-pro-layout-header-fixed-header-scroll').exists()).toBe(false)
+  })
+
   it('🥩 menuDataRender change date', async () => {
     const Demo = defineComponent({
       setup() {
@@ -816,6 +873,23 @@ describe('basicLayout', () => {
     })
 
     expect(wrapper.find('.ant-pro-layout-bg-list').exists()).toBe(false)
+  })
+
+  it('🥩 render bgLayoutImgList', () => {
+    const wrapper = mount(ProLayout, {
+      attachTo: document.body,
+      props: {
+        bgLayoutImgList: [
+          { src: 'https://example.com/one.png', width: '100px', left: 12 },
+          { src: 'https://example.com/two.png', height: '80px', right: 24 },
+        ],
+      },
+    })
+
+    const bgList = wrapper.get('[data-testid="pro-layout-bg-list"]')
+    expect(bgList.findAll('img')).toHaveLength(2)
+    expect((bgList.findAll('img')[0]!.element as HTMLImageElement).src).toContain('/one.png')
+    expect((bgList.findAll('img')[0]!.element as HTMLElement).style.left).toBe('12px')
   })
 
   it('🥩 contentStyle should change dom', () => {
@@ -992,6 +1066,66 @@ describe('basicLayout', () => {
     expect(wrapper.get('#route-title').text()).toBe('Provided')
   })
 
+  it('🥩 RouteContext provides full layout fields', () => {
+    const Child = defineComponent({
+      setup() {
+        const context = useRouteContext()
+        return () => (
+          <div id="route-context">
+            {JSON.stringify({
+              title: context.title,
+              contentWidth: context.contentWidth,
+              layout: context.layout,
+              hasSiderMenu: context.hasSiderMenu,
+              isMobile: context.isMobile,
+              siderWidth: context.siderWidth,
+              collapsed: context.collapsed,
+              fixedHeader: context.fixedHeader,
+              hasHeader: context.hasHeader,
+              hasFooter: context.hasFooter,
+              hasFooterToolbar: context.hasFooterToolbar,
+              hasPageContainer: context.hasPageContainer,
+              matchMenuKeys: context.matchMenuKeys,
+              currentMenu: context.currentMenu?.path,
+              pageTitleInfo: context.pageTitleInfo?.title,
+              menuDataLength: context.menuData?.length,
+            })}
+          </div>
+        )
+      },
+    })
+    const wrapper = mount(ProLayout, {
+      attachTo: document.body,
+      props: {
+        fixedHeader: true,
+        collapsed: true,
+        route: { children: [{ path: '/welcome', name: '欢迎' }] },
+        location: { pathname: '/welcome' },
+      },
+      slots: { default: () => <Child /> },
+    })
+
+    const context = JSON.parse(wrapper.get('#route-context').text())
+    expect(context).toMatchObject({
+      title: '欢迎',
+      contentWidth: 'Fluid',
+      layout: 'side',
+      hasSiderMenu: true,
+      isMobile: false,
+      siderWidth: 64,
+      collapsed: true,
+      fixedHeader: true,
+      hasHeader: true,
+      hasFooter: true,
+      hasFooterToolbar: false,
+      hasPageContainer: 0,
+      matchMenuKeys: ['/welcome'],
+      currentMenu: '/welcome',
+      pageTitleInfo: '欢迎',
+      menuDataLength: 1,
+    })
+  })
+
   it('🥩 siderMenu should restore openKeys when collapsed is false', async () => {
     const Demo = defineComponent({
       setup() {
@@ -1042,7 +1176,63 @@ describe('basicLayout', () => {
       slots: { default: () => <PageContainer title="name">content</PageContainer> },
     })
 
-    expect(wrapper.find('.ant-pro-page-container').exists()).toBe(true)
+    const slot = wrapper.get('[data-testid="pro-page-container-top-fixed-slot"]')
+    expect(slot.find('[data-testid="pro-page-header"]').exists()).toBe(true)
+    expect(slot.find('[data-testid="pro-grid-content"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('content')
+  })
+
+  it('🥩 SiderMenu/Header/TopNavHeader support prefix, stylish and className', () => {
+    const siderWrapper = mount(SiderMenu, {
+      attachTo: document.body,
+      props: {
+        prefixCls: 'custom-pro',
+        className: 'custom-sider',
+        stylish: () => ({ color: 'red' }),
+        menuData: [{ path: '/welcome', name: '欢迎' }],
+        matchMenuKeys: [],
+      },
+    })
+    expect(siderWrapper.find('.custom-pro-sider.custom-sider.custom-pro-sider-stylish').exists()).toBe(true)
+    expect(siderWrapper.find('nav.custom-pro-base-menu-vertical').exists()).toBe(true)
+
+    const headerWrapper = mount(DefaultHeader, {
+      attachTo: document.body,
+      props: {
+        prefixCls: 'custom-pro',
+        className: 'custom-header',
+        stylish: () => ({ color: 'red' }),
+        layout: 'side',
+        matchMenuKeys: [],
+      },
+    })
+    expect(headerWrapper.find('.custom-pro-layout-header.custom-header.custom-pro-layout-header-stylish').exists()).toBe(true)
+
+    const topWrapper = mount(TopNavHeader, {
+      attachTo: document.body,
+      props: {
+        prefixCls: 'custom-pro',
+        className: 'custom-top',
+        layout: 'top',
+        menuData: [{ path: '/welcome', name: '欢迎' }],
+        matchMenuKeys: [],
+      },
+    })
+    expect(topWrapper.find('.custom-pro-top-nav-header.custom-top').exists()).toBe(true)
+    expect(topWrapper.find('nav.custom-pro-base-menu-horizontal').exists()).toBe(true)
+  })
+
+  it('uses getPrefixCls("pro") from antd config', () => {
+    const wrapper = mount({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <ProLayout pure={false}>welcome</ProLayout>
+        </ConfigProvider>
+      ),
+    }, { attachTo: document.body })
+
+    expect(wrapper.find('.acme-pro-layout').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-basicLayout').exists()).toBe(true)
+    expect(wrapper.find('.ant-pro-layout').exists()).toBe(false)
   })
 })

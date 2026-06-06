@@ -1,7 +1,7 @@
-import { ProForm, ProFormText } from '@antdv/components'
-// @ts-nocheck
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
+import ProFormText from '../../form/components/Text'
+import ProForm from '../../form/layouts/ProForm'
 import { mountAttached, waitFor } from '../testUtils'
 
 describe('proForm transform (docs + regression tests)', () => {
@@ -38,7 +38,7 @@ describe('proForm transform (docs + regression tests)', () => {
     await wrapper.find('.ant-btn-primary').trigger('click')
 
     await waitFor(() => {
-      expect(transform).toHaveBeenCalledWith('qixian', ['user', 'name'])
+      expect(transform).toHaveBeenCalledWith('qixian', ['user', 'name'], expect.objectContaining({ user: { name: 'qixian' } }))
       expect(fn).toHaveBeenCalledWith({ joined: 'user.name:qixian' })
     })
   })
@@ -68,7 +68,7 @@ describe('proForm transform (docs + regression tests)', () => {
       expect(fn).toHaveBeenCalledTimes(2)
       expect(fn).toHaveBeenNthCalledWith(1, { name: 'antdv' })
       expect(fn).toHaveBeenNthCalledWith(2, { name: 'antdv' })
-      expect(transform).toHaveBeenCalledWith('antdv', ['name'])
+      expect(transform).toHaveBeenCalledWith('antdv', ['name'], expect.objectContaining({ name: 'antdv' }))
     })
   })
 })

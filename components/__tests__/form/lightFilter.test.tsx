@@ -1,6 +1,7 @@
 // eslint-disable-next-line ts/ban-ts-comment
 // @ts-nocheck
 import { LightFilter, LightFilterInput, ProFormText } from '@antdv/components'
+import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { mountAttached, waitFor } from '../testUtils'
@@ -90,5 +91,21 @@ describe('lightFilter', () => {
       expect(wrapper.text()).toContain('名称')
       expect(document.body.querySelector('[title="qixian"]')).toBeNull()
     })
+  })
+
+  it('uses getPrefixCls("pro-form") for light filter classes from antd config', () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <LightFilter>
+            <ProFormText label="名称" name="name" />
+          </LightFilter>
+        </ConfigProvider>
+      ),
+    })
+
+    expect(wrapper.find('.acme-pro-form-light-filter').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-core-field-label').exists()).toBe(true)
+    expect(wrapper.find('.ant-pro-form-light-filter').exists()).toBe(false)
   })
 })

@@ -1,7 +1,8 @@
-import { CheckCard, ProConfigProvider } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
+import { CheckCard } from '../../card'
+import { ProConfigProvider } from '../../provider'
 import { waitFor } from '../testUtils'
 
 function withProvider(node: any) {
@@ -85,6 +86,39 @@ describe('checkCard', () => {
     await nextTick()
 
     expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(0)
+  })
+
+  it('should be controlled by value in multiple mode', async () => {
+    const value = ref<string[] | undefined>(['Apple'])
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group
+            multiple
+            value={value.value}
+            onChange={onChange}
+            options={[
+              { title: '苹果', value: 'Apple' },
+              { title: '梨', value: 'Pear' },
+              { title: '橙子', value: 'Orange' },
+            ]}
+          />,
+        )
+      ),
+    })
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(1)
+    expect(wrapper.find('.ant-pro-checkcard-checked').text()).toContain('苹果')
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['Apple', 'Pear']))
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(1)
+
+    value.value = ['Apple', 'Pear']
+    await nextTick()
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(2)
   })
 
   it('should invoke onChange function when group click option in multiple mode', async () => {

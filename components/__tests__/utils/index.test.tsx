@@ -1,7 +1,7 @@
 import type { Dayjs } from 'dayjs'
 import { CodeFilled } from '@antdv-next/icons'
 import { mount } from '@vue/test-utils'
-import { Form, Input } from 'antdv-next'
+import { ConfigProvider, Form, Input } from 'antdv-next'
 import dayjs from 'dayjs'
 import {
   afterAll,
@@ -18,6 +18,7 @@ import {
   dateArrayFormatter,
   deleteValueByNamePath,
   DropdownFooter,
+  FieldLabel,
   getValueByNamePath,
   InlineErrorFormItem,
   isDeepEqualReact,
@@ -36,6 +37,12 @@ import {
   transformKeySubmitValue,
   useDebounceFn,
   useDebounceValue,
+  useDeepCompareEffect,
+  useDeepCompareMemo,
+  useFetchData,
+  useLatest,
+  useReactiveRef,
+  useRefFunction,
 } from '../../utils'
 import { mountAttached } from '../testUtils'
 
@@ -52,6 +59,25 @@ describe('utils', () => {
   it('setAlpha', () => {
     const color = setAlpha('#fff', 0.5)
     expect(color).toBe('rgba(255, 255, 255, 0.5)')
+  })
+
+  it('uses getPrefixCls for pro core utility class names from antd config', () => {
+    const wrapper = mount({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <div>
+            <FieldLabel label="Name" value="Antdv" />
+            <DropdownFooter onConfirm={() => {}} />
+            <LabelIconTip label="Name" tooltip="Tip" />
+          </div>
+        </ConfigProvider>
+      ),
+    })
+
+    expect(wrapper.find('.acme-pro-core-field-label').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-core-dropdown-footer').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-core-label-tip').exists()).toBe(true)
+    expect(wrapper.find('.ant-pro-core-field-label').exists()).toBe(false)
   })
 
   it('📅 useDebounceValue', async () => {
@@ -239,6 +265,173 @@ describe('utils', () => {
     }))
     await (wrapper.vm as any).fetchData.run().catch(catchFn)
     expect(catchFn).toHaveBeenCalledWith(error)
+  })
+
+  it('📅 useLatest exposes the latest current value', async () => {
+    const wrapper = mount(defineComponent({
+      setup() {
+        const count = ref(1)
+        const latest = useLatest(count)
+        return { count, latest }
+      },
+      render() {
+        return <span>{this.latest.current}</span>
+      },
+    }))
+
+    expect(wrapper.text()).toBe('1')
+    ;(wrapper.vm as any).count = 2
+    await nextTick()
+
+    expect((wrapper.vm as any).latest.current).toBe(2)
+    expect(wrapper.text()).toBe('2')
+  })
+
+  it('📅 useRefFunction keeps a stable function and calls latest closure', async () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    let stableFn: any
+    const wrapper = mount(defineComponent({
+      props: {
+        handler: {
+          type: Function,
+          required: true,
+        },
+      },
+      setup(props) {
+        const handler = useRefFunction((value: string) => props.handler(value))
+        stableFn = handler
+        return { handler }
+      },
+      render() {
+        return <button onClick={() => this.handler('next')}>run</button>
+      },
+    }), {
+      props: { handler: first },
+    })
+
+    await wrapper.find('button').trigger('click')
+    await wrapper.setProps({ handler: second })
+    expect((wrapper.vm as any).handler).toBe(stableFn)
+
+    await wrapper.find('button').trigger('click')
+    expect(first).toHaveBeenCalledWith('next')
+    expect(second).toHaveBeenCalledWith('next')
+  })
+
+  it('📅 useReactiveRef rerenders when current changes', async () => {
+    const wrapper = mount(defineComponent({
+      setup() {
+        const inputRef = useReactiveRef('first')
+        return { inputRef }
+      },
+      render() {
+        return <span>{this.inputRef.current}</span>
+      },
+    }))
+
+    expect(wrapper.text()).toBe('first')
+    ;(wrapper.vm as any).inputRef.current = 'second'
+    await nextTick()
+
+    expect(wrapper.text()).toBe('second')
+  })
+
+  it('📅 useDeepCompareMemo only recomputes when deps deeply change', async () => {
+    const factory = vi.fn((value: any) => ({ value: value.name }))
+    const wrapper = mount(defineComponent({
+      setup() {
+        const deps = ref({ name: 'qixian' })
+        const memo = useDeepCompareMemo(() => factory(deps.value), [deps])
+        return { deps, memo }
+      },
+      render() {
+        return <span>{this.memo.value}</span>
+      },
+    }))
+    const firstMemo = (wrapper.vm as any).memo
+
+    expect(wrapper.text()).toBe('qixian')
+    expect(factory).toHaveBeenCalledTimes(1)
+
+    ;(wrapper.vm as any).deps = { name: 'qixian' }
+    await nextTick()
+    expect((wrapper.vm as any).memo).toBe(firstMemo)
+    expect(factory).toHaveBeenCalledTimes(1)
+
+    ;(wrapper.vm as any).deps = { name: 'kiner' }
+    await nextTick()
+    expect(wrapper.text()).toBe('kiner')
+    expect(factory).toHaveBeenCalledTimes(2)
+  })
+
+  it('📅 useDeepCompareEffect ignores deeply equal dependency updates', async () => {
+    const effect = vi.fn()
+    const cleanup = vi.fn()
+    const wrapper = mount(defineComponent({
+      setup() {
+        const deps = ref({ name: 'qixian', ignoreMe: 1 })
+        useDeepCompareEffect(() => {
+          effect(deps.value.name)
+          return cleanup
+        }, [deps], ['ignoreMe'])
+        return { deps }
+      },
+      render() {
+        return <span>{this.deps.name}</span>
+      },
+    }))
+
+    expect(effect).toHaveBeenCalledTimes(1)
+    ;(wrapper.vm as any).deps = { name: 'qixian', ignoreMe: 2 }
+    await nextTick()
+    expect(effect).toHaveBeenCalledTimes(1)
+
+    ;(wrapper.vm as any).deps = { name: 'kiner', ignoreMe: 2 }
+    await nextTick()
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    expect(effect).toHaveBeenCalledTimes(2)
+  })
+
+  it('📅 useFetchData caches by proFieldKey and aborts stale requests', async () => {
+    async function settleFetchData() {
+      await Promise.resolve()
+      await Promise.resolve()
+      await nextTick()
+    }
+
+    const abortEvents: string[] = []
+    const request = vi.fn(async (params: any, signal: AbortSignal) => {
+      signal.addEventListener('abort', () => abortEvents.push(params.keyword))
+      await Promise.resolve()
+      return [{ label: params.keyword, value: params.keyword }]
+    })
+    const wrapper = mount(defineComponent({
+      setup() {
+        const params = ref({ keyword: 'first' })
+        const [data, loading] = useFetchData({
+          proFieldKey: 'shared-key',
+          params,
+          request,
+        })
+        return { params, data, loading }
+      },
+      render() {
+        return <span>{this.loading ? 'loading' : this.data?.[0]?.label}</span>
+      },
+    }))
+
+    await settleFetchData()
+    expect(request).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toBe('first')
+
+    ;(wrapper.vm as any).params = { keyword: 'second' }
+    ;(wrapper.vm as any).params = { keyword: 'third' }
+    await settleFetchData()
+
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(abortEvents).toContain('first')
+    expect(wrapper.text()).toBe('third')
   })
 
   it('📅 conversionSubmitValue nil', async () => {

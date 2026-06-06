@@ -36,6 +36,7 @@ export interface ProFormInstance<T = ProFormData> extends Partial<FormInstance> 
 
 export interface FormRefLike {
   readonly formInstance?: unknown
+  readonly nativeElement?: HTMLFormElement
   submit?: () => void
   reset?: () => void
   getFieldsValue?: () => FormData

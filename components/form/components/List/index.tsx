@@ -1,6 +1,7 @@
 import type { FunctionalComponent, VNodeChild } from 'vue'
 import type { FormListActionType, FormListRecord, ProFormListProps, ProFormListSlotProps } from './typing'
 import { computed, defineComponent, onMounted, watchEffect } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { getValueByNamePath, normalizeNamePath, setValueByNamePath } from '../../../utils'
 import { useFieldContext } from '../../FieldContext'
 import ProFormItem from '../FormItem'
@@ -68,6 +69,7 @@ const ProFormList = defineComponent({
   props: [...proFormListPropNames],
   setup(rawProps, { slots }) {
     const props = rawProps as unknown as ProFormListProps
+    const prefixCls = useProPrefixCls('pro-form-list')
     const fieldContext = useFieldContext()
     const parentListContext = useFormListContext()
 
@@ -172,7 +174,7 @@ const ProFormList = defineComponent({
       const list = getList()
       const fields = list.map((record, index) => ({ name: index, key: index, record }))
       return (
-        <div class="ant-pro-form-list">
+        <div class={prefixCls.value}>
           <ProFormItem
             name={props.name}
             label={props.label}

@@ -4,6 +4,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { GroupProps } from './types'
 import { computed, defineComponent, ref } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldCascaderEdit from './FieldCascaderEdit'
@@ -90,6 +91,7 @@ const FieldCascader = defineComponent({
   props: fieldCascaderPropNames,
   setup(rawProps, { expose }) {
     const props = withFieldCascaderDefaults(rawProps as unknown as FieldCascaderComponentProps)
+    const prefixCls = useProPrefixCls('pro-field-cascader')
     const cascaderRef = ref<any>(null)
     const open = ref(false)
     const intl: IntlType = {
@@ -137,7 +139,7 @@ const FieldCascader = defineComponent({
           fieldProps: props.fieldProps,
           options: options.value as NonNullable<CascaderProps['options']>,
           loading: loading.value,
-          layoutClassName: 'ant-pro-field-cascader',
+          layoutClassName: prefixCls.value,
           open: open.value,
           setOpen,
           cascaderRef,

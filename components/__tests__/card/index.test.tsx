@@ -1,7 +1,9 @@
-import { ProCard, ProConfigProvider } from '@antdv/components'
 import { mount } from '@vue/test-utils'
+import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
 import { h, nextTick, ref } from 'vue'
+import { ProCard } from '../../card'
+import { ProConfigProvider } from '../../provider'
 import { waitFor } from '../testUtils'
 
 function withProvider(node: any) {
@@ -225,5 +227,73 @@ describe('card', () => {
 
     expect(wrapper.find('.ant-pro-card-loading-content').exists()).toBe(true)
     expect(wrapper.findAll('.ant-pro-card-loading-block').length).toBeGreaterThan(0)
+  })
+
+  it('uses getPrefixCls("pro-card") from antd config', () => {
+    const wrapper = mount({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <ProConfigProvider>
+            <ProCard title="prefix">内容</ProCard>
+          </ProConfigProvider>
+        </ConfigProvider>
+      ),
+    })
+
+    expect(wrapper.find('.acme-pro-card').exists()).toBe(true)
+    expect(wrapper.find('.ant-pro-card').exists()).toBe(false)
+  })
+
+  it('supports semantic classNames, styles, and actions styles', () => {
+    const wrapper = mount({
+      render: () => withProvider(
+        <ProCard
+          classNames={{
+            root: 'root-class',
+            body: 'body-class',
+            actions: 'actions-class',
+          }}
+          styles={{
+            body: { padding: '0px' },
+            actions: { marginTop: '4px' },
+          }}
+          actions={[<span class="action-one">Action</span>]}
+        >
+          内容
+        </ProCard>,
+      ),
+    })
+
+    expect(wrapper.find('.ant-pro-card').classes()).toContain('root-class')
+    expect(wrapper.find('.ant-pro-card-body').classes()).toContain('body-class')
+    expect(wrapper.find('.ant-pro-card-body').attributes('style')).toContain('padding: 0px')
+    expect(wrapper.find('.ant-pro-card-actions').classes()).toContain('actions-class')
+    expect(wrapper.find('.ant-pro-card-actions').attributes('style')).toContain('margin-top: 4px')
+    expect(wrapper.find('.action-one').text()).toBe('Action')
+  })
+
+  it('does not apply inactive responsive colSpan classes', () => {
+    const wrapper = mount({
+      render: () => withProvider(
+        <ProCard wrap>
+          <ProCard colSpan={{ xxl: 4, xl: 8 }}>
+            子卡片
+          </ProCard>
+        </ProCard>,
+      ),
+    })
+
+    const col = wrapper.find('.ant-pro-card-col')
+    expect(col.exists()).toBe(true)
+    expect(col.classes()).not.toContain('ant-pro-card-col-4')
+    expect(col.classes()).not.toContain('ant-pro-card-col-8')
+  })
+
+  it('adds default padding to loading placeholder when body padding is zero', () => {
+    const wrapper = mount({
+      render: () => withProvider(<ProCard loading styles={{ body: { padding: 0 } }} />),
+    })
+
+    expect(wrapper.find('.ant-pro-card-loading-content').attributes('style')).toContain('padding')
   })
 })

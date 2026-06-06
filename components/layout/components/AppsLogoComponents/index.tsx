@@ -1,5 +1,6 @@
 import type { AppItemProps, AppListProps } from '../SiderMenu/types'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { AppsLogo } from './AppsLogo'
 import { DefaultContent } from './DefaultContent'
 import { SimpleContent } from './SimpleContent'
@@ -23,7 +24,9 @@ export const AppsLogoComponents = defineComponent<{
   setup(props) {
     const open = ref(false)
     const popoverRef = shallowRef<HTMLElement>()
-    const baseClassName = computed(() => `${props.prefixCls || 'ant-pro'}-layout-apps`)
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
+    const baseClassName = computed(() => `${prefixCls.value}-layout-apps`)
+    const hashId = ''
     const handleItemClick = (app: AppItemProps) => props.onItemClick?.(app, popoverRef)
     const defaultDomContent = computed(() => {
       const isSimple = props.appList?.some(app => !app?.desc)
@@ -45,7 +48,7 @@ export const AppsLogoComponents = defineComponent<{
               event.stopPropagation()
               open.value = !open.value
             }}
-            class={[`${baseClassName.value}-icon`, open.value && `${baseClassName.value}-icon-active`]}
+            class={[`${baseClassName.value}-icon`, hashId, open.value && `${baseClassName.value}-icon-active`]}
             data-testid="pro-layout-apps-logo-icon"
           >
             <AppsLogo />

@@ -1,6 +1,8 @@
 import type { HeaderViewProps } from '../SiderMenu/types'
 import { MenuOutlined } from '@antdv-next/icons'
-import { defineComponent } from 'vue'
+import { clsx } from '@v-c/util'
+import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { defaultRenderLogo } from '../AppsLogoComponents'
 import { ActionsContent } from './ActionsContent'
 
@@ -29,19 +31,22 @@ export const GlobalHeader = defineComponent<HeaderViewProps>({
     'avatarProps',
   ] as any,
   setup(props, { slots }) {
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
+    const baseClassName = computed(() => `${prefixCls.value}-global-header`)
+    const hashId = ''
+
     return () => {
-      const baseClassName = `${props.prefixCls || 'ant-pro'}-global-header`
       const logoDom = (
-        <span class={[`${baseClassName}-logo`, props.isMobile && `${baseClassName}-logo-mobile`]} key="logo" data-testid="pro-layout-global-header-logo">
+        <span class={clsx(`${baseClassName.value}-logo`, hashId, props.isMobile && `${baseClassName.value}-logo-mobile`)} key="logo" data-testid="pro-layout-global-header-logo">
           <span>{defaultRenderLogo(props.logo)}</span>
         </span>
       )
       return (
-        <div class={[props.className, baseClassName]} style={props.style} data-testid="pro-layout-global-header">
+        <div class={clsx(props.className, baseClassName.value, hashId)} style={props.style} data-testid="pro-layout-global-header">
           {props.isMobile
             ? (
                 <span
-                  class={`${baseClassName}-collapsed-button`}
+                  class={clsx(`${baseClassName.value}-collapsed-button`, hashId)}
                   data-testid="pro-layout-global-header-collapsed-button"
                   onClick={() => props.onCollapse?.(!props.collapsed)}
                 >

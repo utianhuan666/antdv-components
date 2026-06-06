@@ -1,5 +1,7 @@
 import type { BreadcrumbProps, WatermarkProps } from 'antdv-next'
 import type { InjectionKey, PropType, VNodeChild } from 'vue'
+import type { ProSettings } from '../../defaultSettings'
+import type { MenuDataItem } from '../../typing'
 import { defineComponent, inject, provide } from 'vue'
 
 export type ContentWidth = 'Fluid' | 'Fixed'
@@ -14,6 +16,20 @@ export interface RouteContextType {
   collapsed?: boolean
   fixedHeader?: boolean
   hasHeader?: boolean
+  hasFooter?: boolean
+  hasFooterToolbar?: boolean
+  hasPageContainer?: number
+  isChildrenLayout?: boolean
+  pageTitleInfo?: {
+    title: string
+    id: string
+    pageName: string
+  }
+  matchMenus?: MenuDataItem[]
+  matchMenuKeys?: string[]
+  currentMenu?: ProSettings & MenuDataItem
+  menuData?: MenuDataItem[]
+  prefixCls?: string
   breadcrumb?: BreadcrumbProps
   breadcrumbProps?: BreadcrumbProps
   waterMarkProps?: WatermarkProps
@@ -76,6 +92,36 @@ export const RouteContextProvider = defineComponent({
       },
       get hasHeader() {
         return props.value.hasHeader ?? defaultRouteContext.hasHeader
+      },
+      get hasFooter() {
+        return props.value.hasFooter
+      },
+      get hasFooterToolbar() {
+        return props.value.hasFooterToolbar
+      },
+      get hasPageContainer() {
+        return props.value.hasPageContainer
+      },
+      get isChildrenLayout() {
+        return props.value.isChildrenLayout
+      },
+      get pageTitleInfo() {
+        return props.value.pageTitleInfo
+      },
+      get matchMenus() {
+        return props.value.matchMenus
+      },
+      get matchMenuKeys() {
+        return props.value.matchMenuKeys
+      },
+      get currentMenu() {
+        return props.value.currentMenu
+      },
+      get menuData() {
+        return props.value.menuData
+      },
+      get prefixCls() {
+        return props.value.prefixCls
       },
       get breadcrumb() {
         return props.value.breadcrumb

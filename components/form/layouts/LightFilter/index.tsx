@@ -5,6 +5,7 @@ import type { FieldLabelVariant } from './FieldLabel'
 import type { FooterRender } from './FilterDropdown'
 import { FilterOutlined } from '@antdv-next/icons'
 import { cloneVNode, Comment, computed, defineComponent, Fragment, h, isVNode, ref, shallowRef, Text } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { BaseForm } from '../../BaseForm'
 import ProFormCascader from '../../components/Cascader'
 import { ProFormCheckboxGroup } from '../../components/Checkbox'
@@ -126,6 +127,7 @@ const LightFilterImpl = defineComponent({
   props: [...lightFilterPropNames],
   setup(rawProps, { attrs, slots, expose }) {
     const props = rawProps as Readonly<LightFilterProps>
+    const prefixCls = useProPrefixCls('pro-form')
     const baseRef = shallowRef<FormRefLike>()
     const popoverOpen = ref(false)
     /** 折叠区临时编辑值，确认后写回主 form */
@@ -171,7 +173,7 @@ const LightFilterImpl = defineComponent({
       if (props.collapseLabel)
         return props.collapseLabel
       if (resolveBoolean(props.collapse))
-        return <FilterOutlined class="ant-pro-form-light-filter-collapse-icon" />
+        return <FilterOutlined class={`${prefixCls.value}-light-filter-collapse-icon`} />
       return (
         <FieldLabel
           variant={props.variant ?? 'borderless'}
@@ -246,20 +248,20 @@ const LightFilterImpl = defineComponent({
       return (
         <div
           class={[
-            'ant-pro-form-light-filter',
-            `ant-pro-form-light-filter-${props.size ?? 'middle'}`,
-            hasEffectiveValue ? 'ant-pro-form-light-filter-effective' : '',
+            `${prefixCls.value}-light-filter`,
+            `${prefixCls.value}-light-filter-${props.size ?? 'middle'}`,
+            hasEffectiveValue ? `${prefixCls.value}-light-filter-effective` : '',
           ].filter(Boolean).join(' ')}
         >
-          <div class="ant-pro-form-light-filter-container">
+          <div class={`${prefixCls.value}-light-filter-container`}>
             {outsideItems.map((child, index) => (
-              <div class="ant-pro-form-light-filter-item" key={child.key ?? index}>
+              <div class={`${prefixCls.value}-light-filter-item`} key={child.key ?? index}>
                 {renderOutsideChild(child)}
               </div>
             ))}
             {collapseItems.length > 0
               ? (
-                  <div class="ant-pro-form-light-filter-item" key="more">
+                  <div class={`${prefixCls.value}-light-filter-item`} key="more">
                     <FilterDropdown
                       open={popoverOpen.value}
                       onUpdate:open={(open: boolean) => (popoverOpen.value = open)}
@@ -273,7 +275,7 @@ const LightFilterImpl = defineComponent({
                       }}
                     >
                       {collapseItems.map(child => (
-                        <div class="ant-pro-form-light-filter-line" key={child.key ?? getVNodeProps(child).name}>
+                        <div class={`${prefixCls.value}-light-filter-line`} key={child.key ?? getVNodeProps(child).name}>
                           {renderCollapseChild(child)}
                         </div>
                       ))}

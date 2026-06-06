@@ -2,9 +2,10 @@ import type { DescriptionsItemType } from 'antdv-next'
 import type { ProDescriptionsActionType, ProDescriptionsProps } from './typing'
 import type { ProDescriptionsRequestResult } from './useFetchData'
 import { Descriptions, Space } from 'antdv-next'
-import { computed, defineComponent, reactive, watchEffect } from 'vue'
+import { computed, defineComponent, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import { ProForm } from '../form'
 import { ProConfigProvider } from '../provider'
+import { useProPrefixCls } from '../provider/useProPrefixCls'
 import ProSkeleton from '../skeleton'
 import { ErrorBoundary, getValueByNamePath, LabelIconTip, stableStringify, useEditableMap } from '../utils'
 import { schemaToDescriptionsItem } from './schemaToDescriptionsItem'
@@ -46,6 +47,9 @@ const ProDescriptionsImpl = defineComponent({
   props: proDescriptionsPropNames,
   setup(rawProps, { attrs }) {
     const props = rawProps as ProDescriptionsProps<Record<string, any>, any>
+    const prefixCls = useProPrefixCls('pro-descriptions')
+    const formRef = shallowRef<any>()
+    const formKey = ref(0)
 
     const action = useFetchData<
       Record<string, any>,
@@ -73,6 +77,14 @@ const ProDescriptionsImpl = defineComponent({
     )
 
     const editableDataSource = computed(() => (action.dataSource || {}) as Record<string, any>)
+    const editableInitialValues = shallowRef<Record<string, any>>({})
+    watch(
+      () => action.dataSource,
+      (value) => {
+        editableInitialValues.value = clonePlain((value || {}) as Record<string, any>)
+      },
+      { immediate: true },
+    )
     const columnsByKey = computed(() => new Map(
       (props.columns || []).map((column, index) => [JSON.stringify([(column.dataIndex as any) ?? index].flat(1)), column]),
     ))
@@ -81,8 +93,42 @@ const ProDescriptionsImpl = defineComponent({
       return columnsByKey.value.get(JSON.stringify([recordKey].flat(1)))
     }
 
+    const editableForm = computed(() => {
+      if (props.editable?.form)
+        return props.editable.form
+
+      const getInnerForm = () => formRef.value?.formInstance
+
+      return {
+        get formInstance() {
+          return getInnerForm()
+        },
+        getFieldValue: (name: any) => formRef.value?.getFieldValue?.(name),
+        getFieldsValue: (...args: any[]) => formRef.value?.getFieldsValue?.(...args),
+        setFieldsValue: (...args: any[]) => formRef.value?.setFieldsValue?.(...args),
+        resetFields: (...args: any[]) => {
+          const resetValues = clonePlain(editableInitialValues.value)
+          action.setDataSource(resetValues)
+          formRef.value?.setFieldsValue?.(resetValues)
+          formKey.value += 1
+          if (formRef.value?.reset)
+            return formRef.value.reset(...args)
+          const innerForm = getInnerForm()
+          if (innerForm?.resetFields)
+            return innerForm.resetFields(...args)
+          return undefined
+        },
+        validateFields: (...args: any[]) => {
+          const innerForm = getInnerForm()
+          if (innerForm?.validateFields)
+            return innerForm.validateFields(...args)
+          return formRef.value?.validateFieldsReturnFormatValue?.(args[0])
+        },
+      }
+    })
+
     async function validateEditable(recordKey: any) {
-      const form = props.editable?.form
+      const form = editableForm.value
       if (form?.validateFields) {
         await form.validateFields([recordKey].flat(1))
         return
@@ -166,6 +212,7 @@ const ProDescriptionsImpl = defineComponent({
         coreAction.value,
         props.editable ? editableUtils : undefined,
         props.emptyText,
+        editableForm.value,
       )
     })
 
@@ -180,7 +227,7 @@ const ProDescriptionsImpl = defineComponent({
         : undefined
       const descriptions = (
         <Descriptions
-          class="ant-pro-descriptions"
+          class={prefixCls.value}
           {...attrs}
           styles={{
             content: {
@@ -203,7 +250,9 @@ const ProDescriptionsImpl = defineComponent({
       const body = props.editable
         ? (
             <ProForm
-              key="form"
+              ref={formRef}
+              key={`form-${formKey.value}`}
+              form={props.editable?.form}
               model={action.dataSource || reactive({})}
               component={false}
               submitter={false}

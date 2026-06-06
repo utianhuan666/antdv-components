@@ -2,6 +2,7 @@ import type { FunctionalComponent } from 'vue'
 import type { ProFormGroupProps } from '../../../typing'
 import { Col, Row, Space } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
+import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
 import { useGridHelpers } from '../../../helpers'
 
 const groupPropNames = [
@@ -32,6 +33,7 @@ const Group = defineComponent({
   props: [...groupPropNames],
   setup(rawProps, { slots }) {
     const props = rawProps as Readonly<ProFormGroupProps>
+    const prefixCls = useProPrefixCls('pro-form-group')
     const { grid, rowProps } = useGridHelpers(props.colProps)
     const collapsed = ref(resolveBoolean(props.defaultCollapsed))
 
@@ -68,7 +70,7 @@ const Group = defineComponent({
           )
         : (
             <Space
-              class="ant-pro-form-group-container"
+              class={`${prefixCls.value}-container`}
               align="start"
               size={32}
               style={bodyStyle}
@@ -97,7 +99,7 @@ const Group = defineComponent({
         : null
 
       return (
-        <div class="ant-pro-form-group" style={{ boxSizing: 'border-box', marginBottom: 16, ...rootStyle }}>
+        <div class={prefixCls.value} style={{ boxSizing: 'border-box', marginBottom: 16, ...rootStyle }}>
           {titleNode}
           {!collapsed.value ? body : null}
         </div>

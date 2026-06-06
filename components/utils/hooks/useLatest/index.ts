@@ -1,10 +1,18 @@
-import type { ShallowRef } from 'vue'
-import { shallowRef, watchEffect } from 'vue'
+import type { Ref } from 'vue'
+import { isRef, shallowRef, watchEffect } from 'vue'
 
-export function useLatest<T>(value: T): ShallowRef<T> {
-  const ref = shallowRef(value) as ShallowRef<T>
+function readLatestValue(value: unknown): unknown {
+  return isRef(value) ? value.value : value
+}
+
+export function useLatest<T>(value: T): { readonly current: T extends Ref<infer V> ? V : T } {
+  const latest = shallowRef<any>(readLatestValue(value))
   watchEffect(() => {
-    ref.value = value
+    latest.value = readLatestValue(value)
   })
-  return ref
+  return {
+    get current() {
+      return latest.value
+    },
+  }
 }

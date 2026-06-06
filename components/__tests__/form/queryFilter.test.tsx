@@ -1,5 +1,6 @@
 import { ProFormText, QueryFilter } from '@antdv/components'
 // @ts-nocheck
+import { ConfigProvider } from 'antdv-next'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mountAttached, waitFor } from '../testUtils'
@@ -142,5 +143,21 @@ describe('queryFilter', () => {
     await nextTick()
 
     expect(wrapper.find('form.ant-pro-query-filter').exists()).toBe(true)
+  })
+
+  it('uses getPrefixCls("pro-query-filter") from antd config', () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <QueryFilter>
+            <ProFormText label="a" name="a" />
+          </QueryFilter>
+        </ConfigProvider>
+      ),
+    })
+
+    expect(wrapper.find('form.acme-pro-query-filter').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-query-filter-container').exists()).toBe(true)
+    expect(wrapper.find('form.ant-pro-query-filter').exists()).toBe(false)
   })
 })

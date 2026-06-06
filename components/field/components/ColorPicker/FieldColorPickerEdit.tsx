@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'vue'
 import type { ProFieldFC } from '../../types'
+import { clsx } from '@v-c/util'
 import { ColorPicker } from 'antdv-next'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 const DEFAULT_PRESETS = {
   label: 'Recommended',
@@ -32,13 +34,15 @@ type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
 
 export function FieldColorPickerEdit(props: Props) {
   const { text, mode, formItemRender, fieldProps } = props
+  const prefixCls = useProPrefixCls('pro-field-color-picker')
   const style = { display: 'table-cell', ...(fieldProps?.style as CSSProperties) }
   const dom = (
     <ColorPicker
       presets={[DEFAULT_PRESETS]}
       {...fieldProps}
       style={style}
-      class={`ant-pro-field-color-picker${fieldProps?.class ? ` ${fieldProps.class}` : ''}`}
+      class={[prefixCls.value, fieldProps?.class]}
+      rootClass={clsx(prefixCls.value, fieldProps?.rootClass)}
     />
   )
 

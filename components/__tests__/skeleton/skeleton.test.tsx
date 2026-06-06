@@ -1,3 +1,5 @@
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import {
   DescriptionsPageSkeleton,
   DescriptionsSkeleton,
@@ -10,9 +12,10 @@ import {
   ResultPageSkeleton,
   TableItemSkeleton,
   TableSkeleton,
-} from '@antdv/components'
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+} from '../../skeleton'
+import DescriptionsItemSkeleton from '../../skeleton/components/Descriptions/DescriptionsItemSkeleton.vue'
+import DirectTableItemSkeleton from '../../skeleton/components/Descriptions/TableItemSkeleton.vue'
+import StatisticSkeleton from '../../skeleton/components/List/StatisticSkeleton.vue'
 
 function skeletonCount(wrapper: ReturnType<typeof mount>) {
   return wrapper.findAll('.ant-skeleton').length
@@ -20,6 +23,10 @@ function skeletonCount(wrapper: ReturnType<typeof mount>) {
 
 function skeletonButtonCount(wrapper: ReturnType<typeof mount>) {
   return wrapper.findAll('.ant-skeleton-button').length
+}
+
+function lineSkeletonCount(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findAll('.ant-skeleton-title').length
 }
 
 describe('skeleton', () => {
@@ -216,5 +223,23 @@ describe('skeleton', () => {
 
     for (const wrapper of cases)
       expect(skeletonCount(wrapper) + skeletonButtonCount(wrapper)).toBeGreaterThan(0)
+  })
+
+  it('🥩 list statistic skeleton uses default md breakpoint columns', () => {
+    const wrapper = mount(StatisticSkeleton, { props: { active: true } })
+
+    expect(skeletonButtonCount(wrapper)).toBe(4)
+  })
+
+  it('🥩 descriptions item skeleton uses default md breakpoint columns', () => {
+    const wrapper = mount(DescriptionsItemSkeleton, { props: { active: true } })
+
+    expect(lineSkeletonCount(wrapper)).toBe(9)
+  })
+
+  it('🥩 descriptions table item skeleton uses default md breakpoint columns plus value column', () => {
+    const wrapper = mount(DirectTableItemSkeleton, { props: { active: true } })
+
+    expect(lineSkeletonCount(wrapper)).toBe(4)
   })
 })

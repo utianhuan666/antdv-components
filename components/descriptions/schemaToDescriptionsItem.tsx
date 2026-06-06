@@ -15,6 +15,7 @@ export function schemaToDescriptionsItem(
   action: ProCoreActionType<any>,
   editableUtils?: UseEditableMapUtilType,
   emptyText?: VNodeChild,
+  form?: any,
 ) {
   const options: VNodeChild[] = []
   const children = items
@@ -72,6 +73,7 @@ export function schemaToDescriptionsItem(
           emptyText={emptyText}
           action={action}
           editableUtils={editableUtils}
+          form={form}
         />
       )
 

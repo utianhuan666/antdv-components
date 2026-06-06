@@ -2,6 +2,7 @@ import type { CSSProperties, VNodeChild } from 'vue'
 import { clsx } from '@v-c/util'
 import { Statistic as AntStatistic } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { useStyle } from './style'
 
 export interface StatisticProps {
@@ -45,7 +46,8 @@ const Statistic = defineComponent({
   ],
   setup(rawProps, { attrs, slots }) {
     const props = rawProps as StatisticProps
-    const { wrapSSR, hashId } = useStyle('ant-pro-statistic')
+    const prefixCls = useProPrefixCls('pro-card-statistic')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
       const layout = props.layout || 'horizontal'
@@ -62,11 +64,11 @@ const Statistic = defineComponent({
       return wrapSSR(
         <div
           class={clsx(
-            'ant-pro-statistic',
+            prefixCls.value,
             hashId,
-            `ant-pro-statistic-${layout}`,
-            props.status && `ant-pro-statistic-status-${props.status}`,
-            props.trend && `ant-pro-statistic-trend-${props.trend}`,
+            `${prefixCls.value}-${layout}`,
+            props.status && `${prefixCls.value}-status-${props.status}`,
+            props.trend && `${prefixCls.value}-trend-${props.trend}`,
             props.class,
             props.className,
           )}
@@ -79,7 +81,7 @@ const Statistic = defineComponent({
             v-slots={statisticSlots}
           />
           {props.description || slots.description
-            ? <div class="ant-pro-statistic-description">{slots.description?.() ?? props.description}</div>
+            ? <div class={`${prefixCls.value}-description`}>{slots.description?.() ?? props.description}</div>
             : null}
         </div>,
       )

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { omit } from '@v-c/util'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 type FieldTextAreaReadonlyProps = NonNullable<ProFieldFC<{
   text: string | number
@@ -8,11 +9,12 @@ type FieldTextAreaReadonlyProps = NonNullable<ProFieldFC<{
 
 export function FieldTextAreaReadonly(props: FieldTextAreaReadonlyProps) {
   const { text, fieldProps, emptyText = '-' } = props
+  const prefixCls = useProPrefixCls('pro-field-readonly')
   const restFieldProps = omit(fieldProps || {}, ['autoSize', 'classNames', 'styles'])
   return (
     <span
       {...restFieldProps}
-      class={['ant-pro-field-readonly', 'ant-pro-field-readonly-textarea', restFieldProps.class]}
+      class={[prefixCls.value, `${prefixCls.value}-textarea`, restFieldProps.class]}
       style={{
         display: 'inline-block',
         lineHeight: '1.5715',

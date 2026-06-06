@@ -44,6 +44,7 @@ import {
 import { MyFormItem } from './form-item.tsx'
 import Form from './form.vue'
 import {
+  DrawerForm,
   FieldLabel,
   FilterDropdown,
   LightFilter,
@@ -75,6 +76,7 @@ import {
   LightWrapper,
   LoginForm,
   LoginFormPage,
+  ModalForm,
   QueryFilter,
 } from './layouts'
 import ProForm from './layouts/ProForm'
@@ -156,8 +158,10 @@ export const ProFormModule = {
       LightFilterSwitch,
       FieldLabel,
       FilterDropdown,
+      DrawerForm,
       LoginForm,
       LoginFormPage,
+      ModalForm,
     ] as any[]
     list.forEach((c) => {
       if (c?.name) {
@@ -170,6 +174,7 @@ export const ProFormModule = {
 export {
   BaseForm,
   BetaSchemaForm,
+  DrawerForm,
   FieldLabel,
   FilterDropdown,
   Form,
@@ -202,6 +207,7 @@ export {
   LightWrapper,
   LoginForm,
   LoginFormPage,
+  ModalForm,
   MyFormItem,
   ProForm,
   ProFormCaptcha,

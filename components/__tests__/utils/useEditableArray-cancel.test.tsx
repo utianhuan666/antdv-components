@@ -711,8 +711,8 @@ describe('useEditableArray - Cancel Operation', () => {
       expect(keysText.split(',').sort().join(',')).toBe('1,2')
     })
 
-    const cancel1 = wrapper.get('[data-testid="cancel-action-1"]').get('button')
-    const cancel2 = wrapper.get('[data-testid="cancel-action-2"]').get('button')
+    const cancel1 = wrapper.get('[data-testid="cancel-action-1"]').get('a')
+    const cancel2 = wrapper.get('[data-testid="cancel-action-2"]').get('a')
 
     expect(cancel1.text()).toBe('取消')
     expect(cancel2.text()).toBe('取消')

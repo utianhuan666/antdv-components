@@ -37,6 +37,7 @@ export const FieldRender = defineComponent({
     'label',
     'tooltip',
     'editable',
+    'form',
   ],
   setup(rawProps) {
     const props = rawProps as Omit<ProDescriptionsColumn<any>, 'valueType'> & {
@@ -47,6 +48,7 @@ export const FieldRender = defineComponent({
       index: number
       editableUtils?: UseEditableMapUtilType
       emptyText?: any
+      form?: any
     }
 
     function getRecordKey() {
@@ -142,11 +144,13 @@ export const FieldRender = defineComponent({
                   {
                     isEditable: true,
                     recordKey,
-                    record: getValueByNamePath(props.entity, props.dataIndex as any),
+                    record: props.form?.getFieldValue
+                      ? props.form.getFieldValue([props.dataIndex as any].flat(1))
+                      : getValueByNamePath(props.entity, props.dataIndex as any),
                     defaultRender,
                     type: 'descriptions',
                   },
-                  undefined as any,
+                  props.form,
                 )
               : defaultRender()}
           </AnyInlineErrorFormItem>

@@ -1,7 +1,7 @@
-import useForceRender from '../useForceRender'
-import { useRefCallback } from '../useRefCallback'
+import { reactive } from 'vue'
 
 export function useReactiveRef<T>(initialValue?: T | null) {
-  const forceRender = useForceRender()
-  return useRefCallback(forceRender as any, initialValue)
+  return reactive({
+    current: initialValue,
+  }) as { current: T | null | undefined }
 }

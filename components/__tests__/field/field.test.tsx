@@ -6,9 +6,12 @@ import {
   ProFieldBadgeColor,
 } from '@antdv/components'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ConfigProvider } from 'antdv-next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import { useFieldFetchData } from '../../field/components/Select'
+import SearchSelect from '../../field/components/Select/SearchSelect'
+import ProFieldLightWrapper from '../../field/internal/ProFieldLightWrapper'
 import { mountAttached, waitFor } from '../testUtils'
 import { TreeSelectDemo } from './fixtures/treeSelectDemo'
 
@@ -41,6 +44,7 @@ describe('field', () => {
 
   const CompatProField = ProField as any
   const CompatFieldSelect = FieldSelect as any
+  const CompatSearchSelect = SearchSelect as any
 
   it('🐴 base use', () => {
     const wrapper = mount({
@@ -49,6 +53,58 @@ describe('field', () => {
 
     expect(wrapper.find('.ant-input-number').exists()).toBe(true)
     expect(wrapper.find('.ant-input-number-input').exists()).toBe(true)
+  })
+
+  it('uses getPrefixCls for field class names from antd config', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <div>
+            <ProField text={1} valueType="index" mode="read" />
+            <ProField text={1} valueType="indexBorder" mode="read" />
+            <ProField text="#1677ff" valueType="color" mode="read" />
+            <ProField text="line one" valueType="textarea" mode="read" />
+            <ProField text={[<a>Action</a>]} valueType="option" mode="read" />
+            <ProField
+              text="open"
+              valueType="select"
+              mode="edit"
+              light
+              valueEnum={{ open: 'Open' }}
+            />
+          </div>
+        </ConfigProvider>
+      ),
+    })
+
+    await nextTick()
+
+    expect(wrapper.find('.acme-pro-field-index-column').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-field-index-column-border').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-field-color-picker').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-field-readonly-textarea').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-field-option').exists()).toBe(true)
+    expect(wrapper.find('.acme-pro-field-select-light-select').exists()).toBe(true)
+    expect(wrapper.find('.ant-pro-field-index-column').exists()).toBe(false)
+  })
+
+  it('uses React-compatible pro-filed-search-select prefix from antd config', async () => {
+    mountAttached({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <CompatSearchSelect
+            open
+            value="open"
+            options={[{ label: 'Open', value: 'open' }]}
+          />
+        </ConfigProvider>
+      ),
+    })
+
+    await nextTick()
+
+    expect(document.body.querySelector('.acme-pro-filed-search-select-option')).not.toBeNull()
+    expect(document.body.querySelector('.ant-pro-filed-search-select-option')).toBeNull()
   })
 
   it('🐴 percent=0', () => {
@@ -915,6 +971,105 @@ describe('field', () => {
     })
 
     expect(wrapper.text()).toBe('2')
+  })
+
+  it('🐴 valueType formItemRender clone vnode with merged fieldProps', async () => {
+    const fieldOnChange = vi.fn()
+    const propOnChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          value="merged"
+          mode="edit"
+          valueType="text"
+          onChange={propOnChange}
+          fieldProps={{
+            'data-field': 'field',
+            'onChange': fieldOnChange,
+          }}
+          formItemRender={() => <input id="clone-target" />}
+        />
+      ),
+    })
+
+    const input = wrapper.find<HTMLInputElement>('#clone-target')
+    expect(input.attributes('data-field')).toBe('field')
+    expect(input.element.value).toBe('merged')
+
+    await input.trigger('change')
+    expect(fieldOnChange).toHaveBeenCalledTimes(1)
+    expect(propOnChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('🐴 valueType formItemRender returned vnode props override merged fieldProps', () => {
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          value="merged"
+          mode="edit"
+          valueType="text"
+          fieldProps={{
+            'data-field': 'field',
+          }}
+          formItemRender={() => <input id="clone-own" data-field="own" value="own" />}
+        />
+      ),
+    })
+
+    const input = wrapper.find<HTMLInputElement>('#clone-own')
+    expect(input.attributes('data-field')).toBe('own')
+    expect(input.element.value).toBe('own')
+  })
+
+  it('🐴 light wrapper mousedown on clear area does not trigger label', async () => {
+    const Probe = defineComponent({
+      props: ['lightLabel', 'labelTrigger'],
+      setup(props) {
+        return () => (
+          <div>
+            <span
+              class="probe-label"
+              ref={(el: any) => {
+                if (props.lightLabel)
+                  props.lightLabel.labelRef.value = el
+              }}
+            >
+              label
+            </span>
+            <span
+              class="probe-clear"
+              ref={(el: any) => {
+                if (props.lightLabel)
+                  props.lightLabel.clearRef.value = el
+              }}
+            >
+              clear
+            </span>
+            <span class="probe-state">{String(props.labelTrigger)}</span>
+          </div>
+        )
+      },
+    })
+
+    const wrapper = mount({
+      render: () => (
+        <ProFieldLightWrapper isLight>
+          <Probe />
+        </ProFieldLightWrapper>
+      ),
+    })
+
+    await wrapper.find('.probe-label').trigger('mousedown')
+    await nextTick()
+    expect(wrapper.find('.probe-state').text()).toBe('true')
+
+    await wrapper.find('.probe-label').trigger('mouseup')
+    await nextTick()
+    expect(wrapper.find('.probe-state').text()).toBe('false')
+
+    await wrapper.find('.probe-clear').trigger('mousedown')
+    await nextTick()
+    expect(wrapper.find('.probe-state').text()).toBe('false')
   })
 
   it('🐴 valueType digit support precision when change with stringMode', async () => {

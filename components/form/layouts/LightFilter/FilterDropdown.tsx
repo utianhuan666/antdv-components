@@ -2,6 +2,7 @@ import type { PopoverProps, TooltipPlacement } from 'antdv-next'
 import type { VNodeChild } from 'vue'
 import { Button, Popover } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export type FooterRender
   = | ((onConfirm?: (event?: MouseEvent) => void, onClear?: (event?: MouseEvent) => void) => VNodeChild | false)
@@ -51,6 +52,8 @@ const FilterDropdown = defineComponent({
   emits: ['update:open', 'openChange'],
   setup(rawProps, { slots, emit }) {
     const props = rawProps as Readonly<FilterDropdownProps>
+    const prefixCls = useProPrefixCls('pro-core-field-dropdown')
+
     function renderFooter(): VNodeChild | null {
       if (!props.footer)
         return null
@@ -60,7 +63,7 @@ const FilterDropdown = defineComponent({
       if (typeof props.footerRender === 'function')
         return props.footerRender(onConfirm, onClear) || null
       return (
-        <div class="ant-pro-core-field-dropdown-footer">
+        <div class={`${prefixCls.value}-footer`}>
           <Button size="small" type="link" onClick={(event: MouseEvent) => onClear?.(event)}>
             清除
           </Button>
@@ -84,13 +87,13 @@ const FilterDropdown = defineComponent({
       >
         {{
           default: () => (
-            <span class="ant-pro-core-field-dropdown-label">
+            <span class={`${prefixCls.value}-label`}>
               {props.label}
             </span>
           ),
           content: () => (
-            <div class="ant-pro-core-field-dropdown-overlay" style={{ padding: `${props.padding ?? 24}px` }}>
-              <div class="ant-pro-core-field-dropdown-content">
+            <div class={`${prefixCls.value}-overlay`} style={{ padding: `${props.padding ?? 24}px` }}>
+              <div class={`${prefixCls.value}-content`}>
                 {slots.default?.()}
               </div>
               {renderFooter()}

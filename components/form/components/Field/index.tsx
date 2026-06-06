@@ -1,6 +1,7 @@
 import type { ProFormFieldProps } from '../../typing'
 import { Comment, computed, defineComponent, Fragment, onMounted, Text, watch } from 'vue'
 import { ProField } from '../../../field'
+import { setValueByNamePath } from '../../../utils'
 import { useEditOrReadOnly } from '../../BaseForm/EditOrReadOnlyContext'
 import { useFieldContext } from '../../FieldContext'
 import LightWrapper from '../../layouts/LightFilter/LightWrapper'
@@ -48,8 +49,11 @@ const ProFormFieldImpl = defineComponent({
     function getCellValue() {
       if (props.name === undefined)
         return props.value
+      if (!fieldContext.model)
+        return props.value
       const path = Array.isArray(props.name) ? props.name : [props.name]
-      return path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
+      const value = path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
+      return value === undefined ? props.value : value
     }
 
     function setCellValue(value: any) {
@@ -70,6 +74,10 @@ const ProFormFieldImpl = defineComponent({
     function handleChange(...args: any[]) {
       const next = args[0]?.target ? args[0].target.value ?? args[0].target.checked : args[0]
       setCellValue(next)
+      if (props.name !== undefined && fieldContext.model) {
+        const model = fieldContext.rootModel || fieldContext.model
+        fieldContext.onValuesChange?.(setValueByNamePath({}, props.name, next), model)
+      }
       emit('change', ...args)
       props.fieldProps?.onChange?.(...args)
     }

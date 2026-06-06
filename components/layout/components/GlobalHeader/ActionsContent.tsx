@@ -1,6 +1,7 @@
 import type { HeaderViewProps } from '../SiderMenu/types'
 import { Avatar, Space } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export const ActionsContent = defineComponent<HeaderViewProps>({
   name: 'ActionsContent',
@@ -11,7 +12,8 @@ export const ActionsContent = defineComponent<HeaderViewProps>({
     'prefixCls',
   ] as any,
   setup(props) {
-    const prefixCls = computed(() => `${props.prefixCls || 'ant-pro'}-global-header`)
+    const rootPrefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
+    const prefixCls = computed(() => `${rootPrefixCls.value}-global-header`)
     const avatarDom = computed(() => {
       const avatarProps = props.avatarProps
       if (!avatarProps)

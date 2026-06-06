@@ -1,8 +1,9 @@
 import type { ProCoreActionType } from '../../utils'
-import { Badge, Button } from 'antdv-next'
+import { Badge, Button, ConfigProvider } from 'antdv-next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { ProDescriptions } from '../../descriptions'
+import { ProConfigProvider } from '../../provider'
 import { mountAttached, waitFor } from '../testUtils'
 
 afterEach(() => {
@@ -229,6 +230,98 @@ describe('descriptions', () => {
 
     await waitFor(() => {
       expect(fn).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('🥩 keeps current dataSource when request returns success false', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ProDescriptions
+          dataSource={{ name: 'old value' }}
+          request={async () => ({
+            success: false,
+            data: { name: 'new value' },
+          })}
+          columns={[
+            { label: 'Name', dataIndex: 'name' },
+          ]}
+        />
+      ),
+    })
+
+    await waitFor(() => {
+      expect(wrapper.text()).toContain('old value')
+      expect(wrapper.text()).not.toContain('new value')
+    })
+  })
+
+  it('🥩 supports custom valueTypeMap from provider', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ProConfigProvider
+          valueTypeMap={{
+            customLink: {
+              render: text => <a class="descriptions-custom-link">{text}</a>,
+            },
+          }}
+        >
+          <ProDescriptions
+            dataSource={{ site: 'Ant Design Vue' }}
+            columns={[
+              { label: 'Site', dataIndex: 'site', valueType: 'customLink' as any },
+            ]}
+          />
+        </ProConfigProvider>
+      ),
+    })
+
+    await waitFor(() => {
+      expect(wrapper.find('.descriptions-custom-link').text()).toBe('Ant Design Vue')
+    })
+  })
+
+  it('uses getPrefixCls("pro-descriptions") from antd config', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ConfigProvider prefixCls="acme">
+          <ProConfigProvider>
+            <ProDescriptions
+              dataSource={{ name: 'Antdv' }}
+              columns={[{ label: 'Name', dataIndex: 'name' }]}
+            />
+          </ProConfigProvider>
+        </ConfigProvider>
+      ),
+    })
+
+    await waitFor(() => {
+      expect(wrapper.find('.acme-pro-descriptions').exists()).toBe(true)
+      expect(wrapper.find('.ant-pro-descriptions').exists()).toBe(false)
+    })
+  })
+
+  it('🥩 filters hideInDescriptions and renders option valueType in extra', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ProDescriptions
+          dataSource={{ name: 'visible', hidden: 'hidden text' }}
+          columns={[
+            { label: 'Name', dataIndex: 'name' },
+            { label: 'Hidden', dataIndex: 'hidden', hideInDescriptions: true },
+            {
+              valueType: 'option',
+              render: () => <a class="description-action">Action</a>,
+            },
+          ]}
+        />
+      ),
+    })
+
+    await waitFor(() => {
+      expect(wrapper.text()).toContain('visible')
+      expect(wrapper.text()).toContain('Action')
+      expect(wrapper.text()).not.toContain('hidden text')
+      expect(wrapper.find('.ant-descriptions-extra .description-action').exists()).toBe(true)
     })
   })
 

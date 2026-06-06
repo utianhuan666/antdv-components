@@ -26,23 +26,30 @@ const ProFieldLightWrapper = defineComponent({
       if (!props.isLight || !child)
         return child ?? null
 
-      return cloneVNode(child, {
-        lightLabel,
-        labelTrigger: labelTrigger.value,
-        onMousedown: (event: MouseEvent) => {
-          labelTrigger.value = lightLabel.labelRef.value?.contains(event.target as Node) ?? false
-        },
-        onMouseup: () => {
-          labelTrigger.value = false
-        },
-      })
+      return (
+        <div
+          onMousedown={(event: MouseEvent) => {
+            const target = event.target as Node
+            const isLabelMouseDown = lightLabel.labelRef.value?.contains(target) ?? false
+            const isClearMouseDown = lightLabel.clearRef.value?.contains(target) ?? false
+            labelTrigger.value = isLabelMouseDown && !isClearMouseDown
+          }}
+          onMouseup={() => {
+            labelTrigger.value = false
+          }}
+        >
+          {cloneVNode(child, {
+            lightLabel,
+            labelTrigger: labelTrigger.value,
+          })}
+        </div>
+      )
     }
   },
 })
 
-export function wrapProFieldLight(light: boolean | undefined, child: VNode, mode?: string) {
-  const currentMode = mode ?? (child.props as Record<string, any> | null)?.mode
-  if (!light || (currentMode !== 'edit' && currentMode !== 'update'))
+export function wrapProFieldLight(light: boolean | undefined, child: VNode, _mode?: string) {
+  if (!light)
     return child
   return <ProFieldLightWrapper isLight>{child}</ProFieldLightWrapper>
 }

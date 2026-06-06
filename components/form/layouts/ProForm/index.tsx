@@ -33,6 +33,9 @@ const InternalProForm = defineComponent({
       get formInstance() {
         return baseRef.value?.formInstance
       },
+      get nativeElement() {
+        return baseRef.value?.nativeElement
+      },
       submit: () => baseRef.value?.submit?.(),
       reset: () => baseRef.value?.reset?.(),
       getFieldsValue: () => baseRef.value?.getFieldsValue?.(),

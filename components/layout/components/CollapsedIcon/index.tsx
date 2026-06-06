@@ -8,6 +8,7 @@ export const CollapsedIcon = defineComponent({
   emits: ['click'],
   setup(rawProps, { attrs, emit }) {
     const props = rawProps as any
+    const hashId = ''
     return () => {
       if (props.isMobile && props.collapsed)
         return null
@@ -16,6 +17,7 @@ export const CollapsedIcon = defineComponent({
           {...attrs}
           class={[
             props.className,
+            hashId,
             props.collapsed && `${props.className}-collapsed`,
             props.isMobile && `${props.className}-is-mobile`,
           ]}

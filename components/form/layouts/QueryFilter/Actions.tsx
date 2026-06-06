@@ -2,6 +2,7 @@ import type { CSSProperties, VNodeChild } from 'vue'
 import { DownOutlined } from '@antdv-next/icons'
 import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface ActionsCollapseProps {
   collapsed?: boolean
@@ -45,6 +46,7 @@ const Actions = defineComponent({
   props: ['submitter', 'collapsed', 'setCollapsed', 'collapseRender', 'hiddenNum', 'style'],
   setup(rawProps) {
     const props = rawProps as Readonly<ActionsProps>
+    const prefixCls = useProPrefixCls('pro-query-filter-collapse-button')
     return () => {
       const renderFn = typeof props.collapseRender === 'function'
         ? props.collapseRender
@@ -57,7 +59,7 @@ const Actions = defineComponent({
           {props.collapseRender !== false
             ? (
                 <a
-                  class="ant-pro-query-filter-collapse-button"
+                  class={prefixCls.value}
                   onClick={() => props.setCollapsed?.(!collapsed)}
                 >
                   {renderFn(collapsed, { collapsed, hiddenNum }, hiddenNum)}

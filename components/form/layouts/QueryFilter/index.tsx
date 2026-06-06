@@ -6,6 +6,7 @@ import type { QueryFilterLayout, SpanConfig } from './breakpoints'
 import { useResizeObserver } from '@vueuse/core'
 import { Col, FormItem, Row } from 'antdv-next'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { deleteValueByNamePath, normalizeNamePath } from '../../../utils'
 import { BaseForm } from '../../BaseForm'
 import Actions from './Actions'
@@ -83,6 +84,7 @@ const QueryFilterImpl = defineComponent({
   emits: ['collapse'],
   setup(rawProps, { attrs, slots, emit, expose }) {
     const props = rawProps as Readonly<QueryFilterProps>
+    const prefixCls = useProPrefixCls('pro-query-filter')
     const baseRef = shallowRef<FormRefLike>()
     const containerRef = ref<HTMLElement | null>(null)
     const width = ref<number>(defaultWidth)
@@ -195,8 +197,8 @@ const QueryFilterImpl = defineComponent({
             key={itemDom && typeof itemDom === 'object' && 'key' in itemDom ? itemDom.key ?? undefined : index}
             span={colSpan}
             class={[
-              'ant-pro-query-filter-row-split',
-              isSplitLine ? 'ant-pro-query-filter-row-split-line' : '',
+              `${prefixCls.value}-row-split`,
+              isSplitLine ? `${prefixCls.value}-row-split-line` : '',
             ]}
             style={colStyle}
           >
@@ -218,7 +220,7 @@ const QueryFilterImpl = defineComponent({
         <Row
           gutter={(props.searchGutter ?? 24) as RowProps['gutter']}
           justify="start"
-          class="ant-pro-query-filter-row"
+          class={`${prefixCls.value}-row`}
         >
           {doms}
           {submitter
@@ -230,7 +232,7 @@ const QueryFilterImpl = defineComponent({
                   offset={offset}
                   style={{ textAlign: 'end' }}
                 >
-                  <FormItem label=" " colon={false} class="ant-pro-query-filter-actions">
+                  <FormItem label=" " colon={false} class={`${prefixCls.value}-actions`}>
                     <Actions
                       submitter={submitter}
                       collapsed={collapsed.value}
@@ -254,13 +256,13 @@ const QueryFilterImpl = defineComponent({
       } = attrs as FormData
       const baseFormAttrs = {
         ...restAttrs,
-        class: ['ant-pro-query-filter', attrsClass].filter(Boolean).join(' '),
+        class: [prefixCls.value, attrsClass].filter(Boolean).join(' '),
       }
 
       return (
         <div
           ref={containerRef}
-          class="ant-pro-query-filter-container"
+          class={`${prefixCls.value}-container`}
           style={props.containerStyle}
         >
           <BaseForm

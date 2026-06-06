@@ -1,14 +1,17 @@
 import type { ProFieldFC } from '../../types'
 import { ColorPicker } from 'antdv-next'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
 
 export function FieldColorPickerRead(props: Props) {
   const { text, mode, render, fieldProps } = props
+  const prefixCls = useProPrefixCls('pro-field-color-picker')
   const dom = (
     <ColorPicker
       value={text}
-      class="ant-pro-field-color-picker"
+      class={prefixCls.value}
+      rootClass={prefixCls.value}
       open={false}
     />
   )

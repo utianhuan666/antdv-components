@@ -4,6 +4,8 @@ import { defineComponent } from 'vue'
 export interface WrapContentProps {
   isChildrenLayout?: boolean
   hasPageContainer?: number
+  hasHeader?: boolean
+  prefixCls?: string
   className?: string
   style?: CSSProperties
 }
@@ -13,6 +15,8 @@ export const WrapContent = defineComponent({
   props: {
     isChildrenLayout: Boolean,
     hasPageContainer: Number,
+    hasHeader: Boolean,
+    prefixCls: String,
     className: String,
     style: Object as PropType<CSSProperties>,
   },

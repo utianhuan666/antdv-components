@@ -1,5 +1,4 @@
 import type { VNodeChild } from 'vue'
-import { Button } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 import { useIntl } from '../../provider'
 import { cloneDeep, getValue, setValue } from '../path'
@@ -34,8 +33,10 @@ export type UseEditableType<RecordType> = RowEditableConfig<RecordType> & {
   dataSource: RecordType[]
   setDataSource: (data: RecordType[] | ((data: RecordType[]) => RecordType[])) => void
   getRowKey: (record: RecordType, index?: number) => string | number
+  form?: any
   childrenColumnName?: string
   tableName?: string
+  columns?: any[]
 }
 
 export type UseEditableUtilType<RecordType extends Record<string, any> = any> = ReturnType<typeof useEditableArray<RecordType>>
@@ -50,6 +51,10 @@ function patchDataSource<RecordType>(
   updater: (data: RecordType[]) => RecordType[],
 ) {
   setDataSource((old: RecordType[]) => updater(Array.isArray(old) ? old : dataSource) as RecordType[])
+}
+
+function flattenColumns(columns: any[] = []): any[] {
+  return columns.flatMap(column => [column, ...flattenColumns(column?.children || [])])
 }
 
 export function editableRowByKey<RecordType>(
@@ -94,14 +99,54 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
       .map(key => editableRowByKey(key, props.dataSource, props.getRowKey, props.childrenColumnName))
       .filter(Boolean) as RecordType[]
 
+  const getRealIndex = (record: RecordType) => {
+    const key = props.getRowKey(record)
+    return props.dataSource.findIndex((item, index) => String(props.getRowKey(item, index)) === String(key))
+  }
+
+  const updateEditableRow = (recordKey: RecordKey, dataIndex: RecordKey, value: any) => {
+    const key = recordKeyToString(recordKey)
+    let changedRecord: RecordType | undefined
+    patchDataSource(props.dataSource, props.setDataSource, data => data.map((item, index) => {
+      if (String(props.getRowKey(item, index)) !== key)
+        return item
+      const next = cloneDeep(item)
+      setValue(next, Array.isArray(dataIndex) ? dataIndex : [dataIndex], value)
+      changedRecord = next
+      return next
+    }))
+    const nextDataSource = props.dataSource.map((item, index) => {
+      if (String(props.getRowKey(item, index)) !== key)
+        return item
+      return changedRecord || item
+    })
+    if (changedRecord)
+      props.onValuesChange?.(changedRecord, nextDataSource)
+    if (changedRecord) {
+      const changedPath = Array.isArray(dataIndex) ? dataIndex.join('.') : String(dataIndex)
+      flattenColumns(props.columns).forEach((column) => {
+        const dependencies = [column?.dependencies].flat(2).filter(Boolean).map(String)
+        if (typeof column?.request === 'function' && dependencies.includes(changedPath))
+          column.request(changedRecord, column)
+      })
+    }
+  }
+
   const setEditableRowKeys = (keys: RecordKey[]) => {
     if (!props.editableKeys)
       innerEditableKeys.value = keys
     props.onChange?.(keys, getEditableRows(keys))
   }
 
-  const isEditable = (recordKey: RecordKey) =>
-    editableKeys.value.map(recordKeyToString).includes(recordKeyToString(recordKey))
+  const isEditable = (recordKey: RecordKey | (RecordType & { index?: number })) => {
+    const keys = editableKeys.value.map(recordKeyToString)
+    if (recordKey && typeof recordKey === 'object' && !Array.isArray(recordKey)) {
+      const rowKey = props.getRowKey(recordKey as RecordType, (recordKey as any).index)
+      const idKey = (recordKey as any).id
+      return keys.includes(recordKeyToString(rowKey)) || (idKey !== undefined && keys.includes(recordKeyToString(idKey)))
+    }
+    return keys.includes(recordKeyToString(recordKey as RecordKey))
+  }
 
   const startEditable = (recordKey: RecordKey, record?: RecordType) => {
     if (isEditable(recordKey))
@@ -179,14 +224,20 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
     const recordKey = typeof recordOrKey === 'object' && !Array.isArray(recordOrKey)
       ? props.getRowKey(recordOrKey as RecordType, (recordOrKey as any).index)
       : recordOrKey as RecordKey
-    return [
-      <Button type="link" size="small" onClick={() => saveEditable(recordKey)}>{intl.getMessage('editableTable.action.save', '保存')}</Button>,
-      <Button type="link" size="small" onClick={() => deleteEditable(recordKey)}>{intl.getMessage('editableTable.action.delete', '删除')}</Button>,
-      <Button type="link" size="small" onClick={() => cancelEditable(recordKey)}>{intl.getMessage('editableTable.action.cancel', '取消')}</Button>,
+    const record = typeof recordOrKey === 'object' && !Array.isArray(recordOrKey)
+      ? recordOrKey as RecordType & { index?: number }
+      : editableRowByKey(recordKey, props.dataSource, props.getRowKey, props.childrenColumnName)
+    const defaultDoms = [
+      <a onClick={() => saveEditable(recordKey)}>{intl.getMessage('editableTable.action.save', '保存')}</a>,
+      <a onClick={() => deleteEditable(recordKey)}>{intl.getMessage('editableTable.action.delete', '删除')}</a>,
+      <a onClick={() => cancelEditable(recordKey)}>{intl.getMessage('editableTable.action.cancel', '取消')}</a>,
     ]
+    return props.actionRender?.(record, { recordKey, index: record?.index }, defaultDoms) ?? defaultDoms
   }
 
   return {
+    props,
+    editableForm: props.form,
     get editableKeys() {
       return editableKeys.value
     },
@@ -194,6 +245,8 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
       return newLineRecord.value
     },
     setEditableRowKeys,
+    getRealIndex,
+    updateEditableRow,
     isEditable,
     startEditable,
     cancelEditable,

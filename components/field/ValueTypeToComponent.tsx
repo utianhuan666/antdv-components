@@ -155,7 +155,7 @@ const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
   second: sameRenderPair((text, props) => <FieldSecond {...props} text={text} placeholder={props.placeholder as string} />),
   select: sameRenderPair((text, props) => wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)),
   text: sameRenderPair((text, props) =>
-    'valueEnum' in props || props.request
+    props.valueEnum !== undefined || props.request
       ? wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)
       : <FieldText {...props} text={text as string} />,
   ),

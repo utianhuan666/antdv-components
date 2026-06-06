@@ -1,6 +1,7 @@
 import type { CSSProperties, VNode, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { cloneVNode, Fragment, h, isVNode } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 type FieldOptionsProps = NonNullable<ProFieldFC<{
   text?: VNodeChild | VNodeChild[]
@@ -23,9 +24,10 @@ function addArrayKeys(doms: VNodeChild[]) {
 }
 
 function renderOptions(doms: VNodeChild[]) {
+  const prefixCls = useProPrefixCls('pro-field-option')
   return (
     <div
-      class="ant-pro-field-option"
+      class={prefixCls.value}
       style={{
         display: 'flex',
         gap: 8,

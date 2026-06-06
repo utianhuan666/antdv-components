@@ -1,6 +1,8 @@
 import type { BaseMenuProps } from './types'
+import { clsx } from '@v-c/util'
 import { Skeleton } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { getOpenKeysFromMenuData, mapMenuDataToNavNodes } from './menuTree'
 import { ProLayoutNavMenu } from './ProLayoutNavMenu'
 
@@ -36,8 +38,9 @@ export const BaseMenu = defineComponent<BaseMenuProps>({
   ] as any,
   setup(props, { attrs }) {
     const mode = computed(() => props.mode || 'vertical')
-    const prefixCls = computed(() => props.prefixCls || 'ant-pro')
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-base-menu-${mode.value}`)
+    const hashId = ''
     const selectedKeys = ref<string[]>(props.selectedKeys || (props as any).matchMenuKeys || [])
     const openKeys = ref<string[]>(
       props.openKeys === false
@@ -111,12 +114,13 @@ export const BaseMenu = defineComponent<BaseMenuProps>({
           }}
           data-testid={dataTestId}
           dataTestid={dataTestId}
-          class={[
+          class={clsx(
             props.className,
             menuPropsClassName,
+            hashId,
             baseClassName.value,
-            mode.value !== 'horizontal' && (props as any).menuRenderType !== 'header' && 'ant-pro-sider-menu',
-          ]}
+            mode.value !== 'horizontal' && (props as any).menuRenderType !== 'header' && `${prefixCls.value}-sider-menu`,
+          )}
         />
       )
     }

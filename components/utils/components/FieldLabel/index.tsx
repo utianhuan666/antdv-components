@@ -4,6 +4,7 @@ import { CloseCircleFilled, DownOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface FieldLabelProps {
   label?: VNodeChild
@@ -53,6 +54,7 @@ export const FieldLabel = defineComponent({
   setup(rawProps, { expose }) {
     const props = rawProps as FieldLabelProps
     const intl = useIntl()
+    const prefixCls = useProPrefixCls('pro-core-field-label')
     const clearRef = ref<HTMLElement | null>(null)
     const labelRef = ref<HTMLElement | null>(null)
     expose({ clearRef, labelRef })
@@ -84,7 +86,7 @@ export const FieldLabel = defineComponent({
       if (hasValue(value)) {
         const prefix = label
           ? (
-              <span onClick={() => props.onLabelClick?.()} class="ant-pro-core-field-label-text">
+              <span onClick={() => props.onLabelClick?.()} class={`${prefixCls.value}-text`}>
                 {label}
                 {': '}
               </span>
@@ -125,14 +127,14 @@ export const FieldLabel = defineComponent({
       return (
         <span
           class={clsx(
-            'ant-pro-core-field-label',
-            `ant-pro-core-field-label-${props.size ?? 'middle'}`,
+            prefixCls.value,
+            `${prefixCls.value}-${props.size ?? 'middle'}`,
             {
-              [`ant-pro-core-field-label-${props.variant || 'borderless'}-active`]: active,
-              'ant-pro-core-field-label-active': active,
-              'ant-pro-core-field-label-disabled': disabled,
-              [`ant-pro-core-field-label-${props.variant}`]: props.variant,
-              'ant-pro-core-field-label-allow-clear': allowClear,
+              [`${prefixCls.value}-${props.variant || 'borderless'}-active`]: active,
+              [`${prefixCls.value}-active`]: active,
+              [`${prefixCls.value}-disabled`]: disabled,
+              [`${prefixCls.value}-${props.variant}`]: props.variant,
+              [`${prefixCls.value}-allow-clear`]: allowClear,
             },
             props.className,
           )}
@@ -146,7 +148,7 @@ export const FieldLabel = defineComponent({
                 <span
                   role="button"
                   title={intl.getMessage('form.lightFilter.clear', '清除')}
-                  class="ant-pro-core-field-label-icon ant-pro-core-field-label-close"
+                  class={`${prefixCls.value}-icon ${prefixCls.value}-close`}
                   onClick={(event: MouseEvent) => {
                     if (!disabled)
                       props.onClear?.()
@@ -159,7 +161,7 @@ export const FieldLabel = defineComponent({
               )
             : null}
           {props.downIcon !== false
-            ? (props.downIcon ?? <DownOutlined class="ant-pro-core-field-label-icon ant-pro-core-field-label-arrow" />)
+            ? (props.downIcon ?? <DownOutlined class={`${prefixCls.value}-icon ${prefixCls.value}-arrow`} />)
             : null}
         </span>
       )

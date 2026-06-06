@@ -1,5 +1,6 @@
 import type { SetupContext, VNodeChild } from 'vue'
 import { isVNode } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 interface IndexColumnProps {
   border?: boolean
@@ -19,6 +20,7 @@ function getSlotText(children: VNodeChild[] | undefined, fallback: number) {
 }
 
 function FieldIndexColumn(props: IndexColumnProps, { slots }: SetupContext) {
+  const prefixCls = useProPrefixCls('pro-field-index-column')
   const text = props.text ?? 1
   const displayValue = getSlotText(slots.default?.(), text)
   const isTopThree = Number(displayValue) > 3
@@ -26,7 +28,7 @@ function FieldIndexColumn(props: IndexColumnProps, { slots }: SetupContext) {
   if (props.border) {
     return (
       <div
-        class={['ant-pro-field-index-column', 'ant-pro-field-index-column-border', { 'top-three': isTopThree }]}
+        class={[prefixCls.value, `${prefixCls.value}-border`, { 'top-three': isTopThree }]}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -47,7 +49,7 @@ function FieldIndexColumn(props: IndexColumnProps, { slots }: SetupContext) {
 
   return (
     <div
-      class="ant-pro-field-index-column"
+      class={prefixCls.value}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

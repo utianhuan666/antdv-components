@@ -4,10 +4,13 @@ import type { ProLayoutNavMenuSelectInfo } from './components/SiderMenu/types'
 import type { ProSettings } from './defaultSettings'
 import type { GetPageTitleProps } from './getPageTitle'
 import type { MenuDataItem, Route, RouterTypes, WithFalse } from './typing'
+import { clsx } from '@v-c/util'
 import { Layout, LayoutContent } from 'antdv-next'
 import { computed, defineComponent, onMounted, reactive, ref, watch } from 'vue'
 import { ProConfigProvider } from '../provider'
-import { useDocumentTitle } from '../utils'
+import { useProPrefixCls } from '../provider/useProPrefixCls'
+import { useBreakpoint, useDocumentTitle } from '../utils'
+import { Logo } from './assert/Logo'
 import { DefaultFooter } from './components/Footer'
 import { DefaultHeader } from './components/Header'
 import { RouteContextProvider } from './components/PageContainer/context'
@@ -15,6 +18,7 @@ import { PageLoading } from './components/PageLoading'
 import { SiderMenu } from './components/SiderMenu'
 import { defaultSettings } from './defaultSettings'
 import { getPageTitleInfo } from './getPageTitle'
+import { proLayoutVar } from './style'
 import { getBreadcrumbProps } from './utils/getBreadcrumbProps'
 import { getMenuData } from './utils/getMenuData'
 import { urlToList } from './utils/pathTools'
@@ -23,6 +27,7 @@ import { WrapContent } from './WrapContent'
 
 const SiderMenuView = SiderMenu as any
 const DefaultHeaderView = DefaultHeader as any
+const LayoutView = Layout as any
 
 export type ProLayoutLayoutMode = 'side' | 'top' | 'mix'
 
@@ -89,6 +94,14 @@ export type ProLayoutProps = Omit<ProSettings, 'layout'> & {
 
 type ProLayoutChildrenRender = (children: VNodeChild, props: ProLayoutProps) => VNodeChild
 
+function toPositionValue(value: number | undefined) {
+  return value === undefined ? undefined : `${value}px`
+}
+
+function menuLayoutForPureSettings(layout: ProLayoutLayoutMode | undefined): NonNullable<ProSettings['layout']> {
+  return layout === 'mix' || layout === undefined ? 'side' : layout
+}
+
 function findCurrentMenu(menuData: MenuDataItem[], pathname?: string): MenuDataItem | undefined {
   for (const item of menuData) {
     if (item.path === pathname || item.key === pathname)
@@ -98,6 +111,18 @@ function findCurrentMenu(menuData: MenuDataItem[], pathname?: string): MenuDataI
       return child
   }
   return undefined
+}
+
+function findMatchMenus(menuData: MenuDataItem[], pathname?: string, parents: MenuDataItem[] = []): MenuDataItem[] {
+  for (const item of menuData) {
+    const current = [...parents, item]
+    if (item.path === pathname || item.key === pathname)
+      return current
+    const child = findMatchMenus(item.children || [], pathname, current)
+    if (child.length)
+      return child
+  }
+  return []
 }
 
 export const ProLayout = defineComponent({
@@ -170,10 +195,17 @@ export const ProLayout = defineComponent({
     const menuRequestLoading = ref(false)
     const hasFooterToolbar = ref(false)
     const hasPageContainer = ref(0)
+    const isFixedHeaderScroll = ref(false)
+    const colSize = useBreakpoint()
+    const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
+    const proLayoutClassName = computed(() => `${prefixCls.value}-layout`)
+    const basicLayoutClassName = computed(() => `${prefixCls.value}-basicLayout`)
+    const hashId = ''
 
     const mergedSettings = computed(() => ({
       ...defaultSettings,
       ...props,
+      layout: menuLayoutForPureSettings(props.layout),
       menu: {
         ...defaultSettings.menu,
         ...(props.menu || {}),
@@ -182,6 +214,15 @@ export const ProLayout = defineComponent({
 
     const collapsed = computed(() => props.collapsed ?? uncontrolledCollapsed.value)
     const pathname = computed(() => props.location?.pathname || '/')
+    const isMobile = computed(() => (colSize.value === 'sm' || colSize.value === 'xs') && !props.disableMobile)
+    const actionsPlacement = computed(() => props.actionsPlacement ?? (mergedSettings.value.layout === 'top' ? 'header' : 'sider'))
+    const menuCollapsedWidth = computed(() => mergedSettings.value.menu?.collapsedWidth ?? defaultSettings.menu!.collapsedWidth!)
+    const leftSiderWidth = computed(() => {
+      if (mergedSettings.value.layout === 'top' || isMobile.value)
+        return 0
+      return collapsed.value ? menuCollapsedWidth.value : (props.siderWidth ?? 240)
+    })
+    const mergedLogo = computed(() => props.logo === undefined ? <Logo /> : props.logo)
 
     const baseMenuInfo = computed(() => {
       const routeChildren = props.route?.children || props.route?.routes || []
@@ -208,7 +249,10 @@ export const ProLayout = defineComponent({
     watch(() => [props.menu?.request, props.menu?.params, baseMenuInfo.value.menuData], reloadMenu, { immediate: true, deep: true })
 
     const menuData = computed(() => menuRequestData.value || baseMenuInfo.value.menuData)
+    const matchMenus = computed(() => findMatchMenus(menuData.value, pathname.value))
     const matchMenuKeys = computed(() => {
+      if (matchMenus.value.length)
+        return Array.from(new Set(matchMenus.value.map(item => item.key || item.path || '').filter(Boolean) as string[]))
       const current = findCurrentMenu(menuData.value, pathname.value)
       return current?.parentKeys?.length ? [...current.parentKeys, current.path || String(current.key)] : urlToList(pathname.value)
     })
@@ -224,8 +268,12 @@ export const ProLayout = defineComponent({
       const info = pageTitleInfo.value
       if (props.pageTitleRender === false)
         return false
-      if (props.pageTitleRender)
-        return props.pageTitleRender({ pathname: pathname.value, ...props }, info.title, info)
+      if (props.pageTitleRender) {
+        const title = props.pageTitleRender({ pathname: pathname.value, ...props }, info.title, info)
+        if (typeof title === 'string')
+          return title
+        return info.title
+      }
       return info.title
     })
 
@@ -276,13 +324,13 @@ export const ProLayout = defineComponent({
         return mergedSettings.value.layout
       },
       get hasSiderMenu() {
-        return mergedSettings.value.layout !== 'top' && props.menuRender !== false && !props.pure
+        return mergedSettings.value.layout !== 'top' && props.menuRender !== false && !props.pure && !(props.suppressSiderWhenMenuEmpty && clearMenuItem(menuData.value).length < 1)
       },
       get isMobile() {
-        return false
+        return isMobile.value
       },
       get siderWidth() {
-        return props.siderWidth ?? 240
+        return leftSiderWidth.value || undefined
       },
       get collapsed() {
         return collapsed.value
@@ -292,6 +340,36 @@ export const ProLayout = defineComponent({
       },
       get hasHeader() {
         return props.headerRender !== false
+      },
+      get hasFooter() {
+        return props.footerRender !== false
+      },
+      get hasFooterToolbar() {
+        return hasFooterToolbar.value
+      },
+      get hasPageContainer() {
+        return hasPageContainer.value
+      },
+      get isChildrenLayout() {
+        return true
+      },
+      get pageTitleInfo() {
+        return pageTitleInfo.value
+      },
+      get matchMenus() {
+        return matchMenus.value
+      },
+      get matchMenuKeys() {
+        return matchMenuKeys.value
+      },
+      get currentMenu() {
+        return matchMenus.value[matchMenus.value.length - 1]
+      },
+      get menuData() {
+        return menuData.value
+      },
+      get prefixCls() {
+        return prefixCls.value
       },
       get breadcrumb() {
         return getBreadcrumbProps({
@@ -326,6 +404,13 @@ export const ProLayout = defineComponent({
       },
     })
 
+    const onContainerScroll = (event: Event) => {
+      if (!mergedSettings.value.fixedHeader)
+        return
+      const target = event.currentTarget as HTMLElement
+      isFixedHeaderScroll.value = target.scrollTop > 56
+    }
+
     return () => {
       const children = slots.default?.()
       if (props.loading)
@@ -340,7 +425,7 @@ export const ProLayout = defineComponent({
 
       if (props.pure) {
         return (
-          <RouteContextProvider value={routeContextValue}>
+          <RouteContextProvider value={routeContextValue as any}>
             {childrenDom}
           </RouteContextProvider>
         )
@@ -352,13 +437,17 @@ export const ProLayout = defineComponent({
             <SiderMenuView
               {...props}
               title={mergedSettings.value.title || undefined}
+              logo={mergedLogo.value}
+              layout={mergedSettings.value.layout}
+              isMobile={isMobile.value}
+              actionsPlacement={actionsPlacement.value}
               collapsed={collapsed.value}
               onCollapse={setCollapsed}
               menuData={menuData.value}
               matchMenuKeys={matchMenuKeys.value}
               menu={{ ...mergedSettings.value.menu, loading: menuRequestLoading.value || mergedSettings.value.menu?.loading }}
               siderWidth={props.siderWidth ?? 240}
-              prefixCls={props.prefixCls || 'ant-pro'}
+              prefixCls={prefixCls.value}
             />
           )
         : null
@@ -371,18 +460,22 @@ export const ProLayout = defineComponent({
             <DefaultHeaderView
               {...props}
               title={mergedSettings.value.title || undefined}
+              logo={mergedLogo.value}
               collapsed={collapsed.value}
               onCollapse={setCollapsed}
               menuData={menuData.value}
               matchMenuKeys={matchMenuKeys.value}
               layout={mergedSettings.value.layout}
+              isMobile={isMobile.value}
+              actionsPlacement={actionsPlacement.value}
               fixedHeader={mergedSettings.value.fixedHeader}
-              prefixCls={props.prefixCls || 'ant-pro'}
+              isFixedHeaderScroll={isFixedHeaderScroll.value}
+              prefixCls={prefixCls.value}
               hasSiderMenu={hasSiderMenu}
             />
           )
 
-      const footerDefaultDom = <DefaultFooter prefixCls={props.prefixCls || 'ant-pro'} />
+      const footerDefaultDom = <DefaultFooter prefixCls={prefixCls.value} />
       const footerRender = props.footerRender as any
       const footerDom = props.footerRender === false
         ? null
@@ -392,19 +485,77 @@ export const ProLayout = defineComponent({
 
       return (
         <ProConfigProvider>
-          <RouteContextProvider value={routeContextValue}>
-            <Layout class={['ant-pro-layout', 'ant-pro-basicLayout', props.className]} style={props.style} hasSider={hasSiderMenu}>
+          <RouteContextProvider value={routeContextValue as any}>
+            <LayoutView
+              class={clsx(
+                'ant-design-pro',
+                proLayoutClassName.value,
+                hashId,
+                basicLayoutClassName.value,
+                props.className,
+                `screen-${colSize.value}`,
+                `${proLayoutClassName.value}-${mergedSettings.value.layout}`,
+                {
+                  [`${proLayoutClassName.value}-top-menu`]: mergedSettings.value.layout === 'top',
+                  [`${proLayoutClassName.value}-fix-siderbar`]: mergedSettings.value.fixSiderbar,
+                  [`${proLayoutClassName.value}-fixed-header`]: mergedSettings.value.fixedHeader,
+                },
+              )}
+              data-testid="pro-layout"
+              style={{
+                [proLayoutVar.fixedHeaderStart]: `${leftSiderWidth.value || 0}px`,
+                ...(props.style || {}),
+              } as CSSProperties}
+              hasSider={hasSiderMenu}
+            >
+              {props.bgLayoutImgList?.length
+                ? (
+                    <div class={clsx(`${proLayoutClassName.value}-bg-list`, hashId)} data-testid="pro-layout-bg-list">
+                      {props.bgLayoutImgList.map((item, index) => (
+                        <img
+                          key={item.src ? `${item.src}-${index}` : `bg-layout-${index}`}
+                          src={item.src}
+                          alt=""
+                          style={{
+                            position: 'absolute',
+                            width: item.width,
+                            height: item.height,
+                            left: toPositionValue(item.left),
+                            top: toPositionValue(item.top),
+                            right: toPositionValue(item.right),
+                            bottom: toPositionValue(item.bottom),
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )
+                : null}
               {menuDom}
-              <Layout class="ant-pro-layout-container">
+              <LayoutView class={clsx(`${proLayoutClassName.value}-container`, hashId)} data-testid="pro-layout-container" onScroll={onContainerScroll}>
                 {headerDom}
-                <LayoutContent class={['ant-pro-layout-content', 'ant-pro-basicLayout-content']} style={props.contentStyle}>
-                  <WrapContent hasPageContainer={hasPageContainer.value}>
+                <LayoutContent class={[`${proLayoutClassName.value}-content`, `${basicLayoutClassName.value}-content`]} style={props.contentStyle}>
+                  <WrapContent
+                    hasPageContainer={hasPageContainer.value}
+                    isChildrenLayout={routeContextValue.isChildrenLayout}
+                    hasHeader={!!headerDom}
+                    prefixCls={proLayoutClassName.value}
+                    style={props.contentStyle}
+                  >
                     {childrenDom}
                   </WrapContent>
                 </LayoutContent>
                 {footerDom}
-              </Layout>
-            </Layout>
+                {hasFooterToolbar.value
+                  ? (
+                      <div
+                        class={`${proLayoutClassName.value}-has-footer`}
+                        data-testid="pro-layout-has-footer"
+                        style={{ height: 64 }}
+                      />
+                    )
+                  : null}
+              </LayoutView>
+            </LayoutView>
           </RouteContextProvider>
         </ProConfigProvider>
       )
