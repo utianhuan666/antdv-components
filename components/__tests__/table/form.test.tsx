@@ -228,7 +228,7 @@ describe('basicTable Search', () => {
             title: '状态',
             dataIndex: 'status',
             dependencies: ['name'],
-            fieldProps: (form) => {
+            fieldProps: (form: FormInstance) => {
               if (form.getFieldValue?.('name') === 'closed') {
                 return {
                   disabled: true,
@@ -239,7 +239,7 @@ describe('basicTable Search', () => {
                 id: 'status',
               }
             },
-            formItemProps: (form) => {
+            formItemProps: (form: FormInstance) => {
               if (form.getFieldValue?.('name') === 'closed') {
                 return {
                   noStyle: true,

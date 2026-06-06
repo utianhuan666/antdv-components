@@ -12,7 +12,7 @@ import {
   it,
   vi,
 } from 'vitest'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, ref, toRef } from 'vue'
 import {
   conversionSubmitValue,
   dateArrayFormatter,
@@ -43,6 +43,7 @@ import {
   useLatest,
   useReactiveRef,
   useRefFunction,
+  useUrlSearchParams,
 } from '../../utils'
 import { mountAttached } from '../testUtils'
 
@@ -115,6 +116,14 @@ describe('utils', () => {
     )).toEqual('2020-01-01 00:00:00 ~ 2020-01')
   })
 
+  it('📅 dateArrayFormatter keeps missing end format as undefined', async () => {
+    const end = dayjs('2020-01-02')
+    expect(dateArrayFormatter(
+      [dayjs('2020-01-01'), end],
+      ['YYYY-MM-DD'],
+    )).toEqual(`2020-01-01 ~ ${end.format()}`)
+  })
+
   it('📅 dateArrayFormatter support moment function', async () => {
     expect(dateArrayFormatter(
       [dayjs('2020-01-01'), dayjs('2020-01-01')],
@@ -154,7 +163,7 @@ describe('utils', () => {
     const wrapper = mount(defineComponent({
       props: { wait: Number },
       setup(props) {
-        const fetchData = useDebounceFn(async () => fn(), props.wait)
+        const fetchData = useDebounceFn(async () => fn(), toRef(props, 'wait'))
         fetchData.run()
         return { fetchData }
       },
@@ -177,6 +186,25 @@ describe('utils', () => {
     expect(fn).toHaveBeenCalledTimes(1)
     await wrapper.find('#test').trigger('click')
     expect(fn).toHaveBeenCalledTimes(3)
+    await wrapper.setProps({ wait: 80 })
+    await wrapper.find('#test').trigger('click')
+    vi.advanceTimersByTime(80)
+    await Promise.resolve()
+    expect(fn).toHaveBeenCalledTimes(4)
+    await wrapper.setProps({ wait: 160 })
+    await wrapper.find('#test').trigger('click')
+    vi.advanceTimersByTime(80)
+    await Promise.resolve()
+    expect(fn).toHaveBeenCalledTimes(4)
+    vi.advanceTimersByTime(80)
+    await Promise.resolve()
+    expect(fn).toHaveBeenCalledTimes(5)
+    wrapper.unmount()
+    expect(fn).toHaveBeenCalledTimes(5)
+  })
+
+  it('📅 useDebounceFn supports isolated debounced instance', async () => {
+    const fn = vi.fn()
     const debouncedWrapper = mount(defineComponent({
       setup() {
         const fetchData = useDebounceFn(async () => fn(), 80)
@@ -199,13 +227,13 @@ describe('utils', () => {
     await debouncedWrapper.find('#test').trigger('click')
     vi.advanceTimersByTime(80)
     await Promise.resolve()
-    expect(fn).toHaveBeenCalledTimes(4)
+    expect(fn).toHaveBeenCalledTimes(1)
     await debouncedWrapper.find('#test').trigger('click')
     vi.advanceTimersByTime(80)
     await Promise.resolve()
-    expect(fn).toHaveBeenCalledTimes(5)
+    expect(fn).toHaveBeenCalledTimes(2)
     debouncedWrapper.unmount()
-    expect(fn).toHaveBeenCalledTimes(5)
+    expect(fn).toHaveBeenCalledTimes(2)
   })
 
   it('pickProProps filters internal pro props unless custom valueType', () => {
@@ -396,6 +424,9 @@ describe('utils', () => {
   it('📅 useFetchData caches by proFieldKey and aborts stale requests', async () => {
     async function settleFetchData() {
       await Promise.resolve()
+      await vi.advanceTimersByTimeAsync(0)
+      await Promise.resolve()
+      await nextTick()
       await Promise.resolve()
       await nextTick()
     }
@@ -432,6 +463,74 @@ describe('utils', () => {
     expect(request).toHaveBeenCalledTimes(2)
     expect(abortEvents).toContain('first')
     expect(wrapper.text()).toBe('third')
+  })
+
+  it('📅 useFetchData separates cache by params under the same proFieldKey', async () => {
+    async function settleFetchData() {
+      await Promise.resolve()
+      await vi.advanceTimersByTimeAsync(0)
+      await Promise.resolve()
+      await nextTick()
+      await Promise.resolve()
+      await nextTick()
+    }
+
+    const request = vi.fn(async (params: any) => {
+      await Promise.resolve()
+      return [{ label: params.keyword, value: params.keyword }]
+    })
+    const CacheProbe = defineComponent({
+      props: {
+        keyword: {
+          type: String,
+          required: true,
+        },
+      },
+      setup(props) {
+        const [data, loading] = useFetchData({
+          proFieldKey: 'same-key-different-params',
+          params: toRef(props, 'keyword'),
+          request: keyword => request({ keyword }),
+        })
+        return { data, loading }
+      },
+      render() {
+        return <span>{this.loading ? 'loading' : this.data?.[0]?.label}</span>
+      },
+    })
+
+    const first = mount(CacheProbe, { props: { keyword: 'first' } })
+    await settleFetchData()
+    expect(first.text()).toBe('first')
+    first.unmount()
+
+    const second = mount(CacheProbe, { props: { keyword: 'second' } })
+    expect(second.text()).not.toBe('first')
+    await settleFetchData()
+    expect(second.text()).toBe('second')
+    expect(request).toHaveBeenCalledTimes(2)
+  })
+
+  it('🧩 useUrlSearchParams responds to popstate updates', async () => {
+    window.history.replaceState({}, '', `${window.location.pathname}?keyword=first`)
+
+    const wrapper = mount(defineComponent({
+      setup() {
+        const [params] = useUrlSearchParams({ keyword: 'default' })
+        return { params }
+      },
+      render() {
+        return <span>{this.params.keyword}</span>
+      },
+    }))
+
+    expect(wrapper.text()).toBe('first')
+
+    window.history.pushState({}, '', `${window.location.pathname}?keyword=second`)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await nextTick()
+
+    expect(wrapper.text()).toBe('second')
   })
 
   it('📅 conversionSubmitValue nil', async () => {
@@ -1252,8 +1351,18 @@ describe('utils', () => {
         return 1
       },
     })
-    expect(vnodeString).toContain('"type":"div"')
-    expect(vnodeString).toContain('"children":"aaaa"')
-    expect(vnodeString).not.toContain('"fn"')
+    expect(JSON.parse(vnodeString)).toMatchObject({
+      name: 'kiner',
+      age: 99999,
+      node: {
+        type: 'div',
+        children: 'aaaa',
+      },
+    })
+    expect(JSON.parse(vnodeString)).not.toHaveProperty('fn')
+    expect(stringify({
+      object: { a: { b: { c: { d: 1 } } } },
+      array: [[[[[1]]]]],
+    })).toBe('{"object":{"a":{"b":{"c":"[Object]"}}},"array":[[["[Array]"]]]}')
   })
 })

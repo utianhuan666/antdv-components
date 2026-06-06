@@ -1,12 +1,12 @@
 import type { Dayjs } from 'dayjs'
 import type { NamePath, ProFieldValueType } from '../typing'
+import { get } from '@v-c/util'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import { isNil } from '../isNil'
 import { normalizeSerializedDayjsLike } from '../parseValueToMoment'
-import { getValue } from '../path'
 
 dayjs.extend(isoWeek)
 dayjs.extend(advancedFormat)
@@ -102,7 +102,7 @@ export function conversionMomentValue<T extends {} = any>(value: T, dateFormatte
   Object.keys(value as Record<string, any>).forEach((valueKey) => {
     const parentPath = parentKey === undefined ? [] : [parentKey].flat(1)
     const namePath = [...parentPath, valueKey] as (string | number)[]
-    const valueFormatMap = getValue(valueTypeMap, namePath) || 'text'
+    const valueFormatMap = get(valueTypeMap, namePath) || 'text'
     let valueType: ProFieldValueType = 'text'
     let dateFormat: string | undefined
     if (typeof valueFormatMap === 'string') {

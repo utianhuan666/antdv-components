@@ -237,7 +237,9 @@ const BaseFormImpl = defineComponent({
       return transformKey(getFieldsValue(), omitNilParam ?? props.omitNil !== false)
     }
 
-    function getFieldFormatValue(name: NamePath, omitNilParam?: boolean) {
+    function getFieldFormatValue(name?: NamePath, omitNilParam?: boolean) {
+      if (name === undefined)
+        return getFieldsFormatValue(true, omitNilParam)
       const namePath = normalizeNamePath(name)!
       const value = getFieldValue(namePath)
       const transformed = transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
@@ -247,7 +249,9 @@ const BaseFormImpl = defineComponent({
       return result
     }
 
-    function getFieldFormatValueObject(name: NamePath, omitNilParam?: boolean) {
+    function getFieldFormatValueObject(name?: NamePath, omitNilParam?: boolean) {
+      if (name === undefined)
+        return getFieldsFormatValue(true, omitNilParam)
       const namePath = normalizeNamePath(name)!
       const value = getFieldValue(namePath)
       return transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)

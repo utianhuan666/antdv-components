@@ -1,4 +1,4 @@
-import { computed, ref, watchEffect } from 'vue'
+import { computed, onMounted, onScopeDispose, ref, watchEffect } from 'vue'
 
 function setQueryToCurrentUrl(params: Record<string, unknown>): URL {
   const href = typeof window !== 'undefined' && window.location ? window.location.href : 'http://localhost/'
@@ -67,6 +67,24 @@ export function useUrlSearchParams(
   watchEffect(() => {
     if (!config.disabled)
       redirectToNewSearchParams({ ...initial, ...params.value })
+  })
+
+  let removePopStateListener = () => {}
+
+  onMounted(() => {
+    if (config.disabled || typeof window === 'undefined' || !window.URL)
+      return
+    const onPopState = () => {
+      version.value += 1
+    }
+    window.addEventListener('popstate', onPopState)
+    removePopStateListener = () => {
+      window.removeEventListener('popstate', onPopState)
+    }
+  })
+
+  onScopeDispose(() => {
+    removePopStateListener()
   })
 
   return [params, redirectToNewSearchParams] as const

@@ -10,7 +10,7 @@ function toDayjsInstance(value: any) {
   return dayjs(value)
 }
 
-function formatString(value: any, format: FormatType): string {
+function formatString(value: any, format: FormatType | undefined): string {
   const d = toDayjsInstance(value)
   if (typeof format === 'function')
     return format(d)
@@ -19,12 +19,12 @@ function formatString(value: any, format: FormatType): string {
 
 export function dateArrayFormatter(value: any[], format: FormatType | FormatType[] | { format: string, type?: 'mask' }): string {
   const [startText, endText] = Array.isArray(value) ? value : []
-  let formatFirst: FormatType
-  let formatEnd: FormatType
+  let formatFirst: FormatType | undefined
+  let formatEnd: FormatType | undefined
 
   if (Array.isArray(format)) {
-    formatFirst = format[0] || 'YYYY-MM-DD'
-    formatEnd = format[1] || formatFirst
+    formatFirst = format[0]
+    formatEnd = format[1]
   }
   else if (typeof format === 'object' && format.type === 'mask') {
     formatFirst = format.format

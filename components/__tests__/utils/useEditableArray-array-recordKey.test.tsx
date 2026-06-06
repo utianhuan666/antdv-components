@@ -1,5 +1,3 @@
-// eslint-disable-next-line ts/ban-ts-comment
-// @ts-nocheck
 import type { NewLineConfig, RecordKey } from '../../utils/useEditableArray'
 import { mount } from '@vue/test-utils'
 import { Form } from 'antdv-next'
@@ -70,7 +68,7 @@ describe('useEditableArray - Array recordKey Support', () => {
 
       const editableUtils = useEditableArray<TestRecordType>({
         dataSource: dataSource.value,
-        setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+        setDataSource: (next: TestRecordType[] | ((data: TestRecordType[]) => TestRecordType[])) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
         getRowKey: record => record.id,
         childrenColumnName: undefined,
         onSave: props.onSave,
@@ -82,7 +80,7 @@ describe('useEditableArray - Array recordKey Support', () => {
 
       return { dataSource, editableUtils }
     },
-    render() {
+    render(this: any) {
       return (
         <Form>
           <div data-testid="editable-keys">
@@ -95,7 +93,7 @@ describe('useEditableArray - Array recordKey Support', () => {
             Start Edit 1
           </button>
           <div data-testid="data-source">
-            {this.dataSource.map(item => `${item.id}:${item.name}`).join(',')}
+            {this.dataSource.map((item: TestRecordType) => `${item.id}:${item.name}`).join(',')}
           </div>
         </Form>
       )
@@ -140,14 +138,14 @@ describe('useEditableArray - Array recordKey Support', () => {
         const newObj = { ...obj }
         let current = newObj
         for (let i = 0; i < path.length - 1; i++) {
-          const key = path[i]
+          const key = path[i]!
           if (!current[key]) {
             current[key] = {}
           }
           current[key] = { ...current[key] }
           current = current[key]
         }
-        current[path[path.length - 1]] = value
+        current[path[path.length - 1]!] = value
         return newObj
       }
 
@@ -370,14 +368,14 @@ describe('useEditableArray - Array recordKey Support', () => {
       const newObj = { ...obj }
       let current = newObj
       for (let i = 0; i < path.length - 1; i++) {
-        const key = path[i]
+        const key = path[i]!
         if (!current[key]) {
           current[key] = {}
         }
         current[key] = { ...current[key] }
         current = current[key]
       }
-      current[path[path.length - 1]] = value
+      current[path[path.length - 1]!] = value
       return newObj
     }
 
@@ -465,14 +463,14 @@ describe('useEditableArray - Array recordKey Support', () => {
         const newObj = { ...obj }
         let current = newObj
         for (let i = 0; i < path.length - 1; i++) {
-          const key = path[i]
+          const key = path[i]!
           if (!current[key]) {
             current[key] = {}
           }
           current[key] = { ...current[key] }
           current = current[key]
         }
-        current[path[path.length - 1]] = value
+        current[path[path.length - 1]!] = value
         return newObj
       }
 

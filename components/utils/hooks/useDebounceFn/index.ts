@@ -1,9 +1,10 @@
-import { onScopeDispose } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
+import { onScopeDispose, toValue } from 'vue'
 import { useRefFunction } from '../useRefFunction'
 
 export function useDebounceFn<T extends any[], U = any>(
   fn: (...args: T) => Promise<any> | any,
-  wait?: number,
+  wait?: MaybeRefOrGetter<number | undefined>,
 ) {
   const callback = useRefFunction(fn)
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -16,7 +17,8 @@ export function useDebounceFn<T extends any[], U = any>(
   }
 
   const run = async (...args: T): Promise<U | undefined> => {
-    if (wait === 0 || wait === undefined)
+    const waitTime = toValue(wait)
+    if (waitTime === 0 || waitTime === undefined)
       return callback(...args)
     cancel()
     return new Promise<U>((resolve, reject) => {
@@ -27,7 +29,7 @@ export function useDebounceFn<T extends any[], U = any>(
         catch (error) {
           reject(error)
         }
-      }, wait)
+      }, waitTime)
     })
   }
 

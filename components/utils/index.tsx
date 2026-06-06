@@ -68,19 +68,28 @@ export { pickProProps } from './pickProProps'
 export { objectToMap, ProFieldBadgeColor, proFieldParsingText } from './proFieldParsingText'
 export { runFunction } from './runFunction'
 export { stringify as stableStringify, default as stringify } from './stringify'
-export { transformKeySubmitValue } from './transformKeySubmitValue'
+export { isPlainObj, transformKeySubmitValue } from './transformKeySubmitValue'
 export * from './typing'
 export type {
+  ActionRenderConfig,
+  ActionRenderFunction,
+  ActionTypeText,
+  AddLineOptions,
   NewLineConfig,
   RecordKey,
   RowEditableConfig,
   RowEditableType,
+  SaveEditableActionRef,
   UseEditableType,
   UseEditableUtilType,
 } from './useEditableArray'
 export {
+  defaultActionRender,
+  DeleteEditableAction,
   editableRowByKey,
+  isSameRecordKey,
   recordKeyToString,
+  SaveEditableAction,
   useEditableArray,
 } from './useEditableArray'
 export type {

@@ -16,7 +16,7 @@ export type ProFormLayoutType = 'Form' | 'ModalForm' | 'DrawerForm' | 'StepsForm
 export type ProFormData = Record<string, any>
 export type FormData = ProFormData
 export type SearchTransformKeyFn = (value: any, namePath: NamePath, allValues?: ProFormData) => any
-export type SearchConvertKeyFn = (value: any, namePath: NamePath) => any
+export type SearchConvertKeyFn = (value: any, namePath: NamePath) => string | boolean | Record<string, any>
 
 export interface ProFormGridConfig {
   /** 是否开启栅格布局 */
@@ -29,8 +29,8 @@ export interface ProFormGridConfig {
 
 export interface ProFormInstance<T = ProFormData> extends Partial<FormInstance> {
   getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => T
-  getFieldFormatValue?: (name: NamePath, omitNil?: boolean) => any
-  getFieldFormatValueObject?: (name: NamePath, omitNil?: boolean) => Partial<T>
+  getFieldFormatValue?: (name?: NamePath, omitNil?: boolean) => T
+  getFieldFormatValueObject?: (name?: NamePath, omitNil?: boolean) => T
   validateFieldsReturnFormatValue?: (nameList?: NamePath[], omitNil?: boolean) => Promise<T>
 }
 
@@ -42,8 +42,8 @@ export interface FormRefLike {
   getFieldsValue?: () => FormData
   getFieldValue?: (name: NamePath) => unknown
   getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => FormData
-  getFieldFormatValue?: (name: NamePath, omitNil?: boolean) => unknown
-  getFieldFormatValueObject?: (name: NamePath, omitNil?: boolean) => FormData
+  getFieldFormatValue?: (name?: NamePath, omitNil?: boolean) => FormData
+  getFieldFormatValueObject?: (name?: NamePath, omitNil?: boolean) => FormData
   validateFieldsReturnFormatValue?: (nameList?: NamePath[], omitNil?: boolean) => Promise<FormData>
   setFieldsValue?: (values: FormData) => void
 }

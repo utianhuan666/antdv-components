@@ -1,3 +1,29 @@
-export function useStyle() {
-  return { wrapSSR: (node: any) => node, hashId: '' }
+import type { GenerateStyle, ProAliasToken } from '../../../provider'
+import { useStyle as useAntdStyle } from '../../../provider'
+
+export interface ProToken extends ProAliasToken {
+  componentCls: string
+}
+
+const genProStyle: GenerateStyle<ProToken> = token => ({
+  [token.componentCls]: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    justifyContent: 'space-between',
+    paddingBlock: 8,
+    paddingInlineStart: 8,
+    paddingInlineEnd: 8,
+    borderBlockStart: `1px solid ${token.colorSplit}`,
+  },
+})
+
+export function useStyle(prefixCls: string) {
+  return useAntdStyle('DropdownFooter', (token) => {
+    const proToken: ProToken = {
+      ...token,
+      componentCls: `.${prefixCls}`,
+    }
+
+    return [genProStyle(proToken)]
+  })
 }

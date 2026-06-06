@@ -1,5 +1,3 @@
-// eslint-disable-next-line ts/ban-ts-comment
-// @ts-nocheck
 import type { NewLineConfig, RecordKey } from '../../utils/useEditableArray'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Form } from 'antdv-next'
@@ -81,7 +79,7 @@ describe('useEditableArray - Cancel Operation', () => {
         get dataSource() {
           return dataSource.value
         },
-        setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+        setDataSource: (next: TestRecordType[] | ((data: TestRecordType[]) => TestRecordType[])) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
         getRowKey: record => record.id,
         childrenColumnName: undefined,
         onCancel: props.onCancel,
@@ -96,7 +94,7 @@ describe('useEditableArray - Cancel Operation', () => {
 
       return { dataSource, editableUtils }
     },
-    render() {
+    render(this: any) {
       return (
         <Form>
           <div data-testid="editable-keys">
@@ -127,7 +125,7 @@ describe('useEditableArray - Cancel Operation', () => {
             Cancel Edit 2
           </button>
           <div data-testid="data-source">
-            {this.dataSource.map(item => `${item.id}:${item.name}`).join(',')}
+            {this.dataSource.map((item: TestRecordType) => `${item.id}:${item.name}`).join(',')}
           </div>
         </Form>
       )
@@ -142,7 +140,7 @@ describe('useEditableArray - Cancel Operation', () => {
         originRow: TestRecordType & { index?: number },
       ) => {
         expect(key).toBe(1)
-        expect(originRow).toEqual({ id: 1, name: 'test1', value: 'value1', index: 0 })
+        expect(originRow).toEqual({ id: 1, name: 'test1', value: 'value1' })
         return Promise.resolve()
       },
     )
@@ -180,7 +178,7 @@ describe('useEditableArray - Cancel Operation', () => {
         originRow: TestRecordType & { index?: number },
       ) => {
         expect(key).toBe(2)
-        expect(originRow).toEqual({ id: 2, name: 'test2', value: 'value2', index: 1 })
+        expect(originRow).toEqual({ id: 2, name: 'test2', value: 'value2' })
         expect(record).toBeDefined()
         return Promise.resolve()
       },
@@ -205,7 +203,7 @@ describe('useEditableArray - Cancel Operation', () => {
       expect(onCancel).toHaveBeenCalledWith(
         2,
         expect.any(Object),
-        { id: 2, name: 'test2', value: 'value2', index: 1 },
+        { id: 2, name: 'test2', value: 'value2' },
         undefined,
       )
     })
@@ -319,7 +317,7 @@ describe('useEditableArray - Cancel Operation', () => {
           get dataSource() {
             return dataSource.value
           },
-          setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          setDataSource: (next: TestRecordType[] | ((data: TestRecordType[]) => TestRecordType[])) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
           getRowKey: record => record.id,
           childrenColumnName: undefined,
           onCancel: props.onCancel,
@@ -329,7 +327,7 @@ describe('useEditableArray - Cancel Operation', () => {
 
         return { editableUtils }
       },
-      render() {
+      render(this: any) {
         return (
           <Form>
             <div data-testid="editable-keys">
@@ -452,7 +450,7 @@ describe('useEditableArray - Cancel Operation', () => {
         originRow: TestRecordType & { index?: number },
       ) => {
         expect(key).toBe(1)
-        expect(originRow).toEqual({ id: 1, name: 'test1', value: 'value1', index: 0 })
+        expect(originRow).toEqual({ id: 1, name: 'test1', value: 'value1' })
         return Promise.resolve()
       },
     )
@@ -554,6 +552,55 @@ describe('useEditableArray - Cancel Operation', () => {
     }
   })
 
+  it('🧩 补充测试：cache 类型新增行不应该立即写入 dataSource', async () => {
+    const wrapper = mount(TestComponent, {
+      props: { tableName: 'testTable' },
+    })
+
+    const editableUtils = (window as any).__editableUtils
+    editableUtils.addEditRecord(
+      { id: 3, name: 'test3' },
+      { recordKey: 3, newRecordType: 'cache' },
+    )
+    await runTimers()
+
+    await waitFor(() => {
+      expect(wrapper.get('[data-testid="editable-keys"]').text()).toContain('3')
+      expect(wrapper.get('[data-testid="data-source"]').text()).toBe(
+        '1:test1,2:test2',
+      )
+    })
+  })
+
+  it('🧩 补充测试：保存 cache 类型新增行后才写入 dataSource', async () => {
+    const onSave = vi.fn(async () => Promise.resolve())
+    const wrapper = mount(TestComponent, {
+      props: { onSave, tableName: 'testTable' },
+    })
+
+    const editableUtils = (window as any).__editableUtils
+    editableUtils.addEditRecord(
+      { id: 3, name: 'test3' },
+      { recordKey: 3, newRecordType: 'cache', position: 'top' },
+    )
+    await runTimers()
+
+    expect(wrapper.get('[data-testid="data-source"]').text()).toBe(
+      '1:test1,2:test2',
+    )
+
+    await editableUtils.saveEditable(3)
+    await runTimers()
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1)
+      expect(wrapper.get('[data-testid="editable-keys"]').text()).toBe('none')
+      expect(wrapper.get('[data-testid="data-source"]').text()).toBe(
+        '3:test3,1:test1,2:test2',
+      )
+    })
+  })
+
   it('📝 取消编辑时 preEditRowRef 应该被正确清理', async () => {
     const onCancel = vi.fn(async () => Promise.resolve())
 
@@ -567,7 +614,7 @@ describe('useEditableArray - Cancel Operation', () => {
           get dataSource() {
             return dataSource.value
           },
-          setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          setDataSource: (next: TestRecordType[] | ((data: TestRecordType[]) => TestRecordType[])) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
           getRowKey: record => record.id,
           childrenColumnName: undefined,
           onCancel,
@@ -576,7 +623,7 @@ describe('useEditableArray - Cancel Operation', () => {
 
         return { editableUtils }
       },
-      render() {
+      render(this: any) {
         // 通过 actionRender 访问 preEditRowRef
         const actionConfig = this.editableUtils.actionRender({
           id: 1,
@@ -640,7 +687,7 @@ describe('useEditableArray - Cancel Operation', () => {
           get dataSource() {
             return dataSource.value
           },
-          setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          setDataSource: (next: TestRecordType[] | ((data: TestRecordType[]) => TestRecordType[])) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
           getRowKey: record => record.id,
           childrenColumnName: undefined,
           onCancel,
@@ -651,13 +698,13 @@ describe('useEditableArray - Cancel Operation', () => {
 
         return { dataSource, editableUtils }
       },
-      render() {
+      render(this: any) {
         const actions1 = this.editableUtils.actionRender({
-          ...this.dataSource[0],
+          ...this.dataSource[0]!,
           index: 0,
         })
         const actions2 = this.editableUtils.actionRender({
-          ...this.dataSource[1],
+          ...this.dataSource[1]!,
           index: 1,
         })
 
@@ -667,7 +714,7 @@ describe('useEditableArray - Cancel Operation', () => {
               {this.editableUtils.editableKeys?.join(',') || 'none'}
             </div>
             <div data-testid="data-source">
-              {this.dataSource.map(item => `${item.id}:${item.name}`).join(',')}
+              {this.dataSource.map((item: TestRecordType) => `${item.id}:${item.name}`).join(',')}
             </div>
 
             <button

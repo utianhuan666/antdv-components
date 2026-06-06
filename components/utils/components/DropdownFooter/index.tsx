@@ -1,8 +1,10 @@
 import type { VNodeChild } from 'vue'
+import { clsx } from '@v-c/util'
 import { Button } from 'antdv-next'
 import { defineComponent } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { useStyle } from './style'
 
 type OnClick = (event?: MouseEvent) => void
 
@@ -21,6 +23,7 @@ export const DropdownFooter = defineComponent({
     const props = rawProps as DropdownFooterProps
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-core-dropdown-footer')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
       const defaultFooter = [
@@ -49,16 +52,16 @@ export const DropdownFooter = defineComponent({
         return null
       const renderDom = custom || slots.default?.() || props.children || defaultFooter
 
-      return (
+      return wrapSSR(
         <div
-          class={prefixCls.value}
+          class={clsx(prefixCls.value, hashId)}
           onClick={(event: MouseEvent) => {
             if ((event.target as Element).getAttribute('data-type') !== 'confirm')
               event.stopPropagation()
           }}
         >
           {renderDom}
-        </div>
+        </div>,
       )
     }
   },

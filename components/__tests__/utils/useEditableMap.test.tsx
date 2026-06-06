@@ -1,5 +1,3 @@
-// eslint-disable-next-line ts/ban-ts-comment
-// @ts-nocheck
 import type { NewLineConfig, RecordKey } from '../../utils/useEditableArray'
 import { mount } from '@vue/test-utils'
 import { Form } from 'antdv-next'
@@ -12,7 +10,6 @@ import {
   it,
   vi,
 } from 'vitest'
-// @ts-nocheck
 import { defineComponent, nextTick, ref } from 'vue'
 import { useEditableMap } from '../../utils/useEditableMap'
 import { waitFor } from '../testUtils'
@@ -95,7 +92,7 @@ describe('useEditableMap', () => {
         get dataSource() {
           return dataSource.value
         },
-        setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+        setDataSource: (next: TestRecordType | ((data: TestRecordType) => TestRecordType)) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
         get editableKeys() {
           return props.editableKeys
         },
@@ -124,7 +121,7 @@ describe('useEditableMap', () => {
 
       return { dataSource, editableUtils }
     },
-    render() {
+    render(this: any) {
       return (
         <Form>
           <div data-testid="editable-keys">
@@ -389,7 +386,7 @@ describe('useEditableMap', () => {
 
         return { editableKeys, onChange }
       },
-      render() {
+      render(this: any) {
         return (
           <TestComponent
             editableKeys={this.editableKeys}
@@ -457,7 +454,7 @@ describe('useEditableMap', () => {
 
     // actionRender 返回的是 Vue 节点数组，需要在 Form 上下文中渲染这些节点并点击保存按钮
     const ActionButtons = defineComponent({
-      render() {
+      render(this: any) {
         return (
           <Form>
             {actionRender}
@@ -467,7 +464,7 @@ describe('useEditableMap', () => {
     })
 
     const actionWrapper = mount(ActionButtons)
-    const saveButton = actionWrapper.findAll('button').find(button => button.text() === '保存')
+    const saveButton = actionWrapper.findAll('a').find(action => action.text() === '保存')
 
     expect(saveButton).toBeTruthy()
 
@@ -507,7 +504,7 @@ describe('useEditableMap', () => {
 
     // actionRender 返回的是 Vue 节点数组，需要在 Form 上下文中渲染这些节点并点击取消按钮
     const ActionButtons = defineComponent({
-      render() {
+      render(this: any) {
         return (
           <Form>
             {actionRender}
@@ -517,7 +514,7 @@ describe('useEditableMap', () => {
     })
 
     const actionWrapper = mount(ActionButtons)
-    const cancelButton = actionWrapper.findAll('button').find(button => button.text() === '取消')
+    const cancelButton = actionWrapper.findAll('a').find(action => action.text() === '取消')
 
     expect(cancelButton).toBeTruthy()
 
@@ -575,6 +572,68 @@ describe('useEditableMap', () => {
     expect(actionRender.length).toBeGreaterThan(0)
   })
 
+  it('🧩 补充测试：actionRender config.onSave 成功后应该按 recordKey 更新 dataSource', async () => {
+    let saveConfig: any
+    const onSave = vi.fn(async () => Promise.resolve())
+    const customActionRender = vi.fn((_row, config, defaultDoms) => {
+      saveConfig = config
+      return [defaultDoms.save, defaultDoms.delete, defaultDoms.cancel]
+    })
+
+    const SaveComponent = defineComponent({
+      setup() {
+        const dataSource = ref<TestRecordType>({
+          name: 'John Doe',
+          age: 30,
+          address: {
+            city: 'Beijing',
+            street: 'Main St',
+          },
+        })
+
+        const editableUtils = useEditableMap<TestRecordType>({
+          get dataSource() {
+            return dataSource.value
+          },
+          setDataSource: (next: TestRecordType | ((data: TestRecordType) => TestRecordType)) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          onSave,
+          actionRender: customActionRender,
+        } as any)
+
+        return { dataSource, editableUtils }
+      },
+      render(this: any) {
+        const actions = this.editableUtils.actionRender('name')
+        return (
+          <Form>
+            <div data-testid="data-source">{JSON.stringify(this.dataSource)}</div>
+            <span>{actions}</span>
+          </Form>
+        )
+      },
+    })
+
+    const wrapper = mount(SaveComponent)
+    expect(customActionRender).toHaveBeenCalled()
+
+    await saveConfig.onSave(
+      'name',
+      { name: 'Jane Doe' },
+      { name: 'John Doe' },
+    )
+    await nextTick()
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledTimes(1)
+      expect(wrapper.get('[data-testid="data-source"]').text()).toContain(
+        '"name":"Jane Doe"',
+      )
+      expect(wrapper.get('[data-testid="data-source"]').text()).toContain(
+        '"age":30',
+      )
+    })
+  })
+
   it('📝 应该正确处理空数据源', async () => {
     const EmptyComponent = defineComponent({
       setup() {
@@ -583,11 +642,11 @@ describe('useEditableMap', () => {
           get dataSource() {
             return dataSource.value
           },
-          setDataSource: next => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          setDataSource: (next: TestRecordType | ((data: TestRecordType) => TestRecordType)) => (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
         } as any)
         return { editableUtils }
       },
-      render() {
+      render(this: any) {
         return (
           <Form>
             <div data-testid="editable-keys">{this.editableUtils.editableKeys?.join(',') || 'none'}</div>

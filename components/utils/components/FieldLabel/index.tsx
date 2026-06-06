@@ -5,6 +5,7 @@ import { clsx } from '@v-c/util'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { useStyle } from './style'
 
 export interface FieldLabelProps {
   label?: VNodeChild
@@ -55,6 +56,7 @@ export const FieldLabel = defineComponent({
     const props = rawProps as FieldLabelProps
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-core-field-label')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
     const clearRef = ref<HTMLElement | null>(null)
     const labelRef = ref<HTMLElement | null>(null)
     expose({ clearRef, labelRef })
@@ -124,10 +126,11 @@ export const FieldLabel = defineComponent({
       const disabled = resolveBoolean(props.disabled)
       const allowClear = resolveBoolean(props.allowClear, true)
 
-      return (
+      return wrapSSR(
         <span
           class={clsx(
             prefixCls.value,
+            hashId,
             `${prefixCls.value}-${props.size ?? 'middle'}`,
             {
               [`${prefixCls.value}-${props.variant || 'borderless'}-active`]: active,
@@ -163,7 +166,7 @@ export const FieldLabel = defineComponent({
           {props.downIcon !== false
             ? (props.downIcon ?? <DownOutlined class={`${prefixCls.value}-icon ${prefixCls.value}-arrow`} />)
             : null}
-        </span>
+        </span>,
       )
     }
   },

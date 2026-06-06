@@ -1,8 +1,10 @@
 import type { FormItemProps, PopoverProps } from 'antdv-next'
 import { LoadingOutlined } from '@antdv-next/icons'
+import { clsx, get } from '@v-c/util'
 import { FormItem, Popover } from 'antdv-next'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { cloneVNode, defineComponent, isVNode, ref, watch } from 'vue'
-import { getValue } from '../../path'
+import { useStyle } from './style'
 
 const AnyFormItem = FormItem as any
 
@@ -32,6 +34,10 @@ const InlineErrorFormItemPopover = defineComponent({
     }
     const open = ref<boolean | undefined>(false)
     const messages = ref({ errors: [] as any[], warnings: [] as any[] })
+    const config = useConfig()
+    const formItemCls = config.value.getPrefixCls('form-item')
+    const formItemWithHelpCls = `${formItemCls}-with-help`
+    const { wrapSSR, hashId } = useStyle(formItemWithHelpCls)
 
     watch(
       () => [props.inputProps.errors, props.inputProps.warnings, props.inputProps.validateStatus],
@@ -49,8 +55,8 @@ const InlineErrorFormItemPopover = defineComponent({
       const loading = props.inputProps.validateStatus === 'validating'
       const hasMessages = (messages.value.errors?.length ?? 0) + (messages.value.warnings?.length ?? 0) >= 1
       const content = (
-        <div class="ant-form-item" style={{ margin: 0, padding: 0 }}>
-          <div class="ant-form-item-with-help">
+        <div class={clsx(formItemCls, hashId)} style={{ margin: 0, padding: 0 }}>
+          <div class={clsx(formItemWithHelpCls, hashId)}>
             {loading ? <LoadingOutlined /> : null}
             {hasMessages
               ? (
@@ -63,7 +69,7 @@ const InlineErrorFormItemPopover = defineComponent({
           </div>
         </div>
       )
-      return (
+      return wrapSSR(
         <Popover
           open={!hasMessages ? false : open.value}
           onOpenChange={(next: boolean) => {
@@ -79,7 +85,7 @@ const InlineErrorFormItemPopover = defineComponent({
             {props.input}
             {props.extra}
           </>
-        </Popover>
+        </Popover>,
       )
     }
   },
@@ -101,7 +107,7 @@ export const InlineErrorFormItem = defineComponent({
           if (shouldName.length > 1)
             shouldName.pop()
           try {
-            return JSON.stringify(getValue(prev, shouldName)) !== JSON.stringify(getValue(next, shouldName))
+            return JSON.stringify(get(prev, shouldName)) !== JSON.stringify(get(next, shouldName))
           }
           catch {
             return true

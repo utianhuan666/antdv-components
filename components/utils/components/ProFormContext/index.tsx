@@ -4,9 +4,9 @@ import type { NamePath } from '../../typing'
 import { inject, provide } from 'vue'
 
 export interface ProFormInstanceType<T> {
-  getFieldsFormatValue?: (allData?: true, omitNil?: boolean) => T
-  getFieldFormatValue?: (name: NamePath, omitNil?: boolean) => any
-  getFieldFormatValueObject?: (name: NamePath, omitNil?: boolean) => Partial<T>
+  getFieldsFormatValue?: (nameList?: true, omitNil?: boolean) => T
+  getFieldFormatValue?: (nameList?: NamePath, omitNil?: boolean) => T
+  getFieldFormatValueObject?: (nameList?: NamePath, omitNil?: boolean) => T
   validateFieldsReturnFormatValue?: (nameList?: NamePath[], omitNil?: boolean) => Promise<T>
 }
 

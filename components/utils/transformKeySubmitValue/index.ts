@@ -1,9 +1,52 @@
 import type { SearchTransformKeyFn } from '../typing'
+import { get } from '@v-c/util'
+import { cloneDeep } from 'es-toolkit'
 import { isNil } from '../isNil'
-import { cloneDeep, getValue, isPlainObject, parseDotPath, setValue } from '../path'
 
 export interface DataFormatMapType {
   [key: string]: SearchTransformKeyFn | undefined | DataFormatMapType
+}
+
+export function isPlainObj(itemValue: any): boolean {
+  if (typeof itemValue !== 'object')
+    return false
+  if (itemValue === null)
+    return true
+  if (itemValue.constructor === RegExp)
+    return false
+  if (itemValue instanceof Map)
+    return false
+  if (itemValue instanceof Set)
+    return false
+  if (typeof HTMLElement !== 'undefined' && itemValue instanceof HTMLElement)
+    return false
+  if (typeof Blob !== 'undefined' && itemValue instanceof Blob)
+    return false
+  if (typeof File !== 'undefined' && itemValue instanceof File)
+    return false
+  if (Array.isArray(itemValue))
+    return false
+  return true
+}
+
+function parseDotPath(dotPath: string): (string | number)[] {
+  return dotPath.split('.').map(segment => (/^\d+$/.test(segment) ? Number.parseInt(segment, 10) : segment))
+}
+
+function setPathValue(source: any, path: (string | number)[], value: any) {
+  if (!path.length)
+    return value
+  let cursor = source
+  path.slice(0, -1).forEach((key, index) => {
+    const nextKey = path[index + 1]
+    if (cursor[key] == null || typeof cursor[key] !== 'object')
+      cursor[key] = typeof nextKey === 'number' ? [] : {}
+    cursor = cursor[key]
+  })
+  const lastKey = path[path.length - 1]
+  if (lastKey !== undefined)
+    cursor[lastKey] = value
+  return source
 }
 
 function filterNilTransforms(
@@ -41,14 +84,14 @@ function processDotPathTransforms(result: any, dotPathTransforms: Record<string,
     if (typeof transform !== 'function')
       return
     const pathArray = parseDotPath(dotPath)
-    const currentValue = getValue(result, pathArray)
+    const currentValue = get(result, pathArray)
     if (currentValue === undefined)
       return
 
     const transformed = transform(currentValue, pathArray.map(String), result)
     if (transformed && typeof transformed === 'object' && !Array.isArray(transformed)) {
       const parentPath = pathArray.slice(0, -1)
-      const parentObj = parentPath.length > 0 ? getValue(result, parentPath) : result
+      const parentObj = parentPath.length > 0 ? get(result, parentPath) : result
       const lastKey = pathArray[pathArray.length - 1]
       if (lastKey === undefined)
         return
@@ -61,13 +104,13 @@ function processDotPathTransforms(result: any, dotPathTransforms: Record<string,
       }
     }
     else {
-      setValue(result, pathArray, transformed)
+      setPathValue(result, pathArray, transformed)
     }
   })
 }
 
 function findNestedTransformFunction(currentTransforms: any, parentsKey: (string | number)[], entityKey: string): SearchTransformKeyFn | undefined {
-  const candidate = getValue(currentTransforms, [...parentsKey.map(String), entityKey])
+  const candidate = get(currentTransforms, [...parentsKey.map(String), entityKey])
   return typeof candidate === 'function' ? candidate : undefined
 }
 
@@ -121,7 +164,7 @@ function processNestedObjectTransforms(
         currentResult[entityKey] = transformed
       }
     }
-    else if (isPlainObject(itemValue) && !isNil(itemValue)) {
+    else if (isPlainObj(itemValue) && !isNil(itemValue)) {
       const nestedTransforms = currentTransforms[entityKey]
       if (nestedTransforms && typeof nestedTransforms === 'object') {
         const nested = processNestedObjectTransforms(itemValue, nextParentsKey, nestedTransforms, rootLevelMerges, rootAllValues)

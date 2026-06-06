@@ -1,8 +1,14 @@
 import type { Ref } from 'vue'
-import { isRef, onScopeDispose, ref, shallowRef, watch } from 'vue'
+import useSWRV from 'swrv'
+import { computed, isRef, onScopeDispose } from 'vue'
+import { configure } from '../../stringify'
 
 let testId = 0
-const fetchDataCache = new Map<string, unknown>()
+const stringifyKey = configure({
+  bigint: true,
+  circularValue: '[Circular]',
+  deterministic: true,
+})
 
 export type ProRequestData<T, U = Record<string, any>> = (
   params: U,
@@ -14,46 +20,41 @@ export function useFetchData<T, U = Record<string, any>>(props: {
   params?: U | Ref<U>
   request?: ProRequestData<T, U>
 }): [Ref<T | undefined>, Ref<boolean>] {
-  const cacheKey = props.proFieldKey ? props.proFieldKey.toString() : String(++testId)
-  const data = shallowRef<T | undefined>(fetchDataCache.get(cacheKey) as T | undefined)
-  const loading = ref(false)
+  const cacheKey = (() => {
+    if (props.proFieldKey)
+      return props.proFieldKey.toString()
+    testId += 1
+    return testId.toString()
+  })()
   let abort: AbortController | null = null
-
   const getParams = () => isRef(props.params) ? props.params.value : props.params
+  const swrKey = computed(() => props.request ? `${cacheKey}::${stringifyKey(getParams())}` : null)
 
-  async function fetchData() {
+  const fetchData = async () => {
     abort?.abort()
-    if (!props.request) {
-      data.value = undefined
-      loading.value = false
-      return
-    }
-
-    abort = new AbortController()
-    const currentAbort = abort
-    loading.value = true
+    const currentAbort = new AbortController()
+    abort = currentAbort
     try {
-      const response = await props.request(getParams() as U, currentAbort.signal)
-      if (!currentAbort.signal.aborted) {
-        data.value = response
-        fetchDataCache.set(cacheKey, response)
-      }
+      if (!props.request)
+        return undefined
+      return await props.request(getParams() as U, currentAbort.signal)
     }
     catch (error: any) {
-      if (error?.name !== 'AbortError' && !currentAbort.signal.aborted)
-        throw error
-    }
-    finally {
-      if (abort === currentAbort)
-        loading.value = false
+      if (error?.name === 'AbortError')
+        return undefined
+      throw error
     }
   }
 
-  watch(
-    () => [props.request, cacheKey, getParams()],
+  const { data, isValidating } = useSWRV<T | undefined>(
+    swrKey,
     fetchData,
-    { immediate: true, deep: true },
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    },
   )
+
   onScopeDispose(() => abort?.abort())
-  return [data, loading]
+  return [data, isValidating]
 }

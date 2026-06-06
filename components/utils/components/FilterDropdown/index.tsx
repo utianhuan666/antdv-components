@@ -6,6 +6,7 @@ import { Popover } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { DropdownFooter } from '../DropdownFooter'
+import { useStyle } from './style'
 
 export type FooterRender = ((onConfirm?: (e?: MouseEvent) => void, onClear?: (e?: MouseEvent) => void) => VNodeChild | false) | false
 
@@ -30,8 +31,9 @@ export const FilterDropdown = defineComponent({
     const props = rawProps as DropdownProps
     const htmlRef = ref<HTMLDivElement | null>(null)
     const prefixCls = useProPrefixCls('pro-core-field-dropdown')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
-    return () => (
+    return () => wrapSSR(
       <Popover
         {...(props.popoverProps || {})}
         placement={props.placement}
@@ -51,15 +53,15 @@ export const FilterDropdown = defineComponent({
         }}
       >
         {{
-          default: () => <span class={`${prefixCls.value}-label`}>{props.label}</span>,
+          default: () => <span class={clsx(`${prefixCls.value}-label`, hashId)}>{props.label}</span>,
           content: () => (
             <div
               ref={htmlRef}
-              class={clsx(`${prefixCls.value}-overlay`, {
+              class={clsx(`${prefixCls.value}-overlay`, hashId, {
                 [`${prefixCls.value}-overlay-${props.placement}`]: props.placement,
               })}
             >
-              <div class={`${prefixCls.value}-content`} style={{ padding: props.padding }}>{slots.default?.() || props.children}</div>
+              <div class={clsx(`${prefixCls.value}-content`, hashId)} style={{ padding: props.padding }}>{slots.default?.() || props.children}</div>
               {props.footer
                 ? (
                     <DropdownFooter
@@ -72,7 +74,7 @@ export const FilterDropdown = defineComponent({
             </div>
           ),
         }}
-      </Popover>
+      </Popover>,
     )
   },
 })
