@@ -1,4 +1,42 @@
-import { afterEach, vi } from 'vitest'
+import { afterEach, expect, vi } from 'vitest'
+
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    toBeInTheDocument: () => T
+    toHaveAttribute: (name: string, value?: string) => T
+    toHaveClass: (...classNames: string[]) => T
+  }
+}
+
+expect.extend({
+  toBeInTheDocument(received: Element | null) {
+    const pass = !!received && document.body.contains(received)
+    return {
+      pass,
+      message: () => pass ? 'expected element not to be in the document' : 'expected element to be in the document',
+    }
+  },
+  toHaveAttribute(received: Element | null, name: string, value?: string) {
+    const actual = received?.getAttribute(name)
+    const pass = value === undefined ? actual !== null : actual === value
+    return {
+      pass,
+      message: () => pass
+        ? `expected element not to have attribute ${name}`
+        : `expected element to have attribute ${name}${value === undefined ? '' : `=${value}`}`,
+    }
+  },
+  toHaveClass(received: Element | null, ...classNames: string[]) {
+    const actual = Array.from(received?.classList || [])
+    const pass = !!received && classNames.every(className => actual.includes(className))
+    return {
+      pass,
+      message: () => pass
+        ? `expected element not to have class ${classNames.join(' ')}`
+        : `expected element to have class ${classNames.join(' ')}`,
+    }
+  },
+})
 
 afterEach(() => {
   document.body.innerHTML = ''
@@ -30,6 +68,25 @@ class ResizeObserverMock {
 
 if (!window.ResizeObserver)
   window.ResizeObserver = ResizeObserverMock as any
+
+const originalGetComputedStyle = window.getComputedStyle.bind(window)
+window.getComputedStyle = ((element: Element, pseudoElt?: string | null) => {
+  try {
+    return originalGetComputedStyle(element, pseudoElt)
+  }
+  catch {
+    return {
+      display: 'block',
+      visibility: 'visible',
+      width: '0px',
+      height: '0px',
+      overflow: 'visible',
+      overflowX: 'visible',
+      overflowY: 'visible',
+      getPropertyValue: () => '',
+    } as unknown as CSSStyleDeclaration
+  }
+}) as typeof window.getComputedStyle
 
 if (!window.URL.createObjectURL)
   window.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
