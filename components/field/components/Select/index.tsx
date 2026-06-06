@@ -7,6 +7,7 @@ import { Badge, useConfig } from 'antdv-next'
 import { debounce } from 'es-toolkit'
 import useSWRV from 'swrv'
 import { computed, defineComponent, h, onUnmounted, ref, watch } from 'vue'
+import { useProProviderSWRVContext } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSelectLightEdit from './FieldSelectLightEdit'
 import FieldSelectRead from './FieldSelectRead'
@@ -172,13 +173,20 @@ export function useFieldFetchData(
   },
 ): [Ref<boolean>, Ref<RequestOptionsType[]>, (keyWord?: string) => void, () => void] {
   const keyWords = ref<string | undefined>(props.defaultKeyWords)
+  const providerSWRVContext = useProProviderSWRVContext()
   let debouncedFetch: ReturnType<typeof debounce<(runner: () => void) => void>> | undefined
   let debounceMsCache: number | undefined
   const cacheKey = props.proFieldKey != null
-    ? props.proFieldKey.toString()
+    ? `${providerSWRVContext?.key || 'default'}-${props.proFieldKey.toString()}`
     : props.request
-      ? `field-select-${++fieldFetchCacheSeed}`
+      ? `${providerSWRVContext?.key || 'default'}-field-select-${++fieldFetchCacheSeed}`
       : 'no-fetch'
+  const swrvConfig = {
+    ...(providerSWRVContext ? { cache: providerSWRVContext.cache } : {}),
+    dedupingInterval: props.cacheForSwr ? MAX_TIMER_DEDUPING_INTERVAL : 2000,
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  }
 
   const swrKey = ref<[string, FieldSelectComponentProps['params'], string | undefined] | null>(null)
   const swr = useSWRV<RequestOptionsType[]>(
@@ -190,11 +198,7 @@ export function useFieldFetchData(
       )
       return data || []
     },
-    {
-      dedupingInterval: props.cacheForSwr ? MAX_TIMER_DEDUPING_INTERVAL : 2000,
-      revalidateOnFocus: false,
-      shouldRetryOnError: false,
-    },
+    swrvConfig,
   )
 
   const loading = computed(() => props.request ? swr.isValidating.value : false) as Ref<boolean>

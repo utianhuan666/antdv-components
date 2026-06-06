@@ -322,6 +322,7 @@ export type {
   ParamsType,
   ProAliasToken,
   ProFieldFCMode,
+  ProSchemaValueEnumType,
   ProSchemaValueEnumMap,
   ProSchemaValueEnumObj,
   ProTokenType,

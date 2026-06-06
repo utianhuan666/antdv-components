@@ -1,6 +1,5 @@
 import type { ConfigProviderProps, ThemeConfig } from 'antdv-next'
 import type { DefineComponent, InjectionKey, PropType, VNodeChild } from 'vue'
-import type { ProRenderFieldPropsType, ProSchemaValueEnumType } from '../field/types'
 import type { IntlType } from './intl'
 import type { DeepPartial, ProTokenType } from './typing/layoutToken'
 import type { ProAliasToken } from './useStyle'
@@ -9,7 +8,8 @@ import { useConfig } from 'antdv-next/dist/config-provider/context'
 import zhCNLocale from 'antdv-next/locale/zh_CN'
 import { ThemeProvider } from 'antdv-style'
 import dayjs from 'dayjs'
-import { computed, defineComponent, inject, provide, reactive, watchEffect } from 'vue'
+import { SWRVCache } from 'swrv'
+import { computed, defineComponent, inject, onUnmounted, provide, reactive, watchEffect } from 'vue'
 import { ProConfigKey } from '../field/types'
 import { findIntlKeyByAntdLocaleKey, intlMap, zhCNIntl } from './intl'
 import { getLayoutDesignToken } from './typing/layoutToken'
@@ -67,6 +67,13 @@ function resolveIntl(propsIntl: IntlType | undefined, parentIntl: IntlType | und
   return zhCNIntl
 }
 
+export type ProSchemaValueEnumType = {
+  text: VNodeChild
+  status?: string
+  color?: string
+  disabled?: boolean
+}
+
 export type ProSchemaValueEnumMap = Map<
   string | number | boolean,
   ProSchemaValueEnumType | VNodeChild
@@ -84,7 +91,7 @@ export interface BaseProFieldFC {
   light?: boolean
   label?: VNodeChild
   valueEnum?: ProSchemaValueEnumObj | ProSchemaValueEnumMap
-  proFieldKey?: string | number
+  proFieldKey?: string | number | bigint
 }
 
 export type ProFieldFCMode = 'read' | 'edit' | 'update'
@@ -97,7 +104,22 @@ export type ProFieldFCRenderProps = {
   onChange?: (...rest: any[]) => void
 } & BaseProFieldFC
 
-export type { ProRenderFieldPropsType }
+export type ProRenderFieldPropsType = {
+  render?:
+    | ((
+      text: any,
+      props: Omit<ProFieldFCRenderProps, 'value' | 'onChange'>,
+      dom: VNodeChild,
+    ) => VNodeChild)
+    | undefined
+  formItemRender?:
+    | ((
+      text: any,
+      props: ProFieldFCRenderProps,
+      dom: VNodeChild,
+    ) => VNodeChild)
+    | undefined
+}
 
 export type ParamsType = Record<string, any>
 
@@ -133,8 +155,28 @@ const defaultProConfigContext: ConfigContextPropsType = {
 export const ProProviderKey: InjectionKey<ConfigContextPropsType>
   = Symbol('ProProvider')
 
+interface ProProviderSWRVContext {
+  cache: SWRVCache<any>
+  key: string
+}
+
+let swrvCacheSeed = 0
+
+const ProProviderSWRVContextKey: InjectionKey<ProProviderSWRVContext | undefined>
+  = Symbol('ProProviderSWRVContext')
+
 export function useProProviderContext(): ConfigContextPropsType {
   return inject(ProProviderKey, defaultProConfigContext)
+}
+
+export function useProProviderSWRVContext(): ProProviderSWRVContext | undefined {
+  return inject(ProProviderSWRVContextKey, undefined)
+}
+
+function clearSWRVCache(context: ProProviderSWRVContext | undefined) {
+  const items = (context?.cache as any)?.items
+  if (typeof items?.clear === 'function')
+    items.clear()
 }
 
 export const ConfigConsumer = defineComponent({
@@ -160,6 +202,13 @@ const ConfigProviderContainer = defineComponent({
     const config = useConfig()
     const tokenContext = antdTheme.useToken()
     const parentProvide = useProProviderContext()
+    const parentSWRVContext = useProProviderSWRVContext()
+    const scopedSWRVContext = props.autoClearCache
+      ? {
+          cache: new SWRVCache(),
+          key: `pro-provider-${++swrvCacheSeed}`,
+        }
+      : parentSWRVContext
 
     const proComponentsCls = computed(() =>
       props.prefixCls
@@ -238,12 +287,19 @@ const ConfigProviderContainer = defineComponent({
     }) as ConfigContextPropsType
 
     provide(ProProviderKey, contextValue)
-    provide(ProConfigKey, contextValue)
+    provide(ProConfigKey, contextValue as any)
+    provide(ProProviderSWRVContextKey, scopedSWRVContext)
+
+    onUnmounted(() => {
+      if (props.autoClearCache)
+        clearSWRVCache(scopedSWRVContext)
+    })
 
     const themeConfig = computed<ThemeConfig>(() => ({
       ...(config.value.theme || {}),
+      hashId: hashId.value,
       hashed: hashed.value && isNeedOpenHash(),
-    }))
+    }) as ThemeConfig)
 
     return () => (
       <ConfigProvider theme={themeConfig.value}>
@@ -336,6 +392,18 @@ export const ProConfigProvider = defineComponent({
   },
 }) as DefineComponent<ProConfigProviderProps>
 
+const ProProviderProvider = defineComponent({
+  name: 'ProProvider',
+  props: {
+    value: { type: Object as PropType<ConfigContextPropsType>, required: true },
+  },
+  setup(props, { slots }) {
+    provide(ProProviderKey, props.value)
+    provide(ProConfigKey, props.value as any)
+    return () => slots.default?.()
+  },
+})
+
 export function useIntl(): IntlType {
   const config = useConfig()
   const { intl } = useProProviderContext()
@@ -354,6 +422,9 @@ export function useIntl(): IntlType {
   return zhCNIntl
 }
 
-export const ProProvider = ProProviderKey
+export const ProProvider = {
+  Provider: ProProviderProvider,
+  Consumer: ConfigConsumer,
+}
 
-export default ProProviderKey
+export default ProProvider

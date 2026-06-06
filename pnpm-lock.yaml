@@ -14,6 +14,9 @@ importers:
       '@antdv-next/icons':
         specifier: ^1.0.4
         version: 1.0.4(vue@3.5.29(typescript@5.9.3))
+      '@ctrl/tinycolor':
+        specifier: ^4.2.0
+        version: 4.2.0
       '@umijs/route-utils':
         specifier: ^4.0.3
         version: 4.0.3
@@ -553,6 +556,10 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
+
+  '@ctrl/tinycolor@4.2.0':
+    resolution: {integrity: sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A==}
+    engines: {node: '>=14'}
 
   '@dprint/formatter@0.5.1':
     resolution: {integrity: sha512-cdZUrm0iv/FnnY3CKE2dEcVhNEzrC551aE2h2mTFwQCRBrqyARLDnb7D+3PlXTUVp3s34ftlnGOVCmhLT9DeKA==}
@@ -5252,6 +5259,8 @@ snapshots:
   '@csstools/css-syntax-patches-for-csstree@1.1.0': {}
 
   '@csstools/css-tokenizer@4.0.0': {}
+
+  '@ctrl/tinycolor@4.2.0': {}
 
   '@dprint/formatter@0.5.1': {}
 

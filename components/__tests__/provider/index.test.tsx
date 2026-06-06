@@ -1,16 +1,27 @@
 import type { ComponentTokenMap } from 'antdv-next/dist/theme/interface/components'
 import { mount } from '@vue/test-utils'
-import { ConfigProvider } from 'antdv-next'
-import { describe, expect, it, vi } from 'vitest'
+import { TinyColor } from '@ctrl/tinycolor'
+import { ConfigProvider, theme as antdTheme } from 'antdv-next'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import { ProField } from '../../field'
+import { useFieldFetchData } from '../../field/components/Select'
 import { ProForm, ProFormMoney } from '../../form'
 import {
   createIntl,
   ProConfigProvider,
+  ProProvider,
+  lighten,
+  setAlpha,
   useIntl,
   useProProviderContext,
   useStyle,
+} from '../../provider'
+import type { VNodeChild } from 'vue'
+import type {
+  ProFieldFCRenderProps,
+  ProRenderFieldPropsType as ProviderProRenderFieldPropsType,
+  ProSchemaValueEnumType,
 } from '../../provider'
 import { genProStyleHooks } from '../../theme/genProStyleUtils'
 import { waitFor } from '../testUtils'
@@ -80,6 +91,86 @@ describe('proConfigProvider', () => {
     expect(wrapper.find('.pro-provider-demo').text()).toBe('wrapped')
     expect(wrapper.find('.pro-provider-demo').attributes('data-hash-id')).toBe('')
     expect(assertToken).toHaveBeenCalledWith('.ant-pro', '.ant')
+  })
+
+  it('useStyle falls back to antd token without ProConfigProvider', () => {
+    const assertToken = vi.fn()
+
+    const Demo = defineComponent({
+      setup() {
+        const style = useStyle('ProProviderFallback', (token) => {
+          assertToken(token.colorPrimary, token.proComponentsCls, token.antCls)
+          return {
+            '.pro-provider-fallback': {
+              color: token.colorPrimary,
+            },
+          }
+        })
+
+        return () => <div class="pro-provider-fallback" data-hash-id={style.hashId} />
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ConfigProvider theme={{ token: { colorPrimary: '#f5222d' } }}>
+        <Demo />
+      </ConfigProvider>
+    ))
+
+    expect(wrapper.find('.pro-provider-fallback').exists()).toBe(true)
+    expect(assertToken).toHaveBeenCalledWith('#f5222d', '.ant-pro', '.ant')
+  })
+
+  it('setAlpha and lighten match TinyColor behavior', () => {
+    expect(setAlpha('red', 0.35)).toBe(new TinyColor('red').setAlpha(0.35).toRgbString())
+    expect(setAlpha('hsl(120, 100%, 25%)', 0.5)).toBe(new TinyColor('hsl(120, 100%, 25%)').setAlpha(0.5).toRgbString())
+    expect(lighten('#1677ff', 20)).toBe(new TinyColor('#1677ff').lighten(20).toHexString())
+    expect(lighten('rgba(22, 119, 255, 0.8)', 20)).toBe(new TinyColor('rgba(22, 119, 255, 0.8)').lighten(20).toHexString())
+  })
+
+  it('ProProvider facade provides and consumes context value', () => {
+    const token = {
+      ...antdTheme.getDesignToken(),
+      proComponentsCls: '.custom-pro',
+      antCls: '.custom-ant',
+      themeId: 0,
+    }
+
+    const Demo = defineComponent({
+      setup() {
+        const context = useProProviderContext()
+        return () => (
+          <span
+            data-locale={context.intl?.locale}
+            data-token={context.token.proComponentsCls}
+          />
+        )
+      },
+    })
+
+    const wrapper = mount(() => (
+      <ProProvider.Provider
+        value={{
+          intl: createIntl('en_US', { moneySymbol: '$' }),
+          valueTypeMap: {},
+          token,
+          hashed: false,
+          dark: false,
+          prefixCls: '.custom-pro',
+        }}
+      >
+        <ProProvider.Consumer>
+          {{
+            default: (context: any) => <span class="consumer">{context.token.proComponentsCls}</span>,
+          }}
+        </ProProvider.Consumer>
+        <Demo />
+      </ProProvider.Provider>
+    ))
+
+    expect(wrapper.find('.consumer').text()).toBe('.custom-pro')
+    expect(wrapper.find('span[data-locale]').attributes('data-locale')).toBe('en_US')
+    expect(wrapper.find('span[data-locale]').attributes('data-token')).toBe('.custom-pro')
   })
 
   it('genProStyleHooks registers pro component styles', () => {
@@ -152,6 +243,46 @@ describe('proConfigProvider', () => {
       expect(input.exists()).toBe(true)
       expect((input.element as HTMLInputElement).value).toBe('!? 44.33')
     })
+  })
+
+  it('autoClearCache isolates and clears swrv cache on unmount', async () => {
+    const request = vi.fn(async () => [{ label: 'A', value: 'A' }])
+
+    const Demo = defineComponent({
+      setup() {
+        const [, options] = useFieldFetchData({
+          request,
+          cacheForSwr: true,
+          proFieldKey: 'provider-auto-clear-cache',
+        } as any)
+
+        return () => <span>{options.value.length}</span>
+      },
+    })
+
+    const first = mount(() => (
+      <ProConfigProvider autoClearCache>
+        <Demo />
+      </ProConfigProvider>
+    ))
+
+    await waitFor(() => {
+      expect(first.text()).toBe('1')
+    })
+    expect(request).toHaveBeenCalledTimes(1)
+    first.unmount()
+
+    const second = mount(() => (
+      <ProConfigProvider autoClearCache>
+        <Demo />
+      </ProConfigProvider>
+    ))
+
+    await waitFor(() => {
+      expect(second.text()).toBe('1')
+    })
+    expect(request).toHaveBeenCalledTimes(2)
+    second.unmount()
   })
 
   it('provides custom valueTypeMap to ProField', () => {
@@ -275,5 +406,20 @@ describe('proConfigProvider', () => {
       expect(wrapper.find('span').attributes('data-dark')).toBe('true')
       expect(wrapper.find('span').attributes('data-color')).not.toBe('#1677ff')
     })
+  })
+
+  it('exports provider types aligned with React provider surface', () => {
+    expectTypeOf<ProSchemaValueEnumType['text']>().toEqualTypeOf<VNodeChild>()
+    expectTypeOf<ProSchemaValueEnumType['status']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<ProSchemaValueEnumType['color']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<ProSchemaValueEnumType['disabled']>().toEqualTypeOf<boolean | undefined>()
+
+    expectTypeOf<NonNullable<ProFieldFCRenderProps['proFieldKey']>>()
+      .toEqualTypeOf<string | number | bigint>()
+
+    expectTypeOf<ProviderProRenderFieldPropsType['render']>()
+      .parameter(1)
+      .exclude<undefined>()
+      .toEqualTypeOf<Omit<ProFieldFCRenderProps, 'value' | 'onChange'>>()
   })
 })

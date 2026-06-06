@@ -232,7 +232,7 @@ export function createProField(
           dataValue.value,
           resolvedValueType,
           renderProps,
-          context.valueTypeMap || {},
+          (context.valueTypeMap || {}) as any,
         )
 
         return rendered ?? null

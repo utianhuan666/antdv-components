@@ -1,78 +1,27 @@
+import type { CSSInterpolation, CSSObject } from '@antdv-next/cssinjs'
 import type { GlobalToken } from 'antdv-next'
 import type { VNodeChild } from 'vue'
 import type { ProTokenType } from '../typing/layoutToken'
+import { useStyleRegister } from '@antdv-next/cssinjs'
+import { TinyColor } from '@ctrl/tinycolor'
 import { theme as antdTheme } from 'antdv-next'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
-import { createGlobalStyle } from 'antdv-style'
+import { computed, ref, watch } from 'vue'
 import { useProProviderContext } from '../index'
 
-export type CSSObject = Record<string, any>
-export type CSSInterpolation
-  = | CSSObject
-    | CSSInterpolation[]
-    | string
-    | number
-    | boolean
-    | null
-    | undefined
+export type { CSSInterpolation, CSSObject }
+
 export type GenerateStyle<
   ComponentToken extends object = GlobalToken,
   ReturnType = CSSInterpolation,
 > = (token: ComponentToken, ...rest: any[]) => ReturnType
 
-interface RGB { r: number, g: number, b: number, a?: number }
-
-function parseColor(color: string): RGB | undefined {
-  const value = color.trim()
-
-  if (value.startsWith('#')) {
-    const hex = value.slice(1)
-    const normalized = hex.length === 3
-      ? hex.split('').map(char => char + char).join('')
-      : hex
-    const intValue = Number.parseInt(normalized.slice(0, 6), 16)
-    if (Number.isNaN(intValue))
-      return undefined
-
-    return {
-      r: (intValue >> 16) & 255,
-      g: (intValue >> 8) & 255,
-      b: intValue & 255,
-    }
-  }
-
-  const rgba = value.match(/^rgba?\(([^)]+)\)$/i)
-  if (!rgba)
-    return undefined
-
-  const parts = rgba[1]!.split(',').map(part => Number.parseFloat(part.trim()))
-  if (parts.length < 3 || parts.slice(0, 3).some(Number.isNaN))
-    return undefined
-
-  return { r: parts[0]!, g: parts[1]!, b: parts[2]!, a: parts[3] }
-}
-
-function toHex(value: number) {
-  return Math.round(Math.min(255, Math.max(0, value))).toString(16).padStart(2, '0')
-}
-
 export function setAlpha(baseColor: string, alpha: number) {
-  const rgb = parseColor(baseColor)
-  if (!rgb)
-    return baseColor
-
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
+  return new TinyColor(baseColor).setAlpha(alpha).toRgbString()
 }
 
 export function lighten(baseColor: string, brightness: number) {
-  const rgb = parseColor(baseColor)
-  if (!rgb)
-    return baseColor
-
-  const ratio = Math.min(100, Math.max(0, brightness)) / 100
-  return `#${toHex(rgb.r + (255 - rgb.r) * ratio)}${toHex(
-    rgb.g + (255 - rgb.g) * ratio,
-  )}${toHex(rgb.b + (255 - rgb.b) * ratio)}`
+  return new TinyColor(baseColor).lighten(brightness).toHexString()
 }
 
 export const proTheme = antdTheme as any
@@ -136,17 +85,15 @@ function getProTokenKey(token: ProAliasToken): string {
   }
 }
 
-const globalStyleCache = new Map<string, ReturnType<typeof createGlobalStyle>>()
-
 export function useStyle(
   componentName: string,
   styleFn: GenerateStyle<ProAliasToken>,
 ) {
   const proProvider = useProProviderContext()
-  const { token: antdToken, hashId } = antdTheme.useToken()
+  const { token: antdToken, hashId, theme } = antdTheme.useToken()
   const config = useConfig()
 
-  const getMergedToken = (): ProAliasToken => {
+  const mergedToken = computed((): ProAliasToken => {
     const contextToken = proProvider.token?.layout ? proProvider.token : antdToken.value
     return {
       ...(contextToken as Record<string, any>),
@@ -155,27 +102,48 @@ export function useStyle(
         ?? `.${config.value.getPrefixCls('pro')}`,
       antCls: `.${config.value.getPrefixCls()}`,
     } as ProAliasToken
-  }
+  })
 
-  const cacheKey = `${componentName}-${getProTokenKey(getMergedToken())}`
-  let useGlobalStyle = globalStyleCache.get(cacheKey)
+  const styleKey = computed(() =>
+    [
+      proProvider.hashId || hashId.value,
+      (theme.value as any)?.id,
+      mergedToken.value.themeId,
+      getProTokenKey(mergedToken.value),
+    ].filter(Boolean).join('-'),
+  )
 
-  if (!useGlobalStyle) {
-    useGlobalStyle = createGlobalStyle(() => {
-      const styles = styleFn(getMergedToken())
-      return styles == null || typeof styles === 'boolean' || typeof styles === 'number'
-        ? ''
-        : (styles as string | Record<string, unknown>)
-    })
-    globalStyleCache.set(cacheKey, useGlobalStyle)
-  }
+  const lastStyleKey = ref('')
+  const styleVersion = ref(0)
 
-  useGlobalStyle()
+  watch(
+    styleKey,
+    (key) => {
+      if (lastStyleKey.value !== key) {
+        styleVersion.value += 1
+        lastStyleKey.value = key
+      }
+    },
+    { immediate: true, flush: 'sync' },
+  )
+
+  useStyleRegister(
+    computed(() => ({
+      theme: theme.value as any,
+      token: mergedToken.value,
+      path: [componentName, styleKey.value, styleVersion.value].filter(Boolean).map(String),
+      nonce: config.value.csp?.nonce ? () => config.value.csp!.nonce! : undefined,
+      layer: {
+        name: 'antd-pro',
+      },
+    })),
+    () => styleFn(mergedToken.value),
+  )
 
   return {
     wrapSSR: (node: VNodeChild) => node,
     get hashId() {
-      return proProvider.hashed ? hashId.value : ''
+      return proProvider.hashed ? (proProvider.hashId || hashId.value) : ''
     },
   } as UseStyleResult
 }

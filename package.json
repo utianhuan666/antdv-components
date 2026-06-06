@@ -57,6 +57,7 @@
   "dependencies": {
     "@antdv-next/cssinjs": "^1.0.6",
     "@antdv-next/icons": "^1.0.4",
+    "@ctrl/tinycolor": "^4.2.0",
     "@umijs/route-utils": "^4.0.3",
     "@v-c/util": "^1.0.19",
     "@vueuse/core": "^14.2.1",
