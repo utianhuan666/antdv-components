@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { version } from '../package.json'
 import { CardModule, CheckCard, ProCard, Statistic, StatisticCard } from './card'
+import { DescriptionsModule, ProDescriptions } from './descriptions'
 import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
 import { ProConfigProvider } from './provider'
@@ -14,12 +15,13 @@ export default {
     app.use(FieldModule)
     app.use(ProFormModule)
     app.use(CardModule)
+    app.use(DescriptionsModule)
     app.component(ProConfigProvider.name!, ProConfigProvider)
   },
   version,
 }
 
-export { CheckCard, Form, FormItem, ProCard, ProConfigProvider, ProField, ProSkeleton, PureProField, Statistic, StatisticCard, version }
+export { CheckCard, DescriptionsModule, Form, FormItem, ProCard, ProConfigProvider, ProDescriptions, ProField, ProSkeleton, PureProField, Statistic, StatisticCard, version }
 export { CardModule } from './card'
 export type {
   CheckCardGroupProps,
@@ -29,6 +31,16 @@ export type {
   StatisticCardProps,
   StatisticProps,
 } from './card'
+export type {
+  DescriptionsItemProps,
+  ProDescriptionsActionType,
+  ProDescriptionsColumn,
+  ProDescriptionsItemProps,
+  ProDescriptionsProps,
+  ProDescriptionsRequestResult,
+  RequestData,
+  RowEditableConfig,
+} from './descriptions'
 export {
   defaultRenderText,
   FieldCascader,

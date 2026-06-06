@@ -18,6 +18,6 @@ export async function waitFor(assertion: () => void | Promise<void>, timeout = 1
   throw lastError
 }
 
-export function mountAttached(component: any) {
+export function mountAttached(component: any): any {
   return mount(component, { attachTo: document.body })
 }
