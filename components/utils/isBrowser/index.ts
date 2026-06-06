@@ -7,6 +7,8 @@ export function isBrowser() {
   const currentProcess = (globalThis as any).process
   if (currentProcess?.env?.NODE_ENV === 'TEST')
     return true
+  if (typeof window !== 'undefined' && typeof window.document !== 'undefined' && typeof window.document.createElement === 'function')
+    return true
   return (
     typeof window !== 'undefined'
     && typeof window.document !== 'undefined'

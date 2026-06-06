@@ -14,6 +14,9 @@ importers:
       '@antdv-next/icons':
         specifier: ^1.0.4
         version: 1.0.4(vue@3.5.29(typescript@5.9.3))
+      '@umijs/route-utils':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@v-c/util':
         specifier: ^1.0.19
         version: 1.0.19(vue@3.5.29(typescript@5.9.3))
@@ -32,6 +35,9 @@ importers:
       es-toolkit:
         specifier: ^1.47.0
         version: 1.47.0
+      path-to-regexp:
+        specifier: ^8.4.2
+        version: 8.4.2
       swrv:
         specifier: ^1.2.0
         version: 1.2.0(vue@3.5.29(typescript@5.9.3))
@@ -1663,6 +1669,9 @@ packages:
   '@typescript-eslint/visitor-keys@8.56.1':
     resolution: {integrity: sha512-KiROIzYdEV85YygXw6BI/Dx4fnBlFQu6Mq4QE4MOH9fFnhohw6wX/OAvDY2/C+ut0I3RSPKenvZJIVYqJNkhEw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@umijs/route-utils@4.0.3':
+    resolution: {integrity: sha512-zPEcYhl1cSfkSRDzzGgoD1mDvGjxoOTJFvkn55srfgdQ3NZe2ZMCScCU6DEnOxuKP1XDVf8pqyqCDVd2+RCQIw==}
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
@@ -3818,6 +3827,9 @@ packages:
   path-scurry@1.11.1:
     resolution: {integrity: sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA==}
     engines: {node: '>=16 || 14 >=14.18'}
+
+  path-to-regexp@8.4.2:
+    resolution: {integrity: sha512-qRcuIdP69NPm4qbACK+aDogI5CBDMi1jKe0ry5rSQJz8JVLsC7jV8XpiJjGRLLol3N+R5ihGYcrPLTno6pAdBA==}
 
   path-type@3.0.0:
     resolution: {integrity: sha512-T2ZUsdZFHgA3u4e5PfPbjd7HDDpxPnQb5jN0SrDsjNSuVXHJqtwTnWqG0B1jZrgmJ/7lj1EmVIByWt1gxGkWvg==}
@@ -6128,6 +6140,8 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.56.1
       eslint-visitor-keys: 5.0.1
+
+  '@umijs/route-utils@4.0.3': {}
 
   '@ungap/structured-clone@1.3.0': {}
 
@@ -8855,6 +8869,8 @@ snapshots:
     dependencies:
       lru-cache: 10.4.3
       minipass: 7.1.3
+
+  path-to-regexp@8.4.2: {}
 
   path-type@3.0.0:
     dependencies:

@@ -4,6 +4,7 @@ import { CardModule, CheckCard, ProCard, Statistic, StatisticCard } from './card
 import { DescriptionsModule, ProDescriptions } from './descriptions'
 import { FieldModule, ProField, PureProField } from './field'
 import { Form, MyFormItem as FormItem, ProFormModule } from './form'
+import { LayoutModule, ProLayout } from './layout'
 import { ProConfigProvider } from './provider'
 import { ProSkeleton } from './skeleton'
 import './theme/augmentComponentTokenMap'
@@ -16,12 +17,13 @@ export default {
     app.use(ProFormModule)
     app.use(CardModule)
     app.use(DescriptionsModule)
+    app.use(LayoutModule)
     app.component(ProConfigProvider.name!, ProConfigProvider)
   },
   version,
 }
 
-export { CheckCard, DescriptionsModule, Form, FormItem, ProCard, ProConfigProvider, ProDescriptions, ProField, ProSkeleton, PureProField, Statistic, StatisticCard, version }
+export { CheckCard, DescriptionsModule, Form, FormItem, LayoutModule, ProCard, ProConfigProvider, ProDescriptions, ProField, ProLayout, ProSkeleton, PureProField, Statistic, StatisticCard, version }
 export { CardModule } from './card'
 export type {
   CheckCardGroupProps,
@@ -209,6 +211,44 @@ export type {
   SpanConfigObject,
   SubmitterProps,
 } from './form'
+export {
+  BaseMenu,
+  DefaultFooter,
+  DefaultHeader,
+  FooterToolbar,
+  getMenuData,
+  getPageTitle,
+  GridContent,
+  PageContainer,
+  PageHeader,
+  PageLoading,
+  ProBreadcrumb,
+  ProPageHeader,
+  RouteContext,
+  RouteContextProvider,
+  SiderMenu,
+  TopNavHeader,
+  useRouteContext,
+} from './layout'
+export type {
+  AppItemProps,
+  AppListProps,
+  BaseMenuProps,
+  FooterProps,
+  HeaderProps,
+  MenuDataItem,
+  MenuMode,
+  PageContainerProps,
+  PageHeaderProps,
+  ProLayoutLayoutMode,
+  ProLayoutMenuRenderCallbackProps,
+  ProLayoutNavMenuSelectInfo,
+  ProLayoutProps,
+  ProSettings,
+  RouterTypes,
+  Settings,
+  SiderMenuProps,
+} from './layout'
 export {
   arEGIntl,
   caESIntl,
