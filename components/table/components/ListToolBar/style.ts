@@ -1,0 +1,131 @@
+import type { GenerateStyle, ProAliasToken } from '../../../provider'
+import { useStyle as useAntdStyle } from '../../../provider'
+
+export interface ProListToken extends ProAliasToken {
+  componentCls: string
+}
+
+const genProListStyle: GenerateStyle<ProListToken> = token => ({
+  [token.componentCls]: {
+    'boxSizing': 'border-box',
+    'lineHeight': '1',
+    '&-container': {
+      'display': 'flex',
+      'justifyContent': 'space-between',
+      'paddingBlock': token.padding,
+      'paddingInline': token.paddingXS,
+      '&-mobile': { flexDirection: 'column' },
+    },
+    '&-title': {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      color: token.colorTextHeading,
+      fontWeight: token.fontWeightStrong,
+      fontSize: token.fontSizeLG,
+    },
+    '&-search:not(:last-child)': {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+    },
+    '&-setting-item': {
+      'display': 'inline-flex',
+      'alignItems': 'center',
+      'justifyContent': 'center',
+      'marginBlock': 0,
+      'marginInline': token.marginXXS,
+      'padding': (token.paddingXXS + token.paddingXS) / 2,
+      'color': token.colorTextSecondary,
+      'fontSize': token.fontSizeLG,
+      'lineHeight': 1,
+      'cursor': 'pointer',
+      'borderRadius': token.borderRadiusSM,
+      'transition': `color ${token.motionDurationMid}, background-color ${token.motionDurationMid}`,
+      '&:hover': {
+        color: token.colorText,
+        backgroundColor: token.colorBgTextHover,
+      },
+      '&:active': {
+        backgroundColor: token.colorBgTextActive,
+      },
+    },
+    '&-left': {
+      'display': 'flex',
+      'flexWrap': 'wrap',
+      'alignItems': 'center',
+      'gap': token.marginXS,
+      'justifyContent': 'flex-start',
+      'maxWidth': 'calc(100% - 200px)',
+      [`${token.antCls}-tabs`]: {
+        width: '100%',
+      },
+      '&-has-tabs': {
+        overflow: 'hidden',
+      },
+    },
+    '&-right': {
+      flex: 1,
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-end',
+      gap: token.marginXS,
+    },
+    '&-extra-line': { marginBlockEnd: token.margin },
+    '&-setting-items': {
+      display: 'flex',
+      gap: token.marginXS,
+      lineHeight: '32px',
+      alignItems: 'center',
+    },
+    '&-filter': {
+      'display': 'flex',
+      'alignItems': 'center',
+      '&:not(:last-child)': { marginInlineEnd: token.margin },
+    },
+    '&-inline-menu-item': {
+      'display': 'inline-block',
+      'marginInlineEnd': token.marginLG,
+      'cursor': 'pointer',
+      'opacity': '0.75',
+      '&-active': { fontWeight: 'bold', opacity: '1' },
+      '&-disabled': { cursor: 'not-allowed', opacity: '0.35' },
+    },
+    [`${token.antCls}-tabs-top > ${token.antCls}-tabs-nav`]: {
+      'marginBlockEnd': 0,
+      '&::before': { borderBlockEnd: 0 },
+      [`${token.antCls}-tabs-nav-list`]: {
+        marginBlockStart: 0,
+        [`${token.antCls}-tabs-tab`]: {
+          paddingBlockStart: 0,
+        },
+      },
+    },
+    '&-dropdownmenu-label': {
+      fontWeight: 'bold',
+      fontSize: token.fontSizeIcon,
+      textAlign: 'center',
+      cursor: 'pointer',
+    },
+    '@media (max-width: 768px)': {
+      [token.componentCls]: {
+        '&-container': {
+          display: 'flex',
+          flexWrap: 'wrap',
+          flexDirection: 'column',
+        },
+        '&-left': { marginBlockEnd: '16px', maxWidth: '100%' },
+      },
+    },
+  },
+})
+
+export default function useStyle(prefixCls: string) {
+  return useAntdStyle('ProTableListToolBar', (token) => {
+    const proListToken: ProListToken = {
+      ...token,
+      componentCls: `.${prefixCls}`,
+    }
+    return [genProListStyle(proListToken)]
+  })
+}
