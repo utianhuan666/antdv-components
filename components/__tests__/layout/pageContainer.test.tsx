@@ -249,7 +249,7 @@ describe('pageContainer', () => {
   })
 
   it('🐲 footer should know width', async () => {
-    const route = ref({ hasSiderMenu: true, siderWidth: 235, isMobile: false, layout: 'side' })
+    const route = ref<any>({ hasSiderMenu: true, siderWidth: 235, isMobile: false, layout: 'side' })
     const wrapper = mount({
       render: () => (
         <RouteContextProvider value={route.value}>
@@ -268,7 +268,7 @@ describe('pageContainer', () => {
 
     expect((wrapper.find('.ant-pro-footer-bar').element as HTMLElement).style.width).toBe('calc(100% - 235px)')
 
-    route.value = { hasSiderMenu: true, siderWidth: 64, isMobile: false, layout: 'side' }
+    route.value = { hasSiderMenu: true, siderWidth: 64, isMobile: false, layout: 'side' } as any
     await nextTick()
     expect((wrapper.find('.ant-pro-footer-bar').element as HTMLElement).style.width).toBe('calc(100% - 64px)')
 
@@ -279,7 +279,7 @@ describe('pageContainer', () => {
   })
 
   it('🐲 FooterToolbar should know width', async () => {
-    const route = ref({ hasSiderMenu: true, siderWidth: 235, isMobile: false, layout: 'side' })
+    const route = ref<any>({ hasSiderMenu: true, siderWidth: 235, isMobile: false, layout: 'side' })
     const wrapper = mount({
       render: () => (
         <RouteContextProvider value={route.value}>
@@ -301,7 +301,7 @@ describe('pageContainer', () => {
 
     expect((wrapper.find('.ant-pro-footer-bar').element as HTMLElement).style.width).toBe('calc(100% - 235px)')
 
-    route.value = { hasSiderMenu: true, siderWidth: 64, isMobile: false, layout: 'side' }
+    route.value = { hasSiderMenu: true, siderWidth: 64, isMobile: false, layout: 'side' } as any
     await nextTick()
     expect((wrapper.find('.ant-pro-footer-bar').element as HTMLElement).style.width).toBe('calc(100% - 64px)')
 

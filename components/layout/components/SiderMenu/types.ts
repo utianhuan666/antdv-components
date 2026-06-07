@@ -1,21 +1,13 @@
 import type { CSSProperties, VNodeChild } from 'vue'
 import type { MenuDataItem } from '../../typing'
+import type { AppItemProps, AppListProps } from '../AppsLogoComponents/types'
 
 export type { MenuDataItem } from '../../typing'
 
 export type WithFalse<T> = T | false
 export type MenuMode = 'vertical' | 'horizontal'
 
-export interface AppItemProps {
-  icon?: VNodeChild | (() => VNodeChild) | string
-  title?: VNodeChild
-  desc?: VNodeChild
-  url?: string
-  target?: string
-  children?: AppItemProps[]
-}
-
-export type AppListProps = AppItemProps[]
+export type { AppItemProps, AppListProps }
 
 export interface ProLayoutNavMenuSelectInfo {
   key: string
@@ -24,33 +16,45 @@ export interface ProLayoutNavMenuSelectInfo {
 
 export type ProLayoutNavMenuDomProps = Record<string, any>
 
+export interface NavMenuLeafNode {
+  kind: 'item'
+  key: string
+  disabled?: boolean
+  label: VNodeChild
+  raw: MenuDataItem
+  onClick?: () => void
+  className?: string
+}
+
+export interface NavMenuSubmenuNode {
+  kind: 'submenu'
+  key: string
+  label: VNodeChild
+  raw: MenuDataItem
+  children: NavMenuNode[]
+  className?: string
+  hasIcon?: boolean
+  onTitleClick?: () => void
+}
+
+export interface NavMenuGroupNode {
+  kind: 'group'
+  key: string
+  label: VNodeChild
+  children: NavMenuNode[]
+  className?: string
+}
+
+export interface NavMenuDividerNode {
+  kind: 'divider'
+  key: string
+}
+
 export type NavMenuNode
-  = | {
-    kind: 'item'
-    key: string
-    disabled?: boolean
-    label: VNodeChild
-    raw: MenuDataItem
-    onClick?: () => void
-    className?: string
-  }
-  | {
-    kind: 'submenu'
-    key: string
-    label: VNodeChild
-    raw: MenuDataItem
-    children: NavMenuNode[]
-    className?: string
-    hasIcon?: boolean
-    onTitleClick?: () => void
-  }
-  | {
-    kind: 'group'
-    key: string
-    label: VNodeChild
-    children: NavMenuNode[]
-    className?: string
-  }
+  = | NavMenuLeafNode
+    | NavMenuSubmenuNode
+    | NavMenuGroupNode
+    | NavMenuDividerNode
 
 export interface BaseMenuProps {
   prefixCls?: string
@@ -137,3 +141,5 @@ export type HeaderViewProps = SiderMenuProps & {
   contentWidth?: 'Fluid' | 'Fixed'
   hasSiderMenu?: boolean
 }
+
+export type ProLayoutNavMenuProps = BaseMenuProps

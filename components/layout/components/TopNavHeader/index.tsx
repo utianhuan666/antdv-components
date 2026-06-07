@@ -6,6 +6,7 @@ import { AppsLogoComponents } from '../AppsLogoComponents'
 import { ActionsContent } from '../GlobalHeader/ActionsContent'
 import { BaseMenu } from '../SiderMenu/BaseMenu'
 import { renderLogoAndTitle } from '../SiderMenu/SiderMenu'
+import { useStyle } from './style'
 
 export type TopNavHeaderProps = HeaderViewProps
 
@@ -34,7 +35,7 @@ export const TopNavHeader = defineComponent<TopNavHeaderProps>({
   setup(props) {
     const rootPrefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const prefixCls = computed(() => `${rootPrefixCls.value}-top-nav-header`)
-    const hashId = ''
+    const { hashId } = useStyle(prefixCls.value)
 
     return () => {
       const headerDom = props.menuHeaderRender === false

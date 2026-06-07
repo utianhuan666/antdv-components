@@ -1,9 +1,6 @@
 import type { BaseMenuProps, MenuDataItem, NavMenuNode } from './types'
 import { isVNode } from 'vue'
-
-function isUrl(path?: string) {
-  return /^https?:\/\//.test(path || '')
-}
+import { isUrl } from '../../../utils'
 
 function normalizeMenuPath(path?: string) {
   if (path && path.indexOf('http') === 0)
@@ -88,7 +85,10 @@ function renderLeafRow(ctx: BaseMenuProps & { baseClassName: string }, item: Men
         isUrl: isUrl(path),
         itemPath: path,
         replace: path === ctx.location?.pathname,
-        onClick: () => ctx.onCollapse?.(true),
+        onClick: () => {
+          if (ctx.isMobile)
+            ctx.onCollapse?.(true)
+        },
         children: undefined,
       },
       row,

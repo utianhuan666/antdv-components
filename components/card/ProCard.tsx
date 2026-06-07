@@ -4,6 +4,11 @@ import Card from './components/Card'
 import Divider from './components/Divider'
 
 export type ProCardProps = CardProps
+export type ProCardType = typeof Card & {
+  isProCard: boolean
+  Divider: typeof Divider
+  Group: typeof Group
+}
 
 const Group = defineComponent({
   name: 'ProCardGroup',
@@ -32,6 +37,6 @@ const ProCard = Object.assign(Card, {
   isProCard: true,
   Divider,
   Group,
-})
+}) as ProCardType
 
 export default ProCard

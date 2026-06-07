@@ -24,18 +24,21 @@ export interface CheckCardOptionType {
 }
 
 export interface CheckCardGroupProps {
-  prefixCls?: string
-  class?: any
-  className?: any
-  options?: (CheckCardOptionType | string)[]
-  disabled?: boolean
-  style?: CSSProperties
-  size?: 'large' | 'default' | 'small'
-  multiple?: boolean
-  defaultValue?: CheckGroupValueType
-  value?: CheckGroupValueType
-  loading?: boolean
-  bordered?: boolean
+  'prefixCls'?: string
+  'class'?: any
+  'className'?: any
+  'options'?: (CheckCardOptionType | string)[]
+  'disabled'?: boolean
+  'style'?: CSSProperties
+  'size'?: 'large' | 'default' | 'small'
+  'multiple'?: boolean
+  'defaultValue'?: CheckGroupValueType
+  'value'?: CheckGroupValueType
+  'loading'?: boolean
+  'bordered'?: boolean
+  'onChange'?: (checkedValue: CheckGroupValueType) => void
+  'onUpdate:value'?: (checkedValue: CheckGroupValueType) => void
+  'children'?: VNodeChild
 }
 
 export interface CheckCardGroupContextType {

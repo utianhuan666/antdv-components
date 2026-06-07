@@ -1,18 +1,10 @@
-import type { SpinProps } from 'antdv-next'
-import type { PropType } from 'vue'
 import { Spin } from 'antdv-next'
 import { defineComponent } from 'vue'
 
 export const PageLoading = defineComponent({
   name: 'PageLoading',
   inheritAttrs: false,
-  props: {
-    tip: null as any,
-    spinning: Boolean,
-    delay: Number,
-    indicator: null as any,
-    size: String as PropType<SpinProps['size']>,
-  },
+  props: ['tip', 'spinning', 'delay', 'indicator', 'size'],
   setup(props, { attrs, slots }) {
     return () => {
       const { size: _size, ...spinProps } = props

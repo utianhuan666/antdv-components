@@ -5,6 +5,7 @@ import { computed, defineComponent } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { defaultRenderLogo } from '../AppsLogoComponents'
 import { ActionsContent } from './ActionsContent'
+import { useStyle } from './style'
 
 function renderLogo(menuHeaderRender: HeaderViewProps['menuHeaderRender'], logoDom: any) {
   if (menuHeaderRender === false)
@@ -33,7 +34,7 @@ export const GlobalHeader = defineComponent<HeaderViewProps>({
   setup(props, { slots }) {
     const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-global-header`)
-    const hashId = ''
+    const { hashId } = useStyle(baseClassName.value)
 
     return () => {
       const logoDom = (

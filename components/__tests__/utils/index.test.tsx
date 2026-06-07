@@ -3,6 +3,7 @@ import { CodeFilled } from '@antdv-next/icons'
 import { mount } from '@vue/test-utils'
 import { ConfigProvider, Form, Input } from 'antdv-next'
 import dayjs from 'dayjs'
+import { cloneDeep } from 'es-toolkit'
 import {
   afterAll,
   afterEach,
@@ -28,6 +29,7 @@ import {
   LabelIconTip,
   lighten,
   merge,
+  namePathKey,
   nanoid,
   parseValueToDay,
   pickProProps,
@@ -269,6 +271,34 @@ describe('utils', () => {
 
     deleteValueByNamePath(model, ['user', 'name'])
     expect(model.user.name).toBeUndefined()
+  })
+
+  it('name-path helpers preserve numeric and empty-root semantics', () => {
+    const model: any = { 0: 'zero', list: [{ id: 1 }], stale: true }
+
+    expect(getValueByNamePath(model, 0)).toBe('zero')
+    expect(getValueByNamePath(model, '0')).toBe('zero')
+    expect(namePathKey(['list', 0, 'id'])).toBe(JSON.stringify(['list', 0, 'id']))
+
+    setValueByNamePath(model, [], { next: true })
+    expect(model).toEqual({ next: true })
+
+    deleteValueByNamePath(model, ['missing', 'path'])
+    expect(model).toEqual({ next: true })
+  })
+
+  it('cloneDeep handles missing Blob global', () => {
+    const originalBlob = (globalThis as any).Blob
+    try {
+      ;(globalThis as any).Blob = undefined
+      const source: any = { nested: { value: 1 } }
+      const cloned = cloneDeep(source)
+      cloned.nested.value = 2
+      expect(source.nested.value).toBe(1)
+    }
+    finally {
+      ;(globalThis as any).Blob = originalBlob
+    }
   })
 
   it('📅 useDebounceFn execution has errors', async () => {
@@ -1231,6 +1261,9 @@ describe('utils', () => {
   it('🪓 isUrl', async () => {
     expect(isUrl('https://procomponents.ant.design/components/layout')).toBe(true)
     expect(isUrl('https://procomponents.ant.design/en-US/components/layout#basic-usage')).toBe(true)
+    expect(isUrl('http://')).toBe(false)
+    expect(isUrl('https://')).toBe(false)
+    expect(isUrl('ftp://procomponents.ant.design')).toBe(false)
     expect(isUrl('procomponents.ant.design/en-US/components/layout')).toBe(false)
     expect(isUrl('https:://procomponents.ant.design/en-US/components/layout')).toBe(false)
   })

@@ -1,8 +1,24 @@
 import type { App } from 'vue'
+import type { AppItemProps, AppListProps } from './components/AppsLogoComponents/types'
 import type { FooterProps } from './components/Footer'
 import type { PageContainerProps } from './components/PageContainer'
 import type { PageHeaderProps } from './components/PageHeader'
-import type { AppItemProps, AppListProps, BaseMenuProps, HeaderViewProps, MenuMode, ProLayoutNavMenuSelectInfo, SiderMenuProps } from './components/SiderMenu/types'
+import type {
+  BaseMenuProps,
+  HeaderViewProps,
+  MenuMode,
+  NavMenuDividerNode,
+  NavMenuGroupNode,
+  NavMenuLeafNode,
+  NavMenuNode,
+  NavMenuSubmenuNode,
+  ProLayoutNavMenuDomProps,
+  ProLayoutNavMenuProps,
+  ProLayoutNavMenuSelectInfo,
+  SiderMenuProps,
+} from './components/SiderMenu/types'
+import type { TopNavHeaderProps } from './components/TopNavHeader'
+import type { RouteContextType } from './context/RouteContext'
 import type { ProLayoutLayoutMode, ProLayoutMenuRenderCallbackProps, ProLayoutProps } from './ProLayout'
 import { DefaultFooter } from './components/Footer'
 import { FooterToolbar } from './components/FooterToolbar'
@@ -60,12 +76,21 @@ export type {
   FooterProps,
   HeaderViewProps as HeaderProps,
   MenuMode,
+  NavMenuDividerNode,
+  NavMenuGroupNode,
+  NavMenuLeafNode,
+  NavMenuNode,
+  NavMenuSubmenuNode,
   PageContainerProps,
   PageHeaderProps,
   ProLayoutLayoutMode,
   ProLayoutMenuRenderCallbackProps,
+  ProLayoutNavMenuDomProps,
+  ProLayoutNavMenuProps,
   ProLayoutNavMenuSelectInfo,
   ProLayoutProps,
+  RouteContextType,
   SiderMenuProps,
+  TopNavHeaderProps,
 }
 export default ProLayout

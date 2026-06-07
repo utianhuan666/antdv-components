@@ -1,4 +1,4 @@
-import type { CSSProperties, PropType } from 'vue'
+import type { CSSProperties } from 'vue'
 import { defineComponent } from 'vue'
 
 export interface WrapContentProps {
@@ -12,14 +12,7 @@ export interface WrapContentProps {
 
 export const WrapContent = defineComponent({
   name: 'WrapContent',
-  props: {
-    isChildrenLayout: Boolean,
-    hasPageContainer: Number,
-    hasHeader: Boolean,
-    prefixCls: String,
-    className: String,
-    style: Object as PropType<CSSProperties>,
-  },
+  props: ['isChildrenLayout', 'hasPageContainer', 'hasHeader', 'prefixCls', 'className', 'style'],
   setup(props, { slots }) {
     return () => (
       <div class={props.className} style={props.style} data-testid="pro-layout-wrap-content">

@@ -137,6 +137,8 @@ export const ProLayoutNavMenu = defineComponent<Props>({
         return renderLeaf(node, depth)
       if (node.kind === 'group')
         return renderGroup(node, depth)
+      if (node.kind === 'divider')
+        return <li key={node.key} role="separator" class={`${props.baseClassName}-divider`} />
       return renderSubmenu(node, depth, insidePopup)
     }
 

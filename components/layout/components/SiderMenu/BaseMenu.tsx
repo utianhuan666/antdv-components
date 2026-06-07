@@ -5,6 +5,7 @@ import { computed, defineComponent, ref, watch } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { getOpenKeysFromMenuData, mapMenuDataToNavNodes } from './menuTree'
 import { ProLayoutNavMenu } from './ProLayoutNavMenu'
+import { useStyle } from './style/menu'
 
 export const BaseMenu = defineComponent<BaseMenuProps>({
   name: 'BaseMenu',
@@ -40,7 +41,7 @@ export const BaseMenu = defineComponent<BaseMenuProps>({
     const mode = computed(() => props.mode || 'vertical')
     const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-base-menu-${mode.value}`)
-    const hashId = ''
+    const { hashId } = useStyle(baseClassName.value, mode.value)
     const selectedKeys = ref<string[]>(props.selectedKeys || (props as any).matchMenuKeys || [])
     const openKeys = ref<string[]>(
       props.openKeys === false
@@ -65,6 +66,13 @@ export const BaseMenu = defineComponent<BaseMenuProps>({
       if (value !== undefined && value !== false)
         openKeys.value = value
     }, { deep: true })
+    const mergedOpenKeys = computed(() => {
+      if (props.openKeys === false)
+        return []
+      if (props.openKeys !== undefined)
+        return props.openKeys
+      return openKeys.value
+    })
 
     const resolvedMenuData = computed(() => {
       const data = props.postMenuData ? props.postMenuData(props.menuData) : props.menuData
@@ -95,11 +103,14 @@ export const BaseMenu = defineComponent<BaseMenuProps>({
           mode={mode.value}
           collapsed={props.collapsed}
           selectedKeys={selectedKeys.value}
-          openKeys={openKeys.value}
+          openKeys={mergedOpenKeys.value}
           defaultOpenKeys={props.openKeys === false ? ((props as any).matchMenuKeys || []) : []}
           nodes={nodes.value}
           onOpenChange={(keys: string[]) => {
-            openKeys.value = keys
+            if (props.openKeys === false)
+              return
+            if (props.openKeys === undefined)
+              openKeys.value = keys
             props.onOpenChange?.(keys)
           }}
           onSelect={(info) => {

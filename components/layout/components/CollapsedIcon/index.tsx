@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue'
 import { ArrowSvgIcon } from '../SiderMenu/Arrow'
+import { useStyle } from './style'
 
 export const CollapsedIcon = defineComponent({
   name: 'CollapsedIcon',
@@ -8,7 +9,7 @@ export const CollapsedIcon = defineComponent({
   emits: ['click'],
   setup(rawProps, { attrs, emit }) {
     const props = rawProps as any
-    const hashId = ''
+    const { hashId } = useStyle(props.className || 'ant-pro-sider-collapsed-button')
     return () => {
       if (props.isMobile && props.collapsed)
         return null

@@ -7,7 +7,7 @@ import { AppsLogoComponents, defaultRenderLogo } from '../AppsLogoComponents'
 import { CollapsedIcon } from '../CollapsedIcon'
 import { BaseMenu } from './BaseMenu'
 import { ProLayoutNavMenu } from './ProLayoutNavMenu'
-import { getProLayoutSiderCssVarsStyle } from './style/menu'
+import { getProLayoutSiderCssVarsStyle, useStyle } from './style/menu'
 
 export type HeaderRenderKey = 'menuHeaderRender' | 'headerTitleRender'
 
@@ -88,7 +88,7 @@ const SiderMenuInner = defineComponent<SiderMenuProps>({
     const baseClassName = computed(() => `${prefixCls.value}-sider`)
     const linkMenuBaseClassName = computed(() => `${prefixCls.value}-base-menu-sider`)
     const collapsedWidth = computed(() => props.menu?.collapsedWidth ?? 64)
-    const hashId = ''
+    const { hashId } = useStyle(baseClassName.value, 'vertical')
     const triggerCollapse = (next: boolean) => {
       const handler = Array.isArray(props.onCollapse)
         ? props.onCollapse[props.onCollapse.length - 1]

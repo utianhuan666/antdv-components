@@ -6,7 +6,7 @@ import type {
   TabsProps,
   WatermarkProps,
 } from 'antdv-next'
-import type { CSSProperties, PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import type { GenerateStyle } from '../../../provider'
 import type { FooterToolbarProps } from '../FooterToolbar'
 import type { PageHeaderProps } from '../PageHeader'
@@ -141,10 +141,7 @@ function renderPageHeader(
 
 export const ProBreadcrumb = defineComponent({
   name: 'ProBreadcrumb',
-  props: {
-    items: Array as PropType<BreadcrumbProps['items']>,
-    separator: null as any,
-  },
+  props: ['items', 'separator'],
   setup(props, { attrs }) {
     const routeContext = useRouteContext()
     return () => (
@@ -160,50 +157,41 @@ export const ProBreadcrumb = defineComponent({
   },
 })
 
-const pageContainerProps = {
-  class: String,
-  className: String,
-  style: Object as PropType<CSSProperties>,
-  childrenContentStyle: Object as PropType<CSSProperties>,
-  title: null as any,
-  content: null as any,
-  extraContent: null as any,
-  prefixCls: String,
-  footer: Array as PropType<VNodeChild[]>,
-  token: Object as PropType<PageContainerComponentToken>,
-  header: Object as PropType<PageContainerProps['header']>,
-  pageHeaderRender: {
-    type: [Boolean, Function] as PropType<PageContainerProps['pageHeaderRender']>,
-    default: undefined,
-  },
-  affixProps: Object as PropType<PageContainerProps['affixProps']>,
-  loading: {
-    type: null as any,
-    default: false,
-  },
-  breadcrumbRender: {
-    type: [Boolean, Function] as PropType<PageContainerProps['breadcrumbRender']>,
-    default: undefined,
-  },
-  waterMarkProps: Object as PropType<WatermarkProps>,
-  breadcrumb: Object as PropType<BreadcrumbProps>,
-  stylish: Function as PropType<GenerateStyle<PageContainerToken>>,
-  footerStylish: Function as PropType<GenerateStyle<PageContainerToken>>,
-  footerToolBarProps: Object as PropType<FooterToolbarProps>,
-  tabList: Array as PropType<PageHeaderTabConfig['tabList']>,
-  tabActiveKey: null as any,
-  onTabChange: Function as PropType<PageHeaderTabConfig['onTabChange']>,
-  tabBarExtraContent: null as any,
-  tabProps: Object as PropType<TabsProps>,
-  fixedHeader: Boolean,
-  ghost: Boolean,
-  subTitle: null as any,
-  extra: null as any,
-  tags: null as any,
-  avatar: Object as PropType<PageHeaderProps['avatar']>,
-  backIcon: null as any,
-  onBack: Function as PropType<PageHeaderProps['onBack']>,
-}
+const pageContainerProps = [
+  'class',
+  'className',
+  'style',
+  'childrenContentStyle',
+  'title',
+  'content',
+  'extraContent',
+  'prefixCls',
+  'footer',
+  'token',
+  'header',
+  'pageHeaderRender',
+  'affixProps',
+  'loading',
+  'breadcrumbRender',
+  'waterMarkProps',
+  'breadcrumb',
+  'stylish',
+  'footerStylish',
+  'footerToolBarProps',
+  'tabList',
+  'tabActiveKey',
+  'onTabChange',
+  'tabBarExtraContent',
+  'tabProps',
+  'fixedHeader',
+  'ghost',
+  'subTitle',
+  'extra',
+  'tags',
+  'avatar',
+  'backIcon',
+  'onBack',
+] as const
 
 function memoRenderPageHeader(
   props: PageContainerProps & {
@@ -296,7 +284,7 @@ function memoRenderPageHeader(
 const PageContainerBase = defineComponent({
   name: 'PageContainerBase',
   inheritAttrs: false,
-  props: pageContainerProps,
+  props: [...pageContainerProps],
   setup(props, { slots }) {
     const routeContext = useRouteContext()
     const proProviderContext = useProProviderContext()
@@ -437,7 +425,7 @@ const PageContainerBase = defineComponent({
 export const PageContainer = defineComponent({
   name: 'PageContainer',
   inheritAttrs: false,
-  props: pageContainerProps,
+  props: [...pageContainerProps],
   setup(props, { attrs, slots }) {
     return () => {
       const pageContainerBase = slots.default
@@ -459,12 +447,7 @@ export const PageContainer = defineComponent({
 
 export const ProPageHeader = defineComponent({
   name: 'ProPageHeader',
-  props: {
-    prefixedClassName: {
-      type: String,
-      required: true,
-    },
-  },
+  props: ['prefixedClassName'],
   setup(props, { attrs }) {
     const routeContext = useRouteContext()
     return () => memoRenderPageHeader({

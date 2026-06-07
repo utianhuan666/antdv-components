@@ -211,17 +211,14 @@ const Card = defineComponent({
       const cover = slots.cover?.() ?? props.cover
       const actions = slots.actions?.() ?? props.actions
       const collapsibleButton = renderCollapsibleButton()
-      const loadingPadding = styles.body
-        ? 24
-        : undefined
+      const bodyStylePadding = styles.body?.padding
       const loadingDom = typeof props.loading === 'boolean'
-        ? loadingPadding != null
-          ? (
-              <div class={`${prefixCls.value}-loading-content`} style={`padding: ${loadingPadding}px;`}>
-                <Loading prefix={prefixCls.value} />
-              </div>
-            )
-          : <Loading prefix={prefixCls.value} />
+        ? (
+            <Loading
+              prefix={prefixCls.value}
+              padding={bodyStylePadding === 0 || bodyStylePadding === '0px' ? 24 : undefined}
+            />
+          )
         : props.loading
 
       const cardCls = clsx(
@@ -246,18 +243,18 @@ const Card = defineComponent({
         },
       )
 
-      const bodyCls = clsx(`${prefixCls.value}-body`, classNames.body, {
+      const bodyCls = clsx(`${prefixCls.value}-body`, hashId, classNames.body, {
         [`${prefixCls.value}-body-center`]: props.layout === 'center',
         [`${prefixCls.value}-body-direction-column`]: props.split === 'horizontal' || props.direction === 'column',
         [`${prefixCls.value}-body-wrap`]: props.wrap && childrenResult.containProCard,
       })
 
-      const headerCls = clsx(`${prefixCls.value}-header`, classNames.header, {
+      const headerCls = clsx(`${prefixCls.value}-header`, hashId, classNames.header, {
         [`${prefixCls.value}-header-border`]: props.headerBordered || props.type === 'inner',
         [`${prefixCls.value}-header-collapsible`]: collapsibleButton,
       })
 
-      const header = (title != null || extra != null || collapsibleButton)
+      const header = (title || extra || collapsibleButton)
         ? (
             <div
               class={headerCls}
@@ -267,14 +264,14 @@ const Card = defineComponent({
                   setCollapsed(!collapsed)
               }}
             >
-              <div class={clsx(`${prefixCls.value}-title`, classNames.title)} style={styles.title}>
+              <div class={clsx(`${prefixCls.value}-title`, hashId, classNames.title)} style={styles.title}>
                 {collapsibleButton}
                 <LabelIconTip label={title} tooltip={props.tooltip} subTitle={props.subTitle} />
               </div>
-              {extra != null
+              {extra
                 ? (
                     <div
-                      class={clsx(`${prefixCls.value}-extra`, classNames.extra)}
+                      class={clsx(`${prefixCls.value}-extra`, hashId, classNames.extra)}
                       style={styles.extra}
                       onClick={(event: MouseEvent) => event.stopPropagation()}
                     >
@@ -289,7 +286,7 @@ const Card = defineComponent({
       const tabs = props.tabs
       const tabDom = tabs
         ? (
-            <div class={`${prefixCls.value}-tabs`}>
+            <div class={clsx(`${prefixCls.value}-tabs`, hashId)}>
               {props.loading
                 ? loadingDom
                 : (
@@ -307,15 +304,15 @@ const Card = defineComponent({
         <div
           {...attrs}
           class={cardCls}
-          style={{ ...styles.root, ...props.style }}
+          style={[styles.root, props.style] as any}
           onClick={(event: MouseEvent) => {
             emit('checked', event)
             emit('click', event)
           }}
         >
           {header}
-          {cover != null && !collapsed
-            ? <div class={clsx(`${prefixCls.value}-cover`, classNames.cover)} style={styles.cover}>{cover}</div>
+          {cover && !collapsed
+            ? <div class={clsx(`${prefixCls.value}-cover`, hashId, classNames.cover)} style={styles.cover}>{cover}</div>
             : null}
           {tabDom ?? (
             <div class={bodyCls} style={styles.body}>

@@ -3,10 +3,19 @@ import type {
   CheckCardGroupProps,
   CheckCardProps,
 } from './components/CheckCard'
+import type { ProCardDividerProps } from './components/Divider'
+import type { ProCardOperationProps } from './components/Operation'
 import type { StatisticProps } from './components/Statistic'
 import type { StatisticCardProps } from './components/StatisticCard'
-import type { ProCardProps } from './ProCard'
-import type { ProCardTabsProps } from './typing'
+import type { ProCardProps, ProCardType } from './ProCard'
+import type {
+  CardType,
+  ProCardSlots,
+  ProCardTabPaneProps,
+  ProCardTabsProps,
+  StatisticCardSlots,
+  StatisticSlots,
+} from './typing'
 import CheckCard from './components/CheckCard'
 import Statistic from './components/Statistic'
 import StatisticCard from './components/StatisticCard'
@@ -23,12 +32,20 @@ const CardModule = {
 
 export { CardModule, CheckCard, ProCard, Statistic, StatisticCard }
 export type {
+  CardType,
   CheckCardGroupProps,
   CheckCardProps,
+  ProCardDividerProps,
+  ProCardOperationProps,
   ProCardProps,
+  ProCardSlots,
+  ProCardTabPaneProps,
   ProCardTabsProps,
+  ProCardType,
   StatisticCardProps,
+  StatisticCardSlots,
   StatisticProps,
+  StatisticSlots,
 }
 
 export default ProCard

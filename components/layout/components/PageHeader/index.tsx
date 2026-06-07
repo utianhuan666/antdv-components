@@ -1,5 +1,5 @@
-import type { AvatarProps, BreadcrumbProps, TagProps } from 'antdv-next'
-import type { CSSProperties, PropType, VNode, VNodeChild } from 'vue'
+import type { AvatarProps, BreadcrumbProps } from 'antdv-next'
+import type { CSSProperties, VNode, VNodeChild } from 'vue'
 import type { ContentWidth } from '../PageContainer/context'
 import { ArrowLeftOutlined, ArrowRightOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
@@ -184,29 +184,26 @@ function renderChildren(prefixCls: string, children: VNodeChild, hashId: string)
 export const PageHeader = defineComponent({
   name: 'PageHeader',
   inheritAttrs: false,
-  props: {
-    class: String,
-    className: String,
-    backIcon: null as any,
-    prefixCls: String,
-    title: null as any,
-    subTitle: null as any,
-    style: Object as PropType<CSSProperties>,
-    childrenContentStyle: Object as PropType<CSSProperties>,
-    breadcrumb: null as any,
-    breadcrumbRender: Function as PropType<PageHeaderProps['breadcrumbRender']>,
-    tags: null as unknown as PropType<VNodeChild | TagProps | TagProps[]>,
-    footer: null as any,
-    extra: null as any,
-    avatar: Object as PropType<AvatarProps>,
-    onBack: Function as PropType<(e?: MouseEvent) => void>,
-    contentWidth: String as PropType<ContentWidth>,
-    layout: String,
-    ghost: {
-      type: Boolean,
-      default: true,
-    },
-  },
+  props: [
+    'class',
+    'className',
+    'backIcon',
+    'prefixCls',
+    'title',
+    'subTitle',
+    'style',
+    'childrenContentStyle',
+    'breadcrumb',
+    'breadcrumbRender',
+    'tags',
+    'footer',
+    'extra',
+    'avatar',
+    'onBack',
+    'contentWidth',
+    'layout',
+    'ghost',
+  ],
   setup(props, { attrs, slots }) {
     const compact = ref(false)
     const rootRef = ref<HTMLElement>()
@@ -253,7 +250,7 @@ export const PageHeader = defineComponent({
         [`${prefixCls.value}-rtl`]: config.value.direction === 'rtl',
         [`${prefixCls.value}-compact`]: compact.value,
         [`${prefixCls.value}-wide`]: props.contentWidth === 'Fixed' && props.layout === 'top',
-        [`${prefixCls.value}-ghost`]: props.ghost,
+        [`${prefixCls.value}-ghost`]: props.ghost !== false,
       })
       const title = renderTitle(prefixCls.value, pageHeaderProps, config.value.direction, hashId)
       const children = slots.default?.()

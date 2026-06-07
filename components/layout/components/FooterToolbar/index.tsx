@@ -1,4 +1,4 @@
-import type { CSSProperties, PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import type { GenerateStyle } from '../../../provider'
 import type { RouteContextType } from '../PageContainer/context'
 import type { FooterToolBarToken } from './style'
@@ -26,19 +26,7 @@ export interface FooterToolbarProps {
 export const FooterToolbar = defineComponent({
   name: 'FooterToolbar',
   inheritAttrs: false,
-  props: {
-    class: String,
-    className: String,
-    extra: null as any,
-    portalDom: {
-      type: Boolean,
-      default: true,
-    },
-    style: Object as PropType<CSSProperties>,
-    renderContent: Function as PropType<FooterToolbarProps['renderContent']>,
-    prefixCls: String,
-    stylish: Function as PropType<GenerateStyle<FooterToolBarToken>>,
-  },
+  props: ['class', 'className', 'extra', 'portalDom', 'style', 'renderContent', 'prefixCls', 'stylish'],
   setup(props, { attrs, slots }) {
     const config = useConfig()
     const routeContext = useRouteContext()
@@ -107,7 +95,7 @@ export const FooterToolbar = defineComponent({
         </div>
       )
 
-      if (!props.portalDom || !containerDom)
+      if (props.portalDom === false || !containerDom)
         return renderDom
 
       return <Teleport to={containerDom}>{renderDom}</Teleport>

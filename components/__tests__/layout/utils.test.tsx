@@ -8,6 +8,11 @@ describe('layout utils', () => {
   it('urlToList converts path segments', () => {
     expect(urlToList()).toEqual(['/'])
     expect(urlToList('/')).toEqual(['/'])
+    expect(urlToList('/a//b/')).toEqual(['/a', '/a/b'])
+    expect(urlToList('a/b')).toEqual(['/a', '/a/b'])
+    expect(urlToList('/a?x=1')).toEqual(['/a?x=1'])
+    expect(urlToList('/a#hash')).toEqual(['/a#hash'])
+    expect(urlToList('https://x/y')).toEqual(['/https:', '/https:/x', '/https:/x/y'])
     expect(urlToList('/userInfo/2144/id')).toEqual([
       '/userInfo',
       '/userInfo/2144',

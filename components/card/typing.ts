@@ -1,4 +1,5 @@
-import type { CSSProperties, VNodeChild } from 'vue'
+import type { TabsProps } from 'antdv-next'
+import type { CSSProperties, DefineComponent, HTMLAttributes, VNodeChild } from 'vue'
 import type { LabelTooltipType } from '../utils'
 
 export type { LabelTooltipType }
@@ -77,14 +78,13 @@ export interface ProCardTabItem {
   [key: string]: any
 }
 
-export interface ProCardTabsProps {
+export interface ProCardTabsProps extends Omit<TabsProps, 'items' | 'onChange'> {
   cardProps?: CardPropsBase
   items?: ProCardTabItem[]
   onChange?: (key: string) => void
-  [key: string]: any
 }
 
-export type CardProps = CardPropsBase & {
+export type CardProps = CardPropsBase & Omit<HTMLAttributes, 'title' | 'prefix' | 'onClick'> & {
   tabs?: ProCardTabsProps
 }
 
@@ -92,4 +92,31 @@ export interface ProCardTabPaneProps {
   key?: string
   cardProps?: CardProps
   [key: string]: any
+}
+
+export type CardType = DefineComponent<CardProps> & {
+  isProCard?: boolean
+}
+
+export interface ProCardSlots {
+  default?: () => any
+  title?: () => any
+  extra?: () => any
+  cover?: () => any
+  actions?: () => any
+}
+
+export interface StatisticCardSlots extends ProCardSlots {
+  chart?: () => any
+  footer?: () => any
+}
+
+export interface StatisticSlots {
+  title?: () => any
+  prefix?: () => any
+  suffix?: () => any
+  tip?: () => any
+  icon?: () => any
+  description?: () => any
+  formatter?: (args: { value?: string | number }) => any
 }

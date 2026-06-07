@@ -1,9 +1,6 @@
-import type { AppItemProps, AppListProps } from '../SiderMenu/types'
+import type { AppItemProps, AppListProps } from './types'
 import { defineComponent } from 'vue'
-
-function isUrl(value?: string) {
-  return /^https?:\/\//.test(value || '')
-}
+import { isUrl } from '../../../utils'
 
 export function renderLogo(logo: any, title: any, avatarClassName: string) {
   if (logo && typeof logo === 'string' && isUrl(logo))

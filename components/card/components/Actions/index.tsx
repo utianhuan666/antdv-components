@@ -20,18 +20,26 @@ const Actions = defineComponent({
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
-      const actions = Array.isArray(props.actions) ? props.actions : [props.actions]
-      const filtered = actions.filter(action => action != null)
-      if (!filtered.length)
-        return null
+      const actions = props.actions
+      if (Array.isArray(actions) && actions.length) {
+        return wrapSSR(
+          <ul class={clsx(`${prefixCls.value}-actions`, hashId, props.className)} style={props.style}>
+            {actions.map((action, index) => (
+              <li
+                key={`action-${index}`}
+                class={clsx(`${prefixCls.value}-actions-item`, hashId)}
+                style={{ width: `${100 / actions.length}%`, padding: 0, margin: 0 }}
+              >
+                {action}
+              </li>
+            ))}
+          </ul>,
+        )
+      }
 
       return wrapSSR(
         <ul class={clsx(`${prefixCls.value}-actions`, hashId, props.className)} style={props.style}>
-          {filtered.map((action, index) => (
-            <li key={index} style={{ width: `${100 / filtered.length}%` }}>
-              <span>{action}</span>
-            </li>
-          ))}
+          {actions}
         </ul>,
       )
     }

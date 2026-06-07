@@ -2,7 +2,7 @@ import type { CSSProperties, VNodeChild } from 'vue'
 import type { CheckCardGroupProps, CheckCardValueType } from './Group'
 import { clsx } from '@v-c/util'
 import { Avatar } from 'antdv-next'
-import { computed, defineComponent, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineComponent, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import ProCardActions from '../Actions'
 import CheckCardGroup, { CardLoading, CheckCardGroupContext } from './Group'
@@ -10,6 +10,10 @@ import { useStyle } from './style'
 
 export interface CheckCardProps {
   prefixCls?: string
+  onChange?: (checked: boolean) => void
+  onClick?: (event: MouseEvent) => void
+  onMouseEnter?: (event: MouseEvent) => void
+  onMouseLeave?: (event: MouseEvent) => void
   defaultChecked?: boolean
   checked?: boolean
   disabled?: boolean
@@ -20,7 +24,7 @@ export interface CheckCardProps {
   title?: VNodeChild
   subTitle?: VNodeChild
   description?: VNodeChild
-  value?: CheckCardValueType
+  value?: any
   loading?: boolean
   cover?: VNodeChild
   size?: 'large' | 'default' | 'small'
@@ -83,6 +87,13 @@ const CheckCard = defineComponent({
 
     onMounted(() => group?.registerValue(props.value))
     onBeforeUnmount(() => group?.cancelValue(props.value))
+    watch(
+      () => props.value,
+      (value, oldValue) => {
+        group?.cancelValue(oldValue)
+        group?.registerValue(value)
+      },
+    )
 
     const mergedChecked = computed(() => {
       if (group) {
@@ -110,7 +121,7 @@ const CheckCard = defineComponent({
       const prefixCls = mergedPrefixCls.value
       const disabled = !!(props.disabled || group?.disabled.value)
       const loading = !!(props.loading || group?.loading.value)
-      const bordered = props.bordered ?? group?.bordered.value ?? true
+      const bordered = group ? props.bordered || group.bordered.value : props.bordered ?? true
       const multiple = !!group?.multiple.value
       const size = props.size || group?.size.value
       const sizeCls = getSizeCls(size)
@@ -133,7 +144,7 @@ const CheckCard = defineComponent({
 
       const avatarDom = props.avatar
         ? (
-            <div class={`${prefixCls}-avatar`}>
+            <div class={clsx(`${prefixCls}-avatar`, hashId)}>
               {typeof props.avatar === 'string'
                 ? <Avatar size={48} shape="square" src={props.avatar} />
                 : props.avatar}
@@ -143,20 +154,20 @@ const CheckCard = defineComponent({
 
       const headerDom = (title ?? extra) != null
         ? (
-            <div class={`${prefixCls}-header`}>
-              <div class={`${prefixCls}-header-left`}>
-                <div class={clsx(`${prefixCls}-title`, { [`${prefixCls}-title-with-ellipsis`]: typeof title === 'string' })}>
+            <div class={clsx(`${prefixCls}-header`, hashId)}>
+              <div class={clsx(`${prefixCls}-header-left`, hashId)}>
+                <div class={clsx(`${prefixCls}-title`, hashId, { [`${prefixCls}-title-with-ellipsis`]: typeof title === 'string' })}>
                   {title}
                 </div>
-                {subTitle != null ? <div class={`${prefixCls}-subTitle`}>{subTitle}</div> : null}
+                {subTitle != null ? <div class={clsx(`${prefixCls}-subTitle`, hashId)}>{subTitle}</div> : null}
               </div>
-              {extra != null ? <div class={`${prefixCls}-extra`}>{extra}</div> : null}
+              {extra != null ? <div class={clsx(`${prefixCls}-extra`, hashId)}>{extra}</div> : null}
             </div>
           )
         : null
 
       const descriptionDom = description
-        ? <div class={`${prefixCls}-description`}>{description}</div>
+        ? <div class={clsx(`${prefixCls}-description`, hashId)}>{description}</div>
         : null
 
       const metaDom = loading
@@ -164,11 +175,11 @@ const CheckCard = defineComponent({
         : cover
           ? renderCover(prefixCls, cover)
           : (
-              <div class={clsx(`${prefixCls}-content`, { [`${prefixCls}-avatar-header`]: avatarDom && headerDom && !descriptionDom })}>
+              <div class={clsx(`${prefixCls}-content`, hashId, { [`${prefixCls}-avatar-header`]: avatarDom && headerDom && !descriptionDom })}>
                 {avatarDom}
                 {headerDom || descriptionDom
                   ? (
-                      <div class={`${prefixCls}-detail`}>
+                      <div class={clsx(`${prefixCls}-detail`, hashId)}>
                         {headerDom}
                         {descriptionDom}
                       </div>
@@ -195,7 +206,7 @@ const CheckCard = defineComponent({
           {metaDom}
           {slots.default
             ? (
-                <div class={`${prefixCls}-body`} style={props.styles?.body || props.bodyStyle}>
+                <div class={clsx(`${prefixCls}-body`, hashId)} style={props.styles?.body || props.bodyStyle}>
                   {slots.default()}
                 </div>
               )

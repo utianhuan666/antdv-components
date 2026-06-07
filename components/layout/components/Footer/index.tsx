@@ -1,4 +1,4 @@
-import type { CSSProperties, PropType } from 'vue'
+import type { CSSProperties } from 'vue'
 import type { FooterLink, WithFalse } from '../GlobalFooter'
 import { CopyrightOutlined } from '@antdv-next/icons'
 import { LayoutFooter } from 'antdv-next'
@@ -15,20 +15,7 @@ export interface FooterProps {
 
 export const DefaultFooter = defineComponent({
   name: 'DefaultFooter',
-  props: {
-    class: String,
-    className: String,
-    prefixCls: String,
-    links: {
-      type: [Array, Boolean] as PropType<WithFalse<FooterLink[]>>,
-      default: undefined,
-    },
-    copyright: {
-      type: [String, Boolean] as PropType<WithFalse<string>>,
-      default: undefined,
-    },
-    style: Object as PropType<CSSProperties>,
-  },
+  props: ['class', 'className', 'prefixCls', 'links', 'copyright', 'style'],
   setup(props) {
     return () => (
       <LayoutFooter

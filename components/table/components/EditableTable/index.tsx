@@ -1,10 +1,10 @@
 import type { EditableFormInstance, EditableProTableProps } from '../../typing'
 import { PlusOutlined } from '@antdv-next/icons'
 import { Button } from 'antdv-next'
+import { cloneDeep } from 'es-toolkit'
 import { computed, defineComponent, ref, watch, watchEffect } from 'vue'
 import { useFieldContext } from '../../../form/FieldContext'
 import { getValueByNamePath, runFunction, setValueByNamePath } from '../../../utils'
-import { cloneDeep } from '../../../utils/path'
 import ProTable from '../../Table'
 import { setActionRef } from '../../useFetchData'
 

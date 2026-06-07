@@ -1,9 +1,12 @@
-import type { AppItemProps, AppListProps } from '../SiderMenu/types'
+import type { AppItemProps, AppListProps } from './types'
+import { clsx } from '@v-c/util'
+import { Popover } from 'antdv-next'
 import { computed, defineComponent, ref, shallowRef } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { AppsLogo } from './AppsLogo'
 import { DefaultContent } from './DefaultContent'
 import { SimpleContent } from './SimpleContent'
+import { useStyle } from './style'
 
 export function defaultRenderLogo(logo: any) {
   if (typeof logo === 'string')
@@ -26,7 +29,7 @@ export const AppsLogoComponents = defineComponent<{
     const popoverRef = shallowRef<HTMLElement>()
     const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-layout-apps`)
-    const hashId = ''
+    const { hashId } = useStyle(baseClassName.value)
     const handleItemClick = (app: AppItemProps) => props.onItemClick?.(app, popoverRef)
     const defaultDomContent = computed(() => {
       const isSimple = props.appList?.some(app => !app?.desc)
@@ -41,20 +44,27 @@ export const AppsLogoComponents = defineComponent<{
       if (!props.appList?.length)
         return null
       return (
-        <>
+        <Popover
+          placement="bottomRight"
+          trigger={['click']}
+          zIndex={9999}
+          arrow={false}
+          open={open.value}
+          onOpenChange={(next: boolean) => open.value = next}
+          classes={{ root: clsx(`${baseClassName.value}-popover`, hashId) }}
+          v-slots={{ content: () => content.value }}
+        >
           <span
             ref={popoverRef as any}
             onClick={(event: MouseEvent) => {
               event.stopPropagation()
-              open.value = !open.value
             }}
-            class={[`${baseClassName.value}-icon`, hashId, open.value && `${baseClassName.value}-icon-active`]}
+            class={clsx(`${baseClassName.value}-icon`, hashId, open.value && `${baseClassName.value}-icon-active`)}
             data-testid="pro-layout-apps-logo-icon"
           >
             <AppsLogo />
           </span>
-          {open.value ? content.value : null}
-        </>
+        </Popover>
       )
     }
   },

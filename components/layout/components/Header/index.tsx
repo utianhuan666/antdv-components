@@ -5,6 +5,7 @@ import { computed, defineComponent } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { GlobalHeader } from '../GlobalHeader'
 import { TopNavHeader } from '../TopNavHeader'
+import { useStyle } from './style/header'
 
 export const DefaultHeader = defineComponent<HeaderViewProps>({
   name: 'DefaultHeader',
@@ -31,7 +32,7 @@ export const DefaultHeader = defineComponent<HeaderViewProps>({
     const prefixCls = useProPrefixCls('pro', computed(() => props.prefixCls))
     const baseClassName = computed(() => `${prefixCls.value}-layout-header`)
     const needFixedHeader = computed(() => props.fixedHeader || (props.splitMenus && props.layout === 'side' && !props.isMobile))
-    const hashId = ''
+    const { hashId } = useStyle(baseClassName.value)
 
     const renderContent = () => {
       const isTop = props.layout === 'top'

@@ -1,4 +1,4 @@
-import type { CSSProperties, PropType } from 'vue'
+import type { CSSProperties } from 'vue'
 import type { ContentWidth } from '../PageContainer/context'
 import { clsx } from '@v-c/util'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
@@ -15,13 +15,7 @@ export interface GridContentProps {
 
 export const GridContent = defineComponent({
   name: 'GridContent',
-  props: {
-    class: String,
-    className: String,
-    contentWidth: String as PropType<ContentWidth>,
-    style: Object as PropType<CSSProperties>,
-    prefixCls: String,
-  },
+  props: ['class', 'className', 'contentWidth', 'style', 'prefixCls'],
   setup(props, { slots }) {
     const routeContext = useRouteContext()
     const config = useConfig()

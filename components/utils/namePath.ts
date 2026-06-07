@@ -79,44 +79,6 @@ export function namePathKey(name: NamePathLike): string {
   return JSON.stringify(normalizeNamePath(name) || [])
 }
 
-export function cloneDeep<T>(source: T, seen = new WeakMap<object, any>()): T {
-  if (source == null || typeof source !== 'object')
-    return source
-  if (
-    (source as any).$isDayjsObject === true
-    || ((source as any)._isAMomentObject)
-    || (typeof (source as any).clone === 'function' && typeof (source as any).isValid === 'function')
-  ) {
-    return typeof (source as any).clone === 'function' ? (source as any).clone() : source
-  }
-  if (source instanceof Date)
-    return new Date(source.getTime()) as T
-  if (source instanceof Map)
-    return new Map(Array.from(source.entries()).map(([key, value]) => [cloneDeep(key, seen), cloneDeep(value, seen)])) as T
-  if (source instanceof Set)
-    return new Set(Array.from(source.values()).map(value => cloneDeep(value, seen))) as T
-  if (source instanceof Blob)
-    return source
-  if (Array.isArray(source)) {
-    if (seen.has(source))
-      return seen.get(source)
-    const result: any[] = []
-    seen.set(source, result)
-    source.forEach((item, index) => {
-      result[index] = cloneDeep(item, seen)
-    })
-    return result as T
-  }
-  if (seen.has(source as object))
-    return seen.get(source as object)
-  const result = {} as Record<string, any>
-  seen.set(source as object, result)
-  Object.keys(source as Record<string, any>).forEach((key) => {
-    result[key] = cloneDeep((source as Record<string, any>)[key], seen)
-  })
-  return result as T
-}
-
 export function isPlainObject(value: unknown): value is Record<string, any> {
   if (value === null)
     return true

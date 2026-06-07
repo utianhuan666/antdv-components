@@ -1,4 +1,4 @@
-import type { CSSProperties, PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import { clsx } from '@v-c/util'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { defineComponent } from 'vue'
@@ -23,20 +23,7 @@ export interface GlobalFooterProps {
 
 export const GlobalFooter = defineComponent({
   name: 'GlobalFooter',
-  props: {
-    class: String,
-    className: String,
-    prefixCls: String,
-    links: {
-      type: [Array, Boolean] as PropType<WithFalse<FooterLink[]>>,
-      default: undefined,
-    },
-    copyright: {
-      type: null as any,
-      default: undefined,
-    },
-    style: Object as PropType<CSSProperties>,
-  },
+  props: ['class', 'className', 'prefixCls', 'links', 'copyright', 'style'],
   setup(props) {
     const config = useConfig()
     const baseClassName = config.value.getPrefixCls(props.prefixCls || 'pro-global-footer')
@@ -65,7 +52,7 @@ export const GlobalFooter = defineComponent({
                   class={clsx(`${baseClassName}-list`, hashId)}
                   data-testid="pro-global-footer-list"
                 >
-                  {links.map(link => (
+                  {links.map((link: FooterLink) => (
                     <a
                       class={clsx(`${baseClassName}-list-link`, hashId)}
                       data-testid="pro-global-footer-list-link"

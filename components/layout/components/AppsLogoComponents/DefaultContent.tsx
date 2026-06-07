@@ -1,4 +1,4 @@
-import type { AppItemProps, AppListProps } from '../SiderMenu/types'
+import type { AppItemProps, AppListProps } from './types'
 import { defineComponent } from 'vue'
 import { defaultRenderLogo } from './index'
 

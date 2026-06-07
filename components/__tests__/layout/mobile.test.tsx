@@ -113,6 +113,27 @@ describe('mobile BasicLayout', () => {
     expect(onCollapse).toHaveBeenCalledWith(true)
   })
 
+  it('📱 GlobalHeader collapses overflowing actions into dropdown', () => {
+    const wrapper = mount(GlobalHeader, {
+      attachTo: document.body,
+      props: {
+        isMobile: true,
+        actionsPlacement: 'header',
+        actionsRender: () => [
+          <span>one</span>,
+          <span>two</span>,
+          <span>three</span>,
+        ],
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="pro-layout-global-header-actions-item"]')).toHaveLength(2)
+    expect(wrapper.find('[data-testid="pro-layout-global-header-actions-more"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('one')
+    expect(wrapper.text()).toContain('two')
+    expect(wrapper.text()).not.toContain('three')
+  })
+
   it('📱 ProLayout follows breakpoint and disableMobile', async () => {
     const originalMatchMedia = window.matchMedia
     Object.defineProperty(window, 'matchMedia', {

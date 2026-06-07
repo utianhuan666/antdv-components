@@ -51,18 +51,18 @@ export { isImg } from './isImg'
 export { isNil } from './isNil'
 export { isUrl } from './isUrl'
 export { merge } from './merge'
-export { nanoid } from './nanoid'
-export { omitBoolean } from './omitBoolean'
-export { omitUndefined } from './omitUndefined'
-export { omitUndefinedAndEmptyArr } from './omitUndefinedAndEmptyArr'
-export { parseValueToDay } from './parseValueToMoment'
 export {
   deleteValueByNamePath,
   getValueByNamePath,
   namePathKey,
   normalizeNamePath,
   setValueByNamePath,
-} from './path'
+} from './namePath'
+export { nanoid } from './nanoid'
+export { omitBoolean } from './omitBoolean'
+export { omitUndefined } from './omitUndefined'
+export { omitUndefinedAndEmptyArr } from './omitUndefinedAndEmptyArr'
+export { parseValueToDay } from './parseValueToMoment'
 export { pickProFormItemProps } from './pickProFormItemProps'
 export { pickProProps } from './pickProProps'
 export { objectToMap, ProFieldBadgeColor, proFieldParsingText } from './proFieldParsingText'

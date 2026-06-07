@@ -67,6 +67,15 @@ const StatisticCardBase = defineComponent({
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
+      const {
+        chart: _chart,
+        statistic: _statistic,
+        chartPlacement: _chartPlacement,
+        footer: _footer,
+        class: classProp,
+        className,
+        ...cardProps
+      } = props as any
       const statistic = props.statistic
         ? <Statistic layout="vertical" {...props.statistic} />
         : null
@@ -75,7 +84,7 @@ const StatisticCardBase = defineComponent({
       const chartDom = chart
         ? (
             <div
-              class={clsx(`${prefixCls.value}-chart`, {
+              class={clsx(`${prefixCls.value}-chart`, hashId, {
                 [`${prefixCls.value}-chart-left`]: props.chartPlacement === 'left' && statistic,
                 [`${prefixCls.value}-chart-right`]: props.chartPlacement === 'right' && statistic,
               })}
@@ -84,7 +93,7 @@ const StatisticCardBase = defineComponent({
             </div>
           )
         : null
-      const contentCls = clsx(`${prefixCls.value}-content`, {
+      const contentCls = clsx(`${prefixCls.value}-content`, hashId, {
         [`${prefixCls.value}-content-horizontal`]: props.chartPlacement === 'left' || props.chartPlacement === 'right',
       })
       const contentDom = (chartDom || statistic)
@@ -99,15 +108,15 @@ const StatisticCardBase = defineComponent({
       return wrapSSR(
         <Card
           {...attrs}
-          {...props}
-          class={clsx(prefixCls.value, hashId, props.class, props.className)}
+          {...cardProps}
+          class={clsx(prefixCls.value, hashId, classProp, className)}
           onCollapse={(value: boolean) => emit('collapse', value)}
           onClick={(event: MouseEvent) => emit('click', event)}
           onChecked={(event: MouseEvent) => emit('checked', event)}
         >
           {contentDom}
           {slots.default?.()}
-          {footer != null ? <div class={`${prefixCls.value}-footer`}>{footer}</div> : null}
+          {footer ? <div class={clsx(`${prefixCls.value}-footer`, hashId)}>{footer}</div> : null}
         </Card>,
       )
     }
@@ -118,6 +127,7 @@ const Group = defineComponent({
   name: 'StatisticCardGroup',
   inheritAttrs: false,
   props: StatisticCardBase.props as any,
+  emits: ['collapse', 'click', 'checked'],
   setup(props, { attrs, emit, slots }) {
     return () => (
       <StatisticCardBase

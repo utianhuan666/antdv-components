@@ -10,6 +10,15 @@ function withProvider(node: any) {
 }
 
 describe('checkCard', () => {
+  it('renders without ProConfigProvider', () => {
+    const wrapper = mount({
+      render: () => <CheckCard title="direct" />,
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').exists()).toBe(true)
+    expect(wrapper.text()).toContain('direct')
+  })
+
   it('should invoke onChange and onClick function when click option', async () => {
     const onChange = vi.fn()
     const onClick = vi.fn()
@@ -210,11 +219,45 @@ describe('checkCard', () => {
     })
   })
 
+  it('updates group registered value when card value changes', async () => {
+    const value = ref<'A' | 'B'>('A')
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group onChange={onChange} multiple>
+            <CheckCard title="Dynamic" value={value.value} />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    value.value = 'B'
+    await nextTick()
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['B']))
+  })
+
+  it('inherits group bordered behavior like react', () => {
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group bordered>
+            <CheckCard title="Card A" value="A" bordered={false} />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').classes()).toContain('ant-pro-checkcard-bordered')
+  })
+
   it('should display when title is number zero', () => {
     const wrapper = mount({
       render: () => withProvider(<CheckCard title={0} />),
     })
 
-    expect(wrapper.find('.ant-pro-checkcard-title').html()).toContain('0')
+    expect(wrapper.find('.ant-pro-checkcard-title').element.innerHTML).toBe('0')
   })
 })

@@ -26,8 +26,9 @@ const Loading = defineComponent({
         || (attrs['content-style'] as CSSProperties | undefined)
         || props.style
         || (attrs.style as CSSProperties | undefined)
+      const padding = typeof props.padding === 'number' ? `${props.padding}px` : props.padding
       const mergedStyle = props.padding != null
-        ? { ...(contentStyle || {}), padding: props.padding }
+        ? { ...(contentStyle || {}), padding }
         : contentStyle
 
       return wrapSSR(
@@ -69,7 +70,7 @@ const Loading = defineComponent({
               <div class={`${prefix.value}-loading-block`} />
             </Col>
             <Col span={16}>
-              <div class={`${prefix}-loading-block`} />
+              <div class={`${prefix.value}-loading-block`} />
             </Col>
           </Row>
         </div>,
