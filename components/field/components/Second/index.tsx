@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldSecondProps } from './types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSecondEdit from './FieldSecondEdit'
 import FieldSecondRead from './FieldSecondRead'
@@ -18,8 +19,9 @@ const FieldSecond: ProFieldFC<FieldSecondProps> = (props) => {
     formItemRender,
     fieldProps = {},
   } = props as FieldSecondFieldProps
+  const intl = useIntl()
 
-  const placeholderValue = placeholder || '请输入'
+  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
 
   if (isProFieldReadMode(type)) {
     return FieldSecondRead({

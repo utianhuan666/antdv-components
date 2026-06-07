@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldFromNowEdit from './FieldFromNowEdit'
 import FieldFromNowRead from './FieldFromNowRead'
@@ -23,6 +24,7 @@ const FieldFromNow: ProFieldFC<FieldFromNowOwnProps> = (props) => {
   const typedProps = props as FieldFromNowProps
   const text = typedProps.text ?? ''
   const mode = typedProps.mode ?? 'read'
+  const intl = useIntl()
 
   if (isProFieldReadMode(mode)) {
     return FieldFromNowRead({
@@ -41,6 +43,7 @@ const FieldFromNow: ProFieldFC<FieldFromNowOwnProps> = (props) => {
       variant: typedProps.variant,
       formItemRender: typedProps.formItemRender,
       fieldProps: typedProps.fieldProps,
+      intl,
     })
   }
 

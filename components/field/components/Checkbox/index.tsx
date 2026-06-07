@@ -1,7 +1,9 @@
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { Spin } from 'antdv-next'
+import { useFormItemInputContext } from 'antdv-next/dist/form/context'
 import { computed, defineComponent } from 'vue'
+import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
@@ -54,9 +56,33 @@ const FieldCheckbox = defineComponent({
       emptyText: props.emptyText ?? '-',
       layout: props.layout ?? 'horizontal',
     }))
-    const wrapSSR = (node: JSX.Element) => node
-    const hashId = ''
-    const status = undefined
+    const statusContext = useFormItemInputContext()
+    const { wrapSSR, hashId } = useStyle('Checkbox', token => ({
+      [`.${prefixCls.value}`]: {
+        '&-error': {
+          span: {
+            color: token.colorError,
+          },
+        },
+        '&-warning': {
+          span: {
+            color: token.colorWarning,
+          },
+        },
+        '&-vertical': {
+          [`&${token.antCls}-checkbox-group`]: {
+            display: 'inline-block',
+          },
+          [`${token.antCls}-checkbox-wrapper+${token.antCls}-checkbox-wrapper`]: {
+            'margin-inline-start': '0  !important',
+          },
+          [`${token.antCls}-checkbox-group-item`]: {
+            display: 'flex',
+            marginInlineEnd: 0,
+          },
+        },
+      },
+    }))
 
     expose({ fetchData })
 
@@ -82,7 +108,7 @@ const FieldCheckbox = defineComponent({
           layoutClassName: prefixCls.value,
           wrapSSR,
           hashId,
-          status,
+          status: statusContext.value,
         })
       }
 

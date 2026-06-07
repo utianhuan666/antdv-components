@@ -30,7 +30,21 @@ import FieldTimePicker, { FieldTimeRangePicker } from './components/TimePicker'
 import FieldTreeSelect from './components/TreeSelect'
 import { PureProField } from './PureProField'
 
+export type {
+  ConfigContextPropsType as ProConfigContextType,
+  ProFieldFCRenderProps,
+  ProRenderFieldPropsType,
+} from '../provider'
 export { omitUndefined, pickProProps } from '../utils'
+export type {
+  ProFieldBuiltinValueType,
+  ProFieldSchemaLayoutValueType,
+  ProFieldTextType,
+  ProFieldValueObjectType,
+  ProFieldValueType,
+  ProFieldValueTypeInput,
+} from '../utils/typing'
+export { PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES } from '../utils/typing'
 export type { FieldCascaderProps } from './components/Cascader/types'
 export type { FieldDigitRangeProps } from './components/DigitRange/types'
 export type { FieldMoneyProps } from './components/Money/types'
@@ -39,22 +53,12 @@ export type { FieldTreeSelectProps } from './components/TreeSelect/types'
 export { createProField } from './ProFieldCore'
 export type { ProFieldMoneyProps } from './PureProField'
 export type {
-  ProConfigContextType,
-  ProFieldBuiltinValueType,
   ProFieldEmptyText,
-  ProFieldFCRenderProps,
   ProFieldLightProps,
   ProFieldPropsType,
   ProFieldRenderProps,
-  ProFieldSchemaLayoutValueType,
-  ProFieldTextType,
-  ProFieldValueObjectType,
-  ProFieldValueType,
   ProFieldValueTypeFunction,
-  ProFieldValueTypeInput,
-  ProRenderFieldPropsType,
 } from './types'
-export { PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES, ProConfigKey, useProConfig } from './types'
 
 const FieldModule = {
   install(app: App) {

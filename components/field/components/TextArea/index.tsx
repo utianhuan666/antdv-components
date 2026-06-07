@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTextAreaEdit from './FieldTextAreaEdit'
 import FieldTextAreaRead from './FieldTextAreaRead'
@@ -13,6 +14,7 @@ const FieldTextArea: ProFieldFC<{
   const typedProps = props as FieldTextAreaProps
   const text = typedProps.text ?? ''
   const mode = typedProps.mode ?? 'read'
+  const intl = useIntl()
 
   if (isProFieldReadMode(mode)) {
     return FieldTextAreaRead({
@@ -30,6 +32,7 @@ const FieldTextArea: ProFieldFC<{
       mode,
       formItemRender: typedProps.formItemRender,
       fieldProps: typedProps.fieldProps,
+      intl,
     })
   }
 

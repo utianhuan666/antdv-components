@@ -1,11 +1,11 @@
 import type { CascaderProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { GroupProps } from './types'
 import { computed, defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldCascaderEdit from './FieldCascaderEdit'
 import FieldCascaderLightEdit from './FieldCascaderLightEdit'
@@ -62,42 +62,15 @@ const fieldCascaderPropNames = [
   'cacheForSwr',
 ]
 
-function withFieldCascaderDefaults(props: FieldCascaderComponentProps): FieldCascaderComponentProps {
-  return new Proxy(props, {
-    get(target, key: string) {
-      const value = (target as unknown as Record<string, unknown>)[key]
-      if (value !== undefined) {
-        if (key === 'light' && value === '')
-          return true
-        return value
-      }
-      if (key === 'text')
-        return ''
-      if (key === 'mode')
-        return 'read'
-      if (key === 'fieldProps')
-        return {}
-      if (key === 'emptyText')
-        return '-'
-      if (key === 'light')
-        return false
-      return undefined
-    },
-  }) as FieldCascaderComponentProps
-}
-
 const FieldCascader = defineComponent({
   name: 'FieldCascader',
   props: fieldCascaderPropNames,
   setup(rawProps, { expose }) {
-    const props = withFieldCascaderDefaults(rawProps as unknown as FieldCascaderComponentProps)
+    const props = rawProps as unknown as FieldCascaderComponentProps
     const prefixCls = useProPrefixCls('pro-field-cascader')
     const cascaderRef = ref<any>(null)
     const open = ref(false)
-    const intl: IntlType = {
-      locale: 'default',
-      getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-    }
+    const intl = useIntl()
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
       open.value = typeof updater === 'function' ? updater(open.value) : updater
     }
@@ -106,6 +79,8 @@ const FieldCascader = defineComponent({
     expose({
       fetchData,
       cascaderRef,
+      focus: () => cascaderRef.value?.focus?.(),
+      blur: () => cascaderRef.value?.blur?.(),
     })
 
     const optionsValueEnum = computed(() => {
@@ -115,28 +90,40 @@ const FieldCascader = defineComponent({
     })
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
+      const {
+        placeholder,
+        formItemRender,
+        mode,
+        render,
+        label,
+        light,
+        variant,
+        ...rest
+      } = props
+
+      if (isProFieldReadMode(mode)) {
         return FieldCascaderRead({
-          text: props.text,
-          mode: props.mode,
-          valueEnum: props.valueEnum,
+          placeholder,
+          formItemRender,
+          mode,
+          render,
+          label,
+          light,
+          variant,
           optionsValueEnum: optionsValueEnum.value,
-          render: props.render,
-          fieldProps: props.fieldProps,
-          emptyText: props.emptyText,
+          ...rest,
         })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
+      if (isProFieldEditOnlyMode(mode)) {
         const editProps = {
-          text: props.text,
-          mode: props.mode,
-          placeholder: props.placeholder,
-          formItemRender: props.formItemRender,
-          render: props.render,
-          label: props.label,
-          variant: props.variant,
-          fieldProps: props.fieldProps,
+          ...rest,
+          placeholder,
+          formItemRender,
+          mode,
+          render,
+          label,
+          variant,
           options: options.value as NonNullable<CascaderProps['options']>,
           loading: loading.value,
           layoutClassName: prefixCls.value,
@@ -146,7 +133,7 @@ const FieldCascader = defineComponent({
           intl,
         }
 
-        if (props.light)
+        if (light)
           return FieldCascaderLightEdit(editProps)
 
         return FieldCascaderEdit(editProps)
@@ -157,4 +144,4 @@ const FieldCascader = defineComponent({
   },
 })
 
-export default FieldCascader
+export default FieldCascader as any

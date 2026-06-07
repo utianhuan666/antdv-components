@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitRangeProps, Value, ValuePair } from './types'
 import { defineComponent, ref, watch } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDigitRangeEdit from './FieldDigitRangeEdit'
 import FieldDigitRangeRead from './FieldDigitRangeRead'
@@ -11,6 +12,7 @@ type FieldDigitRangeFieldProps = NonNullable<ProFieldFC<FieldDigitRangeProps>['_
 const FieldDigitRange = defineComponent(
   (rawProps: { [key: string]: unknown }) => {
     const props = rawProps as FieldDigitRangeFieldProps
+    const intl = useIntl()
     const fieldProps = () => props.fieldProps ?? {}
     const valuePair = ref<ValuePair | undefined>(fieldProps().value ?? fieldProps().defaultValue)
     const valuePairRef = ref<ValuePair | undefined>(valuePair.value)
@@ -70,7 +72,10 @@ const FieldDigitRange = defineComponent(
           valuePairRef,
           setValuePair,
           token: {},
-          placeholderValue: currentFieldProps?.placeholder || placeholder || ['请输入', '请输入'],
+          placeholderValue: currentFieldProps?.placeholder || placeholder || [
+            intl.getMessage('tableForm.inputPlaceholder', '请输入'),
+            intl.getMessage('tableForm.inputPlaceholder', '请输入'),
+          ],
         })
       }
 

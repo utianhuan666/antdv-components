@@ -38,7 +38,7 @@ const FieldMoney: ProFieldFC<FieldMoneyProps> = (props) => {
     return intl.getMessage('moneySymbol', '¥')
   })()
 
-  const placeholderValue = placeholder || '请输入'
+  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
   const numberPopoverRender = propsNumberPopoverRender ?? fieldProps.numberPopoverRender ?? false
   const numberFormatOptions = propsNumberFormatOptions ?? fieldProps.numberFormatOptions
 

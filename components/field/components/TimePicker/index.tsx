@@ -1,7 +1,7 @@
 import type { TimePickerProps, TimeRangePickerProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldTimePickerEdit from './FieldTimePickerEdit'
@@ -33,11 +33,6 @@ type FieldTimeRangePickerProps = {
 
 type FieldTimeRangePickerFieldProps = NonNullable<ProFieldFC<FieldTimeRangePickerProps>['__props']>
 
-const intl: IntlType = {
-  locale: 'default',
-  getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-}
-
 /**
  * Time picker field component
  */
@@ -54,6 +49,7 @@ const FieldTimePicker: ProFieldFC<FieldTimePickerProps> = (props) => {
     lightLabel,
     variant,
   } = props as FieldTimePickerFieldProps
+  const intl = useIntl()
   const open = ref(false)
   const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
     open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
@@ -121,6 +117,7 @@ const FieldTimeRangePickerComponent: ProFieldFC<FieldTimeRangePickerProps> = (pr
     fieldProps = {},
     variant,
   } = props as FieldTimeRangePickerFieldProps
+  const intl = useIntl()
   const text = Array.isArray(rawText) ? rawText : []
   const open = ref(false)
   const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {

@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldPasswordEdit from './FieldPasswordEdit'
 import FieldPasswordRead from './FieldPasswordRead'
@@ -13,6 +14,7 @@ type FieldPasswordProps = NonNullable<ProFieldFC<{
 const FieldPassword = defineComponent(
   (rawProps: { [key: string]: unknown }) => {
     const props = rawProps as FieldPasswordProps
+    const intl = useIntl()
     const openRef = ref(false)
     const getOpen = () => props.open ?? openRef.value
 
@@ -44,6 +46,7 @@ const FieldPassword = defineComponent(
           mode,
           formItemRender: props.formItemRender,
           fieldProps: props.fieldProps,
+          intl,
         })
       }
 

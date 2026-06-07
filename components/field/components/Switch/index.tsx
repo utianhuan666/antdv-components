@@ -1,5 +1,6 @@
 import type { SwitchProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSwitchEdit from './FieldSwitchEdit'
 import FieldSwitchLightEdit from './FieldSwitchLightEdit'
@@ -20,11 +21,12 @@ const FieldSwitch: ProFieldFC<FieldSwitchFCProps> = (props) => {
   const mode = props.mode ?? 'read'
   const switchProps = fieldProps.fieldProps ?? {}
   const variant = props.variant ?? switchProps.variant
+  const intl = useIntl()
   const readLabel = text === undefined || text === null || `${text}`.length < 1
     ? '-'
     : text
-      ? (switchProps.checkedChildren ?? '打开')
-      : (switchProps.unCheckedChildren ?? '关闭')
+      ? (switchProps.checkedChildren ?? intl.getMessage('switch.open', '打开'))
+      : (switchProps.unCheckedChildren ?? intl.getMessage('switch.close', '关闭'))
   const mergedProps = {
     ...fieldProps,
     mode,

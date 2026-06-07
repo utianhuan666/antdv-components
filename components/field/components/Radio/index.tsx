@@ -1,7 +1,9 @@
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { Spin } from 'antdv-next'
+import { useFormItemInputContext } from 'antdv-next/dist/form/context'
 import { computed, defineComponent, ref } from 'vue'
+import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
@@ -57,9 +59,25 @@ const FieldRadio = defineComponent({
       emptyText: props.emptyText ?? '-',
       layout: props.layout ?? 'horizontal',
     }))
-    const wrapSSR = (node: JSX.Element) => node
-    const hashId = ''
-    const status = undefined
+    const statusContext = useFormItemInputContext()
+    const { wrapSSR, hashId } = useStyle('FieldRadioRadio', token => ({
+      [`.${prefixCls.value}-error`]: {
+        span: {
+          color: token.colorError,
+        },
+      },
+      [`.${prefixCls.value}-warning`]: {
+        span: {
+          color: token.colorWarning,
+        },
+      },
+      [`.${prefixCls.value}-vertical`]: {
+        [`${token.antCls}-radio-wrapper`]: {
+          display: 'flex',
+          marginInlineEnd: 0,
+        },
+      },
+    }))
 
     expose({ fetchData, radioRef })
 
@@ -85,7 +103,7 @@ const FieldRadio = defineComponent({
           layoutClassName: prefixCls.value,
           wrapSSR,
           hashId,
-          status,
+          status: statusContext.value,
         })
       }
 

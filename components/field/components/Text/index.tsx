@@ -1,5 +1,7 @@
 import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
+import { defineComponent, onMounted, ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTextEdit from './FieldTextEdit'
 import FieldTextRead from './FieldTextRead'
@@ -9,35 +11,69 @@ type FieldTextProps = NonNullable<ProFieldFC<{
   emptyText?: VNodeChild
 }>['__props']>
 
-const FieldText: ProFieldFC<{
+const FieldText = defineComponent({
+  name: 'FieldText',
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps as FieldTextProps
+    const intl = useIntl()
+    const inputRef = ref<any>(null)
+
+    onMounted(() => {
+      if (props.fieldProps?.autoFocus) {
+        queueMicrotask(() => {
+          inputRef.value?.focus?.()
+        })
+      }
+    })
+
+    expose({
+      inputRef,
+      focus: () => inputRef.value?.focus?.(),
+      blur: () => inputRef.value?.blur?.(),
+    })
+
+    return () => {
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const emptyText = props.emptyText ?? '-'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldTextRead({
+          text,
+          mode,
+          render: props.render,
+          fieldProps: props.fieldProps,
+          emptyText,
+        })
+      }
+
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldTextEdit({
+          text,
+          mode,
+          render: props.render,
+          formItemRender: props.formItemRender,
+          fieldProps: props.fieldProps,
+          emptyText,
+          inputRef,
+          intl,
+        })
+      }
+
+      return null
+    }
+  },
+}) as unknown as ProFieldFC<{
   text: string | number | boolean | unknown[]
   emptyText?: VNodeChild
-}> = (props) => {
-  const typedProps = props as FieldTextProps
-  const text = typedProps.text ?? ''
-  const mode = typedProps.mode ?? 'read'
-  const emptyText = typedProps.emptyText ?? '-'
-
-  if (isProFieldReadMode(mode)) {
-    return FieldTextRead({
-      text,
-      mode,
-      render: typedProps.render,
-      fieldProps: typedProps.fieldProps,
-      emptyText,
-    })
-  }
-
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldTextEdit({
-      text,
-      mode,
-      formItemRender: typedProps.formItemRender,
-      fieldProps: typedProps.fieldProps,
-    })
-  }
-
-  return null
-}
+}>
 
 export default FieldText

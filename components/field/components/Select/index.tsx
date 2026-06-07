@@ -1,13 +1,12 @@
 import type { SelectProps } from 'antdv-next'
 import type { Ref, VNodeChild } from 'vue'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, ProFieldValueEnumType, RequestOptionsType } from './types'
 import { Badge, useConfig } from 'antdv-next'
 import { debounce } from 'es-toolkit'
 import useSWRV from 'swrv'
 import { computed, defineComponent, h, onUnmounted, ref, watch } from 'vue'
-import { useProProviderSWRVContext } from '../../../provider'
+import { useIntl, useProProviderSWRVContext } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSelectLightEdit from './FieldSelectLightEdit'
 import FieldSelectRead from './FieldSelectRead'
@@ -393,14 +392,13 @@ const FieldSelect = defineComponent({
     const selectRef = ref<any>(null)
     const [loading, options, fetchData, resetData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
     const { componentSize } = useConfig()
-    const intl: IntlType = {
-      locale: 'default',
-      getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-    }
+    const intl = useIntl()
 
     expose({
       fetchData,
       selectRef,
+      focus: () => selectRef.value?.focus?.(),
+      blur: () => selectRef.value?.blur?.(),
     })
 
     const optionsValueEnum = computed(() => {
@@ -459,4 +457,4 @@ const FieldSelect = defineComponent({
   },
 })
 
-export default FieldSelect
+export default FieldSelect as any

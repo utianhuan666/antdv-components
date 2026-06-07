@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import type { InputNumberPopoverProps } from './InputNumberPopover'
 import type { FieldMoneyProps } from './types'
 import { omit } from '@v-c/util'
 import InputNumberPopover from './InputNumberPopover'
@@ -37,65 +38,67 @@ export function FieldMoneyEdit(props: Props) {
     'visible',
     'open',
     'onBlur',
-  ])
+  ]) as Partial<InputNumberPopoverProps>
 
-  const dom = (
-    <InputNumberPopover
-      {...({
-        contentRender: (popoverProps: Record<string, any>) => {
-          if (numberPopoverRender === false)
-            return null
+  const inputNumberPopoverProps = {
+    contentRender: (popoverProps) => {
+      if (numberPopoverRender === false)
+        return null
 
-          if (!popoverProps.value)
-            return null
+      if (!popoverProps.value)
+        return null
 
-          const localeText = getTextByLocale(
-            moneySymbol || locale || false,
-            `${getFormateValue(popoverProps.value)}`,
-            precision,
-            {
-              ...numberFormatOptions,
-              notation: 'compact',
-            },
-            moneySymbol,
-          )
-
-          if (typeof numberPopoverRender === 'function')
-            return numberPopoverRender(popoverProps, String(localeText))
-
-          return localeText
-        },
+      const localeText = getTextByLocale(
+        moneySymbol || locale || false,
+        `${getFormateValue(popoverProps.value)}`,
         precision,
-        formatter: (value: string | number | undefined) => {
-          if (value && moneySymbol)
-            return `${moneySymbol} ${getFormateValue(value)}`
-
-          return value?.toString() || (value as string)
+        {
+          ...numberFormatOptions,
+          notation: 'compact',
         },
-        parser: (value: string | undefined) => {
+        moneySymbol,
+      )
+
+      if (typeof numberPopoverRender === 'function')
+        return numberPopoverRender(popoverProps, String(localeText))
+
+      return localeText
+    },
+    precision,
+    formatter: (value: string | number | undefined) => {
+      if (value && moneySymbol)
+        return `${moneySymbol} ${getFormateValue(value)}`
+
+      return value?.toString() || (value as string)
+    },
+    parser: (value: string | undefined) => {
+      if (moneySymbol && value) {
+        return value.replace(
+          new RegExp(`\\${moneySymbol}\\s?|(,*)`, 'g'),
+          '',
+        )
+      }
+      return value!
+    },
+    placeholder: placeholderValue,
+    ...restFieldProps,
+    onBlur: onBlur
+      ? (e: FocusEvent) => {
+          let value = (e.target as HTMLInputElement).value
           if (moneySymbol && value) {
-            return value.replace(
+            value = value.replace(
               new RegExp(`\\${moneySymbol}\\s?|(,*)`, 'g'),
               '',
             )
           }
-          return value!
-        },
-        placeholder: placeholderValue,
-        ...restFieldProps,
-        onBlur: onBlur
-          ? (e: FocusEvent) => {
-              let value = (e.target as HTMLInputElement).value
-              if (moneySymbol && value) {
-                value = value.replace(
-                  new RegExp(`\\${moneySymbol}\\s?|(,*)`, 'g'),
-                  '',
-                )
-              }
-              onBlur(value)
-            }
-          : undefined,
-      } as any)}
+          onBlur(value)
+        }
+      : undefined,
+  } satisfies InputNumberPopoverProps
+
+  const dom = (
+    <InputNumberPopover
+      {...inputNumberPopoverProps}
     />
   )
 

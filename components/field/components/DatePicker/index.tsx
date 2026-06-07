@@ -1,9 +1,9 @@
 import type { DatePickerProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import { ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDatePickerEdit from './FieldDatePickerEdit'
 import FieldDatePickerLightEdit from './FieldDatePickerLightEdit'
@@ -25,11 +25,6 @@ type FieldDatePickerProps = {
 
 type FieldDatePickerFieldProps = NonNullable<ProFieldFC<FieldDatePickerProps>['__props']>
 
-const intl: IntlType = {
-  locale: 'default',
-  getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-}
-
 const FieldDatePicker: ProFieldFC<FieldDatePickerProps> = (props) => {
   const {
     text = '',
@@ -45,6 +40,7 @@ const FieldDatePicker: ProFieldFC<FieldDatePickerProps> = (props) => {
     lightLabel,
     variant,
   } = props as FieldDatePickerFieldProps
+  const intl = useIntl()
   const open = ref(false)
   const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
     open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen

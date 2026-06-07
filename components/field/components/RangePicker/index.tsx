@@ -1,7 +1,7 @@
 import type { RangePickerProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldRangePickerEdit from './FieldRangePickerEdit'
@@ -22,11 +22,6 @@ type FieldRangePickerProps = {
 
 type FieldRangePickerFieldProps = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']>
 
-const intl: IntlType = {
-  locale: 'default',
-  getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-}
-
 const FieldRangePicker: ProFieldFC<FieldRangePickerFieldProps> = (props) => {
   const {
     text: rawText,
@@ -42,6 +37,7 @@ const FieldRangePicker: ProFieldFC<FieldRangePickerFieldProps> = (props) => {
     variant,
     fieldProps = {},
   } = props
+  const intl = useIntl()
   const text = Array.isArray(rawText) ? rawText : []
   const [startText, endText] = text
   const open = ref(false)

@@ -4,9 +4,12 @@ import type { GroupProps as RadioGroupProps } from '../../field/components/Radio
 import type { FieldDigitProps as FieldSecondDigitProps } from '../../field/components/Second'
 import type { KeyLabel as SearchSelectKeyLabel } from '../../field/components/Select/SearchSelect'
 import {
+  createIntl,
+  FieldCascader,
   FieldSelect,
   FieldStatus,
   FieldTimePicker,
+  FieldTreeSelect,
   ProConfigProvider,
   ProField,
   ProFieldBadgeColor,
@@ -14,10 +17,12 @@ import {
   PureProField,
 } from '@antdv/components'
 import { flushPromises, mount } from '@vue/test-utils'
-import { ConfigProvider } from 'antdv-next'
+import { Cascader as AntCascader, InputNumber as AntInputNumber, Popover as AntPopover, Select as AntSelect, ConfigProvider, Form, FormItem } from 'antdv-next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
+import InputNumberPopover from '../../field/components/Money/InputNumberPopover'
 import { useFieldFetchData } from '../../field/components/Select'
+import LightSelect from '../../field/components/Select/LightSelect'
 import SearchSelect from '../../field/components/Select/SearchSelect'
 import ProFieldLightWrapper from '../../field/internal/ProFieldLightWrapper'
 import { mountAttached, waitFor } from '../testUtils'
@@ -53,6 +58,8 @@ describe('field', () => {
   const CompatProField = ProField as any
   const CompatFieldSelect = FieldSelect as any
   const CompatSearchSelect = SearchSelect as any
+  const CompatLightSelect = LightSelect as any
+  const CompatInputNumberPopover = InputNumberPopover as any
   type MoneyPropsAlias = ProFieldMoneyProps
   type CheckboxGroupPropsAlias = CheckboxGroupProps
   type RadioGroupPropsAlias = RadioGroupProps
@@ -130,6 +137,299 @@ describe('field', () => {
 
     expect(document.body.querySelector('.acme-pro-filed-search-select-option')).not.toBeNull()
     expect(document.body.querySelector('.ant-pro-filed-search-select-option')).toBeNull()
+  })
+
+  it('cascader update mode follows React edit-only branch', () => {
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text="open"
+          valueType="cascader"
+          mode="update"
+          valueEnum={{ open: 'Open' }}
+        />
+      ),
+    })
+
+    expect(wrapper.text()).toBe('')
+  })
+
+  it('treeSelect read render receives raw text and parsed dom', () => {
+    const render = vi.fn((_text: any, _props: any, dom: any) => <span class="tree-render">{dom}</span>)
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text="open"
+          valueType="treeSelect"
+          mode="read"
+          valueEnum={{ open: 'Open' }}
+          render={render}
+        />
+      ),
+    })
+
+    expect(render.mock.calls[0]?.[0]).toBe('open')
+    expect(wrapper.find('.tree-render').text()).toBe('Open')
+  })
+
+  it('cascader read render undefined falls through to null', () => {
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text="open"
+          valueType="cascader"
+          mode="read"
+          valueEnum={{ open: 'Open' }}
+          emptyText="EMPTY"
+          render={() => undefined as any}
+        />
+      ),
+    })
+
+    expect(wrapper.text()).toBe('')
+  })
+
+  it('field edit placeholders read ProConfigProvider intl', async () => {
+    const wrapper = mountAttached({
+      render: () => (
+        <ProConfigProvider
+          intl={createIntl('en', {
+            tableForm: {
+              inputPlaceholder: 'Type custom',
+              selectPlaceholder: 'Pick custom',
+            },
+          })}
+        >
+          <div>
+            <ProField text="" valueType="text" mode="edit" />
+            <ProField text={0} valueType="digit" mode="edit" />
+            <ProField text="" valueType="select" mode="edit" valueEnum={{ open: 'Open' }} />
+            <ProField
+              text=""
+              valueType="cascader"
+              mode="edit"
+              options={[{ label: 'Open', value: 'open' }]}
+            />
+          </div>
+        </ProConfigProvider>
+      ),
+    })
+
+    await settle()
+
+    expect(wrapper.html()).toContain('Type custom')
+    expect(wrapper.html()).toContain('Pick custom')
+  })
+
+  it('text edit autoFocus focuses input', async () => {
+    mountAttached({
+      render: () => <ProField text="" valueType="text" mode="edit" fieldProps={{ autoFocus: true }} />,
+    })
+
+    await settle()
+    await new Promise<void>(resolve => queueMicrotask(() => resolve()))
+
+    expect(document.activeElement?.tagName).toBe('INPUT')
+  })
+
+  it('field refs expose fetchData and focus when available', async () => {
+    const selectRef = ref<any>()
+    const cascaderRef = ref<any>()
+    const treeSelectRef = ref<any>()
+    const request = vi.fn(async () => [{ label: 'Open', value: 'open' }])
+
+    mountAttached({
+      render: () => (
+        <div>
+          <FieldSelect ref={selectRef} mode="edit" request={request} />
+          <FieldCascader ref={cascaderRef} mode="edit" request={request} />
+          <FieldTreeSelect ref={treeSelectRef} mode="edit" request={request} />
+        </div>
+      ),
+    })
+
+    await settle()
+
+    for (const fieldRef of [selectRef, cascaderRef, treeSelectRef]) {
+      expect(fieldRef.value?.fetchData).toEqual(expect.any(Function))
+      expect(fieldRef.value?.focus).toEqual(expect.any(Function))
+    }
+  })
+
+  ;(['radio', 'checkbox'] as const).forEach((valueType) => {
+    it(`${valueType} edit mode reflects FormItem status and vertical layout`, async () => {
+      const wrapper = mountAttached({
+        render: () => (
+          <Form>
+            <FormItem validateStatus="error">
+              <ProField
+                text="open"
+                valueType={valueType}
+                mode="edit"
+                layout={valueType === 'checkbox' ? 'vertical' : undefined}
+                fieldProps={valueType === 'radio' ? { layout: 'vertical' } : undefined}
+                options={[{ label: 'Open', value: 'open' }]}
+              />
+            </FormItem>
+          </Form>
+        ),
+      })
+
+      await settle()
+
+      expect(wrapper.find(`.ant-pro-field-${valueType}-error`).exists()).toBe(true)
+      expect(wrapper.find(`.ant-pro-field-${valueType}-vertical`).exists()).toBe(true)
+    })
+  })
+
+  it('cascader read and edit branches keep rest props and open callbacks', async () => {
+    const readRender = vi.fn((text: any, config: any, dom: any) => <span class="cascader-read">{dom}</span>)
+    const readWrapper = mount({
+      render: () => (
+        <FieldCascader
+          text="open"
+          mode="read"
+          valueEnum={{ open: 'Open' }}
+          fieldProps={{ className: 'read-extra' }}
+          render={readRender}
+        />
+      ),
+    })
+
+    expect(readWrapper.find('.cascader-read').text()).toBe('Open')
+    expect(readRender.mock.calls[0]?.[0]).toBe('open')
+    expect(readRender.mock.calls[0]?.[1]).toMatchObject({ mode: 'read', className: 'read-extra' })
+
+    const onOpenChange = vi.fn()
+    const request = vi.fn(async () => [{ label: 'Open', value: 'open' }])
+    const cascaderRef = ref<any>()
+    const editWrapper = mountAttached({
+      render: () => (
+        <FieldCascader
+          ref={cascaderRef}
+          text={['open']}
+          mode="edit"
+          request={request}
+          fieldProps={{ value: ['open'], onOpenChange }}
+        />
+      ),
+    })
+
+    await settle()
+    expect(request).toHaveBeenCalledTimes(1)
+
+    const cascader = editWrapper.findComponent(AntCascader)
+    expect(cascader.exists()).toBe(true)
+    cascader.vm.$emit('openChange', true)
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+    expect(cascaderRef.value?.fetchData).toEqual(expect.any(Function))
+  })
+
+  it('money input number popover preserves controlled value and open events', async () => {
+    const onChange = vi.fn()
+    const onOpenChange = vi.fn()
+    const contentRender = vi.fn((props: any) => <span class="money-popover">{props.value}</span>)
+    const wrapper = mount({
+      render: () => (
+        <CompatInputNumberPopover
+          defaultValue={100}
+          open={false}
+          onChange={onChange}
+          onOpenChange={onOpenChange}
+          contentRender={contentRender}
+        />
+      ),
+    })
+
+    await settle()
+    expect(contentRender).toHaveBeenLastCalledWith(expect.objectContaining({ value: 100 }))
+    wrapper.findComponent(AntInputNumber).vm.$emit('change', 200)
+    expect(onChange).toHaveBeenCalledWith(200)
+    wrapper.findComponent(AntPopover).vm.$emit('openChange', true)
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it('light select renders hidden select and clear only emits change', async () => {
+    const fetchData = vi.fn()
+    const onChange = vi.fn()
+    const wrapper = mountAttached({
+      render: () => (
+        <CompatLightSelect
+          label="Status"
+          value="open"
+          options={[{ label: 'Open', value: 'open' }]}
+          fetchData={fetchData}
+          onChange={onChange}
+        />
+      ),
+    })
+
+    await settle()
+    expect(wrapper.find('.ant-select').exists()).toBe(true)
+    expect(wrapper.classes()).toContain('ant-pro-field-select-light-select')
+    expect(wrapper.classes()).toContain('ant-pro-field-select-light-select-container-bottomLeft')
+
+    await wrapper.find('.ant-pro-core-field-label-close').trigger('click')
+    expect(onChange).toHaveBeenCalledWith(undefined, undefined)
+    expect(fetchData).not.toHaveBeenCalled()
+
+    const emptyWrapper = mountAttached({
+      render: () => (
+        <CompatLightSelect
+          label="Status"
+          options={[{ label: 'Open', value: 'open' }]}
+          fetchData={vi.fn()}
+          open
+        />
+      ),
+    })
+
+    await settle()
+    expect(emptyWrapper.find('.ant-select').exists()).toBe(true)
+    expect(emptyWrapper.findComponent(AntSelect).props('open')).toBe(true)
+  })
+
+  it('search select uses explicit defaults and supports autoFocus', async () => {
+    const fetchData = vi.fn()
+    const onSearch = vi.fn()
+    const resetData = vi.fn()
+    const wrapper = mountAttached({
+      render: () => (
+        <CompatSearchSelect
+          showSearch
+          autoFocus
+          fetchData={fetchData}
+          resetData={resetData}
+          onSearch={onSearch}
+          options={[{ label: 'Open', value: 'open' }]}
+        />
+      ),
+    })
+
+    await settle()
+    await new Promise<void>(resolve => queueMicrotask(() => resolve()))
+
+    const select = wrapper.findComponent(AntSelect)
+    expect(select.props('allowClear')).toBe(true)
+    expect(select.props('optionFilterProp')).toBe('label')
+    expect(select.props('optionLabelProp')).toBe('label')
+    ;(select.props('onSearch') as (value: string) => void)('abc')
+    expect(fetchData).toHaveBeenCalledWith('abc')
+    expect(onSearch).toHaveBeenCalledWith('abc')
+    expect(document.activeElement?.tagName).toBe('INPUT')
+
+    const disabledClearWrapper = mount({
+      render: () => (
+        <CompatSearchSelect
+          allowClear={false}
+          fetchData={vi.fn()}
+          resetData={vi.fn()}
+          options={[]}
+        />
+      ),
+    })
+
+    expect(disabledClearWrapper.findComponent(AntSelect).props('allowClear')).toBe(false)
   })
 
   it('🐴 percent=0', () => {
@@ -2112,8 +2412,8 @@ describe('field', () => {
         wrapper.unmount()
       })
 
-      it('🐴 treeSelect read render receives parsed dom and respects null return', () => {
-        const render = vi.fn((dom: any) => <span class="parsed-tree-dom">{dom}</span>)
+      it('🐴 treeSelect read render receives raw text, parsed dom and respects null return', () => {
+        const render = vi.fn((_text: any, _props: any, dom: any) => <span class="parsed-tree-dom">{dom}</span>)
         const wrapper = mount({
           render: () => (
             <ProField
@@ -2127,7 +2427,7 @@ describe('field', () => {
         })
 
         expect(wrapper.find('.parsed-tree-dom').text()).toBe('Open')
-        expect(render.mock.calls[0]![0]).not.toBe('open')
+        expect(render.mock.calls[0]![0]).toBe('open')
 
         const nullWrapper = mount({
           render: () => (

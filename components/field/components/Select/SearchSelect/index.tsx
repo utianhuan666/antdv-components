@@ -3,7 +3,7 @@ import type { VNodeChild } from 'vue'
 import type { RequestOptionsType } from '../types'
 import { clsx } from '@v-c/util'
 import { Select } from 'antdv-next'
-import { computed, defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
 
 export interface LabeledValue {
@@ -42,21 +42,6 @@ export interface SearchSelectProps<T = Record<string, any>> extends Omit<SelectP
   resetData: () => void
   fetchDataOnSearch?: boolean
   defaultSearchValue?: string
-}
-
-type SearchSelectMergedProps = SearchSelectProps & {
-  options: RequestOptionsType[]
-  allowClear: boolean
-  disabled: boolean
-  loading: boolean
-  fetchDataOnSearch: boolean
-  autoClearSearchValue: boolean
-  searchOnFocus: boolean
-  resetAfterSelect: boolean
-  showSearch: boolean
-  optionFilterProp: string
-  optionLabelProp: string
-  labelInValue: boolean
 }
 
 function getOriginalLabel(item: any, fallbackValue: any): any {
@@ -120,29 +105,10 @@ const searchSelectPropNames = [
   'filterOption',
 ]
 
-function booleanValue(value: unknown, defaultValue: boolean): boolean {
+function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
   if (value === undefined)
     return defaultValue
   return value === '' ? true : !!value
-}
-
-function withSearchSelectDefaults(props: SearchSelectProps): SearchSelectMergedProps {
-  return new Proxy(props, {
-    get(target, key: string) {
-      const value = (target as unknown as Record<string, unknown>)[key]
-      if (key === 'allowClear' || key === 'fetchDataOnSearch' || key === 'autoClearSearchValue' || key === 'showSearch')
-        return booleanValue(value, true)
-      if (key === 'disabled' || key === 'loading' || key === 'searchOnFocus' || key === 'resetAfterSelect' || key === 'labelInValue')
-        return booleanValue(value, false)
-      if (value !== undefined)
-        return value
-      if (key === 'options')
-        return []
-      if (key === 'optionFilterProp' || key === 'optionLabelProp')
-        return 'label'
-      return undefined
-    },
-  }) as SearchSelectMergedProps
 }
 
 const SearchSelect = defineComponent({
@@ -150,7 +116,7 @@ const SearchSelect = defineComponent({
   inheritAttrs: false,
   props: searchSelectPropNames,
   setup(rawProps, { attrs, expose }) {
-    const props = withSearchSelectDefaults(rawProps as unknown as SearchSelectProps)
+    const props = rawProps as unknown as SearchSelectProps
     const selectRef = ref<any>(null)
     const innerSearchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
     const prefixCls = useProPrefixCls('pro-filed-search-select', computed(() => props.prefixCls))
@@ -164,6 +130,11 @@ const SearchSelect = defineComponent({
           innerSearchValue.value = value
       },
     )
+
+    onMounted(() => {
+      if (normalizeBoolean((attrs as Record<string, unknown>).autoFocus, false))
+        selectRef.value?.focus?.()
+    })
 
     const fieldNames = computed(() => ({
       label: props.fieldNames?.label || 'label',
@@ -204,7 +175,8 @@ const SearchSelect = defineComponent({
       })
     }
 
-    const mergedOptions = computed(() => genOptions(props.options))
+    const sourceOptions = computed(() => props.options ?? [])
+    const mergedOptions = computed(() => genOptions(sourceOptions.value))
 
     const setSearchValue = (value: string) => {
       innerSearchValue.value = value
@@ -228,6 +200,17 @@ const SearchSelect = defineComponent({
 
     return () => {
       const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
+      const allowClear = normalizeBoolean(props.allowClear, true)
+      const autoClearSearchValue = normalizeBoolean(props.autoClearSearchValue, true)
+      const disabled = normalizeBoolean(props.disabled, false)
+      const fetchDataOnSearch = normalizeBoolean(props.fetchDataOnSearch, true)
+      const labelInValue = normalizeBoolean(props.labelInValue, false)
+      const loading = normalizeBoolean(props.loading, false)
+      const optionFilterProp = props.optionFilterProp ?? 'label'
+      const optionLabelProp = props.optionLabelProp ?? 'label'
+      const resetAfterSelect = normalizeBoolean(props.resetAfterSelect, false)
+      const searchOnFocus = normalizeBoolean(props.searchOnFocus, false)
+      const showSearch = normalizeBoolean(props.showSearch, false)
       const onChange = props.onChange as
         | ((value: any, option: any, ...args: any[]) => void)
         | undefined
@@ -236,19 +219,21 @@ const SearchSelect = defineComponent({
         <Select
           ref={selectRef}
           id={props.id}
-          class={props.className}
+          class={clsx(prefixCls.value, props.className, {
+            [`${prefixCls.value}-disabled`]: disabled,
+          })}
           style={props.style}
           placeholder={props.placeholder}
           notFoundContent={props.notFoundContent}
-          allowClear={props.allowClear}
-          autoClearSearchValue={props.autoClearSearchValue}
-          disabled={props.disabled}
-          loading={props.loading}
+          allowClear={allowClear}
+          autoClearSearchValue={autoClearSearchValue}
+          disabled={disabled}
+          loading={loading}
           mode={props.mode}
-          showSearch={props.showSearch}
+          showSearch={showSearch}
           searchValue={innerSearchValue.value}
-          optionFilterProp={props.optionFilterProp}
-          optionLabelProp={props.optionLabelProp}
+          optionFilterProp={optionFilterProp}
+          optionLabelProp={optionLabelProp}
           {...restAttrs}
           filterOption={
             props.filterOption === false
@@ -265,41 +250,41 @@ const SearchSelect = defineComponent({
                   }
                   return !!(
                     option?.data_title?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
-                    || option?.[props.optionFilterProp]?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
+                    || option?.[optionFilterProp]?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
                   )
                 }
           }
           onClear={() => {
             props.onClear?.()
             props.fetchData?.(undefined)
-            if (props.showSearch) {
+            if (showSearch) {
               props.onSearch?.('')
               setSearchValue('')
             }
           }}
-          onSearch={props.showSearch
+          onSearch={showSearch
             ? (value: string) => {
-                if (props.fetchDataOnSearch)
+                if (fetchDataOnSearch)
                   props.fetchData?.(value)
                 props.onSearch?.(value)
                 setSearchValue(value)
               }
             : undefined}
           onChange={(value: any, optionList: any, ...rest: any[]) => {
-            if (props.showSearch && props.autoClearSearchValue) {
+            if (showSearch && autoClearSearchValue) {
               props.fetchData?.(undefined)
               props.onSearch?.('')
               setSearchValue('')
             }
 
-            if (!props.labelInValue) {
+            if (!labelInValue) {
               onChange?.(value, optionList, ...rest)
               return
             }
 
             if (props.mode !== 'multiple' && !Array.isArray(optionList)) {
               const dataItem = optionList?.['data-item']
-              const foundDataItem = dataItem || findDataItem(props.options, value, fieldNames.value.value, fieldNames.value.options)
+              const foundDataItem = dataItem || findDataItem(sourceOptions.value, value, fieldNames.value.value, fieldNames.value.options)
               if (!value || !foundDataItem) {
                 onChange?.(value ? { ...value, label: getOriginalLabel(foundDataItem, value) } : value, optionList, ...rest)
                 return
@@ -317,13 +302,13 @@ const SearchSelect = defineComponent({
             }
 
             onChange?.(getMergeValue(value, optionList), optionList, ...rest)
-            if (props.resetAfterSelect)
+            if (resetAfterSelect)
               props.resetData?.()
           }}
           onFocus={(event: FocusEvent) => {
-            if (props.searchOnFocus) {
+            if (searchOnFocus) {
               props.fetchData?.(undefined)
-              if (props.showSearch) {
+              if (showSearch) {
                 props.onSearch?.('')
                 setSearchValue('')
               }

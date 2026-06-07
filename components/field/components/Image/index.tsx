@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldImageProps } from './types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldImageEdit from './FieldImageEdit'
 import FieldImageRead from './FieldImageRead'
@@ -12,6 +13,7 @@ const FieldImage: ProFieldFC<FieldImageProps> = (props) => {
   const typedProps = props as FieldImageFieldProps
   const text = typedProps.text ?? ''
   const mode = typedProps.mode ?? 'read'
+  const intl = useIntl()
 
   if (isProFieldReadMode(mode)) {
     return FieldImageRead({
@@ -24,7 +26,7 @@ const FieldImage: ProFieldFC<FieldImageProps> = (props) => {
   }
 
   if (isProFieldEditOrUpdateMode(mode)) {
-    const placeholderValue = (Array.isArray(typedProps.placeholder) ? typedProps.placeholder[0] : typedProps.placeholder) || '请输入'
+    const placeholderValue = (Array.isArray(typedProps.placeholder) ? typedProps.placeholder[0] : typedProps.placeholder) || intl.getMessage('tableForm.inputPlaceholder', '请输入')
     return FieldImageEdit({
       text,
       mode,

@@ -1,12 +1,16 @@
 import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from './internal/fieldMode'
 import type {
   ProFieldFCRenderProps,
-  ProFieldRenderProps,
+  ProRenderFieldPropsType,
+} from '../provider'
+import type {
   ProFieldRequestData,
   ProFieldTextType,
   ProFieldValueTypeInput,
-  ProRenderFieldPropsType,
+} from '../utils/typing'
+import type { ProFieldFCMode } from './internal/fieldMode'
+import type {
+  ProFieldRenderProps,
 } from './types'
 import { cloneVNode, computed, defineComponent, isVNode, ref } from 'vue'
 import { useProProviderContext } from '../provider'

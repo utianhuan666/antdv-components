@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { PercentPropInt } from './types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldPercentEdit from './FieldPercentEdit'
 import FieldPercentRead from './FieldPercentRead'
@@ -22,6 +23,7 @@ const FieldPercent: ProFieldFC<PercentPropInt> = (props) => {
     showColor = false,
     showSymbol: propsShowSymbol,
   } = props as FieldPercentProps
+  const intl = useIntl()
 
   const realValue = typeof text === 'string' && text.includes('%')
     ? toNumber(text.replace('%', ''))
@@ -31,7 +33,7 @@ const FieldPercent: ProFieldFC<PercentPropInt> = (props) => {
     ? propsShowSymbol(text)
     : propsShowSymbol
 
-  const placeholderValue = placeholder || '请输入'
+  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
 
   if (isProFieldReadMode(mode)) {
     return FieldPercentRead({

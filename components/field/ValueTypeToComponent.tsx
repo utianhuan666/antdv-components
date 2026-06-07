@@ -1,5 +1,6 @@
 import type { VNodeChild } from 'vue'
-import type { ProFieldBuiltinValueType, ProRenderFieldPropsType } from './types'
+import type { ProRenderFieldPropsType } from '../provider'
+import type { ProFieldBuiltinValueType } from '../utils/typing'
 import { Avatar } from 'antdv-next'
 import { pickProProps } from '../utils'
 import FieldCascader from './components/Cascader'

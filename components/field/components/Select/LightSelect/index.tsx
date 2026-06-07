@@ -5,6 +5,7 @@ import { SearchOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Input, Select } from 'antdv-next'
 import { computed, defineComponent, ref } from 'vue'
+import { useStyle } from '../../../../provider'
 import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
 import FieldLabel from '../../../../utils/components/FieldLabel'
 
@@ -59,35 +60,10 @@ const lightSelectPropNames = [
   'labelTrigger',
 ]
 
-function booleanValue(value: unknown, defaultValue: boolean): boolean {
+function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
   if (value === undefined)
     return defaultValue
   return value === '' ? true : !!value
-}
-
-function withLightSelectDefaults(props: LightSelectProps): LightSelectProps {
-  return new Proxy(props, {
-    get(target, key: string) {
-      const value = (target as unknown as Record<string, unknown>)[key]
-      if (key === 'loading' || key === 'disabled' || key === 'showSearch' || key === 'labelInValue' || key === 'fetchDataOnSearch' || key === 'labelTrigger')
-        return booleanValue(value, false)
-      if (key === 'allowClear')
-        return booleanValue(value, true)
-      if (value !== undefined)
-        return value
-      if (key === 'valueMaxLength')
-        return 41
-      if (key === 'variant')
-        return 'outlined'
-      if (key === 'options')
-        return []
-      if (key === 'optionLabelProp')
-        return ''
-      if (key === 'placement')
-        return 'bottomLeft'
-      return undefined
-    },
-  }) as LightSelectProps
 }
 
 const LightSelect = defineComponent({
@@ -95,11 +71,33 @@ const LightSelect = defineComponent({
   inheritAttrs: false,
   props: lightSelectPropNames,
   setup(rawProps, { attrs, expose }) {
-    const props = withLightSelectDefaults(rawProps as unknown as LightSelectProps)
+    const props = rawProps as unknown as LightSelectProps
     const selectRef = ref<any>(null)
     const open = ref(false)
     const keyword = ref('')
     const prefixCls = useProPrefixCls('pro-field-select-light-select')
+    const { wrapSSR, hashId } = useStyle('LightSelect', token => ({
+      [`.${prefixCls.value}`]: {
+        [`${token.antCls}-select`]: {
+          'position': 'absolute',
+          'width': '153px',
+          'height': '28px',
+          'visibility': 'hidden',
+          'opacity': 0,
+          '&-selector': {
+            height: 28,
+          },
+        },
+        [`&.${prefixCls.value}-searchable`]: {
+          [`${token.antCls}-select`]: {
+            'width': '200px',
+            '&-selector': {
+              height: 28,
+            },
+          },
+        },
+      },
+    }))
 
     expose({ selectRef })
 
@@ -110,8 +108,9 @@ const LightSelect = defineComponent({
 
     const valueMap = computed(() => {
       const values: Record<string, VNodeChild> = {}
-      props.options?.forEach((item) => {
-        const optionLabel = props.optionLabelProp ? item[props.optionLabelProp] : item[fieldNames.value.label]
+      const optionLabelProp = props.optionLabelProp ?? ''
+      ;(props.options ?? []).forEach((item) => {
+        const optionLabel = optionLabelProp ? item[optionLabelProp] : item[fieldNames.value.label]
         const optionValue = item[fieldNames.value.value]
         values[optionValue as string] = optionLabel || optionValue
       })
@@ -119,9 +118,10 @@ const LightSelect = defineComponent({
     })
 
     const filteredOptions = computed(() => {
+      const options = props.options ?? []
       if (props.onSearch || !keyword.value)
-        return props.options
-      return props.options?.filter((item) => {
+        return options
+      return options.filter((item) => {
         const keywordValue = keyword.value.toLowerCase()
         if (props.optionFilterProp)
           return String(item[props.optionFilterProp] ?? '').toLowerCase().includes(keywordValue)
@@ -134,7 +134,7 @@ const LightSelect = defineComponent({
 
     const mergedOpen = computed(() => {
       if (Object.prototype.hasOwnProperty.call(attrs, 'open'))
-        return (attrs as Record<string, unknown>).open as boolean | undefined
+        return normalizeBoolean((attrs as Record<string, unknown>).open, false)
       return open.value
     })
 
@@ -148,93 +148,29 @@ const LightSelect = defineComponent({
     return () => {
       const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
       const displayValue = getValueOrLabel(valueMap.value, props.value)
-      const hasRawValue = props.value !== undefined && props.value !== null && props.value !== '' && (!Array.isArray(props.value) || props.value.length > 0)
-      const hasDisplayValue = displayValue !== undefined && displayValue !== null && displayValue !== '' && (!Array.isArray(displayValue) || displayValue.length > 0)
-      const hasValue = hasRawValue || hasDisplayValue
+      const allowClear = normalizeBoolean(props.allowClear, true)
+      const disabled = normalizeBoolean(props.disabled, false)
+      const fetchDataOnSearch = normalizeBoolean(props.fetchDataOnSearch, false)
+      const labelInValue = normalizeBoolean(props.labelInValue, false)
+      const labelTrigger = normalizeBoolean(props.labelTrigger, false)
+      const loading = normalizeBoolean(props.loading, false)
+      const placement = props.placement ?? 'bottomLeft'
+      const showSearch = normalizeBoolean(props.showSearch, false)
+      const valueMaxLength = props.valueMaxLength ?? 41
+      const variant = props.variant ?? 'outlined'
 
-      const selectDom = hasValue || mergedOpen.value
-        ? (
-            <Select
-              ref={selectRef}
-              {...restAttrs}
-              id={props.id}
-              allowClear={props.allowClear}
-              value={props.value}
-              mode={props.mode}
-              labelInValue={props.labelInValue}
-              size={props.size}
-              disabled={props.disabled}
-              variant={props.variant}
-              open={mergedOpen.value}
-              showSearch={props.showSearch}
-              style={props.style}
-              loading={props.loading}
-              options={filteredOptions.value as SelectProps['options']}
-              popupRender={(menuNode: any) => (
-                <div>
-                  {props.showSearch
-                    ? (
-                        <div style={{ margin: '4px 8px' }}>
-                          <Input
-                            value={keyword.value}
-                            allowClear={!!props.allowClear}
-                            prefix={<SearchOutlined />}
-                            style={{ width: '100%' }}
-                            onChange={(event: any) => {
-                              keyword.value = event?.target?.value ?? ''
-                              if (props.fetchDataOnSearch)
-                                props.fetchData?.(keyword.value)
-                              props.onSearch?.(keyword.value)
-                            }}
-                            onKeydown={(event: KeyboardEvent) => {
-                              if (event.key === 'Backspace')
-                                event.stopPropagation()
-                              if (event.key === 'ArrowUp' || event.key === 'ArrowDown')
-                                event.preventDefault()
-                            }}
-                          />
-                        </div>
-                      )
-                    : null}
-                  {menuNode}
-                </div>
-              )}
-              onChange={(value: any, option: any) => {
-                props.onChange?.(value, option)
-                if (props.mode !== 'multiple') {
-                  open.value = false
-                  props.onOpenChange?.(false)
-                }
-              }}
-              onSearch={props.showSearch
-                ? (value: string) => {
-                    if (props.fetchDataOnSearch)
-                      props.fetchData?.(value)
-                    props.onSearch?.(value)
-                  }
-                : undefined}
-              onOpenChange={(nextOpen: boolean) => {
-                if (!nextOpen)
-                  keyword.value = ''
-                if (!props.labelTrigger)
-                  open.value = nextOpen
-                props.onOpenChange?.(nextOpen)
-              }}
-            />
-          )
-        : undefined
-
-      return (
-        <span
+      return wrapSSR(
+        <div
           class={clsx(
             prefixCls.value,
-            props.showSearch ? `${prefixCls.value}-searchable` : '',
-            `${prefixCls.value}-container-${props.placement}`,
+            hashId,
+            showSearch ? `${prefixCls.value}-searchable` : '',
+            `${prefixCls.value}-container-${placement}`,
             props.className,
           )}
           style={props.style}
           onClick={(event: MouseEvent) => {
-            if (props.disabled)
+            if (disabled)
               return
             const isLabelClick = props.lightLabel?.labelRef?.value?.contains(event.target as Node)
             if (!isLabelClick) {
@@ -243,28 +179,94 @@ const LightSelect = defineComponent({
             }
           }}
         >
+          <Select
+            ref={selectRef}
+            {...restAttrs}
+            id={props.id}
+            allowClear={allowClear}
+            value={props.value}
+            mode={props.mode}
+            labelInValue={labelInValue}
+            size={props.size}
+            disabled={disabled}
+            variant={variant}
+            open={mergedOpen.value}
+            showSearch={showSearch}
+            style={props.style}
+            loading={loading}
+            options={filteredOptions.value as SelectProps['options']}
+            popupRender={(menuNode: any) => (
+              <div>
+                {showSearch
+                  ? (
+                      <div style={{ margin: '4px 8px' }}>
+                        <Input
+                          value={keyword.value}
+                          allowClear={allowClear}
+                          prefix={<SearchOutlined />}
+                          style={{ width: '100%' }}
+                          onChange={(event: any) => {
+                            keyword.value = event?.target?.value ?? ''
+                            if (fetchDataOnSearch)
+                              props.fetchData?.(keyword.value)
+                            props.onSearch?.(keyword.value)
+                          }}
+                          onKeydown={(event: KeyboardEvent) => {
+                            if (event.key === 'Backspace')
+                              event.stopPropagation()
+                            if (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+                              event.preventDefault()
+                          }}
+                        />
+                      </div>
+                    )
+                  : null}
+                {menuNode}
+              </div>
+            )}
+            onChange={(value: any, option: any) => {
+              props.onChange?.(value, option)
+              if (props.mode !== 'multiple') {
+                open.value = false
+                props.onOpenChange?.(false)
+              }
+            }}
+            onSearch={showSearch
+              ? (value: string) => {
+                  if (fetchDataOnSearch)
+                    props.fetchData?.(value)
+                  props.onSearch?.(value)
+                }
+              : undefined}
+            onOpenChange={(nextOpen: boolean) => {
+              if (!nextOpen)
+                keyword.value = ''
+              if (!labelTrigger)
+                open.value = nextOpen
+              props.onOpenChange?.(nextOpen)
+            }}
+          />
           <FieldLabel
             ref={syncLightLabelRef}
             ellipsis
             label={props.label}
             placeholder={props.placeholder ?? props.label}
-            disabled={props.disabled}
+            disabled={disabled}
             variant={props.labelVariant}
-            allowClear={!!props.allowClear}
-            value={selectDom || displayValue}
+            allowClear={allowClear}
+            value={displayValue || (props.value as any)?.label || props.value}
+            valueMaxLength={valueMaxLength}
             onClear={() => {
               props.onChange?.(undefined, undefined)
-              props.fetchData?.(undefined)
-              keyword.value = ''
             }}
             onClick={() => {
-              if (props.disabled)
+              if (disabled)
                 return
               open.value = !open.value
               props.onOpenChange?.(open.value)
             }}
           />
-        </span>
+        </div>,
       )
     }
   },

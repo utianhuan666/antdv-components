@@ -18,7 +18,7 @@ export function FieldCascaderRead(props: Props) {
   )
 
   if (render)
-    return render(rest.text, { mode, ...rest.fieldProps }, dom) ?? props.emptyText
+    return render(rest.text, { mode, ...rest.fieldProps }, dom) ?? null
 
   return dom
 }

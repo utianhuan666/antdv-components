@@ -1,10 +1,10 @@
 import type { TreeSelectProps } from 'antdv-next'
-import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { TreeSelectFieldProps } from './types'
 import { omit } from '@v-c/util'
 import { computed, defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
@@ -137,10 +137,7 @@ const FieldTreeSelect = defineComponent({
     const [loading, options, fetchData] = useFieldFetchData(fetchProps)
     const open = ref(false)
     const searchValue = ref<string | undefined>(props.fieldProps?.searchValue)
-    const intl: IntlType = {
-      locale: 'default',
-      getMessage: (_id: string, defaultMessage: string) => defaultMessage,
-    }
+    const intl = useIntl()
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
       open.value = typeof updater === 'function' ? updater(open.value) : updater
     }
@@ -148,6 +145,8 @@ const FieldTreeSelect = defineComponent({
     expose({
       fetchData,
       treeSelectRef,
+      focus: () => treeSelectRef.value?.focus?.(),
+      blur: () => treeSelectRef.value?.blur?.(),
     })
 
     const optionsValueEnum = computed(() => {
@@ -247,4 +246,4 @@ const FieldTreeSelect = defineComponent({
   },
 })
 
-export default FieldTreeSelect
+export default FieldTreeSelect as any

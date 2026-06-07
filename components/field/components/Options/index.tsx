@@ -1,6 +1,7 @@
 import type { CSSProperties, VNode, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
-import { cloneVNode, Fragment, h, isVNode } from 'vue'
+import { cloneVNode, defineComponent, Fragment, h, isVNode } from 'vue'
+import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 type FieldOptionsProps = NonNullable<ProFieldFC<{
@@ -23,44 +24,57 @@ function addArrayKeys(doms: VNodeChild[]) {
   })
 }
 
-function renderOptions(doms: VNodeChild[]) {
-  const prefixCls = useProPrefixCls('pro-field-option')
-  return (
+function renderOptions(
+  doms: VNodeChild[],
+  prefixCls: string,
+  hashId: string,
+  wrapSSR: (node: VNodeChild) => VNodeChild,
+) {
+  return wrapSSR(
     <div
-      class={prefixCls.value}
-      style={{
-        display: 'flex',
-        gap: 8,
-        alignItems: 'center',
-      }}
+      class={[prefixCls, hashId]}
     >
       {addArrayKeys(doms)}
-    </div>
+    </div>,
   )
 }
 
-const FieldOptions: ProFieldFC<{
-  text?: VNodeChild | VNodeChild[]
-}> = (props) => {
-  const typedProps = props as FieldOptionsProps
-  const text = typedProps.text ?? []
-  const mode = typedProps.mode ?? 'read'
+const FieldOptions = defineComponent({
+  name: 'FieldOptions',
+  props: ['text', 'mode', 'render', 'fieldProps'],
+  setup(rawProps) {
+    const props = rawProps as FieldOptionsProps
+    const prefixCls = useProPrefixCls('pro-field-option')
+    const { wrapSSR, hashId } = useStyle('FieldOptions', token => ({
+      [`.${prefixCls.value}`]: {
+        display: 'flex',
+        gap: token.margin,
+        alignItems: 'center',
+      },
+    }))
 
-  if (typedProps.render) {
-    const doms = typedProps.render(text, { mode, ...typedProps.fieldProps }, <></>) as FieldOptionsProps['text']
-    if (!doms || !Array.isArray(doms) || doms.length < 1) {
-      return null
+    return () => {
+      const text = props.text ?? []
+      const mode = props.mode ?? 'read'
+
+      if (props.render) {
+        const doms = props.render(text, { mode, ...props.fieldProps }, <></>) as FieldOptionsProps['text']
+        if (!doms || !Array.isArray(doms) || doms.length < 1)
+          return null
+        return renderOptions(doms as VNodeChild[], prefixCls.value, hashId, wrapSSR)
+      }
+
+      if (!text || !Array.isArray(text)) {
+        if (!isVNode(text))
+          return null
+        return text
+      }
+
+      return renderOptions(text as VNodeChild[], prefixCls.value, hashId, wrapSSR)
     }
-    return renderOptions(doms as VNodeChild[])
-  }
-
-  if (!text || !Array.isArray(text)) {
-    if (!isVNode(text))
-      return null
-    return text
-  }
-
-  return renderOptions(text as VNodeChild[])
-}
+  },
+}) as unknown as ProFieldFC<{
+  text?: VNodeChild | VNodeChild[]
+}>
 
 export default FieldOptions

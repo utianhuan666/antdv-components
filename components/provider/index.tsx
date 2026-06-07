@@ -10,7 +10,6 @@ import { ThemeProvider } from 'antdv-style'
 import dayjs from 'dayjs'
 import { SWRVCache } from 'swrv'
 import { computed, defineComponent, inject, onUnmounted, provide, reactive, watchEffect } from 'vue'
-import { ProConfigKey } from '../field/types'
 import { findIntlKeyByAntdLocaleKey, intlMap, zhCNIntl } from './intl'
 import { getLayoutDesignToken } from './typing/layoutToken'
 import { shallowMergeOneLevel } from './utils/merge'
@@ -85,7 +84,7 @@ export type ProSchemaValueEnumObj = Record<
 >
 
 export interface BaseProFieldFC {
-  text: VNodeChild
+  text?: VNodeChild
   fieldProps?: any
   mode?: ProFieldFCMode
   light?: boolean
@@ -132,6 +131,8 @@ export interface ConfigContextPropsType {
   dark?: boolean
   prefixCls?: string
 }
+
+export const ProConfigKey: InjectionKey<ConfigContextPropsType> = Symbol('ProConfig')
 
 const defaultToken = {
   ...antdTheme.getDesignToken(),

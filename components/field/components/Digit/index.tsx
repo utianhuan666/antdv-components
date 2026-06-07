@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitProps } from './types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDigitEdit from './FieldDigitEdit'
 import FieldDigitRead from './FieldDigitRead'
@@ -17,7 +18,8 @@ const FieldDigit: ProFieldFC<FieldDigitProps> = (props) => {
     fieldProps = {},
   } = props as FieldDigitFieldProps
 
-  const placeholderValue = placeholder || '请输入'
+  const intl = useIntl()
+  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
 
   if (isProFieldReadMode(type)) {
     return FieldDigitRead({

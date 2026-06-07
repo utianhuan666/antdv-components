@@ -1,6 +1,10 @@
 import type { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import { parseValueToDay } from '../../../utils'
 import '../../initDayjs'
+
+dayjs.extend(quarterOfYear)
 
 export type DatePickerReadPicker = 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
 

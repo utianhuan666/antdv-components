@@ -1,3 +1,4 @@
+import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { clsx, omit } from '@v-c/util'
@@ -8,7 +9,7 @@ type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   options: any[]
   loading: boolean
   layoutClassName: string
-  wrapSSR: (node: JSX.Element) => JSX.Element
+  wrapSSR: (node: VNodeChild) => VNodeChild
   hashId: string
   status: { status?: string } | undefined
 }

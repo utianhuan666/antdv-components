@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { toNumber } from '../Percent/util'
 import FieldProgressEdit from './FieldProgressEdit'
@@ -23,12 +24,13 @@ const FieldProgress: ProFieldFC<{
     fieldProps = {},
     placeholder,
   } = props as FieldProgressProps
+  const intl = useIntl()
 
   const realValue = typeof text === 'string' && text.includes('%')
     ? toNumber(text.replace('%', ''))
     : toNumber(text)
 
-  const placeholderValue = placeholder || '请输入'
+  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
 
   if (isProFieldReadMode(mode)) {
     return FieldProgressRead({

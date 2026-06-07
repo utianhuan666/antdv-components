@@ -1,10 +1,13 @@
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { TextArea } from 'antdv-next'
 
-type Props = NonNullable<ProFieldFC<{ text: string | number }>['__props']>
+type Props = NonNullable<ProFieldFC<{ text: string | number }>['__props']> & {
+  intl: IntlType
+}
 
 export function FieldTextAreaEdit(props: Props) {
-  const { text, mode, formItemRender, fieldProps } = props
+  const { text, mode, formItemRender, fieldProps, intl } = props
   const dom = (
     <TextArea
       rows={3}
@@ -12,7 +15,7 @@ export function FieldTextAreaEdit(props: Props) {
         if (event.key === 'Enter')
           event.stopPropagation()
       }}
-      placeholder="请输入"
+      placeholder={intl.getMessage('tableForm.inputPlaceholder', '请输入')}
       {...fieldProps}
     />
   )

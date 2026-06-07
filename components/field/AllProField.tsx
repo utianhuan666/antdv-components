@@ -1,5 +1,6 @@
+import type { ProFieldTextType } from '../utils/typing'
 import type { ProFieldRenderText } from './ProFieldCore'
-import type { ProFieldRenderProps, ProFieldTextType } from './types'
+import type { ProFieldRenderProps } from './types'
 import { pickProProps } from '../utils'
 import FieldImage from './components/Image'
 import FieldMoney from './components/Money'
@@ -123,4 +124,4 @@ export const defaultRenderText: ProFieldRenderText = (
 export const ProField = createProField(
   { renderRead: defaultRenderRead, renderEdit: defaultRenderEdit },
   { pickProPropsWithValueTypeMap: true },
-)
+) as any

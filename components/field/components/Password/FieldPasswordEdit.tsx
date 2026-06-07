@@ -1,3 +1,4 @@
+import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { InputPassword } from 'antdv-next'
 
@@ -5,13 +6,15 @@ type Props = NonNullable<ProFieldFC<{
   text: string | number
   open?: boolean
   onOpenChange?: (open: boolean) => void
-}>['__props']>
+}>['__props']> & {
+  intl: IntlType
+}
 
 export function FieldPasswordEdit(props: Props) {
-  const { text, mode, formItemRender, fieldProps } = props
+  const { text, mode, formItemRender, fieldProps, intl } = props
   const dom = (
     <InputPassword
-      placeholder="请输入"
+      placeholder={intl.getMessage('tableForm.inputPlaceholder', '请输入')}
       {...fieldProps}
     />
   )

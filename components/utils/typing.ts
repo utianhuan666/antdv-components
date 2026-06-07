@@ -1,32 +1,106 @@
 import type { AvatarProps, CascaderProps, CheckboxProps, ColorPickerProps, DatePickerProps, DividerProps, FormInstance, FormItemProps, ImageProps, InputNumberProps, InputPasswordProps, InputProps, PopoverProps, ProgressProps, RadioProps, RangePickerProps, RateProps, SegmentedProps, SelectProps, SliderProps, SpaceProps, SwitchProps, TextAreaProps, TimeRangePickerProps, TreeSelectProps } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
-import type {
-  ProFieldBuiltinValueType,
-  ProFieldSchemaLayoutValueType,
-  ProFieldTextType,
-  ProFieldValueObjectType,
-  ProFieldValueType,
-  ProFieldValueTypeInput,
-  ProSchemaValueEnumMap,
-  ProSchemaValueEnumObj,
-  ProSchemaValueEnumType,
-} from '../field/types'
 import type { UseEditableUtilType } from './useEditableArray'
-import { PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES } from '../field/types'
 
-export type {
-  ProFieldBuiltinValueType,
-  ProFieldSchemaLayoutValueType,
-  ProFieldTextType,
-  ProFieldValueObjectType,
-  ProFieldValueType,
-  ProFieldValueTypeInput,
-  ProSchemaValueEnumMap,
-  ProSchemaValueEnumObj,
-  ProSchemaValueEnumType,
+export type ProFieldTextType
+  = | string
+    | number
+    | boolean
+    | unknown[]
+    | Record<string, any>
+    | VNodeChild
+
+export type ProFieldValueType
+  = | 'text'
+    | 'password'
+    | 'money'
+    | 'index'
+    | 'indexBorder'
+    | 'option'
+    | 'textarea'
+    | 'date'
+    | 'dateWeek'
+    | 'dateMonth'
+    | 'dateQuarter'
+    | 'dateYear'
+    | 'dateTime'
+    | 'fromNow'
+    | 'dateRange'
+    | 'dateTimeRange'
+    | 'dateWeekRange'
+    | 'dateMonthRange'
+    | 'dateQuarterRange'
+    | 'dateYearRange'
+    | 'time'
+    | 'timeRange'
+    | 'select'
+    | 'checkbox'
+    | 'rate'
+    | 'slider'
+    | 'radio'
+    | 'radioButton'
+    | 'progress'
+    | 'percent'
+    | 'digit'
+    | 'digitRange'
+    | 'second'
+    | 'code'
+    | 'jsonCode'
+    | 'avatar'
+    | 'switch'
+    | 'image'
+    | 'cascader'
+    | 'treeSelect'
+    | 'color'
+    | 'segmented'
+    | 'group'
+    | 'formList'
+    | 'formSet'
+    | 'divider'
+    | 'dependency'
+
+export const PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES = [
+  'group',
+  'formList',
+  'formSet',
+  'divider',
+  'dependency',
+] as const
+
+export type ProFieldSchemaLayoutValueType = typeof PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES[number]
+
+export type ProFieldBuiltinValueType = Exclude<ProFieldValueType, ProFieldSchemaLayoutValueType>
+
+export interface ProFieldValueObjectType {
+  type: 'progress' | 'money' | 'percent' | 'image'
+  status?: 'normal' | 'active' | 'success' | 'exception'
+  locale?: string
+  showSymbol?: ((value: any) => boolean) | boolean
+  showColor?: boolean
+  precision?: number
+  moneySymbol?: boolean
+  request?: ProFieldRequestData
+  width?: number
 }
 
-export { PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES }
+export type ProFieldValueTypeInput = ProFieldValueType | ProFieldValueObjectType
+
+export interface ProSchemaValueEnumType {
+  text: VNodeChild
+  status?: string
+  color?: string
+  disabled?: boolean
+}
+
+export type ProSchemaValueEnumMap = Map<
+  string | number | boolean,
+  ProSchemaValueEnumType | VNodeChild
+>
+
+export type ProSchemaValueEnumObj = Record<
+  string,
+  ProSchemaValueEnumType | VNodeChild
+>
 
 export type LabelTooltipType = any
 export type WrapperTooltipProps = any

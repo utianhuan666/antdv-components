@@ -1,5 +1,7 @@
 import type { VNodeChild } from 'vue'
-import type { ProFieldRequestData as BaseProFieldRequestData, ProFieldLightProps, ProRenderFieldPropsType, ProSchemaValueEnumMap, ProSchemaValueEnumObj } from '../../types'
+import type { ProRenderFieldPropsType } from '../../../provider'
+import type { ProFieldRequestData as BaseProFieldRequestData, ProSchemaValueEnumMap, ProSchemaValueEnumObj } from '../../../utils/typing'
+import type { ProFieldLightProps } from '../../types'
 
 export type ProFieldValueEnumType = ProSchemaValueEnumMap | ProSchemaValueEnumObj | Map<any, any> | Record<string, any> | undefined
 
