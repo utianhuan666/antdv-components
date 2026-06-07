@@ -6,7 +6,7 @@ import type { TreeSelectFieldProps } from './types'
 import { omit } from '@v-c/util'
 import { computed, defineComponent, ref } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldTreeSelectEdit from './FieldTreeSelectEdit'
 import FieldTreeSelectLightEdit from './FieldTreeSelectLightEdit'
@@ -187,7 +187,7 @@ const FieldTreeSelect = defineComponent({
         })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
+      if (isProFieldEditOnlyMode(props.mode)) {
         const setSearchValue = (
           updater:
             | string

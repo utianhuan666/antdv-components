@@ -49,7 +49,6 @@ export function FieldSelectLightEdit(props: FieldSelectLightEditProps) {
       fetchData={fetchData}
       className={rest.className}
       style={rest.style}
-      value={fieldProps?.value ?? rest.text}
       {...fieldProps}
     />
   )

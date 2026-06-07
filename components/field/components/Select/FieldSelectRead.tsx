@@ -21,7 +21,7 @@ export function FieldSelectRead(props: Props) {
   )
 
   if (render)
-    return render(rest.text, { mode, ...fieldProps }, dom) ?? props.emptyText
+    return render(dom, { mode, ...fieldProps }, dom) ?? null
 
   return dom
 }

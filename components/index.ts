@@ -79,6 +79,7 @@ export {
   FieldTimeRangePicker,
   FieldTreeSelect,
   ProFieldBadgeColor,
+  proFieldParsingValueEnumToArray,
 } from './field'
 
 export type {
@@ -90,6 +91,7 @@ export type {
   ProConfigContextType,
   ProFieldEmptyText,
   ProFieldFCRenderProps,
+  ProFieldMoneyProps,
   ProFieldPropsType,
   ProFieldRenderProps,
   ProFieldTextType,

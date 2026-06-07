@@ -19,7 +19,7 @@ export function FieldTreeSelectRead(props: Props) {
   )
 
   if (render)
-    return render(rest.text, { mode, ...fieldProps, treeData: options }, dom) ?? props.emptyText
+    return render(dom, { mode, ...fieldProps, treeData: options }, dom) ?? null
 
   return dom
 }

@@ -1,7 +1,17 @@
+import type { FieldMoneyProps } from './components/Money'
 import type { ProFieldRenderText } from './ProFieldCore'
 import type { ProFieldRenderProps } from './types'
 import FieldText from './components/Text'
 import { createProField } from './ProFieldCore'
+
+export type {
+  ProFieldEmptyText,
+  ProFieldFC,
+  ProFieldLightProps,
+  ProFieldPropsType,
+  ProFieldValueTypeFunction,
+} from './types'
+export type ProFieldMoneyProps = FieldMoneyProps
 
 /** Read: empty text placeholder, custom valueType render, fallback to FieldText */
 export const pureRenderRead: ProFieldRenderText = (
@@ -31,31 +41,32 @@ export const pureRenderRead: ProFieldRenderText = (
     }
   }
 
-  delete props.emptyText
+  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
 
   if (typeof valueType === 'object') {
     return pureRenderRead(
       dataValue,
       valueType.type,
-      { ...valueType, ...props } as ProFieldRenderProps,
+      { ...valueType, ...propsWithoutEmptyText } as ProFieldRenderProps,
       valueTypeMap,
     )
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
+    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
     const readDom = customValueTypeConfig.render?.(
       dataValue,
-      { text: dataValue, ...props, mode: mode || 'read' } as any,
+      { text: dataValue, ...customProps, mode: mode || 'read' } as any,
       <>{dataValue}</>,
     )
     if (props?.render) {
-      return props.render(dataValue, { text: dataValue, ...props } as any, readDom as any)
+      return props.render(dataValue, { text: dataValue, ...customProps } as any, readDom as any)
     }
     return readDom
   }
 
-  return <FieldText text={dataValue as string} {...props} />
+  return <FieldText text={dataValue as string} {...propsWithoutEmptyText} />
 }
 
 /** Edit: custom valueType formItemRender, fallback to FieldText */
@@ -65,31 +76,32 @@ export const pureRenderEdit: ProFieldRenderText = (
   props,
   valueTypeMap,
 ) => {
-  delete props.emptyText
+  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
 
   if (typeof valueType === 'object') {
     return pureRenderEdit(
       dataValue,
       valueType.type,
-      { ...valueType, ...props } as ProFieldRenderProps,
+      { ...valueType, ...propsWithoutEmptyText } as ProFieldRenderProps,
       valueTypeMap,
     )
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
+    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
     const dom = customValueTypeConfig.formItemRender?.(
       dataValue,
-      { text: dataValue, ...props } as any,
+      { text: dataValue, ...customProps } as any,
       <>{dataValue}</>,
     )
     if (props?.formItemRender) {
-      return props.formItemRender(dataValue, { text: dataValue, ...props } as any, dom as any)
+      return props.formItemRender(dataValue, { text: dataValue, ...customProps } as any, dom as any)
     }
     return dom
   }
 
-  return <FieldText text={dataValue as string} {...props} />
+  return <FieldText text={dataValue as string} {...propsWithoutEmptyText} />
 }
 
 /** Dispatch by mode for callers that use the render helper directly. */

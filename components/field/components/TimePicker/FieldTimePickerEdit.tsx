@@ -1,6 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import { TimePicker } from 'antdv-next'
-import { parseValueToDay } from '../DatePicker/datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<{

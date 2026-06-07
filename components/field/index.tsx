@@ -37,6 +37,7 @@ export type { FieldMoneyProps } from './components/Money/types'
 export type { FieldSelectProps } from './components/Select/types'
 export type { FieldTreeSelectProps } from './components/TreeSelect/types'
 export { createProField } from './ProFieldCore'
+export type { ProFieldMoneyProps } from './PureProField'
 export type {
   ProConfigContextType,
   ProFieldBuiltinValueType,

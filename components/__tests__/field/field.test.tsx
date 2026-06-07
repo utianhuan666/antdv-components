@@ -1,9 +1,17 @@
+import type { ProFieldMoneyProps } from '@antdv/components'
+import type { GroupProps as CheckboxGroupProps } from '../../field/components/Checkbox'
+import type { GroupProps as RadioGroupProps } from '../../field/components/Radio'
+import type { FieldDigitProps as FieldSecondDigitProps } from '../../field/components/Second'
+import type { KeyLabel as SearchSelectKeyLabel } from '../../field/components/Select/SearchSelect'
 import {
   FieldSelect,
   FieldStatus,
   FieldTimePicker,
+  ProConfigProvider,
   ProField,
   ProFieldBadgeColor,
+  proFieldParsingValueEnumToArray,
+  PureProField,
 } from '@antdv/components'
 import { flushPromises, mount } from '@vue/test-utils'
 import { ConfigProvider } from 'antdv-next'
@@ -45,8 +53,25 @@ describe('field', () => {
   const CompatProField = ProField as any
   const CompatFieldSelect = FieldSelect as any
   const CompatSearchSelect = SearchSelect as any
+  type MoneyPropsAlias = ProFieldMoneyProps
+  type CheckboxGroupPropsAlias = CheckboxGroupProps
+  type RadioGroupPropsAlias = RadioGroupProps
+  type SearchSelectKeyLabelAlias = SearchSelectKeyLabel
+  type FieldSecondDigitPropsAlias = FieldSecondDigitProps
+  const moneyPropsAliasSmoke: Partial<MoneyPropsAlias> = { moneySymbol: false }
+  const checkboxGroupPropsSmoke: Partial<CheckboxGroupPropsAlias> = { layout: 'horizontal' }
+  const radioGroupPropsSmoke: Partial<RadioGroupPropsAlias> = { radioType: 'button' }
+  const searchSelectKeyLabelSmoke: Partial<SearchSelectKeyLabelAlias> = { value: 'open' }
+  const fieldSecondDigitPropsSmoke: Partial<FieldSecondDigitPropsAlias> = { placeholder: '请输入' }
 
   it('🐴 base use', () => {
+    expect(moneyPropsAliasSmoke.moneySymbol).toBe(false)
+    expect(checkboxGroupPropsSmoke.layout).toBe('horizontal')
+    expect(radioGroupPropsSmoke.radioType).toBe('button')
+    expect(searchSelectKeyLabelSmoke.value).toBe('open')
+    expect(fieldSecondDigitPropsSmoke.placeholder).toBe('请输入')
+    expect(proFieldParsingValueEnumToArray).toEqual(expect.any(Function))
+
     const wrapper = mount({
       render: () => <ProField text="100" valueType="money" mode="edit" />,
     })
@@ -138,17 +163,17 @@ describe('field', () => {
     const wrapper = mount({
       render: () => (
         <ProField
-          text={undefined}
+          text="default"
           valueType="select"
           valueEnum={{
-            undefined: '未定义',
+            default: undefined,
           }}
           mode="read"
         />
       ),
     })
 
-    expect(wrapper.text()).toContain('-')
+    expect(wrapper.text()).toBe('default')
   })
 
   it('🐴 should trigger onChange function provided when change', async () => {
@@ -693,6 +718,37 @@ describe('field', () => {
     expect(wrapper.text()).toBe('all')
   })
 
+  it('🐴 select read render receives parsed dom and respects null return', () => {
+    const render = vi.fn((dom: any) => <span class="parsed-dom">{dom}</span>)
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text="open"
+          valueType="select"
+          mode="read"
+          valueEnum={{ open: 'Open' }}
+          render={render}
+        />
+      ),
+    })
+
+    expect(wrapper.find('.parsed-dom').text()).toBe('Open')
+    expect(render.mock.calls[0]![0]).not.toBe('open')
+
+    const nullWrapper = mount({
+      render: () => (
+        <ProField
+          text="open"
+          valueType="select"
+          mode="read"
+          valueEnum={{ open: 'Open' }}
+          render={() => null as any}
+        />
+      ),
+    })
+    expect(nullWrapper.text()).toBe('')
+  })
+
   const valueTypes = [
     'password',
     'money',
@@ -1019,6 +1075,131 @@ describe('field', () => {
     const input = wrapper.find<HTMLInputElement>('#clone-own')
     expect(input.attributes('data-field')).toBe('own')
     expect(input.element.value).toBe('own')
+  })
+
+  it('🐴 custom valueTypeMap render is not wrapped by field render', () => {
+    const valueTypeMap = {
+      custom: {
+        render: (_text: any, _props: any, dom: any) => <span class="custom-render">{dom}</span>,
+        formItemRender: (_text: any, _props: any, dom: any) => <span class="custom-edit">{dom}</span>,
+      },
+    }
+    const wrapper = mount({
+      render: () => (
+        <ProConfigProvider valueTypeMap={valueTypeMap}>
+          <ProField
+            text="custom text"
+            valueType={'custom' as any}
+            mode="read"
+            render={() => <span class="outer-render">outer</span>}
+          />
+        </ProConfigProvider>
+      ),
+    })
+
+    expect(wrapper.find('.custom-render').exists()).toBe(true)
+    expect(wrapper.find('.outer-render').exists()).toBe(false)
+    expect(wrapper.text()).toBe('custom text')
+  })
+
+  it('🐴 empty text render respects null return', () => {
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text={null as any}
+          valueType="text"
+          mode="read"
+          render={() => null as any}
+        />
+      ),
+    })
+
+    expect(wrapper.text()).toBe('')
+  })
+
+  it('🐴 custom valueTypeMap render props omit ref and emptyText', () => {
+    const render = vi.fn((_text, _props, dom) => <span class="custom-render">{dom}</span>)
+    const formItemRender = vi.fn((_text, _props, dom) => <span class="custom-edit">{dom}</span>)
+    const valueTypeMap = {
+      custom: {
+        render,
+        formItemRender,
+      },
+    }
+
+    mount({
+      render: () => (
+        <ProConfigProvider valueTypeMap={valueTypeMap}>
+          <ProField
+            text="custom read"
+            valueType={'custom' as any}
+            mode="read"
+            emptyText="EMPTY"
+          />
+          <ProField
+            text="custom edit"
+            valueType={'custom' as any}
+            mode="edit"
+            emptyText="EMPTY"
+          />
+          <PureProField
+            text="pure read"
+            valueType={'custom' as any}
+            mode="read"
+            emptyText="EMPTY"
+          />
+        </ProConfigProvider>
+      ),
+    })
+
+    expect(render).toHaveBeenCalledTimes(2)
+    expect(formItemRender).toHaveBeenCalledTimes(1)
+    for (const call of [...render.mock.calls, ...formItemRender.mock.calls]) {
+      expect(call[1]).not.toHaveProperty('ref')
+      expect(call[1]).not.toHaveProperty('emptyText')
+    }
+  })
+
+  it('🐴 built-in text render receives fieldProps without text prop', () => {
+    const render = vi.fn((_text, props, dom) => <span>{dom}</span>)
+    const wrapper = mount({
+      render: () => (
+        <ProField
+          text="qixian"
+          mode="read"
+          valueType="text"
+          fieldProps={{ prefix: 'pre-', suffix: '-post' }}
+          render={render}
+        />
+      ),
+    })
+
+    expect(wrapper.text()).toBe('pre-qixian-post')
+    expect(render).toHaveBeenCalled()
+    expect(render.mock.calls[0]![1]).toEqual({
+      mode: 'read',
+      prefix: 'pre-',
+      suffix: '-post',
+      onChange: expect.any(Function),
+    })
+  })
+
+  it('🐴 avatar only renders image in read mode with string text', () => {
+    const readWrapper = mount({
+      render: () => <ProField text="https://example.test/avatar.png" valueType="avatar" mode="read" />,
+    })
+    expect(readWrapper.find('.ant-avatar').exists()).toBe(true)
+
+    const editWrapper = mount({
+      render: () => <ProField text="https://example.test/avatar.png" valueType="avatar" mode="edit" />,
+    })
+    expect(editWrapper.find('.ant-avatar').exists()).toBe(false)
+    expect(editWrapper.find('input').exists()).toBe(true)
+
+    const objectWrapper = mount({
+      render: () => <ProField text={{ src: 'https://example.test/avatar.png' }} valueType="avatar" mode="read" />,
+    })
+    expect(objectWrapper.find('.ant-avatar').exists()).toBe(false)
   })
 
   it('🐴 light wrapper mousedown on clear area does not trigger label', async () => {
@@ -1353,6 +1534,20 @@ describe('field', () => {
 
           expect(readWrapper.text()).toContain('100')
           expect(readWrapper.find('.ant-input-number').exists()).toBe(false)
+
+          const noSymbolWrapper = mount({
+            render: () => (
+              <ProField
+                text="100"
+                valueType={{ type: 'money', locale, moneySymbol: false }}
+                mode="read"
+              />
+            ),
+          })
+
+          expect(noSymbolWrapper.text()).toContain('100')
+          expect(noSymbolWrapper.text()).not.toContain('¥')
+          expect(noSymbolWrapper.find('.ant-input-number').exists()).toBe(false)
         })
       })
     })
@@ -1658,6 +1853,23 @@ describe('field', () => {
         expect(wrapper.find('.ant-pro-core-field-label').text()).toBe('不解决')
       })
 
+      it('🐴 select light edit does not fall back to text as selected value', async () => {
+        const wrapper = mount({
+          render: () => (
+            <CompatProField
+              text="open"
+              light
+              valueType="select"
+              mode="edit"
+              fieldProps={{ options: requestOptions }}
+            />
+          ),
+        })
+
+        await settle()
+        expect(wrapper.find('.ant-pro-core-field-label').text()).toBe('请选择')
+      })
+
       it('🐴 select mode=null is single select', () => {
         const wrapper = mount({
           render: () => (
@@ -1898,6 +2110,55 @@ describe('field', () => {
         expect(loadDataFn).toHaveBeenCalledWith(true)
 
         wrapper.unmount()
+      })
+
+      it('🐴 treeSelect read render receives parsed dom and respects null return', () => {
+        const render = vi.fn((dom: any) => <span class="parsed-tree-dom">{dom}</span>)
+        const wrapper = mount({
+          render: () => (
+            <ProField
+              text="open"
+              valueType="treeSelect"
+              mode="read"
+              valueEnum={{ open: 'Open' }}
+              render={render}
+            />
+          ),
+        })
+
+        expect(wrapper.find('.parsed-tree-dom').text()).toBe('Open')
+        expect(render.mock.calls[0]![0]).not.toBe('open')
+
+        const nullWrapper = mount({
+          render: () => (
+            <ProField
+              text="open"
+              valueType="treeSelect"
+              mode="read"
+              valueEnum={{ open: 'Open' }}
+              render={() => null as any}
+            />
+          ),
+        })
+        expect(nullWrapper.text()).toBe('')
+      })
+
+      it('🐴 treeSelect update mode follows React edit-only branch', () => {
+        const wrapper = mount({
+          render: () => (
+            <ProField
+              text="open"
+              valueType="treeSelect"
+              mode="update"
+              fieldProps={{
+                treeData: [{ label: 'Open', value: 'open' }],
+              }}
+            />
+          ),
+        })
+
+        expect(wrapper.find('.ant-select').exists()).toBe(false)
+        expect(wrapper.text()).toBe('')
       })
     })
   }
@@ -2174,6 +2435,7 @@ describe('field', () => {
               mode="edit"
               light
               fieldProps={{
+                value: 'all',
                 options: [
                   { label: '全部', value: 'all' },
                   { label: '未解决', value: 'open' },

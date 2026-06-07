@@ -1,5 +1,5 @@
 import type { VNodeChild } from 'vue'
-import type { ProRenderFieldPropsType } from './types'
+import type { ProFieldBuiltinValueType, ProRenderFieldPropsType } from './types'
 import { Avatar } from 'antdv-next'
 import { pickProProps } from '../utils'
 import FieldCascader from './components/Cascader'
@@ -41,7 +41,7 @@ function sameRenderPair(
   }
 }
 
-const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
+const ValueTypeToComponentMap: Record<ProFieldBuiltinValueType, ProRenderFieldPropsType> = {
   progress: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
@@ -137,7 +137,11 @@ const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
   fromNow: sameRenderPair((text, props) => <FieldFromNow {...props} text={text} />),
   index: sameRenderPair(text => <FieldIndexColumn>{(text as number) + 1}</FieldIndexColumn>),
   indexBorder: sameRenderPair(text => <FieldIndexColumn border>{(text as number) + 1}</FieldIndexColumn>),
-  avatar: sameRenderPair(text => <Avatar src={text as string} size={22} shape="circle" />),
+  avatar: sameRenderPair((text, props) =>
+    props.mode === 'read' && typeof text === 'string'
+      ? <Avatar src={text} size={22} shape="circle" />
+      : <FieldText {...props} text={text as string} />,
+  ),
   code: sameRenderPair((text, props) => <FieldCode {...props} text={text} />),
   jsonCode: sameRenderPair((text, props) => <FieldCode language="json" {...props} text={text} />),
   textarea: sameRenderPair((text, props) => <FieldTextArea {...props} text={text} />),
@@ -155,7 +159,7 @@ const ValueTypeToComponentMap: Record<string, ProRenderFieldPropsType> = {
   second: sameRenderPair((text, props) => <FieldSecond {...props} text={text} placeholder={props.placeholder as string} />),
   select: sameRenderPair((text, props) => wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)),
   text: sameRenderPair((text, props) =>
-    props.valueEnum !== undefined || props.request
+    props.valueEnum || props.request
       ? wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)
       : <FieldText {...props} text={text as string} />,
   ),

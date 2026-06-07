@@ -1,7 +1,7 @@
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { DateRangePicker } from 'antdv-next'
-import { parseValueToDay } from '../DatePicker/datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<{
@@ -40,7 +40,7 @@ export function FieldRangePickerEdit(props: Props) {
           intl.getMessage('tableForm.selectPlaceholder', '请选择'),
           intl.getMessage('tableForm.selectPlaceholder', '请选择'),
         ]
-  const parsedValue = parseValueToDay(fieldProps.value, format)
+  const parsedValue = parseValueToDay(fieldProps.value)
   const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
     ? [parsedValue[0], parsedValue[1]] as [any, any]
     : undefined

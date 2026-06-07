@@ -122,8 +122,7 @@ describe('dateField', () => {
       ),
     })
 
-    expect(wrapper.text()).toContain('2024-06-04 12:30:45')
-    expect(wrapper.text()).toContain('2024-06-05 12:30:45')
+    expect(wrapper.text()).toBe('2024-06-04 12:30:45 ~ 2024-06-05 12:30:45')
   })
 
   it('📅  DatePicker support format is Array', () => {
@@ -141,6 +140,6 @@ describe('dateField', () => {
       ),
     })
 
-    expect(wrapper.text()).toContain('2024-06-04')
+    expect(wrapper.html()).toBe('<div>2024-06-04</div>')
   })
 })

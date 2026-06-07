@@ -6,7 +6,7 @@ import FieldSecondRead from './FieldSecondRead'
 import { formatSecond } from './utils'
 
 export { formatSecond }
-export type { FieldSecondProps }
+export type { FieldDigitProps, FieldSecondProps } from './types'
 type FieldSecondFieldProps = NonNullable<ProFieldFC<FieldSecondProps>['__props']>
 
 const FieldSecond: ProFieldFC<FieldSecondProps> = (props) => {

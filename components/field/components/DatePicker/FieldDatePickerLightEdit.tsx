@@ -2,7 +2,7 @@ import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { DatePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
-import { parseValueToDay } from './datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
 
@@ -39,7 +39,7 @@ export function FieldDatePickerLightEdit(props: Props) {
   } = props
   const fieldProps = props.fieldProps || {}
   const { disabled, value } = fieldProps
-  const dayValue = parseValueToDay(value, format)
+  const dayValue = parseValueToDay(value)
   const handleLabelClick = () => {
     if (disabled)
       return

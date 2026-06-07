@@ -131,7 +131,6 @@ export function createProField(
           ...userFieldProps,
         }
 
-        // Always expose value + onChange on fieldProps for v-model support
         if (props.value !== undefined) {
           merged.value = props.value
         }
@@ -140,10 +139,6 @@ export function createProField(
         merged.onChange = (...args: any[]) => {
           originalOnChange?.(...args)
           props.onChange?.(...args)
-        }
-        merged['onUpdate:value'] = (value: any) => {
-          userFieldProps['onUpdate:value']?.(value)
-          props.onChange?.(value)
         }
 
         return merged

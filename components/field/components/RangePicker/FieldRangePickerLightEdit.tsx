@@ -2,7 +2,7 @@ import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { DateRangePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
-import { parseValueToDay } from '../DatePicker/datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
 
@@ -38,7 +38,7 @@ export function FieldRangePickerLightEdit(props: Props) {
     intl,
   } = props
   const fieldProps = props.fieldProps || {}
-  const parsedValue = parseValueToDay(fieldProps.value, format)
+  const parsedValue = parseValueToDay(fieldProps.value)
   const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
     ? [parsedValue[0], parsedValue[1]] as [any, any]
     : undefined

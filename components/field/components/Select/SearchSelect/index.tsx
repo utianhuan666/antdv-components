@@ -14,7 +14,7 @@ export interface LabeledValue {
 
 export type DefaultOptionType = NonNullable<SelectProps['options']>[number]
 
-type KeyLabel = Partial<{
+export type KeyLabel = Partial<{
   key: string
   label: any
   value: string | number

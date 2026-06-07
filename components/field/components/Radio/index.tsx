@@ -8,6 +8,8 @@ import { useFieldFetchData } from '../Select'
 import FieldRadioEdit from './FieldRadioEdit'
 import FieldRadioRead from './FieldRadioRead'
 
+export type { GroupProps } from './types'
+
 type RadioFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
 
 function buildOptionsValueEnum(options: any[] | undefined) {

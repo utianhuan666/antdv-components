@@ -1,5 +1,5 @@
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
-import { parseValueToDay } from '../DatePicker/datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<

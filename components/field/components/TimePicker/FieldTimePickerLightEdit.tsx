@@ -3,7 +3,7 @@ import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { CloseCircleFilled } from '@antdv-next/icons'
 import { TimePicker } from 'antdv-next'
 import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
-import { parseValueToDay } from '../DatePicker/datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
 

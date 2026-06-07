@@ -1,7 +1,7 @@
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { DatePicker } from 'antdv-next'
-import { parseValueToDay } from './datePickerUtils'
+import { parseValueToDay } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<{
@@ -33,7 +33,7 @@ export function FieldDatePickerEdit(props: Props) {
     value,
     placeholder = intl.getMessage('tableForm.selectPlaceholder', '请选择'),
   } = fieldProps
-  const dayValue = parseValueToDay(value, format)
+  const dayValue = parseValueToDay(value)
 
   const dom = (
     <DatePicker

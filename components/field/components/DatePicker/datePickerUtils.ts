@@ -2,8 +2,6 @@ import type { Dayjs } from 'dayjs'
 import { parseValueToDay } from '../../../utils'
 import '../../initDayjs'
 
-export { parseValueToDay }
-
 export type DatePickerReadPicker = 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
 
 function pickFormatTemplate(format: unknown): string {

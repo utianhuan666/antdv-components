@@ -32,19 +32,11 @@ function defaultRenderTextByObject(
 }
 
 function renderDefaultValueTypeLeaf(dataValue: ProFieldTextType, valueType: string, props: ProFieldRenderProps) {
-  const renderer = ValueTypeToComponentMap[valueType] ?? ValueTypeToComponentMap.text!
-  const { render, emptyText, ...restProps } = props
-  const dom = renderer.render?.(dataValue, restProps as any, <>{dataValue as any}</>)
-
-  if (render && (props.mode ?? 'read') === 'read') {
-    return render(
-      dataValue,
-      { text: dataValue, ...restProps } as any,
-      dom as any,
-    ) ?? emptyText ?? null
-  }
-
-  return dom
+  const renderer = ValueTypeToComponentMap[valueType as keyof typeof ValueTypeToComponentMap] ?? ValueTypeToComponentMap.text!
+  const renderFn = props.mode === 'edit' || props.mode === 'update'
+    ? renderer.formItemRender
+    : renderer.render
+  return renderFn?.(dataValue, props as any, <>{dataValue as any}</>)
 }
 
 /** Read: empty text, context valueTypeMap, built-in valueType */
@@ -65,29 +57,28 @@ export const defaultRenderRead: ProFieldRenderText = (
     if (typeof dataValue !== 'boolean' && typeof dataValue !== 'number' && !dataValue) {
       const { fieldProps, render } = props
       if (render)
-        return render(dataValue, { mode, ...fieldProps }, <>{emptyText}</>) ?? emptyText
+        return render(dataValue, { mode, ...fieldProps }, <>{emptyText}</>)
       return <>{emptyText}</>
     }
   }
 
+  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
+
   if (typeof valueType === 'object') {
-    return defaultRenderTextByObject(dataValue, valueType, props)
+    return defaultRenderTextByObject(dataValue, valueType, propsWithoutEmptyText as ProFieldRenderProps)
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    const readDom = customValueTypeConfig.render?.(
+    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
+    return customValueTypeConfig.render?.(
       dataValue,
-      { text: dataValue, ...props, mode: mode || 'read' } as any,
+      { text: dataValue, ...customProps, mode: mode || 'read' } as any,
       <>{dataValue}</>,
     )
-    if (props?.render) {
-      return props.render(dataValue, { text: dataValue, ...props } as any, readDom as any)
-    }
-    return readDom
   }
 
-  return renderDefaultValueTypeLeaf(dataValue, valueType as string, props)
+  return renderDefaultValueTypeLeaf(dataValue, valueType as string, propsWithoutEmptyText as ProFieldRenderProps)
 }
 
 /** Edit: context valueTypeMap, built-in valueType */
@@ -97,24 +88,23 @@ export const defaultRenderEdit: ProFieldRenderText = (
   props,
   valueTypeMap,
 ) => {
+  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
+
   if (typeof valueType === 'object') {
-    return defaultRenderTextByObject(dataValue, valueType, props)
+    return defaultRenderTextByObject(dataValue, valueType, propsWithoutEmptyText as ProFieldRenderProps)
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    const dom = customValueTypeConfig.formItemRender?.(
+    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
+    return customValueTypeConfig.formItemRender?.(
       dataValue,
-      { text: dataValue, ...props } as any,
+      { text: dataValue, ...customProps } as any,
       <>{dataValue}</>,
     )
-    if (props?.formItemRender) {
-      return props.formItemRender(dataValue, { text: dataValue, ...props } as any, dom as any)
-    }
-    return dom
   }
 
-  return renderDefaultValueTypeLeaf(dataValue, valueType as string, props)
+  return renderDefaultValueTypeLeaf(dataValue, valueType as string, propsWithoutEmptyText as ProFieldRenderProps)
 }
 
 /** Dispatch by mode (compat) */

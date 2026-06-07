@@ -1,5 +1,5 @@
 import type { ProFieldFC } from '../../types'
-import type { FieldCheckboxProps, GroupProps } from './types'
+import type { GroupProps } from './types'
 import { Spin } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
@@ -8,7 +8,7 @@ import { useFieldFetchData } from '../Select'
 import FieldCheckboxEdit from './FieldCheckboxEdit'
 import FieldCheckboxRead from './FieldCheckboxRead'
 
-export type { FieldCheckboxProps }
+export type { FieldCheckboxProps, GroupProps } from './types'
 type CheckboxFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
 
 function buildOptionsValueEnum(options: any[] | undefined) {

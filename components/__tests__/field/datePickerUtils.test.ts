@@ -1,8 +1,12 @@
 import { ProField } from '@antdv/components'
 import { mount } from '@vue/test-utils'
 import dayjs from 'dayjs'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import { describe, expect, it } from 'vitest'
 import { formatDate } from '../../field/components/DatePicker/datePickerUtils'
+import '../../field/initDayjs'
+
+dayjs.extend(quarterOfYear)
 
 describe('formatDate', () => {
   it('formats ISO string', () => {
