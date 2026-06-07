@@ -8,6 +8,7 @@ export const ignore: ProSchemaRenderValueTypeFunction = (item) => {
   ) {
     return null
   }
-
   return true
 }
+
+export default ignore

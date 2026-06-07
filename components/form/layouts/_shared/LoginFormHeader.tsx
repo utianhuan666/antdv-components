@@ -1,42 +1,44 @@
-import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import { clsx } from '@v-c/util'
+import { computed, defineComponent } from 'vue'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface LoginFormHeaderProps {
-  logo?: VNodeChild
+  logo?: VNodeChild | string
   title?: VNodeChild | false
   subTitle?: VNodeChild | false
-  prefixCls: string
+  prefixCls?: string
   hashId?: string
 }
 
-export const LoginFormHeader: FunctionalComponent<LoginFormHeaderProps> = (props) => {
-  const getCls = (className: string) => `${props.prefixCls}-${className}`
+export const LoginFormHeader = defineComponent({
+  name: 'ProLoginFormHeader',
+  props: ['logo', 'title', 'subTitle', 'prefixCls', 'hashId'],
+  setup(rawProps) {
+    const props = rawProps as LoginFormHeaderProps
+    const defaultPrefixCls = useProPrefixCls('pro-form-login')
+    const prefixCls = computed(() => props.prefixCls || defaultPrefixCls.value)
+    const getCls = (className: string) => `${prefixCls.value}-${className}`
+    const logoDom = computed(() => {
+      if (!props.logo)
+        return null
+      return typeof props.logo === 'string' ? <img src={props.logo} alt="" /> : props.logo
+    })
 
-  const logoDom = () => {
-    if (!props.logo)
-      return null
-    if (typeof props.logo === 'string')
-      return <img src={props.logo} alt="" />
-    return props.logo
-  }
+    return () => (
+      <div class={clsx(getCls('top'), props.hashId)}>
+        {props.title || logoDom.value
+          ? (
+              <div class={clsx(getCls('header'), props.hashId)}>
+                {logoDom.value ? <span class={clsx(getCls('logo'), props.hashId)}>{logoDom.value}</span> : null}
+                {props.title ? <span class={clsx(getCls('title'), props.hashId)}>{props.title}</span> : null}
+              </div>
+            )
+          : null}
+        {props.subTitle ? <div class={clsx(getCls('desc'), props.hashId)}>{props.subTitle}</div> : null}
+      </div>
+    )
+  },
+})
 
-  return (
-    <div class={clsx(getCls('top'), props.hashId)}>
-      {props.title || logoDom()
-        ? (
-            <div class={clsx(getCls('header'), props.hashId)}>
-              {logoDom()
-                ? <span class={clsx(getCls('logo'), props.hashId)}>{logoDom()}</span>
-                : null}
-              {props.title
-                ? <span class={clsx(getCls('title'), props.hashId)}>{props.title}</span>
-                : null}
-            </div>
-          )
-        : null}
-      {props.subTitle
-        ? <div class={clsx(getCls('desc'), props.hashId)}>{props.subTitle}</div>
-        : null}
-    </div>
-  )
-}
+export default LoginFormHeader

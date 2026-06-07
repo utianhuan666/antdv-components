@@ -1,208 +1,149 @@
-import type { DefineComponent, VNodeChild } from 'vue'
-import type {
-  BetaSchemaFormProps,
-  ItemType,
-  ProFormColumnsType,
-} from './typing'
-import { Drawer, Modal } from 'antdv-next'
-import { computed, defineComponent, ref, shallowRef } from 'vue'
-import { omitUndefined, runFunction } from '../../../utils'
-import { LightFilter, ProForm, QueryFilter } from '../../layouts'
+import type { PropType } from 'vue'
+import type { ProFormInstance } from '../../BaseForm'
+import type { FormSchema, ItemType, ProFormColumnsType } from './typing'
+import { defineComponent, ref } from 'vue'
+import { LabelIconTip, runFunction, stringify } from '../../../utils'
+import { DrawerForm, LightFilter, ModalForm, ProForm, QueryFilter, StepForm } from '../../layouts'
+import { setRefValue } from '../../layouts/_shared/vueHelpers'
 import { Embed, StepsForm } from './layoutType'
 import { renderValueType } from './valueType'
 
-export * from './typing'
-
-const betaSchemaFormPropNames = [
-  'layoutType',
-  'type',
-  'steps',
-  'columns',
-  'shouldUpdate',
-  'title',
-  'action',
-  'formRef',
-  'open',
-  'trigger',
-  'modalProps',
-  'drawerProps',
-  'onCurrentChange',
-] as const
-
-function normalizeBooleanProp(value: unknown, defaultValue = false) {
-  if (value === '')
-    return true
-  return typeof value === 'boolean' ? value : defaultValue
-}
-
-const layoutComponents = {
-  Form: ProForm,
+const FormLayoutType = {
+  DrawerForm,
   QueryFilter,
   LightFilter,
+  StepForm,
+  StepsForm,
+  ModalForm,
   Embed,
+  Form: ProForm,
 }
 
-const BetaSchemaForm = defineComponent({
+export const BetaSchemaForm = defineComponent({
   name: 'BetaSchemaForm',
   inheritAttrs: false,
-  props: [...betaSchemaFormPropNames],
-  emits: ['finish', 'currentChange'],
-  setup(rawProps, { attrs, emit }) {
-    const props = rawProps as unknown as BetaSchemaFormProps
-    const formRef = shallowRef<any>()
-    const innerOpen = ref(false)
-    const renderTick = ref(0)
-    const oldValuesRef = shallowRef<Record<string, any>>()
-    const layoutType = computed(() => props.layoutType ?? 'Form')
-    const formType = computed(() => props.type ?? 'form')
-    const columns = computed(() => props.columns ?? [])
+  props: {
+    columns: { type: Array as PropType<ProFormColumnsType[]>, default: () => [] },
+    layoutType: { type: String, default: 'Form' },
+  },
+  setup(props, { attrs, slots }) {
+    const formRef = ref<ProFormInstance>()
+    const oldValuesRef = ref<any>()
+    const updateKey = ref(0)
 
-    const flatColumns = computed(() => {
-      if (layoutType.value === 'StepsForm')
-        return []
-      return columns.value as ProFormColumnsType[]
-    })
-
-    function getTitle(column: ProFormColumnsType) {
-      return runFunction(column.title as any, column, 'form', column.title as any)
-    }
-
-    function resolveConfig(config: any, form: any, column: ProFormColumnsType) {
-      return typeof config === 'function' ? config(form, column) : config
-    }
-
-    function genItems(columns: ProFormColumnsType[] = [], form = formRef.value): VNodeChild[] {
-      void renderTick.value
-      return columns
-        .filter(column => !(column.hideInForm && formType.value === 'form'))
-        .sort((prev, next) => {
-          if (prev.order || next.order)
-            return (next.order || 0) - (prev.order || 0)
-          return ((next as any).index || 0) - ((prev as any).index || 0)
+    const genItems = (items: ProFormColumnsType[]) => {
+      const schema = { ...attrs, ...props } as FormSchema
+      return (items || [])
+        .filter(originItem => !(originItem.hideInForm && (schema.type || 'form') === 'form'))
+        .sort((a, b) => {
+          if (b.order || a.order)
+            return (b.order || 0) - (a.order || 0)
+          return ((b as any).index || 0) - ((a as any).index || 0)
         })
         .map((originItem, index) => {
-          const item = omitUndefined({
-            ...originItem,
-            title: getTitle(originItem),
-            label: getTitle(originItem),
+          const title = runFunction(
+            originItem.title,
+            originItem,
+            'form',
+            <LabelIconTip label={originItem.title as string} tooltip={originItem.tooltip} />,
+          )
+          const item = {
+            title,
+            label: title,
             name: originItem.name,
-            valueType: runFunction(originItem.valueType as any, {}),
+            valueType: runFunction(originItem.valueType, {}),
             key: originItem.key || originItem.dataIndex || index,
+            columns: originItem.columns,
+            valueEnum: originItem.valueEnum,
             dataIndex: originItem.dataIndex || originItem.key,
-            index: originItem.index ?? index,
+            initialValue: originItem.initialValue,
+            width: originItem.width,
+            index: (originItem as any).index,
+            readonly: originItem.readonly,
+            colSize: originItem.colSize,
+            colProps: originItem.colProps,
+            rowProps: originItem.rowProps,
+            className: originItem.className,
+            tooltip: originItem.tooltip,
+            dependencies: originItem.dependencies,
+            proFieldProps: originItem.proFieldProps,
+            ignoreFormItem: originItem.ignoreFormItem,
             getFieldProps: originItem.fieldProps
-              ? () => resolveConfig(originItem.fieldProps, formRef.value, originItem)
+              ? () => runFunction(originItem.fieldProps, formRef.value, originItem)
               : undefined,
             getFormItemProps: originItem.formItemProps
-              ? () => resolveConfig(originItem.formItemProps, formRef.value, originItem)
+              ? () => runFunction(originItem.formItemProps, formRef.value, originItem)
               : undefined,
-            originProps: originItem,
-          }) as ItemType
+            render: originItem.render,
+            formItemRender: originItem.formItemRender,
+            renderText: originItem.renderText,
+            request: originItem.request,
+            params: originItem.params,
+            transform: originItem.transform,
+            convertValue: originItem.convertValue,
+            debounceTime: originItem.debounceTime,
+            defaultKeyWords: originItem.defaultKeyWords,
+          } as ItemType<any, any>
 
           return renderValueType(item, {
-            action: props.action,
-            type: formType.value,
+            action: schema.action,
+            type: schema.type || 'form',
             originItem,
             formRef,
-            genItems: (items: ProFormColumnsType[]) => genItems(items, form),
+            genItems,
           })
         })
-        .filter(Boolean) as VNodeChild[]
-    }
-
-    function handleValuesChange(changedValues: Record<string, any>, values: Record<string, any>) {
-      const shouldUpdate = (props.shouldUpdate as unknown) === '' ? true : props.shouldUpdate ?? true
-      const shouldRender = shouldUpdate === true
-        || (typeof shouldUpdate === 'function' && shouldUpdate(values, oldValuesRef.value))
-
-      if (shouldRender)
-        renderTick.value += 1
-      oldValuesRef.value = values
-      ;(attrs.onValuesChange as any)?.(changedValues, values)
-    }
-
-    async function handleFinish(values: Record<string, any>) {
-      const result = await (attrs.onFinish as any)?.(values)
-      emit('finish', values)
-      if (result !== false)
-        innerOpen.value = false
-      return result
-    }
-
-    function setFormRef(instance: any) {
-      formRef.value = instance
-      if (props.formRef)
-        props.formRef.value = instance
-    }
-
-    function renderForm(embed = false) {
-      const content = genItems(flatColumns.value, formRef.value)
-      if (embed)
-        return <Embed>{content}</Embed>
-
-      const FormComponent = (layoutComponents[layoutType.value as keyof typeof layoutComponents] || ProForm) as any
-      return (
-        <FormComponent
-          ref={setFormRef}
-          {...attrs}
-          onFinish={handleFinish as any}
-          onValuesChange={handleValuesChange as any}
-        >
-          {content}
-        </FormComponent>
-      )
+        .filter(Boolean)
     }
 
     return () => {
-      if (layoutType.value === 'Embed')
-        return renderForm(true)
+      void updateKey.value
+      const schema = { ...attrs, ...props } as FormSchema
+      const layoutType = schema.layoutType || 'Form'
+      const FormRenderComponents = (FormLayoutType[layoutType as keyof typeof FormLayoutType] || ProForm) as any
+      const formChildrenDoms = Array.isArray(schema.columns?.[0])
+        ? undefined
+        : genItems(schema.columns as ProFormColumnsType[])
+      const specificProps = layoutType === 'StepsForm'
+        ? {
+            forceUpdate: () => {
+              updateKey.value += 1
+            },
+            columns: schema.columns as ProFormColumnsType[][],
+          }
+        : {}
 
-      if (layoutType.value === 'StepsForm') {
-        return (
-          <StepsForm
-            {...attrs}
-            columns={columns.value as ProFormColumnsType[][]}
-            steps={props.steps || []}
-            formRef={formRef as any}
-            externalFormRef={props.formRef}
-            renderColumns={genItems}
-            onFinish={handleFinish as any}
-            onCurrentChange={(value: number) => {
-              props.onCurrentChange?.(value)
-              emit('currentChange', value)
-            }}
-          />
-        )
-      }
-
-      const open = props.open === undefined ? innerOpen.value : normalizeBooleanProp(props.open)
-      const trigger = props.trigger ? <span onClick={() => (innerOpen.value = true)}>{props.trigger}</span> : null
-
-      if (layoutType.value === 'ModalForm') {
-        return (
-          <>
-            {trigger}
-            <Modal title={props.title as any} open={open} onCancel={() => (innerOpen.value = false)} footer={null} {...props.modalProps}>
-              {renderForm()}
-            </Modal>
-          </>
-        )
-      }
-
-      if (layoutType.value === 'DrawerForm') {
-        return (
-          <>
-            {trigger}
-            <Drawer title={props.title as any} open={open} onClose={() => (innerOpen.value = false)} {...props.drawerProps}>
-              {renderForm()}
-            </Drawer>
-          </>
-        )
-      }
-
-      return renderForm()
+      return (
+        <FormRenderComponents
+          {...specificProps}
+          {...attrs as any}
+          columns={schema.columns}
+          steps={schema.steps}
+          onInit={(values: any, initForm: ProFormInstance) => {
+            setRefValue((attrs as any).formRef, initForm)
+            formRef.value = initForm
+            ;(attrs as any).onInit?.(values, initForm)
+          }}
+          onValuesChange={(changedValues: any, values: any) => {
+            const shouldUpdate = schema.shouldUpdate ?? ((pre: any, next: any) => stringify(pre) !== stringify(next))
+            if (
+              shouldUpdate === true
+              || (typeof shouldUpdate === 'function' && shouldUpdate(values, oldValuesRef.value))
+            ) {
+              updateKey.value += 1
+            }
+            oldValuesRef.value = values
+            ;(attrs as any).onValuesChange?.(changedValues, values)
+          }}
+        >
+          {formChildrenDoms}
+          {slots.default?.()}
+        </FormRenderComponents>
+      )
     }
   },
-}) as unknown as DefineComponent<BetaSchemaFormProps>
+})
 
 export default BetaSchemaForm
+
+export type { ProFormColumnsType, ProFormLayoutType } from './typing'

@@ -1,68 +1,72 @@
 import type { CSSProperties, VNodeChild } from 'vue'
 import { DownOutlined } from '@antdv-next/icons'
+import { clsx } from '@v-c/util'
 import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { useIntl, useProProviderContext } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
-export interface ActionsCollapseProps {
+export interface ActionsProps {
+  submitter: VNodeChild
   collapsed?: boolean
-  hiddenNum?: number | false
-}
-
-export interface ActionsProps extends ActionsCollapseProps {
-  submitter?: VNodeChild
-  setCollapsed?: (collapsed: boolean) => void
-  collapseRender?: CollapseRender
+  onCollapse?: (collapsed: boolean) => void
+  setCollapsed: (collapse: boolean) => void
+  isForm?: boolean
   style?: CSSProperties
-}
-
-export type CollapseRender
-  = | ((collapsed: boolean, props: ActionsCollapseProps, hiddenNum?: number | false) => VNodeChild)
+  collapseRender?:
+    | ((
+      collapsed: boolean,
+      props: ActionsProps,
+      intl: ReturnType<typeof useIntl>,
+      hiddenNum?: false | number,
+    ) => VNodeChild)
     | false
-
-const defaultCollapseRender: Exclude<CollapseRender, false> = (collapsed, _, hiddenNum) => {
-  return (
-    <>
-      {collapsed ? '展开' : '收起'}
-      {collapsed && hiddenNum ? `(${hiddenNum})` : null}
-      <DownOutlined
-        style={{
-          marginInlineStart: '0.5em',
-          transition: '0.3s all',
-          transform: `rotate(${collapsed ? 0 : 0.5}turn)`,
-        }}
-      />
-    </>
-  )
+  hiddenNum?: false | number
 }
 
-/**
- * QueryFilter 底部操作区，对标 React `src/form/layouts/QueryFilter/Actions.tsx`。
- * 1. 渲染 submitter 中默认按钮组
- * 2. 当需要时附加展开/收起按钮，可由 `collapseRender` 自定义
- */
+const defaultCollapseRender: NonNullable<ActionsProps['collapseRender']> = (
+  collapsed,
+  _,
+  intl,
+  hiddenNum,
+) => (
+  <>
+    {collapsed
+      ? intl.getMessage('tableForm.collapsed', '展开')
+      : intl.getMessage('tableForm.expand', '收起')}
+    {collapsed && hiddenNum ? `(${hiddenNum})` : null}
+    <DownOutlined
+      style={{
+        marginInlineStart: '0.5em',
+        transition: '0.3s all',
+        transform: `rotate(${collapsed ? 0 : 0.5}turn)`,
+      }}
+    />
+  </>
+)
+
 const Actions = defineComponent({
-  name: 'ProQueryFilterActions',
-  props: ['submitter', 'collapsed', 'setCollapsed', 'collapseRender', 'hiddenNum', 'style'],
+  name: 'QueryFilterActions',
+  props: ['submitter', 'collapsed', 'onCollapse', 'setCollapsed', 'isForm', 'style', 'collapseRender', 'hiddenNum'],
   setup(rawProps) {
-    const props = rawProps as Readonly<ActionsProps>
+    const props = rawProps as ActionsProps
+    const intl = useIntl()
+    const proProvider = useProProviderContext()
     const prefixCls = useProPrefixCls('pro-query-filter-collapse-button')
+
     return () => {
-      const renderFn = typeof props.collapseRender === 'function'
-        ? props.collapseRender
-        : defaultCollapseRender
-      const collapsed = props.collapsed ?? false
-      const hiddenNum = props.hiddenNum ?? false
+      const collapseRender = props.collapseRender || defaultCollapseRender
+
       return (
         <Space style={props.style} size={16}>
           {props.submitter}
           {props.collapseRender !== false
             ? (
                 <a
-                  class={prefixCls.value}
-                  onClick={() => props.setCollapsed?.(!collapsed)}
+                  class={clsx(prefixCls.value, proProvider.hashId)}
+                  onClick={() => props.setCollapsed(!props.collapsed)}
                 >
-                  {renderFn(collapsed, { collapsed, hiddenNum }, hiddenNum)}
+                  {collapseRender?.(!!props.collapsed, props, intl, props.hiddenNum)}
                 </a>
               )
             : null}

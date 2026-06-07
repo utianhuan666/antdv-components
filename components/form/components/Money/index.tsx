@@ -1,8 +1,7 @@
 import type { InputNumberProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
 import type { FieldMoneyProps } from '../../../field'
 import type { ProFormFieldItemProps } from '../../typing'
-import ProFormField from '../Field'
+import { defineProFormField } from '../FormItem/warpField'
 
 export type ProFormMoneyProps = ProFormFieldItemProps<
   Omit<FieldMoneyProps, 'valueType' | 'text'> & InputNumberProps
@@ -14,13 +13,14 @@ export type ProFormMoneyProps = ProFormFieldItemProps<
   placeholder?: string
 }
 
-const ProFormMoney: FunctionalComponent<ProFormMoneyProps> = (props, { slots }) => (
-  <ProFormField valueType="money" {...props}>
-    {slots.default?.()}
-  </ProFormField>
+const ProFormMoney = defineProFormField(
+  'ProFormMoney',
+  props => ({ type: 'money', locale: props.locale }),
+  props => ({
+    min: props.min,
+    max: props.max,
+    customSymbol: props.customSymbol,
+  }),
 )
-
-ProFormMoney.displayName = 'ProFormMoney'
-ProFormMoney.inheritAttrs = false
 
 export default ProFormMoney

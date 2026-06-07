@@ -1,104 +1,60 @@
-import type { CSSProperties, FunctionalComponent, VNodeChild } from 'vue'
-import type { ProFormProps, SubmitterProps } from '../../typing'
+import type { CSSProperties, VNodeChild } from 'vue'
+import type { ProFormProps } from '../ProForm'
 import { clsx } from '@v-c/util'
-import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { defineComponent } from 'vue'
-import { useIntl } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { LoginFormHeader } from '../_shared/LoginFormHeader'
 import ProForm from '../ProForm'
 import { useStyle } from './style'
 
-export type LoginFormProps<T = Record<string, any>, U = Record<string, any>> = Omit<ProFormProps<T, U>, 'title'> & {
+export type LoginFormProps<T = Record<string, any>> = {
   message?: VNodeChild | false
   title?: VNodeChild | false
   subTitle?: VNodeChild | false
   actions?: VNodeChild
-  logo?: VNodeChild
+  logo?: VNodeChild | string
   contentStyle?: CSSProperties
   containerStyle?: CSSProperties
   otherStyle?: CSSProperties
-}
+} & Omit<ProFormProps<T>, 'title'>
 
-const loginFormPropNames = [
-  'logo',
-  'message',
-  'contentStyle',
-  'title',
-  'subTitle',
-  'actions',
-  'containerStyle',
-  'otherStyle',
-] as const
-
-const LoginFormImpl = defineComponent({
+export const LoginForm = defineComponent({
   name: 'LoginForm',
   inheritAttrs: false,
-  props: [...loginFormPropNames],
-  setup(rawProps, { attrs, slots }) {
-    const props = rawProps as Readonly<LoginFormProps>
-    const intl = useIntl()
-    const config = useConfig()
-    const baseClassName = config.value.getPrefixCls('pro-form-login')
-    const { wrapSSR, hashId } = useStyle(baseClassName)
-    const getCls = (className: string) => `${baseClassName}-${className}`
-
+  setup(_props, { attrs, slots }) {
+    const baseClassName = useProPrefixCls('pro-form-login')
+    const { wrapSSR, hashId } = useStyle(baseClassName.value)
+    const getCls = (className: string) => `${baseClassName.value}-${className}`
     return () => {
-      const proFormProps = attrs as Partial<ProFormProps>
+      const { logo, message, contentStyle, title, subTitle, actions, containerStyle, otherStyle, ...proFormProps } = attrs as Partial<LoginFormProps>
       const submitter = proFormProps.submitter === false
         ? false
-        : ({
-            searchConfig: {
-              submitText: intl.getMessage('loginForm.submitText', '登录'),
-            },
-            ...(typeof proFormProps.submitter === 'object' ? proFormProps.submitter : {}),
+        : {
+            searchConfig: { submitText: '登录' },
+            ...proFormProps.submitter,
             submitButtonProps: {
               size: 'large',
-              style: {
-                width: '100%',
-              },
-              ...(typeof proFormProps.submitter === 'object' && typeof proFormProps.submitter.submitButtonProps === 'object'
-                ? proFormProps.submitter.submitButtonProps
-                : {}),
+              style: { width: '100%' },
+              ...(proFormProps.submitter as any)?.submitButtonProps,
             },
-            render: (submitterProps, dom) => {
-              const loginButton = dom.pop()
-              const originRender = (proFormProps.submitter as SubmitterProps | undefined)?.render
-              if (typeof originRender === 'function')
-                return originRender(submitterProps, dom)
+            render: (submitterProps: any, dom: VNodeChild[]) => {
+              const nextDom = [...dom]
+              const loginButton = nextDom.pop()
+              if (typeof (proFormProps.submitter as any)?.render === 'function')
+                return (proFormProps.submitter as any).render(submitterProps, nextDom)
               return loginButton
             },
-          } as ProFormProps['submitter'])
+          }
 
       return wrapSSR(
-        <div class={clsx(getCls('container'), hashId)} style={props.containerStyle}>
-          <LoginFormHeader
-            logo={props.logo}
-            title={props.title}
-            subTitle={props.subTitle}
-            prefixCls={baseClassName}
-            hashId={hashId}
-          />
-          <div
-            class={clsx(getCls('main'), hashId)}
-            style={{
-              width: 328,
-              ...(props.contentStyle || {}),
-            }}
-          >
-            <ProForm isKeyPressSubmit {...proFormProps} submitter={submitter}>
-              {props.message}
+        <div class={clsx(getCls('container'), hashId)} style={containerStyle}>
+          <LoginFormHeader logo={logo} title={title} subTitle={subTitle} prefixCls={baseClassName.value} />
+          <div class={getCls('main')} style={{ width: 328, ...contentStyle }}>
+            <ProForm isKeyPressSubmit {...proFormProps as any} submitter={submitter}>
+              {message}
               {slots.default?.()}
             </ProForm>
-            {props.actions
-              ? (
-                  <div
-                    class={clsx(getCls('main-other'), hashId)}
-                    style={props.otherStyle}
-                  >
-                    {props.actions}
-                  </div>
-                )
-              : null}
+            {actions ? <div class={clsx(getCls('main-other'))} style={otherStyle}>{actions}</div> : null}
           </div>
         </div>,
       )
@@ -106,8 +62,4 @@ const LoginFormImpl = defineComponent({
   },
 })
 
-const LoginForm = LoginFormImpl as unknown as FunctionalComponent<LoginFormProps>
-
 export default LoginForm
-export { LoginForm }
-export type { SubmitterProps }

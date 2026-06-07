@@ -1,14 +1,5 @@
-import type { RangePickerProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
-import type { ProFormFieldItemProps } from '../../typing'
-import { BaseDateRanger } from './BaseDateRanger'
+import { createDateRangePicker } from './BaseDateRanger'
 
-export type ProFormDateMonthRangePickerProps = Omit<ProFormFieldItemProps<RangePickerProps>, 'valueType'>
+export const ProFormDateMonthRangePicker = createDateRangePicker('ProFormDateMonthRangePicker', 'dateMonthRange')
 
-const valueType = 'dateMonthRange' as const
-
-export const ProFormDateMonthRangePicker: FunctionalComponent<ProFormDateMonthRangePickerProps> = (props, { slots }) => (
-  <BaseDateRanger valueType={valueType} {...props}>
-    {slots.default?.()}
-  </BaseDateRanger>
-)
+export default ProFormDateMonthRangePicker

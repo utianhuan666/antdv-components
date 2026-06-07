@@ -1,2 +1,1 @@
-export { GridContextKey, provideGridContext, useGridContext, useGridHelpers } from './GridContext'
-export type { GridContextValue } from './GridContext'
+export { GridContext, provideGridContext, useGridContext, useGridHelpers } from './grid'

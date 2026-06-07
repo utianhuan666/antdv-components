@@ -1,154 +1,100 @@
-import type { ComponentPublicInstance, Ref, VNodeChild } from 'vue'
-import type { CommonFormProps, FormData, FormRefLike, SubmitterProps } from '../../typing'
-import { cloneVNode, computed, h, isVNode, nextTick, ref, shallowRef, Teleport } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
+import { cloneVNode, computed, h, isVNode, ref, Teleport, watch } from 'vue'
 
-type OverlayCloseHandler = {
-  bivarianceHack: (event?: MouseEvent | KeyboardEvent | Event) => void
-}['bivarianceHack']
-
-export interface OverlayFormOptions<T = FormData> {
+export interface OverlayFormOptions<T = Record<string, any>> {
   propsOpen?: boolean
+  visible?: boolean
   onOpenChange?: (open: boolean) => void
-  emitOpenChange?: (open: boolean) => void
-  formRef: Ref<FormRefLike | undefined>
-  destroyOnHidden?: boolean
+  formRef: Ref<any>
   submitTimeout?: number
-  onFinish?: (values: T) => Promise<boolean | void> | boolean | void
-  onCloseExtra?: OverlayCloseHandler
-  submitter?: CommonFormProps['submitter']
-  searchConfig: {
-    submitText: string
-    resetText: string
-  }
+  onFinish?: (values: T) => Promise<any> | any
+  submitter?: any
+  searchConfig?: Record<string, any>
   trigger?: VNodeChild
 }
 
-function isControlled(open: boolean | undefined) {
-  return open !== undefined
-}
-
-export function useOverlayForm<T = FormData>(options: OverlayFormOptions<T>) {
-  const innerOpen = ref(false)
+export function useOverlayForm<T = Record<string, any>>(options: OverlayFormOptions<T>) {
+  const innerOpen = ref(Boolean(options.propsOpen ?? options.visible))
   const loading = ref(false)
-  const footerRef = shallowRef<HTMLElement>()
+  const footerRef = ref<HTMLElement | null>(null)
 
-  const open = computed(() => isControlled(options.propsOpen) ? options.propsOpen! : innerOpen.value)
-
-  function notifyOpenChange(nextOpen: boolean) {
-    options.onOpenChange?.(nextOpen)
-    options.emitOpenChange?.(nextOpen)
-  }
-
-  function setOpen(nextOpen: boolean) {
-    if (!isControlled(options.propsOpen))
+  const open = computed(() => options.propsOpen ?? options.visible ?? innerOpen.value)
+  const setOpen = (nextOpen: boolean) => {
+    if (options.propsOpen === undefined && options.visible === undefined)
       innerOpen.value = nextOpen
-    queueMicrotask(() => notifyOpenChange(nextOpen))
+    options.onOpenChange?.(nextOpen)
   }
 
-  function resetFields() {
-    if (options.destroyOnHidden)
-      options.formRef.value?.reset?.()
+  watch(
+    () => [options.propsOpen, options.visible],
+    ([propsOpen, visible]) => {
+      if (propsOpen !== undefined || visible !== undefined)
+        innerOpen.value = Boolean(propsOpen ?? visible)
+    },
+  )
+
+  const resetFields = () => {
+    options.formRef.value?.resetFields?.()
   }
 
-  function renderTrigger() {
-    const trigger = options.trigger
-    if (!trigger)
-      return null
-
-    const onClick = (event: MouseEvent) => {
-      setOpen(!open.value)
-      if (isVNode(trigger)) {
-        const triggerProps = trigger.props as { onClick?: (event: MouseEvent) => void } | null
-        triggerProps?.onClick?.(event)
-      }
+  const onFinishHandle = async (values: T) => {
+    if (!options.onFinish)
+      return undefined
+    loading.value = true
+    try {
+      const result = await options.onFinish(values)
+      if (result)
+        setOpen(false)
+      return result
     }
-
-    return isVNode(trigger)
-      ? cloneVNode(trigger, { onClick })
-      : h('span', { onClick }, trigger)
+    finally {
+      loading.value = false
+    }
   }
 
-  const submitterConfig = computed<CommonFormProps['submitter']>(() => {
+  const submitterConfig = computed(() => {
     if (options.submitter === false)
       return false
-
-    const submitter = (options.submitter || {}) as SubmitterProps
     return {
-      ...submitter,
+      ...options.submitter,
       searchConfig: {
-        ...submitter.searchConfig,
-        submitText: submitter.searchConfig?.submitText ?? options.searchConfig.submitText,
-        resetText: submitter.searchConfig?.resetText ?? options.searchConfig.resetText,
-      },
-      resetButtonProps: {
-        ...(typeof submitter.resetButtonProps === 'object' ? submitter.resetButtonProps : {}),
-        preventDefault: true,
-        disabled: options.submitTimeout ? loading.value : (typeof submitter.resetButtonProps === 'object' ? submitter.resetButtonProps.disabled : undefined),
-        onClick: (event: MouseEvent) => {
-          setOpen(false)
-          options.onCloseExtra?.(event)
-          if (typeof submitter.resetButtonProps === 'object')
-            submitter.resetButtonProps.onClick?.(event)
-        },
+        ...options.searchConfig,
+        ...options.submitter?.searchConfig,
       },
     }
   })
 
-  function renderContent(formDom: VNodeChild, submitterDom: VNodeChild) {
-    return (
-      <>
-        {formDom}
-        {footerRef.value && submitterDom
-          ? <Teleport to={footerRef.value}>{submitterDom}</Teleport>
-          : submitterDom}
-      </>
-    )
-  }
+  const contentRender = (items: VNodeChild[], submitter: VNodeChild) => (
+    <>
+      {items}
+      {footerRef.value && submitter ? <Teleport to={footerRef.value}>{submitter}</Teleport> : submitter}
+    </>
+  )
 
-  async function onFinishHandle(values: T) {
-    const response = options.onFinish?.(values)
-
-    if (options.submitTimeout) {
-      loading.value = true
-      const timer = window.setTimeout(() => {
-        loading.value = false
-      }, options.submitTimeout)
-      try {
-        const result = await response
-        window.clearTimeout(timer)
-        loading.value = false
-        if (result)
-          setOpen(false)
-        return result
-      }
-      catch (error) {
-        window.clearTimeout(timer)
-        loading.value = false
-        throw error
-      }
-    }
-
-    const result = await response
-    if (result)
-      setOpen(false)
-    return result
-  }
-
-  function setFooterRef(element: Element | ComponentPublicInstance | null) {
-    footerRef.value = element instanceof HTMLElement ? element : undefined
-    nextTick()
-  }
+  const triggerDom = computed(() => {
+    if (!options.trigger)
+      return null
+    if (!isVNode(options.trigger))
+      return <span onClick={() => setOpen(true)}>{options.trigger}</span>
+    const originOnClick = (options.trigger.props as any)?.onClick
+    return cloneVNode(options.trigger, {
+      onClick: (...args: any[]) => {
+        originOnClick?.(...args)
+        setOpen(true)
+      },
+    }, true)
+  })
 
   return {
     open,
+    setOpen,
     loading,
     footerRef,
-    setFooterRef,
-    setOpen,
-    resetFields,
-    renderTrigger,
+    footerDom: () => h('div', { ref: footerRef, style: { display: 'flex', justifyContent: 'flex-end' } }),
+    triggerDom,
     submitterConfig,
-    renderContent,
+    contentRender,
     onFinishHandle,
+    resetFields,
   }
 }

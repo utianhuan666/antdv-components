@@ -5,7 +5,7 @@ import type { GroupProps } from './types'
 import { LoadingOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Cascader } from 'antdv-next'
-import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
+import { FieldLabel } from '../../../utils'
 
 type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   options: NonNullable<CascaderProps['options']>

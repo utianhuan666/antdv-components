@@ -19,6 +19,11 @@ export default mergeConfig(
     },
     test: {
       environment: 'jsdom',
+      environmentOptions: {
+        jsdom: {
+          url: 'http://localhost/',
+        },
+      },
       exclude: [...configDefaults.exclude, 'e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       setupFiles: ['./components/__tests__/setupTests.ts'],

@@ -1,166 +1,70 @@
-import type { UploadDraggerProps as AntUploadDraggerProps, UploadChangeParam, UploadFile, UploadProps } from 'antdv-next'
-import type { FunctionalComponent, VNode } from 'vue'
-import type { ProFormUploadDraggerProps as BaseProFormUploadDraggerProps } from '../../typing'
+import type { UploadProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
 import { InboxOutlined } from '@antdv-next/icons'
 import { UploadDragger } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
-import { useEditOrReadOnly } from '../../BaseForm'
-import { useFieldContext } from '../../FieldContext'
-import ProFormItem from '../FormItem'
+import { omitKeys, renderFormItem } from '../_util'
 
-const UploadDraggerComponent = UploadDragger as unknown as (
-  props: AntUploadDraggerProps & {
-    style?: Record<string, unknown>
-    onChange?: (info: UploadChangeParam<UploadFile>) => void
-  },
-) => VNode
-
-type UploadFileList = NonNullable<UploadProps['fileList']>
-
-type ProFormUploadDraggerComponentProps = BaseProFormUploadDraggerProps<AntUploadDraggerProps> & {
+export type ProFormUploadDraggerProps = ProFormFieldItemProps<UploadProps> & {
+  icon?: any
+  title?: any
+  description?: any
+  max?: number
   value?: UploadProps['fileList']
+  onChange?: UploadProps['onChange']
   action?: UploadProps['action']
   accept?: UploadProps['accept']
 }
 
-const uploadDraggerPropNames = [
-  'name',
-  'label',
-  'tooltip',
-  'rules',
-  'required',
-  'initialValue',
-  'transform',
-  'convertValue',
-  'formItemProps',
-  'fieldProps',
-  'value',
-  'action',
-  'accept',
-  'title',
-  'icon',
-  'description',
-  'max',
-  'readonly',
-  'proFieldProps',
-  'ignoreFormItem',
-]
-
-function isEnabledProp(value: unknown) {
-  return value === true || value === ''
-}
-
-function getNumberProp(value: unknown) {
-  if (value === undefined)
-    return undefined
-  const numberValue = Number(value)
-  return Number.isNaN(numberValue) ? undefined : numberValue
-}
-
-const ProFormUploadDraggerImpl = defineComponent({
+const ProFormUploadDragger = defineComponent({
   name: 'ProFormUploadDragger',
   inheritAttrs: false,
-  props: uploadDraggerPropNames,
-  emits: ['change'],
-  setup(rawProps, { emit, slots, attrs }) {
-    const props = rawProps as unknown as ProFormUploadDraggerComponentProps
-    const fieldContext = useFieldContext()
-    const editContext = useEditOrReadOnly()
+  setup(props: ProFormUploadDraggerProps, { attrs, slots }) {
+    const mode = computed(() => props.proFieldProps?.mode || props.mode || 'edit')
+    return () => {
+      const current = { ...attrs, ...props } as ProFormUploadDraggerProps
+      const uploadFieldProps = omitKeys(current.fieldProps, ['id'])
+      const AnyUploadDragger = UploadDragger as any
+      const value = current.fileList ?? current.value
+      const showUploadButton = (current.max === undefined || !value || value.length < current.max)
+        && mode.value !== 'read'
+        && current.proFieldProps?.readonly !== true
+      const icon = current.icon ?? <InboxOutlined />
+      const title = current.title ?? '单击或拖动文件到此区域进行上传'
+      const description = current.description ?? '支持单次或批量上传'
 
-    const finalReadonly = computed(() => isEnabledProp(props.proFieldProps?.readonly ?? editContext.readonly ?? props.readonly))
-    const ignoreFormItem = computed(() => isEnabledProp(props.ignoreFormItem))
-
-    const fileList = computed<UploadFileList>(() => {
-      if (props.value)
-        return props.value
-      if (props.name === undefined)
-        return []
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const value = path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
-      return Array.isArray(value) ? value : []
-    })
-
-    function setCellValue(value: UploadProps['fileList']) {
-      if (props.name === undefined)
-        return
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const last = path[path.length - 1]
-      if (last === undefined)
-        return
-      const parent = path.slice(0, -1).reduce<Record<string, any>>((acc, key) => {
-        if (!acc[key] || typeof acc[key] !== 'object')
-          acc[key] = {}
-        return acc[key]
-      }, fieldContext.model || {})
-      parent[last] = value
-    }
-
-    function handleChange(info: UploadChangeParam<UploadFile>) {
-      const nextFileList = info.fileList || []
-      setCellValue(nextFileList)
-      emit('change', info)
-      props.fieldProps?.onChange?.(info)
-    }
-
-    const renderDragger = () => {
-      const { id: _id, onChange: _onChange, style, ...uploadFieldProps } = props.fieldProps || {}
-      const max = getNumberProp(props.max)
-      const showUploadButton = (max === undefined || fileList.value.length < max) && !finalReadonly.value
-      const title = props.title ?? '单击或拖动文件到此区域进行上传'
-      const icon = props.icon ?? <InboxOutlined />
-      const description = props.description ?? '支持单次或批量上传'
-      const draggerNode = (
-        <UploadDraggerComponent
-          {...attrs}
+      const dom = (
+        <AnyUploadDragger
+          name="files"
+          action={current.action}
+          accept={current.accept}
+          fileList={value}
           {...uploadFieldProps}
-          name={uploadFieldProps.name ?? 'files'}
-          action={props.action ?? uploadFieldProps.action}
-          accept={props.accept ?? uploadFieldProps.accept}
-          fileList={fileList.value}
-          onChange={handleChange}
           style={{
             flexDirection: 'column',
             alignItems: 'center',
-            ...(style || {}),
-            display: showUploadButton ? style?.display || 'flex' : 'none',
+            ...uploadFieldProps.style,
+            display: !showUploadButton ? 'none' : uploadFieldProps.style?.display || 'flex',
+          }}
+          onChange={(info: any) => {
+            current.onChange?.(info)
+            uploadFieldProps.onChange?.(info)
           }}
         >
           <p class="ant-upload-drag-icon">{icon}</p>
           <p class="ant-upload-text">{title}</p>
           <p class="ant-upload-hint">{description}</p>
-          {slots.default?.()?.length
-            ? <div class="ant-upload-extra" style={{ padding: '16px' }}>{slots.default?.()}</div>
+          {slots.default
+            ? <div class="ant-upload-extra" style={{ padding: 16 }}>{slots.default()}</div>
             : null}
-        </UploadDraggerComponent>
+        </AnyUploadDragger>
       )
 
-      if (ignoreFormItem.value)
-        return draggerNode
-
-      return (
-        <ProFormItem
-          name={props.name}
-          label={props.label}
-          tooltip={props.tooltip}
-          rules={props.rules}
-          required={props.required}
-          initialValue={props.initialValue}
-          transform={props.transform}
-          convertValue={props.convertValue}
-          formItemProps={{
-            ...(fieldContext.formItemProps || {}),
-            ...(props.formItemProps || {}),
-          }}
-        >
-          {draggerNode}
-        </ProFormItem>
-      )
+      return renderFormItem(current, dom)
     }
-
-    return renderDragger
   },
-})
+}) as any
 
-const ProFormUploadDragger = ProFormUploadDraggerImpl as unknown as FunctionalComponent<ProFormUploadDraggerComponentProps>
+ProFormUploadDragger.displayName = 'ProFormComponent'
 
 export default ProFormUploadDragger

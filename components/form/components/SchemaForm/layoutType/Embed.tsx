@@ -1,8 +1,10 @@
-import { defineComponent, Fragment } from 'vue'
+import { defineComponent } from 'vue'
 
-export default defineComponent({
+const Embed = defineComponent({
   name: 'SchemaFormEmbed',
-  setup(_, { slots }) {
-    return () => <Fragment>{slots.default?.()}</Fragment>
+  setup(_props, { slots }) {
+    return () => <>{slots.default?.()}</>
   },
 })
+
+export default Embed

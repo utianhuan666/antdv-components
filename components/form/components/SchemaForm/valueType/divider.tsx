@@ -1,9 +1,11 @@
 import type { ProSchemaRenderValueTypeFunction } from '../typing'
-import { Divider } from 'antdv-next'
+import { Divider as AntDivider } from 'antdv-next'
 
 export const divider: ProSchemaRenderValueTypeFunction = (item) => {
-  if (item.valueType !== 'divider')
-    return true
+  if (item.valueType === 'divider')
+    return <AntDivider {...item.getFieldProps?.()} key={item.key as any} />
 
-  return <Divider key={item.key as any} {...(item.getFieldProps?.() || {})} />
+  return true
 }
+
+export default divider

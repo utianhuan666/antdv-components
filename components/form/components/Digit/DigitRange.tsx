@@ -1,11 +1,14 @@
 import type { InputNumberProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
 import type { ProFormFieldItemProps } from '../../typing'
-import ProFormField from '../Field'
+import { defineProFormField } from '../FormItem/warpField'
 
 export type Value = string | number | undefined
 export type ValuePair = Value[]
-export type RangeInputNumberProps = Omit<InputNumberProps, 'value' | 'defaultValue' | 'onChange' | 'placeholder'> & {
+
+export type RangeInputNumberProps = Omit<
+  InputNumberProps,
+  'value' | 'defaultValue' | 'onChange' | 'placeholder'
+> & {
   value?: ValuePair
   defaultValue?: ValuePair
   onChange?: (value?: ValuePair) => void
@@ -16,13 +19,6 @@ export type ProFormDigitRangeProps = ProFormFieldItemProps<RangeInputNumberProps
   separatorWidth?: number
 }
 
-const ProFormDigitRange: FunctionalComponent<ProFormDigitRangeProps> = (props, { slots }) => (
-  <ProFormField valueType="digitRange" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
-
-ProFormDigitRange.displayName = 'ProFormDigitRange'
-ProFormDigitRange.inheritAttrs = false
+const ProFormDigitRange = defineProFormField('ProFormDigitRange', 'digitRange')
 
 export default ProFormDigitRange

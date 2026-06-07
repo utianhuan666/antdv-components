@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import type { ProColumns, ProTableProps, SearchConfig } from '../../typing'
 import { Table } from 'antdv-next'
-import { computed, defineComponent, ref, shallowRef } from 'vue'
+import { computed, defineComponent, nextTick, onMounted, ref, shallowRef, watchEffect } from 'vue'
 import { BetaSchemaForm } from '../../../form'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { getValueByNamePath, setValueByNamePath } from '../../../utils'
@@ -105,6 +105,8 @@ const FormRender = defineComponent({
     const layoutFormRef = shallowRef<any>()
     const pendingValues = shallowRef<Record<string, any>>({})
     const pendingSubmit = shallowRef(false)
+    const initialValuesApplied = shallowRef(false)
+    const firstSearchSubmitted = shallowRef(false)
     const proxyRenderTick = ref(0)
     const searchPrefixCls = useProPrefixCls('pro-table-search')
     const formPrefixCls = useProPrefixCls('pro-table-form')
@@ -300,6 +302,13 @@ const FormRender = defineComponent({
       proxyRenderTick.value += 1
     }
 
+    watchEffect(() => {
+      if (initialValuesApplied.value)
+        return
+      pendingValues.value = getInitialValues()
+      initialValuesApplied.value = true
+    })
+
     function bindForm(instance: any) {
       if (!instance)
         return
@@ -314,6 +323,28 @@ const FormRender = defineComponent({
         instance.submit()
       }
     }
+
+    function submitInitialSearch(values: Record<string, any>) {
+      if (firstSearchSubmitted.value || props.type === 'form' || props.manualRequest)
+        return
+      firstSearchSubmitted.value = true
+      const pageInfo = (props.action as any)?.value?.pageInfo || (props.action as any)?.current?.pageInfo
+      const {
+        current = pageInfo?.current,
+        pageSize = pageInfo?.pageSize,
+      } = values as any
+      ;((props.action as any)?.value || (props.action as any)?.current)?.setPageInfo?.({
+        ...pageInfo,
+        current: Number.parseInt(current, 10),
+        pageSize: Number.parseInt(pageSize, 10),
+      })
+      props.onSubmit?.(values, true)
+    }
+
+    onMounted(async () => {
+      await nextTick()
+      submitInitialSearch(formProxy.value.getFieldsFormatValue?.(true) ?? getInitialValues())
+    })
 
     const schemaFormRef = {
       get value() {
@@ -358,24 +389,10 @@ const FormRender = defineComponent({
             onInit={(values: Record<string, any>, form: any) => {
               bindForm(form)
               setActionRef(props.formRef, formProxy.value)
-              if (props.type !== 'form') {
-                const pageInfo = (props.action as any)?.value?.pageInfo || (props.action as any)?.current?.pageInfo
-                const {
-                  current = pageInfo?.current,
-                  pageSize = pageInfo?.pageSize,
-                } = values as any
-                ;((props.action as any)?.value || (props.action as any)?.current)?.setPageInfo?.({
-                  ...pageInfo,
-                  current: Number.parseInt(current, 10),
-                  pageSize: Number.parseInt(pageSize, 10),
-                })
-                if (props.manualRequest)
-                  return
-                props.onSubmit?.(values, true)
-              }
+              submitInitialSearch(formProxy.value.getFieldsFormatValue?.(true) ?? values)
             }}
-            onFinish={(values: Record<string, any>) => props.onSubmit?.(values, false)}
-            initialValues={props.form?.initialValues}
+            onFinish={(values: Record<string, any>) => props.onSubmit?.(formProxy.value.getFieldsFormatValue?.(true) ?? values, false)}
+            initialValues={getInitialValues()}
           />
         </div>
       )

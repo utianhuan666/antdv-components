@@ -1,14 +1,5 @@
-import type { RangePickerProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
-import type { ProFormFieldItemProps } from '../../typing'
-import { BaseDateRanger } from './BaseDateRanger'
+import { createDateRangePicker } from './BaseDateRanger'
 
-export type ProFormDateQuarterRangePickerProps = Omit<ProFormFieldItemProps<RangePickerProps>, 'valueType'>
+export const ProFormDateQuarterRangePicker = createDateRangePicker('ProFormDateQuarterRangePicker', 'dateQuarterRange')
 
-const valueType = 'dateQuarterRange' as const
-
-export const ProFormDateQuarterRangePicker: FunctionalComponent<ProFormDateQuarterRangePickerProps> = (props, { slots }) => (
-  <BaseDateRanger valueType={valueType} {...props}>
-    {slots.default?.()}
-  </BaseDateRanger>
-)
+export default ProFormDateQuarterRangePicker

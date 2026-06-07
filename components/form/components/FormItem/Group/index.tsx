@@ -1,111 +1,105 @@
-import type { FunctionalComponent } from 'vue'
-import type { ProFormGroupProps } from '../../../typing'
-import { Col, Row, Space } from 'antdv-next'
-import { defineComponent, ref } from 'vue'
+import type { SpaceProps } from 'antdv-next'
+import type { CSSProperties, VNodeChild } from 'vue'
+import { RightOutlined } from '@antdv-next/icons'
+import { Space } from 'antdv-next'
+import { computed, defineComponent, ref, watch } from 'vue'
 import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
-import { useGridHelpers } from '../../../helpers'
+import { useStyle } from './style'
 
-const groupPropNames = [
-  'title',
-  'extra',
-  'collapsible',
-  'defaultCollapsed',
-  'labelLayout',
-  'style',
-  'grid',
-  'rowProps',
-  'colProps',
-] as const
-
-function resolveBoolean(value: unknown, fallback = false) {
-  if (value === '')
-    return true
-  return typeof value === 'boolean' ? value : fallback
+export interface ProFormGroupProps {
+  title?: VNodeChild
+  label?: VNodeChild
+  tooltip?: VNodeChild
+  extra?: VNodeChild
+  size?: SpaceProps['size']
+  style?: CSSProperties
+  titleStyle?: CSSProperties
+  titleRender?: (title: VNodeChild, props: ProFormGroupProps) => VNodeChild
+  align?: SpaceProps['align']
+  spaceProps?: SpaceProps
+  direction?: SpaceProps['orientation']
+  labelLayout?: 'inline' | 'twoLine'
+  collapsed?: boolean
+  collapsible?: boolean
+  defaultCollapsed?: boolean
+  onCollapse?: (collapsed: boolean) => void
+  autoFocus?: boolean
 }
 
-/**
- * ProForm.Group – 对标 React `src/form/components/FormItem/Group/index.tsx`：
- * 1. 支持折叠
- * 2. 支持 grid 模式自动布局
- */
 const Group = defineComponent({
   name: 'ProFormGroup',
-  props: [...groupPropNames],
-  setup(rawProps, { slots }) {
-    const props = rawProps as Readonly<ProFormGroupProps>
+  inheritAttrs: false,
+  setup(props: ProFormGroupProps, { attrs, slots }) {
     const prefixCls = useProPrefixCls('pro-form-group')
-    const { grid, rowProps } = useGridHelpers(props.colProps)
-    const collapsed = ref(resolveBoolean(props.defaultCollapsed))
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
+    const innerCollapsed = ref(Boolean(props.defaultCollapsed))
+    watch(() => props.collapsed, (value) => {
+      if (value !== undefined)
+        innerCollapsed.value = value
+    }, { immediate: true })
 
-    function toggle() {
-      if (resolveBoolean(props.collapsible))
-        collapsed.value = !collapsed.value
+    const collapsed = computed(() => props.collapsed ?? innerCollapsed.value)
+    const setCollapsed = (next: boolean) => {
+      innerCollapsed.value = next
+      props.onCollapse?.(next)
     }
 
     return () => {
-      const isGrid = props.grid === undefined ? grid.value : resolveBoolean(props.grid)
+      const title = props.title ?? props.label
+      const label = (
+        <span>
+          {props.collapsible ? <RightOutlined rotate={collapsed.value ? undefined : 90} style={{ marginInlineEnd: 8 }} /> : null}
+          {title}
+          {props.tooltip ? <span style={{ marginInlineStart: 4 }}>{props.tooltip}</span> : null}
+        </span>
+      )
+      const titleDom = props.titleRender ? props.titleRender(label, props) : label
 
-      const children = slots.default?.()
-      const groupStyle = props.style || {}
-      const { gap, rowGap, columnGap, ...rootStyle } = groupStyle
-      const bodyStyle = {
-        maxWidth: '100%',
-        flexWrap: 'wrap',
-        rowGap: rowGap ?? 0,
-        ...(gap !== undefined ? { gap } : {}),
-        ...(columnGap !== undefined ? { columnGap } : {}),
-      }
-
-      const body = isGrid
-        ? (
-            <Row {...{ ...rowProps.value, ...(props.rowProps || {}) }}>
-              {Array.isArray(children)
-                ? children.map((child, idx) => (
-                    <Col key={idx} {...(props.colProps || { xs: 24 })}>
-                      {child}
-                    </Col>
-                  ))
-                : children}
-            </Row>
-          )
-        : (
+      return wrapSSR(
+        <div {...attrs} class={[prefixCls.value, hashId, props.labelLayout === 'twoLine' && `${prefixCls.value}-twoLine`, (attrs as any).class]} style={props.style}>
+          {(title || props.tooltip || props.extra)
+            ? (
+                <div
+                  class={`${prefixCls.value}-title`}
+                  role={props.collapsible ? 'button' : undefined}
+                  tabindex={props.collapsible ? 0 : undefined}
+                  style={props.titleStyle}
+                  onClick={() => props.collapsible && setCollapsed(!collapsed.value)}
+                  onKeydown={(event: KeyboardEvent) => {
+                    if (props.collapsible && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault()
+                      setCollapsed(!collapsed.value)
+                    }
+                  }}
+                >
+                  {props.extra
+                    ? (
+                        <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
+                          {titleDom}
+                          <span>{props.extra}</span>
+                        </div>
+                      )
+                    : titleDom}
+                </div>
+              )
+            : null}
+          <div class={`${prefixCls.value}-container`} style={{ display: props.collapsible && collapsed.value ? 'none' : undefined }}>
             <Space
-              class={`${prefixCls.value}-container`}
-              align="start"
-              size={32}
-              style={bodyStyle}
+              {...props.spaceProps}
+              size={props.size ?? 32}
+              align={props.align ?? 'start'}
+              orientation={props.direction}
+              style={{ rowGap: 0, ...(props.spaceProps as any)?.style }}
             >
-              {children}
+              {slots.default?.()}
             </Space>
-          )
-
-      const titleNode = props.title
-        ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 24,
-                cursor: resolveBoolean(props.collapsible) ? 'pointer' : 'default',
-                fontWeight: 'bold',
-              }}
-              onClick={toggle}
-            >
-              <span>{props.title}</span>
-              {props.extra ? <span>{props.extra}</span> : null}
-            </div>
-          )
-        : null
-
-      return (
-        <div class={prefixCls.value} style={{ boxSizing: 'border-box', marginBottom: 16, ...rootStyle }}>
-          {titleNode}
-          {!collapsed.value ? body : null}
-        </div>
+          </div>
+        </div>,
       )
     }
   },
-}) as unknown as FunctionalComponent<ProFormGroupProps>
+}) as any
+
+Group.displayName = 'ProForm-Group'
 
 export default Group

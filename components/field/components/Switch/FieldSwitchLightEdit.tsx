@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { omit } from '@v-c/util'
 import { Switch } from 'antdv-next'
-import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
+import { FieldLabel } from '../../../utils'
 
 type Props = NonNullable<ProFieldFC<{
   text: boolean

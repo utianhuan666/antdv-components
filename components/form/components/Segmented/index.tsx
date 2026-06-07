@@ -1,17 +1,8 @@
 import type { SegmentedProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
 import type { ProFormFieldItemProps } from '../../typing'
+import { defineComponent } from 'vue'
 import ProFormField from '../Field'
 
 export type ProFormSegmentedProps = ProFormFieldItemProps<SegmentedProps>
-
-const ProFormSegmented: FunctionalComponent<ProFormSegmentedProps> = (props, { slots }) => (
-  <ProFormField valueType="segmented" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
-
-ProFormSegmented.displayName = 'ProFormSegmented'
-ProFormSegmented.inheritAttrs = false
-
+export const ProFormSegmented = defineComponent({ name: 'ProFormSegmented', inheritAttrs: false, setup: (_p, { attrs }) => () => <ProFormField {...attrs as any} valueType="segmented" /> })
 export default ProFormSegmented

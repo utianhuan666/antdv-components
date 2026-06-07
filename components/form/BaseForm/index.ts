@@ -1,9 +1,3 @@
-export type { ProFormInstance, SubmitterContext, SubmitterProps } from '../typing'
-export { BaseForm, default } from './BaseForm'
-export {
-  EditOrReadOnlyContextKey,
-  provideEditOrReadOnly,
-  useEditOrReadOnly,
-} from './EditOrReadOnlyContext'
-export type { EditOrReadOnlyContextValue } from './EditOrReadOnlyContext'
-export { default as Submitter } from './Submitter'
+export type { BaseFormProps, CommonFormProps, ProFormInstance } from './BaseForm'
+export { BaseForm } from './BaseForm'
+export { default } from './BaseForm'

@@ -1,36 +1,44 @@
 import type { CheckboxGroupProps, CheckboxProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
 import type { ProFormFieldItemProps } from '../../typing'
-import ProFormField from '../Field'
-
-export type ProFormCheckboxProps = ProFormFieldItemProps<CheckboxProps>
+import { Checkbox } from 'antdv-next'
+import { defineComponent } from 'vue'
+import { mergeFieldProps, omitKeys, renderFormItem } from '../_util'
+import { defineProFormField } from '../FormItem/warpField'
 
 export type ProFormCheckboxGroupProps = ProFormFieldItemProps<CheckboxGroupProps> & {
   layout?: 'horizontal' | 'vertical'
   options?: CheckboxGroupProps['options']
 }
 
-const ProFormCheckboxBase: FunctionalComponent<ProFormCheckboxProps> = (props, { slots }) => (
-  <ProFormField valueType="checkbox" valuePropName="checked" {...props}>
-    {slots.default?.()}
-  </ProFormField>
+export type ProFormCheckboxProps = ProFormFieldItemProps<CheckboxProps>
+
+const CheckboxGroup = defineProFormField(
+  'ProFormCheckboxGroup',
+  'checkbox',
+  props => ({
+    options: props.options,
+    layout: props.layout,
+  }),
 )
 
-ProFormCheckboxBase.displayName = 'ProFormCheckbox'
-ProFormCheckboxBase.inheritAttrs = false
+export const ProFormCheckboxGroup = CheckboxGroup
 
-const ProFormCheckboxGroup: FunctionalComponent<ProFormCheckboxGroupProps> = (props, { slots }) => (
-  <ProFormField valueType="checkbox" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
+const ProFormCheckbox = defineComponent({
+  name: 'ProFormCheckbox',
+  inheritAttrs: false,
+  setup(props: ProFormCheckboxProps, { attrs, slots }) {
+    return () => {
+      const current = { ...attrs, ...props } as ProFormCheckboxProps
+      const fieldProps = omitKeys(mergeFieldProps(current), ['allowClear'])
+      const dom = <Checkbox {...fieldProps}>{slots.default?.()}</Checkbox>
+      return renderFormItem(current, dom, { valuePropName: 'checked' })
+    }
+  },
+}) as any
 
-ProFormCheckboxGroup.displayName = 'ProFormCheckboxGroup'
-ProFormCheckboxGroup.inheritAttrs = false
+ProFormCheckbox.Group = CheckboxGroup
+ProFormCheckbox.displayName = 'ProFormComponent'
 
-const ProFormCheckbox = Object.assign(ProFormCheckboxBase, {
-  Group: ProFormCheckboxGroup,
-})
-
-export default ProFormCheckbox
-export { ProFormCheckboxGroup }
+export default ProFormCheckbox as typeof ProFormCheckbox & {
+  Group: typeof CheckboxGroup
+}

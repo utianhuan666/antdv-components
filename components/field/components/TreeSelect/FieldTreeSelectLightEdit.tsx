@@ -5,7 +5,7 @@ import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'
 import { defineComponent, nextTick, onMounted, onUpdated, ref } from 'vue'
-import FieldLabel from '../../../form/layouts/LightFilter/FieldLabel'
+import { FieldLabel } from '../../../utils'
 
 type TreeSelectShowSearchObject = Exclude<
   TreeSelectProps['showSearch'],

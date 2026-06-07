@@ -1,17 +1,8 @@
 import type { RateProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
 import type { ProFormFieldItemProps } from '../../typing'
+import { defineComponent } from 'vue'
 import ProFormField from '../Field'
 
 export type ProFormRateProps = ProFormFieldItemProps<RateProps>
-
-const ProFormRate: FunctionalComponent<ProFormRateProps> = (props, { slots }) => (
-  <ProFormField valueType="rate" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
-
-ProFormRate.displayName = 'ProFormRate'
-ProFormRate.inheritAttrs = false
-
+export const ProFormRate = defineComponent({ name: 'ProFormRate', inheritAttrs: false, setup: (_p, { attrs }) => () => <ProFormField {...attrs as any} valueType="rate" /> })
 export default ProFormRate

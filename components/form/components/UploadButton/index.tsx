@@ -1,165 +1,69 @@
-import type { ButtonProps, ImageProps, UploadChangeParam, UploadFile, UploadProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
-import type { ProFormUploadButtonProps as BaseProFormUploadButtonProps } from '../../typing'
+import type { ButtonProps, ImageProps, UploadFile, UploadProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
 import { UploadOutlined } from '@antdv-next/icons'
 import { Button, Image, Upload } from 'antdv-next'
-import { computed, defineComponent, onMounted, ref, watch } from 'vue'
-import { useEditOrReadOnly } from '../../BaseForm'
-import { useFieldContext } from '../../FieldContext'
-import ProFormItem from '../FormItem'
+import { computed, defineComponent, ref } from 'vue'
+import { omitKeys, renderFormItem } from '../_util'
+
+type PickUploadProps = Pick<UploadProps, 'listType' | 'action' | 'accept' | 'fileList' | 'onChange'>
+
+export type ProFormUploadButtonProps = ProFormFieldItemProps<UploadProps> & {
+  icon?: any
+  title?: any
+  max?: number
+  value?: UploadProps['fileList']
+  buttonProps?: ButtonProps
+  disabled?: ButtonProps['disabled']
+  imageProps?: Omit<ImageProps, 'src'>
+} & PickUploadProps
 
 function getBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.readAsDataURL(file)
     reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
+    reader.onerror = error => reject(error)
   })
 }
 
-type UploadFileList = NonNullable<UploadProps['fileList']>
-
-type ProFormUploadButtonComponentProps = BaseProFormUploadButtonProps<UploadProps> & {
-  value?: UploadProps['fileList']
-  fileList?: UploadProps['fileList']
-  action?: UploadProps['action']
-  accept?: UploadProps['accept']
-  listType?: UploadProps['listType']
-  buttonProps?: ButtonProps
-  imageProps?: Omit<ImageProps, 'src'>
-}
-
-const uploadButtonPropNames = [
-  'name',
-  'label',
-  'tooltip',
-  'rules',
-  'required',
-  'initialValue',
-  'transform',
-  'convertValue',
-  'formItemProps',
-  'fieldProps',
-  'value',
-  'fileList',
-  'action',
-  'accept',
-  'listType',
-  'title',
-  'icon',
-  'max',
-  'buttonProps',
-  'imageProps',
-  'disabled',
-  'readonly',
-  'proFieldProps',
-  'ignoreFormItem',
-]
-
-function isEnabledProp(value: unknown) {
-  return value === true || value === ''
-}
-
-function getNumberProp(value: unknown) {
-  if (value === undefined)
-    return undefined
-  const numberValue = Number(value)
-  return Number.isNaN(numberValue) ? undefined : numberValue
-}
-
-function getImagePreviewConfig(preview: ImageProps['preview']) {
-  return typeof preview === 'object' && preview !== null ? preview : {}
-}
-
-const ProFormUploadButtonImpl = defineComponent({
+const ProFormUploadButton = defineComponent({
   name: 'ProFormUploadButton',
   inheritAttrs: false,
-  props: uploadButtonPropNames,
-  emits: ['change'],
-  setup(rawProps, { emit, attrs }) {
-    const props = rawProps as unknown as ProFormUploadButtonComponentProps
-    const fieldContext = useFieldContext()
-    const editContext = useEditOrReadOnly()
+  setup(props: ProFormUploadButtonProps, { attrs }) {
     const previewOpen = ref(false)
     const previewImage = ref('')
+    const mode = computed(() => props.proFieldProps?.mode || props.mode || 'edit')
 
-    const finalReadonly = computed(() => isEnabledProp(props.proFieldProps?.readonly ?? editContext.readonly ?? props.readonly))
-    const ignoreFormItem = computed(() => isEnabledProp(props.ignoreFormItem))
+    return () => {
+      const current = { ...attrs, ...props } as ProFormUploadButtonProps
+      const value = current.fileList ?? current.value
+      const uploadFieldProps = omitKeys(current.fieldProps, ['id'])
+      const AnyUpload = Upload as any
+      const showUploadButton = (current.max === undefined || !value || value.length < current.max) && mode.value !== 'read'
+      const isPictureCard = (current.listType ?? uploadFieldProps.listType) === 'picture-card'
+      const icon = current.icon ?? <UploadOutlined />
+      const title = current.title ?? '单击上传'
 
-    const fileList = computed<UploadFileList>(() => {
-      if (props.fileList)
-        return props.fileList
-      if (props.value)
-        return props.value
-      if (props.name === undefined)
-        return []
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const value = path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
-      return Array.isArray(value) ? value : []
-    })
-
-    function setCellValue(value: UploadProps['fileList']) {
-      if (props.name === undefined)
-        return
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const last = path[path.length - 1]
-      if (last === undefined)
-        return
-      const parent = path.slice(0, -1).reduce<Record<string, any>>((acc, key) => {
-        if (!acc[key] || typeof acc[key] !== 'object')
-          acc[key] = {}
-        return acc[key]
-      }, fieldContext.model || {})
-      parent[last] = value
-    }
-
-    function applyInitialValue() {
-      if (props.name === undefined || props.initialValue === undefined)
-        return
-      if (fileList.value.length === 0)
-        setCellValue(props.initialValue as UploadProps['fileList'])
-    }
-
-    onMounted(applyInitialValue)
-    watch(() => props.initialValue, applyInitialValue)
-
-    async function handlePreview(file: UploadFile) {
-      if (!file.url && !file.preview && file.originFileObj)
-        file.preview = await getBase64(file.originFileObj)
-      previewImage.value = file.url || file.preview || file.thumbUrl || ''
-      previewOpen.value = Boolean(previewImage.value)
-    }
-
-    function handleChange(info: UploadChangeParam<UploadFile>) {
-      const nextFileList = info.fileList || []
-      setCellValue(nextFileList)
-      emit('change', info)
-      props.fieldProps?.onChange?.(info)
-    }
-
-    const renderUpload = () => {
-      const { id: _id, onChange: _onChange, onPreview: _onPreview, ...uploadFieldProps } = props.fieldProps || {}
-      const listType = props.listType || uploadFieldProps.listType || 'picture'
-      const max = getNumberProp(props.max)
-      const buttonProps = props.buttonProps || {}
-      const imageProps = props.imageProps || {}
-      const title = props.title ?? '单击上传'
-      const icon = props.icon ?? <UploadOutlined />
-      const showUploadButton = (max === undefined || fileList.value.length < max) && !finalReadonly.value
-      const isPictureCard = listType === 'picture-card'
-
-      const uploadNode = (
+      const dom = (
         <>
-          <Upload
-            {...attrs}
+          <AnyUpload
+            action={current.action}
+            accept={current.accept}
+            listType={current.listType || 'picture'}
+            fileList={value}
             {...uploadFieldProps}
-            action={props.action ?? uploadFieldProps.action}
-            accept={props.accept ?? uploadFieldProps.accept}
-            listType={listType}
-            fileList={fileList.value}
             name={uploadFieldProps.name ?? 'file'}
-            onPreview={handlePreview}
-            onChange={handleChange}
+            onPreview={async (file: UploadFile) => {
+              const target = file as UploadFile & { preview?: string, originFileObj?: Blob }
+              if (!target.url && !target.preview && target.originFileObj)
+                target.preview = await getBase64(target.originFileObj)
+              previewImage.value = target.url || target.preview || ''
+              previewOpen.value = Boolean(previewImage.value)
+            }}
+            onChange={(info: any) => {
+              current.onChange?.(info)
+              uploadFieldProps.onChange?.(info)
+            }}
           >
             {showUploadButton
               ? isPictureCard
@@ -171,18 +75,18 @@ const ProFormUploadButtonImpl = defineComponent({
                     </span>
                   )
                 : (
-                    <Button disabled={isEnabledProp(props.disabled ?? uploadFieldProps.disabled)} {...buttonProps}>
+                    <Button disabled={current.disabled || uploadFieldProps.disabled} {...current.buttonProps}>
                       {icon}
                       {title}
                     </Button>
                   )
               : null}
-          </Upload>
+          </AnyUpload>
           {previewImage.value
             ? (
                 <Image
                   style={{ display: 'none' }}
-                  {...imageProps}
+                  {...current.imageProps}
                   preview={{
                     open: previewOpen.value,
                     onOpenChange: (open: boolean) => {
@@ -190,7 +94,7 @@ const ProFormUploadButtonImpl = defineComponent({
                       if (!open)
                         previewImage.value = ''
                     },
-                    ...getImagePreviewConfig(imageProps.preview),
+                    ...((current.imageProps?.preview as any) || {}),
                   }}
                   src={previewImage.value}
                 />
@@ -199,33 +103,11 @@ const ProFormUploadButtonImpl = defineComponent({
         </>
       )
 
-      if (ignoreFormItem.value)
-        return uploadNode
-
-      return (
-        <ProFormItem
-          name={props.name}
-          label={props.label}
-          tooltip={props.tooltip}
-          rules={props.rules}
-          required={props.required}
-          initialValue={props.initialValue}
-          transform={props.transform}
-          convertValue={props.convertValue}
-          formItemProps={{
-            ...(fieldContext.formItemProps || {}),
-            ...(props.formItemProps || {}),
-          }}
-        >
-          {uploadNode}
-        </ProFormItem>
-      )
+      return renderFormItem(current, dom)
     }
-
-    return renderUpload
   },
-})
+}) as any
 
-const ProFormUploadButton = ProFormUploadButtonImpl as unknown as FunctionalComponent<ProFormUploadButtonComponentProps>
+ProFormUploadButton.displayName = 'ProFormComponent'
 
 export default ProFormUploadButton

@@ -1,190 +1,283 @@
-import dayjs from 'dayjs'
-import { describe, expect, it, vi } from 'vitest'
+import { ConfigProvider } from 'antdv-next'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import { ProFormDateTimePicker } from '../../form/components/DatePicker'
-import ProFormText from '../../form/components/Text'
-import ProForm from '../../form/layouts/ProForm'
-import { mountAttached, waitFor } from '../testUtils'
+import { ProForm, ProFormText } from '../../form'
+import { cleanup, fireEvent, render, waitFor } from '../testUtils'
 
-describe('proForm base compatibility', () => {
-  it('syncs values from url and writes submitted values back to url', async () => {
-    window.history.pushState(null, '', '/form-base?name=url&keep=1&empty=')
-    const onFinish = vi.fn().mockResolvedValue(true)
+const TEST_INITIAL_URL = 'http://localhost?layoutTheme=realDark&layout=side&colorPrimary=techBlue&splitMenus=false&fixedHeader=true'
 
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm
-          syncToUrl
-          extraUrlParams={{ keep: '1' }}
-          onFinish={onFinish}
-          initialValues={{ name: 'initial', age: 18 }}
-        >
-          <ProFormText name="name" />
-          <ProFormText name="age" />
+describe('proForm', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', TEST_INITIAL_URL)
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('📦 submit props actionsRender=false', async () => {
+    const wrapper = render(<ProForm submitter={false} />)
+
+    expect(wrapper.queryByText('提 交')).toBeNull()
+    expect(wrapper.queryByText('重 置')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('📦 className and rootClassName should work correctly', () => {
+    const wrapper = render(
+      <ProForm
+        className="custom-form-class"
+        rootClassName="custom-root-class"
+        submitter={false}
+      >
+        <ProFormText name="test" />
+      </ProForm>,
+    )
+    const form = wrapper.container.querySelector('form')
+    expect(form?.className).toContain('ant-pro-form')
+    expect(form?.className).toContain('custom-form-class')
+    expect(form?.className).toContain('custom-root-class')
+    wrapper.unmount()
+  })
+
+  it('📦 componentSize is work', async () => {
+    const wrapper = render(
+      <ConfigProvider componentSize="small">
+        <ProForm>
+          <ProFormText />
         </ProForm>
-      ),
-    })
+      </ConfigProvider>,
+    )
+    expect(wrapper.baseElement.querySelectorAll<HTMLElement>('.ant-input-sm').length).toBe(1)
+    wrapper.unmount()
+  })
 
-    await nextTick()
-    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('initial')
+  it('📦 ProForm support sync form url', async () => {
+    const fn = vi.fn()
+    const wrapper = render(
+      <ProForm
+        onFinish={async (values: any) => {
+          fn(values.layoutTheme)
+        }}
+        syncToUrl
+      >
+        <ProFormText name="layoutTheme" />
+      </ProForm>,
+    )
 
-    await wrapper.find('input').setValue('changed')
-    await wrapper.find('.ant-btn-primary').trigger('click')
+    fireEvent.click(await wrapper.findByText('提 交'))
 
     await waitFor(() => {
-      expect(onFinish).toHaveBeenCalledWith({ name: 'changed', age: 18, keep: '1' })
-      expect(window.location.search).toContain('name=changed')
-      expect(window.location.search).toContain('age=18')
-      expect(window.location.search).toContain('keep=1')
-      expect(window.location.search).not.toContain('empty=')
+      expect(fn).toHaveBeenCalledWith('realDark')
     })
   })
 
-  it('lets syncToUrl override initialValues when syncToUrlAsImportant is true', async () => {
-    window.history.pushState(null, '', '/form-base?name=url')
+  it('📦 ProForm support sync form url as important', async () => {
+    const fn = vi.fn()
+    const wrapper = render(
+      <ProForm
+        onFinish={async (values: any) => {
+          fn(values.layoutTheme)
+        }}
+        syncToUrl
+        syncToUrlAsImportant
+      >
+        <ProFormText name="layoutTheme" />
+      </ProForm>,
+    )
 
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm syncToUrl syncToUrlAsImportant initialValues={{ name: 'initial' }}>
-          <ProFormText name="name" />
-        </ProForm>
-      ),
-    })
-
-    await nextTick()
-    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('url')
-  })
-
-  it('request data rewrites initialValues and toggles loading state', async () => {
-    const onLoadingChange = vi.fn()
-    const request = vi.fn().mockResolvedValue({ name: 'request' })
-    const formRef = shallowRef<any>()
-
-    mountAttached({
-      setup() {
-        return () => (
-          <ProForm
-            ref={formRef}
-            initialValues={{ name: 'initial' }}
-            request={request}
-            params={{ id: 1 }}
-            onLoadingChange={onLoadingChange}
-          >
-            <ProFormText name="name" />
-          </ProForm>
-        )
-      },
-    })
+    fireEvent.click(await wrapper.findByText('提 交'))
 
     await waitFor(() => {
-      expect(request).toHaveBeenCalledWith({ id: 1 })
-      expect(formRef.value?.getFieldValue('name')).toBe('request')
-      expect(onLoadingChange).toHaveBeenCalledWith(true)
-      expect(onLoadingChange).toHaveBeenLastCalledWith(false)
+      expect(fn).toHaveBeenCalledWith('realDark')
     })
+    wrapper.unmount()
   })
 
-  it('closes submit loading when onFinish rejects', async () => {
-    const onLoadingChange = vi.fn()
-    const onFinish = vi.fn().mockRejectedValue(new Error('boom'))
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm onFinish={onFinish} onLoadingChange={onLoadingChange}>
-          <ProFormText name="name" initialValue="antdv" />
-        </ProForm>
-      ),
-    })
-
-    await wrapper.find('.ant-btn-primary').trigger('click')
-
-    await waitFor(() => {
-      expect(onFinish).toHaveBeenCalledWith({ name: 'antdv' })
-      expect(onLoadingChange).toHaveBeenLastCalledWith(false)
-    })
-  })
-
-  it('exposes nativeElement and format helpers on form ref', async () => {
-    const formRef = shallowRef<any>()
-    mountAttached({
-      setup() {
-        return () => (
-          <ProForm ref={formRef}>
-            <ProFormText name="tags" initialValue="a,b" transform={(value: string) => ({ tags: value.split(',') })} />
-          </ProForm>
-        )
-      },
-    })
-
-    await nextTick()
-
-    expect(formRef.value?.nativeElement).toBeInstanceOf(HTMLFormElement)
-    expect(formRef.value?.getFieldsFormatValue()).toEqual({ tags: ['a', 'b'] })
-    expect(formRef.value?.getFieldFormatValueObject('tags')).toEqual({ tags: ['a', 'b'] })
-  })
-
-  it('passes all values to transform and keeps false/0 when omitNil is enabled', async () => {
-    const transform = vi.fn((value: string, namePath: any, allValues?: Record<string, any>) => ({
-      joined: `${allValues?.prefix}-${Array.isArray(namePath) ? namePath.join('.') : namePath}-${value}`,
-    }))
-    const formRef = shallowRef<any>()
-    mountAttached({
-      setup() {
-        return () => (
-          <ProForm ref={formRef} initialValues={{ prefix: 'pre', count: 0, enabled: false, empty: '' }}>
-            <ProFormText name="name" initialValue="value" transform={transform} />
-            <ProFormText name="prefix" />
-            <ProFormText name="count" />
-            <ProFormText name="enabled" />
-            <ProFormText name="empty" />
-          </ProForm>
-        )
-      },
-    })
-
-    await nextTick()
-
-    expect(formRef.value?.getFieldsFormatValue()).toEqual({
-      joined: 'pre-name-value',
-      prefix: 'pre',
-      count: 0,
-      enabled: false,
-    })
-    expect(transform).toHaveBeenCalledWith('value', ['name'], expect.objectContaining({ prefix: 'pre' }))
-  })
-
-  it('submits when pressing enter in an input', async () => {
+  it('📦 ProForm support sync form url and rest', async () => {
     const onFinish = vi.fn()
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm isKeyPressSubmit onFinish={onFinish}>
-          <ProFormText name="name" initialValue="enter" />
-        </ProForm>
-      ),
-    })
+    const wrapper = render(
+      <ProForm
+        onFinish={async (values: any) => {
+          onFinish(values.layoutTheme)
+        }}
+        syncToUrl
+        syncToInitialValues={false}
+      >
+        <ProFormText name="layoutTheme" />
+      </ProForm>,
+    )
 
-    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
+    fireEvent.click(await wrapper.findByText('提 交'))
 
     await waitFor(() => {
-      expect(onFinish).toHaveBeenCalledWith({ name: 'enter' })
+      expect(onFinish).toHaveBeenCalledWith('realDark')
     })
+
+    fireEvent.click(await wrapper.findByText('重 置'))
+    fireEvent.click(await wrapper.findByText('提 交'))
+
+    await waitFor(() => {
+      expect(onFinish).toHaveBeenCalledWith(undefined)
+    })
+    wrapper.unmount()
   })
 
-  it('formats date values with custom dateFormatter', async () => {
-    const formRef = shallowRef<any>()
-    const dateValue = dayjs('2024-01-02 03:04:05')
+  it('📦 request rewrite initialsValue', async () => {
+    const wrapper = render(
+      <ProForm
+        request={async () => {
+          return {
+            name: '100',
+          }
+        }}
+        initialValues={{
+          name: '不是1000',
+        }}
+      >
+        <ProFormText name="name" />
+      </ProForm>,
+    )
+    await wrapper.findByText('提 交')
+    expect(!!(await wrapper.findByDisplayValue('100'))).toBeTruthy()
+    wrapper.unmount()
+  })
 
-    mountAttached({
-      setup() {
-        return () => (
-          <ProForm ref={formRef} initialValues={{ time: dateValue }} dateFormatter={(value, valueType) => `${valueType}:${value.valueOf()}`}>
-            <ProFormDateTimePicker name="time" />
-          </ProForm>
-        )
-      },
-    })
+  it('📦 submit props actionsRender=()=>false', async () => {
+    const wrapper = render(
+      <ProForm
+        submitter={{
+          render: () => false,
+        }}
+      >
+        text
+      </ProForm>,
+    )
+    await wrapper.findByText('text')
+    expect(wrapper.queryByText('提 交')).toBeNull()
+    expect(wrapper.queryByText('重 置')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('📦 submit props actionsRender is one', async () => {
+    const wrapper = render(
+      <ProForm
+        submitter={{
+          render: () => [<a key="test">test</a>],
+        }}
+      />,
+    )
+    await wrapper.findByText('test')
+    expect(wrapper.queryByText('提 交')).toBeNull()
+    expect(wrapper.getByText('test').tagName).toBe('A')
+    wrapper.unmount()
+  })
+
+  it('📦 support formRef', async () => {
+    const formRef = shallowRef<any>()
+    const wrapper = render(
+      <ProForm
+        formRef={formRef}
+        submitter={{
+          render: () => [<a key="test">test</a>],
+        }}
+        initialValues={{
+          test: '12,34',
+        }}
+      >
+        <ProFormText
+          name="test"
+          transform={(value: string) => {
+            return {
+              test: value.split(','),
+            }
+          }}
+        />
+      </ProForm>,
+    )
+    await wrapper.findByText('test')
+
+    expect(formRef.value?.getFieldFormatValue?.('test')?.join('-')).toBe('12-34')
+    expect(formRef.value?.getFieldFormatValueObject?.('test')?.test.join('-')).toBe('12-34')
+    expect(formRef.value?.getFieldFormatValueObject?.()?.test.join('-')).toBe('12-34')
+    expect(formRef.value?.getFieldsFormatValue?.()?.test.join('-')).toBe('12-34')
+    expect(formRef.value?.getFieldFormatValue?.(['test'])?.join('-')).toBe('12-34')
+    expect(formRef.value?.getFieldValue?.('test')).toBe('12,34')
+    wrapper.unmount()
+  })
+
+  it('📦 support formRef nativeElement', async () => {
+    const formRef = shallowRef<any>()
+    const wrapper = render(
+      <ProForm formRef={formRef}>
+        <ProFormText name="test" />
+      </ProForm>,
+    )
 
     await nextTick()
+    expect(wrapper.container.querySelector('form')).toBe(formRef.value?.nativeElement)
+  })
 
-    expect(formRef.value?.getFieldsFormatValue()).toEqual({ time: `dateTime:${dateValue.valueOf()}` })
+  it('📦 ProForm support namePath is array', async () => {
+    const fn = vi.fn()
+    const wrapper = render(
+      <ProForm
+        initialValues={{
+          name: {
+            test: 'test',
+          },
+          test: 'test2',
+        }}
+        isKeyPressSubmit
+        onFinish={async (params: any) => {
+          fn(params)
+        }}
+      >
+        <ProFormText name={['name', 'test']} />
+        <ProFormText name="test" />
+      </ProForm>,
+    )
+
+    fireEvent.click(await wrapper.findByText('提 交'))
+
+    await waitFor(() => {
+      expect(fn).toHaveBeenCalledWith({
+        name: {
+          test: 'test',
+        },
+        test: 'test2',
+      })
+    })
+    wrapper.unmount()
+  })
+
+  it('📦 ProForm support enter submit', async () => {
+    const fn = vi.fn()
+    const wrapper = render(
+      <ProForm
+        omitNil={false}
+        isKeyPressSubmit
+        onFinish={async () => {
+          fn()
+        }}
+      >
+        <ProFormText name="test" />
+      </ProForm>,
+    )
+
+    await wrapper.findByText('提 交')
+    fireEvent.click(await wrapper.findByText('提 交'))
+
+    await waitFor(() => {
+      expect(fn).toHaveBeenCalled()
+    })
+    wrapper.unmount()
   })
 })

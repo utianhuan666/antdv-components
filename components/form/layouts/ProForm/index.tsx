@@ -1,82 +1,47 @@
 import type { FormProps } from 'antdv-next'
-import type { FunctionalComponent } from 'vue'
-import type { ProFormProps as BaseProFormProps, FormData, FormRefLike, NamePath } from '../../typing'
-import { defineComponent, shallowRef } from 'vue'
-import { BaseForm } from '../../BaseForm'
+import type { CommonFormProps } from '../../BaseForm'
+import type { ProFormGroupProps } from '../../typing'
+import { Form } from 'antdv-next'
+import { defineComponent } from 'vue'
+import BaseForm from '../../BaseForm'
+import { EditOrReadOnlyContext } from '../../BaseForm/EditOrReadOnlyContext'
 import ProFormItem from '../../components/FormItem'
-import ProFormGroup from '../../components/FormItem/Group'
+import Group from '../../components/FormItem/Group'
 
-type ProFormLayoutProps<T = FormData, U = FormData> = Omit<FormProps, 'onFinish'> & BaseProFormProps<T, U>
-type ProFormPropName = 'layout'
+export type ProFormProps<T = Record<string, any>, U = Record<string, any>>
+  = Omit<FormProps, 'onFinish'> & CommonFormProps<T, U>
 
-const proFormPropNames: ProFormPropName[] = ['layout']
-
-/**
- * 对标 React `src/form/layouts/ProForm/index.tsx`：
- * 默认使用 vertical 布局，在 BaseForm 基础上注入 contentRender 让 items + submitter 直接顺序排列。
- *
- * 使用方式：
- * ```vue
- * <ProForm @finish="handleFinish">
- *   <ProFormText name="title" label="标题" />
- * </ProForm>
- * ```
- */
-const InternalProForm = defineComponent({
+const ProFormComponent = defineComponent({
   name: 'ProForm',
   inheritAttrs: false,
-  props: proFormPropNames,
-  setup(rawProps, { attrs, slots, expose }) {
-    const props = rawProps as Readonly<Pick<ProFormLayoutProps, typeof proFormPropNames[number]>>
-    const baseRef = shallowRef<FormRefLike>()
-    expose({
-      get formInstance() {
-        return baseRef.value?.formInstance
-      },
-      get nativeElement() {
-        return baseRef.value?.nativeElement
-      },
-      submit: () => baseRef.value?.submit?.(),
-      reset: () => baseRef.value?.reset?.(),
-      getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
-      getFieldValue: (name: NamePath) => baseRef.value?.getFieldValue?.(name),
-      getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
-      getFieldFormatValue: (name: NamePath, omitNil?: boolean) => baseRef.value?.getFieldFormatValue?.(name, omitNil),
-      getFieldFormatValueObject: (name: NamePath, omitNil?: boolean) => baseRef.value?.getFieldFormatValueObject?.(name, omitNil),
-      validateFieldsReturnFormatValue: (nameList?: NamePath[], omitNil?: boolean) => baseRef.value?.validateFieldsReturnFormatValue?.(nameList, omitNil),
-      setFieldsValue: (values: FormData) => baseRef.value?.setFieldsValue?.(values),
-    })
+  setup(_props, { attrs, slots }) {
     return () => (
       <BaseForm
-        ref={baseRef}
-        layout={(props.layout ?? 'vertical') as FormProps['layout']}
-        contentRender={(items, submitter) => (
+        {...attrs as ProFormProps}
+        layout={(attrs as ProFormProps).layout || 'vertical'}
+        contentRender={(items: any[], submitter: any) => (
           <>
             {items}
             {submitter}
           </>
         )}
-        {...attrs}
       >
-        {{
-          default: () => slots.default?.(),
-          submitter: slots.submitter
-            ? (slotProps: FormData) => slots.submitter?.(slotProps)
-            : undefined,
-        }}
+        {slots.default?.()}
       </BaseForm>
     )
   },
-})
+}) as any
 
-const ProForm = InternalProForm as unknown as FunctionalComponent<ProFormLayoutProps> & {
-  Group: typeof ProFormGroup
-  Item: typeof ProFormItem
-}
+ProFormComponent.Group = Group
+ProFormComponent.useForm = (Form as any).useForm
+ProFormComponent.Item = ProFormItem
+ProFormComponent.useWatch = (Form as any).useWatch
+ProFormComponent.ErrorList = (Form as any).ErrorList
+ProFormComponent.Provider = (Form as any).Provider
+ProFormComponent.useFormInstance = (Form as any).useFormInstance
+ProFormComponent.EditOrReadOnlyContext = EditOrReadOnlyContext
 
-ProForm.Group = ProFormGroup
-ProForm.Item = ProFormItem
-
+export const ProForm = ProFormComponent
+export const ProFormGroup = Group
+export type { ProFormGroupProps }
 export default ProForm
-export { ProForm }
-export type { ProFormLayoutProps }

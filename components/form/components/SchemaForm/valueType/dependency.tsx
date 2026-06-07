@@ -1,27 +1,25 @@
-import type { NamePath } from '../../../typing'
 import type { ProSchemaRenderValueTypeFunction } from '../typing'
 import ProFormDependency from '../../Dependency'
 
-function normalizeDependencyNames(name?: NamePath[] | NamePath): NamePath[] {
-  if (!name)
-    return []
-  if (Array.isArray(name) && Array.isArray(name[0]))
-    return name as NamePath[]
-  return Array.isArray(name) ? name as NamePath[] : [name]
-}
-
 export const dependency: ProSchemaRenderValueTypeFunction = (item, helpers) => {
-  if (item.valueType !== 'dependency')
-    return true
+  if (item.valueType === 'dependency') {
+    const fieldProps = item.getFieldProps?.()
+    const name = item.name ?? fieldProps?.name
+    if (!Array.isArray(name))
+      return null
 
-  const fieldProps = item.getFieldProps?.() || {}
-  const names = normalizeDependencyNames(item.name || fieldProps.name)
-  if (!names.length || typeof item.columns !== 'function')
-    return null
+    return (
+      <ProFormDependency name={name as any} {...fieldProps} key={item.key as any}>
+        {(values: any) => {
+          if (!item.columns || typeof item.columns !== 'function')
+            return null
+          return helpers.genItems(item.columns(values) as any)
+        }}
+      </ProFormDependency>
+    )
+  }
 
-  return (
-    <ProFormDependency name={names as any} {...fieldProps} key={item.key as any}>
-      {(values: Record<string, any>) => helpers.genItems((item.columns as any)(values))}
-    </ProFormDependency>
-  )
+  return true
 }
+
+export default dependency

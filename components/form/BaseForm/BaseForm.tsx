@@ -1,520 +1,427 @@
-import type { FunctionalComponent, VNodeChild } from 'vue'
-import type { BaseFormProps, NamePath, ProFormData, ProFormInstance, SearchTransformKeyFn, SubmitterContext, SubmitterProps } from '../typing'
-import { Form, Row, Spin } from 'antdv-next'
-import { computed, defineComponent, nextTick, onMounted, reactive, shallowRef, watch } from 'vue'
+import type { FormInstance, FormItemProps, FormProps } from 'antdv-next'
+import type { Dayjs } from 'dayjs'
+import type { PropType, Ref, VNodeChild } from 'vue'
+import type { NamePath, ProFieldProps, ProFormInstanceType, ProRequestData } from '../../utils'
+import type { FieldProps, ProFormGridConfig, ProFormGroupProps } from '../typing'
+import type { SubmitterProps } from './Submitter'
+import { get, set as namePathSet } from '@v-c/util'
+import { Form, Spin } from 'antdv-next'
+import { computed, defineComponent, nextTick, onMounted, provide, ref, watch } from 'vue'
+import { useStyle } from '../../provider'
+import { useProPrefixCls } from '../../provider/useProPrefixCls'
 import {
-  deleteValueByNamePath,
-  getValueByNamePath,
-  namePathKey,
-  normalizeNamePath,
-  provideProFormContext,
-  setValueByNamePath,
+  conversionMomentValue,
+  isDeepEqualReact,
+  ProFormContext,
+  transformKeySubmitValue,
 } from '../../utils'
-import { provideFieldContext } from '../FieldContext'
-import { provideGridContext } from '../helpers'
-import { baseFormPropNames } from '../typing'
-import { provideEditOrReadOnly } from './EditOrReadOnlyContext'
+import FieldContext from '../FieldContext'
+import { GridContext } from '../helpers'
+import { EditOrReadOnlyContext } from './EditOrReadOnlyContext'
 import Submitter from './Submitter'
+import { useUrlSync } from './useUrlSync'
 
-function readUrlSearch() {
-  if (typeof window === 'undefined')
-    return {}
-  return Array.from(new URLSearchParams(window.location.search).entries()).reduce<Record<string, any>>((result, [key, value]) => {
-    result[key] = value
-    return result
-  }, {})
+export type ProFormInstance<T = any> = FormInstance & ProFormInstanceType<T>
+
+export type CommonFormProps<T = Record<string, any>, U = Record<string, any>> = {
+  initialValues?: T
+  submitter?: SubmitterProps<{ form?: FormInstance }> | false
+  onFinish?: (formData: T) => Promise<boolean | void> | void
+  loading?: boolean
+  onLoadingChange?: (loading: boolean) => void
+  formRef?: Ref<ProFormInstance<T> | undefined>
+  syncToUrl?: boolean | ((values: T, type: 'get' | 'set') => T)
+  syncToUrlAsImportant?: boolean
+  extraUrlParams?: Record<string, any>
+  syncToInitialValues?: boolean
+  omitNil?: boolean
+  dateFormatter?:
+    | (string & {})
+    | 'string'
+    | 'number'
+    | ((value: Dayjs, valueType: string) => string | number)
+    | false
+  onInit?: (values: T, form: ProFormInstance<any>) => void
+  params?: U
+  request?: ProRequestData<T, U>
+  isKeyPressSubmit?: boolean
+  formKey?: string
+  autoFocusFirstInput?: boolean
+  readonly?: boolean
+} & ProFormGridConfig
+
+export type BaseFormProps<T = Record<string, any>, U = Record<string, any>> = {
+  contentRender?: (items: VNodeChild[], submitter: VNodeChild, form: ProFormInstance<any>) => VNodeChild
+  fieldProps?: FieldProps<unknown>
+  proFieldProps?: ProFieldProps
+  formItemProps?: FormItemProps
+  groupProps?: ProFormGroupProps
+  formComponentType?: 'DrawerForm' | 'ModalForm' | 'QueryFilter' | 'LightFilter'
+} & Omit<FormProps, 'onFinish'> & CommonFormProps<T, U>
+
+const formPropNames = [
+  'model',
+  'initialValues',
+  'submitter',
+  'onFinish',
+  'loading',
+  'onLoadingChange',
+  'formRef',
+  'syncToUrl',
+  'syncToUrlAsImportant',
+  'extraUrlParams',
+  'syncToInitialValues',
+  'omitNil',
+  'dateFormatter',
+  'onInit',
+  'params',
+  'request',
+  'isKeyPressSubmit',
+  'formKey',
+  'autoFocusFirstInput',
+  'readonly',
+  'contentRender',
+  'fieldProps',
+  'proFieldProps',
+  'formItemProps',
+  'groupProps',
+  'formComponentType',
+  'grid',
+  'colProps',
+  'rowProps',
+  'layout',
+  'labelCol',
+  'wrapperCol',
+  'rules',
+  'name',
+  'disabled',
+  'validateTrigger',
+  'hideRequiredMark',
+  'labelAlign',
+  'scrollToFirstError',
+] as const
+
+function toNamePath(name?: NamePath): (string | number)[] | undefined {
+  if (name === undefined || name === null)
+    return undefined
+  return Array.isArray(name) ? name as (string | number)[] : [name as string | number]
 }
 
-function writeUrlSearch(params: Record<string, any>) {
-  if (typeof window === 'undefined')
-    return
-  const searchParams = new URLSearchParams(window.location.search)
-  Object.keys(params).forEach((key) => {
-    const value = params[key]
-    if (value === undefined || value === null || value === '')
-      searchParams.delete(key)
-    else
-      searchParams.set(key, String(value))
+function cloneValue<T>(value: T): T {
+  if (Array.isArray(value))
+    return value.map(item => cloneValue(item)) as T
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, any>).reduce<Record<string, any>>((result, key) => {
+      result[key] = cloneValue((value as Record<string, any>)[key])
+      return result
+    }, {}) as T
+  }
+  return value
+}
+
+function mergeValues(target: Record<string, any>, source: Record<string, any>) {
+  Object.keys(source || {}).forEach((key) => {
+    const value = source[key]
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      target[key] = mergeValues({ ...(target[key] || {}) }, value)
+    }
+    else {
+      target[key] = value
+    }
   })
-  const search = searchParams.toString()
-  const nextUrl = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
-  window.history.replaceState(null, '', nextUrl)
+  return target
 }
 
-function genUrlSyncParams(syncToUrl: BaseFormProps['syncToUrl'], params: ProFormData, type: 'get' | 'set') {
-  if (syncToUrl === true)
-    return params
-  return typeof syncToUrl === 'function' ? syncToUrl(params, type) : {}
+function replaceValues(target: Record<string, any>, source: Record<string, any>) {
+  Object.keys(target).forEach(key => delete target[key])
+  Object.assign(target, cloneValue(source))
+  return target
 }
 
-interface FieldValueTypeConfig {
-  valueType?: unknown
-  dateFormat?: string
-  transform?: SearchTransformKeyFn
-}
-
-/**
- * BaseForm – 对标 React 版本 `src/form/BaseForm/BaseForm.tsx`：
- * 1. 提供共享 model
- * 2. 提供 FieldContext / GridContext / EditOrReadOnlyContext
- * 3. 处理 onFinish / submitter
- * 4. 支持 contentRender 让 layouts 自定义包装
- */
-const BaseFormImpl = defineComponent({
-  name: 'BaseProForm',
-  props: [...baseFormPropNames],
-  emits: ['finish', 'finishFailed', 'valuesChange', 'reset', 'update:loading'],
-  setup(rawProps, { attrs, emit, slots, expose }) {
+export const BaseForm = defineComponent({
+  name: 'BaseForm',
+  inheritAttrs: false,
+  props: formPropNames as unknown as Record<string, PropType<any>>,
+  emits: ['finish', 'finishFailed', 'valuesChange', 'loadingChange'],
+  setup(rawProps, { attrs, emit, expose, slots }) {
     const props = rawProps as BaseFormProps
-    const formRef = shallowRef<ProFormInstance>()
-    const urlParamsMergeInitialValues = props.syncToUrl && props.syncToInitialValues !== false
-      ? genUrlSyncParams(props.syncToUrl, readUrlSearch(), 'get')
-      : {}
-
-    /** 内部 model：当外部未提供 model 时使用，初始值合并 initialValues */
-    const innerModel = reactive<ProFormData>(props.syncToUrlAsImportant
-      ? { ...(props.initialValues || {}), ...urlParamsMergeInitialValues }
-      : { ...urlParamsMergeInitialValues, ...(props.initialValues || {}) })
-    const formModel = computed<ProFormData>(() => props.model ?? innerModel)
-
-    const innerLoading = shallowRef<boolean>(Boolean(props.loading))
-    const requestLoading = shallowRef<boolean>(false)
-    const initialized = shallowRef(false)
-    const fieldsValueType = new Map<string, FieldValueTypeConfig>()
-    watch(() => props.loading, value => (innerLoading.value = Boolean(value)))
-
-    function setLoading(value: boolean) {
-      innerLoading.value = value
-      emit('update:loading', value)
-      props.onLoadingChange?.(value)
+    const formRef = ref<ProFormInstance<any>>()
+    const urlSync = useUrlSync({
+      syncToUrl: computed(() => props.syncToUrl),
+      syncToInitialValues: computed(() => props.syncToInitialValues ?? true),
+      extraUrlParams: computed(() => props.extraUrlParams),
+    })
+    const getMergedInitialValues = (urlParams: Record<string, any>) => {
+      const initialValues = cloneValue((props.model || props.initialValues || {}) as Record<string, any>)
+      if (props.syncToUrlAsImportant)
+        return mergeValues(initialValues, urlParams)
+      return mergeValues(cloneValue(urlParams), initialValues)
     }
-
-    function onUrlSyncReset(finalValues: Record<string, any>) {
-      if (!props.syncToUrl)
-        return
-      const params = Object.keys(finalValues).reduce<Record<string, any>>((result, key) => {
-        result[key] = finalValues[key] || undefined
-        return result
-      }, { ...(props.extraUrlParams || {}) })
-      writeUrlSearch(genUrlSyncParams(props.syncToUrl, params, 'set'))
-    }
-
-    function onUrlSyncFinish(finalValues: Record<string, any>, allFieldKeys: string[]) {
-      if (!props.syncToUrl)
-        return
-      const params = allFieldKeys.reduce<Record<string, any>>((result, key) => {
-        result[key] = finalValues[key] ?? undefined
-        return result
-      }, { ...(props.extraUrlParams || {}) })
-      Object.keys(readUrlSearch()).forEach((key) => {
-        if (params[key] !== false && params[key] !== 0 && !params[key])
-          params[key] = undefined
-      })
-      writeUrlSearch(genUrlSyncParams(props.syncToUrl, params, 'set'))
-    }
-
-    /** request 初始化 */
-    watch(
-      () => [props.request, props.params] as const,
-      async ([request, params]) => {
-        if (!request)
-          return
-        try {
-          requestLoading.value = true
-          setLoading(true)
-          const data = await request((params || {}) as any)
-          if (data) {
-            Object.assign(formModel.value, data)
-            if (props.syncToUrlAsImportant)
-              Object.assign(formModel.value, urlParamsMergeInitialValues)
-          }
-        }
-        finally {
-          requestLoading.value = false
-          setLoading(false)
-        }
+    const model = ref<Record<string, any>>(getMergedInitialValues(urlSync.urlParamsMergeInitialValues.value))
+    const loading = ref(Boolean(props.loading))
+    const fieldsValueType = ref<Record<string, any>>({})
+    const transformKey = ref<Record<string, any>>({})
+    const prefixCls = useProPrefixCls('pro-form')
+    const { wrapSSR, hashId } = useStyle('ProForm', token => ({
+      [`.${prefixCls.value}`]: {
+        [`> div:not(${token.proComponentsCls}-form-light-filter)`]: {
+          '.pro-field': {
+            'maxWidth': '100%',
+            '@media screen and (max-width: 575px)': {
+              maxWidth: 'calc(93vw - 48px)',
+            },
+            '&-xs': {
+              width: 104,
+            },
+            '&-s': {
+              width: 216,
+            },
+            '&-sm': {
+              width: 216,
+            },
+            '&-m': {
+              width: 328,
+            },
+            '&-md': {
+              width: 328,
+            },
+            '&-l': {
+              width: 440,
+            },
+            '&-lg': {
+              width: 440,
+            },
+            '&-xl': {
+              width: 552,
+            },
+          },
+        },
       },
-      { immediate: true, deep: true },
-    )
+    }))
 
-    function cloneValue<T>(value: T): T {
-      if (Array.isArray(value))
-        return value.map(item => cloneValue(item)) as T
-      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
-        return Object.keys(value).reduce<Record<string, any>>((result, key) => {
-          result[key] = cloneValue((value as Record<string, any>)[key])
-          return result
-        }, {}) as T
+    const setFieldValueType = (name: NamePath, obj: { valueType?: any, dateFormat?: string, transform?: any }) => {
+      const namePath = toNamePath(name)
+      if (!namePath)
+        return
+      const nextValueType = {
+        valueType: obj.valueType ?? 'text',
+        dateFormat: obj.dateFormat,
       }
-      return value
-    }
-
-    function isNilValue(value: any) {
-      return value === null || value === undefined || value === ''
-    }
-
-    function omitNilValues(value: any): any {
-      if (Array.isArray(value))
-        return value.map(item => omitNilValues(item)).filter(item => !isNilValue(item))
-      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
-        return Object.keys(value).reduce<Record<string, any>>((result, key) => {
-          const nextValue = omitNilValues(value[key])
-          if (!isNilValue(nextValue))
-            result[key] = nextValue
-          return result
-        }, {})
+      if (!isDeepEqualReact(get(fieldsValueType.value, namePath), nextValueType)) {
+        fieldsValueType.value = namePathSet({ ...fieldsValueType.value }, namePath, nextValueType)
       }
-      return value
-    }
-
-    function pruneEmptyPlainObjects(value: any): any {
-      if (Array.isArray(value))
-        return value.map(item => pruneEmptyPlainObjects(item))
-      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
-        Object.keys(value).forEach((key) => {
-          const nextValue = pruneEmptyPlainObjects(value[key])
-          if (
-            nextValue
-            && typeof nextValue === 'object'
-            && Object.getPrototypeOf(nextValue) === Object.prototype
-            && Object.keys(nextValue).length === 0
-          ) {
-            delete value[key]
-          }
-          else {
-            value[key] = nextValue
-          }
-        })
+      if (obj.transform && get(transformKey.value, namePath) !== obj.transform) {
+        transformKey.value = namePathSet({ ...transformKey.value }, namePath, obj.transform)
       }
-      return value
     }
 
-    function isDateValueType(valueType: unknown) {
-      return typeof valueType === 'string' && /date|time/i.test(valueType)
+    const getCurrentValues = () => cloneValue(model.value)
+    const transformValues = (values: any, omitNil = props.omitNil !== false, parentKey?: NamePath) => {
+      const converted = conversionMomentValue(
+        values,
+        props.dateFormatter ?? 'string',
+        fieldsValueType.value,
+        omitNil,
+        parentKey,
+      )
+      return transformKeySubmitValue(converted, transformKey.value)
     }
 
-    function formatDateValue(value: any, valueType?: unknown, dateFormat?: string): any {
-      const dateFormatter = props.dateFormatter ?? 'string'
-      if (!isDateValueType(valueType) || dateFormatter === false || value == null)
-        return value
-
-      if (Array.isArray(value))
-        return value.map(item => formatDateValue(item, valueType, dateFormat))
-
-      if (!value || typeof value !== 'object')
-        return value
-
-      if (typeof dateFormatter === 'function')
-        return dateFormatter(value, String(valueType))
-
-      if (dateFormatter === 'number')
-        return typeof value.valueOf === 'function' ? value.valueOf() : value
-
-      const format = dateFormat || (dateFormatter === 'string' ? 'YYYY-MM-DD' : dateFormatter)
-      return typeof value.format === 'function' ? value.format(format) : value
+    const formatApi = {
+      getFieldsFormatValue: (_allData?: true, omitNil?: boolean) =>
+        transformValues(getCurrentValues(), omitNil),
+      getFieldFormatValue: (nameList?: NamePath, omitNil?: boolean) => {
+        const value = getCurrentValues()
+        if (!nameList)
+          return transformValues(value, omitNil)
+        const namePath = toNamePath(nameList)!
+        return get(transformValues(value, omitNil), namePath)
+      },
+      getFieldFormatValueObject: (nameList?: NamePath, omitNil?: boolean) => {
+        const value = getCurrentValues()
+        if (!nameList)
+          return transformValues(value, omitNil)
+        const namePath = toNamePath(nameList)!
+        const rawValue = get(value, namePath)
+        const obj = namePathSet({}, namePath, rawValue)
+        return transformValues(obj, omitNil)
+      },
+      validateFieldsReturnFormatValue: async (nameList?: NamePath[], omitNil?: boolean) => {
+        await formRef.value?.validateFields?.(nameList as any)
+        return transformValues(getCurrentValues(), omitNil)
+      },
     }
 
-    function transformKey(values: Record<string, any>, omitNilParam = props.omitNil !== false, parentKey: (string | number)[] = []) {
-      const result = cloneValue(values || {})
-      fieldsValueType.forEach((config, key) => {
-        const namePath = [...parentKey, ...(JSON.parse(key) as (string | number)[])]
-        const value = getValueByNamePath(values, namePath)
-        const formattedValue = formatDateValue(value, config.valueType, config.dateFormat)
-        const transformed = config.transform
-          ? config.transform(formattedValue, namePath, values)
-          : formattedValue
-        deleteValueByNamePath(result, namePath)
-        if (transformed && typeof transformed === 'object' && !Array.isArray(transformed))
-          Object.assign(result, transformed)
-        else
-          setValueByNamePath(result, namePath, transformed)
-      })
-      const prunedResult = pruneEmptyPlainObjects(result)
-      return omitNilParam ? omitNilValues(prunedResult) : prunedResult
-    }
-
-    function getFieldsFormatValue(_allData?: true, omitNilParam?: boolean) {
-      return transformKey(getFieldsValue(), omitNilParam ?? props.omitNil !== false)
-    }
-
-    function getFieldFormatValue(name?: NamePath, omitNilParam?: boolean) {
-      if (name === undefined)
-        return getFieldsFormatValue(true, omitNilParam)
-      const namePath = normalizeNamePath(name)!
-      const value = getFieldValue(namePath)
-      const transformed = transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
-      const result = getValueByNamePath(transformed, namePath)
-      if (result && typeof result === 'object' && !Array.isArray(result))
-        return Object.values(result)[0]
+    const submit = async () => {
+      const values = transformValues(getCurrentValues())
+      const result = await props.onFinish?.(values)
+      if (result) {
+        const allFieldKeys = Object.keys(transformValues(getCurrentValues(), false) || {})
+        urlSync.onUrlSyncFinish(values, allFieldKeys, props.extraUrlParams)
+      }
       return result
     }
 
-    function getFieldFormatValueObject(name?: NamePath, omitNilParam?: boolean) {
-      if (name === undefined)
-        return getFieldsFormatValue(true, omitNilParam)
-      const namePath = normalizeNamePath(name)!
-      const value = getFieldValue(namePath)
-      return transformKey(setValueByNamePath({}, namePath, value) as any, omitNilParam ?? props.omitNil !== false)
+    const reset = () => {
+      const finalValues = transformValues(getCurrentValues())
+      const resetValues = getMergedInitialValues(urlSync.urlParamsMergeInitialValues.value)
+      urlSync.onUrlSyncReset(finalValues, props.extraUrlParams)
+      formRef.value?.resetFields?.()
+      replaceValues(model.value, resetValues)
+      void nextTick(() => {
+        formRef.value?.setFieldsValue?.(resetValues)
+      })
     }
 
-    async function handleFinish() {
-      const finalValues = getFieldsFormatValue()
-      if (!props.onFinish || innerLoading.value)
-        return
-      try {
-        setLoading(true)
-        const response = await props.onFinish(finalValues as any)
-        if (response) {
-          const allFieldKeys = Object.keys(getFieldsFormatValue(true, false))
-          onUrlSyncFinish(finalValues, allFieldKeys)
-        }
-      }
-      catch {
-        setLoading(false)
-      }
-      finally {
-        setLoading(false)
-      }
-    }
-
-    function handleFinishFailed(errorInfo: unknown) {
-      emit('finishFailed', errorInfo)
-    }
-
-    function handleValuesChange(changedValues: Record<string, any>, allValues: Record<string, any>) {
-      const transformedChangedValues = transformKey(changedValues)
-      const transformedAllValues = transformKey(allValues)
-      emit('valuesChange', transformedChangedValues, transformedAllValues)
-      ;(attrs.onValuesChange as ((changedValues: Record<string, any>, allValues: Record<string, any>) => void) | undefined)
-        ?.(
-          transformedChangedValues,
-          transformedAllValues,
-        )
-    }
-
-    function handleKeydown(event: KeyboardEvent) {
-      if (!props.isKeyPressSubmit || event.key !== 'Enter')
-        return
-      submit()
-    }
-
-    function submit() {
-      formRef.value?.submit?.()
-    }
-
-    function getFieldsValue() {
-      return { ...formModel.value }
-    }
-
-    function getFieldValue(name: NamePath) {
-      const namePath = normalizeNamePath(name)!
-      return getValueByNamePath(formModel.value, namePath)
-    }
-
-    function setFieldsValue(values: Record<string, any>) {
-      Object.assign(formModel.value, values)
+    const setFieldsValue = (values: Record<string, any>) => {
+      mergeValues(model.value, values)
       formRef.value?.setFieldsValue?.(values)
     }
 
-    async function validateFieldsReturnFormatValue(nameList?: NamePath[], omitNilParam?: boolean) {
-      await formRef.value?.validateFields?.(nameList as any)
-      return getFieldsFormatValue(true, omitNilParam)
+    const getFieldValue = (name: NamePath) => {
+      const namePath = toNamePath(name)!
+      return get(model.value, namePath)
     }
 
-    function reset() {
-      Object.keys(formModel.value).forEach((key) => {
-        delete formModel.value[key]
-      })
-      Object.assign(formModel.value, props.initialValues || {})
-      formRef.value?.resetFields?.()
-      emit('reset')
-    }
-
-    /** 暴露 ProFormInstance 子集 */
-    expose({
-      get formInstance() {
-        return formRef.value
-      },
-      get nativeElement() {
-        const nativeElement = (formRef.value as any)?.nativeElement
-        return nativeElement && 'value' in nativeElement ? nativeElement.value : nativeElement
-      },
+    const formInstance = computed<ProFormInstance<any>>(() => Object.assign({} as ProFormInstance<any>, formRef.value || {}, formatApi, {
       submit,
-      reset,
-      getFieldsValue,
-      getFieldValue,
-      getFieldsFormatValue,
-      getFieldFormatValue,
-      getFieldFormatValueObject,
-      validateFieldsReturnFormatValue,
+      resetFields: reset,
       setFieldsValue,
-    })
-
-    function triggerInit() {
-      if (initialized.value || requestLoading.value)
-        return
-      initialized.value = true
-      nextTick(() => {
-        props.onInit?.(getFieldsFormatValue() as any, {
-          ...formRef.value,
-          getFieldsValue,
-          getFieldValue,
-          getFieldsFormatValue,
-          getFieldFormatValue,
-          getFieldFormatValueObject,
-          validateFieldsReturnFormatValue,
-          setFieldsValue,
-        })
-      })
-    }
-
-    onMounted(triggerInit)
-    watch(requestLoading, triggerInit)
-    watch(
-      () => props.autoFocusFirstInput,
-      (enabled) => {
-        if (!enabled)
-          return
-        nextTick(() => {
-          const rootElement = (formRef.value as any)?.$el as HTMLElement | undefined
-          const input = rootElement?.querySelector<HTMLElement>('input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
-          input?.focus?.()
-        })
-      },
-      { immediate: true },
-    )
-
-    /**
-     * 注入只读上下文。使用 reactive 对象 + watch 保持响应式，
-     * 避免使用 getter 让下游组件跨边界依赖 BaseForm props，
-     * 在路由 unmount 时容易触发 patch 阶段 dom 已分离的报错。
-     */
-    const editOrReadOnlyContext = reactive({ readonly: props.readonly })
-    watch(
-      () => props.readonly,
-      (value) => {
-        editOrReadOnlyContext.readonly = value
-      },
-    )
-    provideEditOrReadOnly(editOrReadOnlyContext)
-    provideGridContext({
-      grid: Boolean(props.grid),
-      rowProps: props.rowProps,
-      colProps: props.colProps,
-    })
-    provideProFormContext({
-      formRef,
-      getFieldsFormatValue,
-      getFieldFormatValue,
-      getFieldFormatValueObject,
-      validateFieldsReturnFormatValue,
-    })
-    provideFieldContext({
-      get formInstance() {
-        return formRef.value
-      },
-      get model() {
-        return formModel.value
-      },
-      get rootModel() {
-        return formModel.value
-      },
+      getFieldValue,
+      nativeElement: formRef.value?.nativeElement,
+    }))
+    const fieldContextValue = computed(() => ({
+      rootModel: model.value,
+      model: model.value,
       fieldProps: props.fieldProps,
+      proFieldProps: props.proFieldProps,
       formItemProps: props.formItemProps,
-      proFieldProps: { readonly: props.readonly, ...(props.proFieldProps || {}) },
-      grid: Boolean(props.grid),
+      groupProps: props.groupProps,
+      setFieldValueType,
+      setFieldValue: (name: NamePath, value: any) => {
+        const namePath = toNamePath(name)
+        if (namePath) {
+          const nextModel = namePathSet(cloneValue(model.value), namePath, value)
+          if (!isDeepEqualReact(model.value, nextModel))
+            replaceValues(model.value, nextModel)
+        }
+      },
+      formComponentType: props.formComponentType,
+      formKey: props.formKey,
+      formRef,
+      onValuesChange: (changedValues: Record<string, any>, values: Record<string, any>) => {
+        ;(attrs as any).onValuesChange?.(changedValues, values)
+        emit('valuesChange', changedValues, values)
+      },
+      grid: props.grid,
       colProps: props.colProps,
       rowProps: props.rowProps,
-      formKey: props.formKey || props.name,
-      get loading() {
-        return innerLoading.value
-      },
-      setFieldValueType: (name: NamePath, config: FieldValueTypeConfig) => {
-        fieldsValueType.set(namePathKey(name), config)
-      },
-      clearFieldValueType: (name: NamePath) => {
-        fieldsValueType.delete(namePathKey(name))
-      },
-      onValuesChange: handleValuesChange,
+    }))
+
+    provide(ProFormContext, { formRef, ...formatApi })
+    provide(FieldContext, fieldContextValue.value)
+    provide(GridContext, { grid: props.grid, colProps: props.colProps, rowProps: props.rowProps })
+    provide(EditOrReadOnlyContext, { mode: props.readonly ? 'read' : 'edit' })
+
+    const updateExternalFormRef = () => {
+      const target = props.formRef as any
+      if (!target)
+        return
+      if (typeof target === 'function') {
+        target(formInstance.value)
+        return
+      }
+      if ('value' in target) {
+        target.value = formInstance.value
+        return
+      }
+      target.current = formInstance.value
+    }
+
+    watch(() => props.loading, (value) => {
+      loading.value = Boolean(value)
     })
 
-    function renderSubmitter(): VNodeChild | undefined {
-      if (props.submitter === false)
-        return undefined
-      const submitterProps = (typeof props.submitter === 'boolean' || !props.submitter ? {} : props.submitter) as SubmitterProps
-      return (
-        <Submitter
-          context={{ form: formRef.value, submit, reset }}
-          searchConfig={submitterProps.searchConfig}
-          submitButtonProps={submitterProps.submitButtonProps === false
-            ? false
-            : {
-                loading: innerLoading.value,
-                ...(typeof submitterProps.submitButtonProps === 'object' ? submitterProps.submitButtonProps : {}),
-              }}
-          resetButtonProps={submitterProps.resetButtonProps}
-          render={slots.submitter
-            ? (submitterContext: SubmitterContext, doms: VNodeChild[]) => slots.submitter?.({ props: submitterContext, doms })
-            : submitterProps.render}
-          onSubmit={() => {
-            submitterProps.onSubmit?.(getFieldsFormatValue())
-          }}
-          onReset={() => {
-            const finalValues = getFieldsFormatValue()
-            submitterProps.onReset?.(finalValues)
-            props.onReset?.(finalValues as any)
-            onUrlSyncReset(finalValues)
-          }}
-        />
-      )
-    }
+    watch(model, (next, prev) => {
+      if (!isDeepEqualReact(next, prev))
+        emit('valuesChange', next, next)
+    }, { deep: true })
 
-    function renderBaseFormComponents() {
-      const items = slots.default?.() as VNodeChild
-      const wrapItems = props.grid
-        ? <Row gutter={8} {...(props.rowProps || {})}>{items}</Row>
-        : items
-      const submitterNode = renderSubmitter()
-      const content = props.contentRender
-        ? props.contentRender(wrapItems, submitterNode, formRef.value)
-        : wrapItems
-      return content
-    }
+    onMounted(async () => {
+      if (props.request) {
+        loading.value = true
+        emit('loadingChange', true)
+        props.onLoadingChange?.(true)
+        try {
+          const data = await props.request(props.params as any, {} as any)
+          if (data && typeof data === 'object') {
+            replaceValues(model.value, data as Record<string, any>)
+            await nextTick()
+            formRef.value?.setFieldsValue?.(data as Record<string, any>)
+          }
+        }
+        finally {
+          loading.value = false
+          emit('loadingChange', false)
+          props.onLoadingChange?.(false)
+        }
+      }
+      await nextTick()
+      updateExternalFormRef()
+      if (typeof props.onInit === 'function')
+        props.onInit(model.value as any, formInstance.value)
+    })
+
+    expose(Object.assign(formInstance.value, {
+      submit,
+      resetFields: reset,
+    }))
 
     return () => {
-      if (props.request && requestLoading.value) {
-        return (
-          <div style={{ paddingTop: '50px', paddingBottom: '50px', textAlign: 'center' }}>
-            <Spin />
-          </div>
-        )
-      }
+      const submitter = props.submitter === false
+        ? null
+        : (
+            <Submitter
+              {...(typeof props.submitter === 'object' ? props.submitter : {})}
+              form={formInstance.value}
+              onSubmit={submit}
+              onReset={reset}
+            />
+          )
+      const children = slots.default?.() ?? []
+      const content = props.contentRender
+        ? props.contentRender(children, submitter, formInstance.value)
+        : (
+            <>
+              {children}
+              {submitter}
+            </>
+          )
 
-      const content = renderBaseFormComponents()
-      const keyPressSubmitProps = props.isKeyPressSubmit ? { onKeydown: handleKeydown } : {}
+      const className = [
+        prefixCls.value,
+        hashId,
+        (attrs as any).class,
+        (attrs as any).className,
+        (attrs as any).rootClassName,
+      ].filter(Boolean).join(' ')
 
-      return (
-        <Form
-          ref={formRef}
-          model={formModel.value}
-          layout={(props.layout ?? 'horizontal') as any}
-          name={props.name}
-          labelCol={props.labelCol as any}
-          wrapperCol={props.wrapperCol as any}
-          {...attrs}
-          onFinish={handleFinish as any}
-          onFinishFailed={handleFinishFailed as any}
-          onValuesChange={handleValuesChange as any}
-          {...keyPressSubmitProps as any}
-        >
-          {content}
-        </Form>
+      return wrapSSR(
+        <Spin spinning={loading.value}>
+          <Form
+            {...attrs as FormProps}
+            class={className}
+            ref={formRef}
+            model={model.value}
+            onFinish={submit}
+            onFinishFailed={(error: any) => emit('finishFailed', error)}
+          >
+            {content}
+          </Form>
+        </Spin>,
       )
     }
   },
 })
 
-const BaseForm = BaseFormImpl as unknown as FunctionalComponent<BaseFormProps>
-
 export default BaseForm
-export { BaseForm }

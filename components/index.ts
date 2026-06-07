@@ -3,7 +3,7 @@ import { version } from '../package.json'
 import { CardModule, CheckCard, ProCard, Statistic, StatisticCard } from './card'
 import { DescriptionsModule, ProDescriptions } from './descriptions'
 import { FieldModule, ProField, PureProField } from './field'
-import { Form, MyFormItem as FormItem, ProFormModule } from './form'
+import { FormModule, ProForm } from './form'
 import { LayoutModule, ProLayout } from './layout'
 import { BaseProList, ListModule, ProList } from './list'
 import { ProConfigProvider } from './provider'
@@ -13,10 +13,9 @@ import './theme/augmentComponentTokenMap'
 
 export default {
   install(app: App) {
-    app.use(Form as any)
     app.use(ProSkeleton as any)
     app.use(FieldModule)
-    app.use(ProFormModule)
+    app.use(FormModule)
     app.use(CardModule)
     app.use(DescriptionsModule)
     app.use(LayoutModule)
@@ -27,7 +26,7 @@ export default {
   version,
 }
 
-export { BaseProList, CheckCard, DescriptionsModule, DragSortTable, EditableProTable, Form, FormItem, LayoutModule, ListModule, ListToolBar, ProCard, ProConfigProvider, ProDescriptions, ProField, ProLayout, ProList, ProSkeleton, ProTable, PureProField, Search, Statistic, StatisticCard, TableDropdown, version }
+export { BaseProList, CheckCard, DescriptionsModule, DragSortTable, EditableProTable, FormModule, LayoutModule, ListModule, ListToolBar, ProCard, ProConfigProvider, ProDescriptions, ProField, ProForm, ProLayout, ProList, ProSkeleton, ProTable, PureProField, Search, Statistic, StatisticCard, TableDropdown, version }
 export { CardModule } from './card'
 export type {
   CheckCardGroupProps,
@@ -100,56 +99,31 @@ export type {
   ProRenderFieldPropsType,
 } from './field'
 export {
-  BaseForm,
   BetaSchemaForm,
+  DrawerForm,
   FieldContext,
-  FieldLabel,
-  FilterDropdown,
   FormListContext,
-  GridContext,
   LightFilter,
-  LightFilterCascader,
-  LightFilterCheckboxGroup,
-  LightFilterDate,
-  LightFilterDateRange,
-  LightFilterDateTime,
-  LightFilterDateTimeRange,
-  LightFilterDigit,
-  LightFilterDigitRange,
-  LightFilterFieldSet,
-  LightFilterInput,
-  LightFilterMonthRange,
-  LightFilterPassword,
-  LightFilterQuarterRange,
-  LightFilterSearchSelect,
-  LightFilterSelect,
-  LightFilterSlider,
-  LightFilterSwitch,
-  LightFilterText,
-  LightFilterTextArea,
-  LightFilterTime,
-  LightFilterTimePickerRange,
-  LightFilterTimeRange,
-  LightFilterTreeSelect,
-  LightFilterWeekRange,
-  LightFilterYearRange,
   LightWrapper,
   LoginForm,
   LoginFormPage,
-  PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES,
-  ProForm,
+  ModalForm,
+  ProFormCaptcha,
   ProFormCascader,
   ProFormCheckbox,
   ProFormCheckboxGroup,
   ProFormColorPicker,
-  ProFormContext,
+  ProFormDateMonthPicker,
   ProFormDateMonthRangePicker,
   ProFormDatePicker,
+  ProFormDateQuarterPicker,
   ProFormDateQuarterRangePicker,
   ProFormDateRangePicker,
   ProFormDateTimePicker,
   ProFormDateTimeRangePicker,
+  ProFormDateWeekPicker,
   ProFormDateWeekRangePicker,
+  ProFormDateYearPicker,
   ProFormDateYearRangePicker,
   ProFormDependency,
   ProFormDigit,
@@ -158,11 +132,10 @@ export {
   ProFormFieldSet,
   ProFormGroup,
   ProFormItem,
+  ProFormItemRender,
   ProFormList,
-  ProFormModule,
   ProFormMoney,
   ProFormRadio,
-  ProFormRadioButton,
   ProFormRadioGroup,
   ProFormRate,
   ProFormSegmented,
@@ -171,52 +144,44 @@ export {
   ProFormSwitch,
   ProFormText,
   ProFormTextArea,
-  ProFormTextPassword,
   ProFormTimePicker,
   ProFormTimeRangePicker,
   ProFormTreeSelect,
   ProFormUploadButton,
   ProFormUploadDragger,
-  provideFieldContext,
-  provideFormListContext,
-  provideGridContext,
-  provideProFormContext,
   QueryFilter,
-  useFieldContext,
-  useFormListContext,
-  useGridContext,
-  useGridHelpers,
-  useProFormContext,
+  StepForm,
+  StepsForm,
 } from './form'
-
 export type {
-  BaseFormProps,
-  BetaSchemaFormProps,
-  CommonFormProps,
   FormListActionType,
-  LightFilterProps,
+  GroupProps,
+  LightFilterFooterRender,
   LightWrapperProps,
-  LoginFormPageProps,
-  LoginFormProps,
-  NamePath,
+  ProFormCaptchaProps,
+  ProFormCheckboxGroupProps,
+  ProFormCheckboxProps,
+  ProFormColorPickerProps,
   ProFormColumnsType,
-  ProFormData,
+  ProFormDependencyProps,
+  ProFormDigitProps,
+  ProFormDigitRangeProps,
   ProFormFieldItemProps,
+  ProFormFieldProps,
   ProFormFieldSetProps,
-  ProFormGridConfig,
-  ProFormGroupProps,
   ProFormInstance,
-  ProFormItemCreateConfig,
   ProFormItemProps,
   ProFormLayoutType,
+  ProFormListProps,
+  ProFormMoneyProps,
   ProFormProps,
+  ProFormRadioGroupProps,
+  ProFormSelectProps,
+  ProFormSliderProps,
+  ProFormSwitchProps,
+  ProFormTreeSelectProps,
   ProFormUploadButtonProps,
   ProFormUploadDraggerProps,
-  QueryFilterProps,
-  SchemaValueType,
-  SpanConfig,
-  SpanConfigObject,
-  SubmitterProps,
 } from './form'
 export {
   BaseMenu,

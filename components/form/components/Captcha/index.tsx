@@ -1,235 +1,116 @@
-import type { ButtonProps, InputProps, InputRef } from 'antdv-next'
-import type { FunctionalComponent, VNodeChild } from 'vue'
-import type { NamePath, ProFormFieldItemProps } from '../../typing'
+import type { ButtonProps, InputProps } from 'antdv-next'
+import type { NamePath } from '../../../utils/typing'
+import type { ProFormFieldItemProps } from '../../typing'
 import { Button, Input } from 'antdv-next'
-import { computed, defineComponent, onUnmounted, ref, watch, watchEffect } from 'vue'
-import { getValueByNamePath, setValueByNamePath } from '../../../utils'
-import { useFieldContext } from '../../FieldContext'
-import ProFormItem from '../FormItem'
+import { defineComponent, onBeforeUnmount, ref, watch } from 'vue'
+import { mergeFieldProps, renderFormItem } from '../_util'
 
-type CaptFieldRefHolder = { value?: CaptFieldRef } | { current?: CaptFieldRef }
-
-export type ProFormCaptchaProps = Omit<ProFormFieldItemProps<InputProps>, 'fieldRef'> & {
+export type ProFormCaptchaProps = ProFormFieldItemProps<InputProps> & {
   countDown?: number
   phoneName?: NamePath
   onGetCaptcha: (mobile: string) => Promise<void>
   onTiming?: (count: number) => void
-  captchaTextRender?: (timing: boolean, count: number) => VNodeChild
-  captchaProps?: ButtonProps & Record<string, any>
-  value?: InputProps['value']
-  onChange?: InputProps['onChange']
-  fieldRef?: CaptFieldRefHolder
+  captchaTextRender?: (timing: boolean, count: number) => any
+  captchaProps?: ButtonProps
+  value?: any
+  onChange?: any
 }
 
 export interface CaptFieldRef {
-  nativeElement?: HTMLDivElement
+  nativeElement: HTMLDivElement | null
   focus: () => void
   startTiming: () => void
   endTiming: () => void
 }
 
-const captchaPropNames = [
-  'name',
-  'label',
-  'tooltip',
-  'rules',
-  'required',
-  'initialValue',
-  'transform',
-  'convertValue',
-  'formItemProps',
-  'fieldProps',
-  'captchaProps',
-  'countDown',
-  'phoneName',
-  'onGetCaptcha',
-  'onTiming',
-  'captchaTextRender',
-  'fieldRef',
-  'ignoreFormItem',
-]
-
-function isEnabledProp(value: unknown) {
-  return value === true || value === ''
-}
-
-function getCountDown(value: unknown) {
-  const count = Number(value ?? 60)
-  return Number.isNaN(count) ? 60 : count
-}
-
-const ProFormCaptchaImpl = defineComponent({
+const ProFormCaptcha = defineComponent({
   name: 'ProFormCaptcha',
   inheritAttrs: false,
-  props: captchaPropNames,
-  emits: ['change'],
-  setup(rawProps, { emit, attrs, expose }) {
-    const props = rawProps as unknown as ProFormCaptchaProps
-    const fieldContext = useFieldContext()
-    const containerRef = ref<HTMLDivElement>()
-    const inputRef = ref<InputRef>()
-    const count = ref(getCountDown(props.countDown))
+  setup(props: ProFormCaptchaProps, { attrs, expose }) {
+    const containerRef = ref<HTMLDivElement | null>(null)
+    const inputRef = ref<any>()
+    const count = ref(props.countDown || 60)
     const timing = ref(false)
     const loading = ref(false)
-    let timer: number | undefined
-    const ignoreFormItem = computed(() => isEnabledProp(props.ignoreFormItem))
+    let timer: ReturnType<typeof setInterval> | undefined
 
-    const value = computed(() => {
-      if (props.name === undefined)
-        return props.fieldProps?.value
-      return getValueByNamePath(fieldContext.model || {}, props.name)
-    })
-
-    function setCellValue(nextValue: any) {
-      if (props.name === undefined)
-        return
-      setValueByNamePath(fieldContext.model || {}, props.name, nextValue)
-    }
-
-    function stopTimer(resetCount = true) {
+    const stopTimer = () => {
       if (timer)
-        window.clearInterval(timer)
+        clearInterval(timer)
       timer = undefined
-      timing.value = false
-      if (resetCount)
-        count.value = getCountDown(props.countDown)
     }
 
-    function startTiming() {
-      stopTimer(false)
+    const startTiming = () => {
+      stopTimer()
       timing.value = true
-      count.value = getCountDown(props.countDown)
-      timer = window.setInterval(() => {
-        if (count.value <= 1) {
-          stopTimer()
-          return
-        }
+      timer = setInterval(() => {
         count.value -= 1
+        if (count.value <= 0) {
+          stopTimer()
+          timing.value = false
+          count.value = props.countDown || 60
+        }
       }, 1000)
     }
 
-    async function handleCaptchaClick(event: MouseEvent) {
-      props.captchaProps?.onClick?.(event as Parameters<NonNullable<ButtonProps['onClick']>>[0])
-      const mobile = props.phoneName === undefined
-        ? ''
-        : getValueByNamePath(fieldContext.model || {}, props.phoneName)
-      try {
-        loading.value = true
-        await props.onGetCaptcha(String(mobile ?? ''))
-        startTiming()
-      }
-      finally {
-        loading.value = false
-      }
+    const endTiming = () => {
+      stopTimer()
+      timing.value = false
+      count.value = props.countDown || 60
     }
 
-    function handleChange(event: Parameters<NonNullable<InputProps['onChange']>>[0]) {
-      const nextValue = (event as { target?: { value?: unknown } })?.target?.value ?? event
-      setCellValue(nextValue)
-      emit('change', event)
-      props.fieldProps?.onChange?.(event)
-    }
+    watch(count, value => props.onTiming?.(value))
+    onBeforeUnmount(stopTimer)
 
-    function applyInitialValue() {
-      if (props.name === undefined || props.initialValue === undefined)
-        return
-      if (getValueByNamePath(fieldContext.model || {}, props.name) === undefined)
-        setCellValue(props.initialValue)
-    }
-
-    watch(() => props.initialValue, applyInitialValue, { immediate: true })
-    watch(count, nextCount => props.onTiming?.(nextCount))
-    onUnmounted(() => stopTimer(false))
-
-    const captchaApi = {
-      get nativeElement() {
-        return containerRef.value
-      },
+    expose({
+      nativeElement: containerRef,
       focus: () => inputRef.value?.focus?.(),
       startTiming,
-      endTiming: () => stopTimer(),
-    }
-
-    watchEffect(() => {
-      if (!props.fieldRef)
-        return
-      if ('value' in props.fieldRef)
-        props.fieldRef.value = captchaApi
-      else if ('current' in props.fieldRef)
-        props.fieldRef.current = captchaApi
+      endTiming,
     })
-    expose(captchaApi)
-
-    const defaultCaptchaTextRender = (isTiming: boolean, currentCount: number) =>
-      isTiming ? `${currentCount} 秒后重新获取` : '获取验证码'
 
     return () => {
-      const fieldProps = props.fieldProps || {}
-      const captchaProps = props.captchaProps || {}
-      const {
-        onChange: _onChange,
-        style: fieldStyle,
-        ...inputProps
-      } = fieldProps
-      const captchaTextRender = props.captchaTextRender || defaultCaptchaTextRender
-      const captchaNode = (
+      const current = { ...attrs, ...props } as ProFormCaptchaProps
+      const { style, ...fieldProps } = mergeFieldProps(current)
+      const captchaTextRender = current.captchaTextRender || ((isTiming: boolean, currentCount: number) =>
+        isTiming ? `${currentCount} 秒后重新获取` : '获取验证码')
+
+      const dom = (
         <div
           ref={containerRef}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            ...(fieldStyle || {}),
-          }}
+          style={{ ...style, display: 'flex', alignItems: 'center' }}
         >
           <Input
-            {...attrs}
-            {...inputProps}
+            {...fieldProps}
             ref={inputRef}
-            value={value.value}
-            style={{
-              flex: 1,
-              transition: 'width .3s',
-              marginRight: 8,
-              ...(fieldStyle || {}),
-            }}
-            onChange={handleChange}
+            style={{ flex: 1, transition: 'width .3s', marginRight: 8, ...style }}
           />
           <Button
-            {...captchaProps}
-            disabled={timing.value || isEnabledProp(captchaProps.disabled)}
-            loading={loading.value || captchaProps.loading}
-            onClick={handleCaptchaClick}
+            style={{ display: 'block' }}
+            disabled={timing.value}
+            loading={loading.value}
+            {...current.captchaProps}
+            onClick={async () => {
+              try {
+                loading.value = true
+                await current.onGetCaptcha?.('')
+                startTiming()
+              }
+              finally {
+                loading.value = false
+              }
+            }}
           >
             {captchaTextRender(timing.value, count.value)}
           </Button>
         </div>
       )
 
-      if (ignoreFormItem.value || props.name === undefined)
-        return captchaNode
-
-      return (
-        <ProFormItem
-          name={props.name}
-          label={props.label}
-          tooltip={props.tooltip}
-          rules={props.rules}
-          required={props.required}
-          initialValue={props.initialValue}
-          transform={props.transform}
-          convertValue={props.convertValue}
-          formItemProps={{
-            ...(fieldContext.formItemProps || {}),
-            ...(props.formItemProps || {}),
-          }}
-        >
-          {captchaNode}
-        </ProFormItem>
-      )
+      return renderFormItem(current, dom)
     }
   },
-})
+}) as any
 
-const ProFormCaptcha = ProFormCaptchaImpl as unknown as FunctionalComponent<ProFormCaptchaProps>
+ProFormCaptcha.displayName = 'ProFormComponent'
 
 export default ProFormCaptcha

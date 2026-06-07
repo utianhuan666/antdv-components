@@ -1,144 +1,18 @@
-import type { ProFormItemProps } from '../../typing'
-import { Col, FormItem } from 'antdv-next'
-import { cloneVNode, defineComponent, isVNode, onMounted, onUnmounted, watch } from 'vue'
-import { getValueByNamePath, normalizeNamePath, setValueByNamePath } from '../../../utils'
-import { useFieldContext } from '../../FieldContext'
-import { useGridHelpers } from '../../helpers'
-import { proFormItemPropNames } from '../../typing'
+import type { ProFormFieldItemProps } from '../../typing'
+import { defineComponent } from 'vue'
+import { renderFormItem, useRegisterFormItem } from '../_util'
 
-/**
- * ProFormItem – 对标 React `src/form/components/FormItem/index.tsx`：
- * 1. 透传 antdv `FormItem` 属性
- * 2. 支持 grid 模式自动包裹 `Col`
- * 3. 提供 valuePropName / convertValue 钩子（最小子集）
- *
- * Vue 端 antdv-next FormItem 默认会捕获 `name` 并通过 v-model 写回 model，
- * 因此我们仍允许子组件自带 onChange 流程；ProFormField 会根据 name 直接写回。
- */
-const ProFormItemImpl = defineComponent({
+export type ProFormItemProps = ProFormFieldItemProps
+
+const ProFormItem = defineComponent({
   name: 'ProFormItem',
   inheritAttrs: false,
-  props: [...proFormItemPropNames],
-  setup(rawProps, { slots, attrs }) {
-    const props = rawProps as ProFormItemProps
-    const fieldContext = useFieldContext()
-    const { grid, colProps } = useGridHelpers(props.colProps)
-
-    function resolveBoolean(value: unknown) {
-      if (value === undefined)
-        return undefined
-      return value === '' || value === true
-    }
-
-    function registerFieldValueType() {
-      if (!props.name)
-        return
-      const namePath = normalizeNamePath(props.name)
-      fieldContext.setFieldValueType?.(namePath, {
-        valueType: props.valueType,
-        dateFormat: props.dataFormat,
-        transform: props.transform,
-      })
-    }
-
-    function clearFieldValueType() {
-      if (!props.name)
-        return
-      const namePath = normalizeNamePath(props.name)
-      fieldContext.clearFieldValueType?.(namePath)
-    }
-
-    onMounted(registerFieldValueType)
-    onUnmounted(clearFieldValueType)
-    watch(() => [props.name, props.transform] as const, registerFieldValueType)
-
-    function toNamePath() {
-      if (!props.name)
-        return []
-      return normalizeNamePath(props.name)
-    }
-
-    function getFieldValue() {
-      return getValueByNamePath(fieldContext.model || {}, toNamePath())
-    }
-
-    function setFieldValue(value: any) {
-      const path = toNamePath()
-      if (!path.length)
-        return
-      setValueByNamePath(fieldContext.model || {}, path, value)
-    }
-
-    function readEventValue(input: unknown) {
-      const target = input && typeof input === 'object' && 'target' in input
-        ? (input as { target?: { value?: unknown, checked?: unknown } }).target
-        : undefined
-      return target ? (target.value ?? target.checked) : input
-    }
-
-    function shouldInjectControl(node: any) {
-      const nodeProps = (node?.props || {}) as Record<string, any>
-      const componentName = node?.type && typeof node.type === 'object' && 'name' in node.type
-        ? node.type.name
-        : undefined
-      return props.name !== undefined
-        && componentName !== 'ProField'
-        && componentName !== 'ProFieldCore'
-        && nodeProps.valueType === undefined
-    }
-
-    function renderControlledChildren(children: any): any {
-      if (!children)
-        return children
-      return children.map((node: any) => {
-        if (!isVNode(node))
-          return node
-        if (!shouldInjectControl(node))
-          return node
-
-        const nodeProps = (node.props || {}) as Record<string, any>
-        return cloneVNode(node, {
-          'value': nodeProps.value ?? getFieldValue(),
-          'onChange': (...args: any[]) => {
-            setFieldValue(readEventValue(args[0]))
-          },
-          'onUpdate:value': (value: any) => {
-            setFieldValue(value)
-          },
-        })
-      })
-    }
-
-    return () => {
-      if (resolveBoolean(props.ignoreFormItem))
-        return slots.default?.() ?? null
-
-      const itemNode = (
-        <FormItem
-          name={props.name as any}
-          label={props.label as any}
-          tooltip={props.tooltip as any}
-          rules={props.rules as any}
-          required={resolveBoolean(props.required)}
-          extra={props.extra as any}
-          help={props.help as any}
-          {...(props.formItemProps || {})}
-          {...attrs}
-        >
-          {renderControlledChildren(slots.default?.())}
-        </FormItem>
-      )
-
-      if (!grid.value)
-        return itemNode
-
-      return <Col {...(colProps.value as any)}>{itemNode}</Col>
-    }
+  setup(props: ProFormItemProps, { attrs, slots }) {
+    useRegisterFormItem(() => ({ ...attrs, ...props } as ProFormItemProps))
+    return () => renderFormItem({ ...attrs, ...props } as ProFormItemProps, slots.default?.())
   },
-})
+}) as any
 
-const ProFormItem = ProFormItemImpl as typeof ProFormItemImpl & {
-  new(): { $props: ProFormItemProps }
-}
+ProFormItem.displayName = 'ProFormComponent'
 
 export default ProFormItem

@@ -1,29 +1,20 @@
-import ProFormDatePickerBase from './DatePicker'
-import ProFormDateTimePicker from './DateTimePicker'
+import ProFormDatePicker from './DatePicker'
 import ProFormDatePickerMonth from './MonthPicker'
 import ProFormDatePickerQuarter from './QuarterPicker'
-import ProFormTimePicker from './TimePicker'
 import ProFormDatePickerWeek from './WeekPicker'
 import ProFormDatePickerYear from './YearPicker'
 
-const ProFormDatePicker = ProFormDatePickerBase as typeof ProFormDatePickerBase & {
+const ExportComponent = ProFormDatePicker as typeof ProFormDatePicker & {
   Week: typeof ProFormDatePickerWeek
   Month: typeof ProFormDatePickerMonth
   Quarter: typeof ProFormDatePickerQuarter
   Year: typeof ProFormDatePickerYear
 }
 
-ProFormDatePicker.Week = ProFormDatePickerWeek
-ProFormDatePicker.Month = ProFormDatePickerMonth
-ProFormDatePicker.Quarter = ProFormDatePickerQuarter
-ProFormDatePicker.Year = ProFormDatePickerYear
+ExportComponent.Week = ProFormDatePickerWeek
+ExportComponent.Month = ProFormDatePickerMonth
+ExportComponent.Quarter = ProFormDatePickerQuarter
+ExportComponent.Year = ProFormDatePickerYear
+ExportComponent.displayName = 'ProFormComponent'
 
-export default ProFormDatePicker
-export {
-  ProFormDatePickerMonth,
-  ProFormDatePickerQuarter,
-  ProFormDatePickerWeek,
-  ProFormDatePickerYear,
-  ProFormDateTimePicker,
-  ProFormTimePicker,
-}
+export default ExportComponent

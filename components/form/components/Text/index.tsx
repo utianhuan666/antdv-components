@@ -1,41 +1,15 @@
-import type { InputPasswordProps, InputProps, PopoverProps } from 'antdv-next'
-import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { InputPasswordProps, InputProps } from 'antdv-next'
 import type { ProFormFieldItemProps } from '../../typing'
-import ProFormField from '../Field'
+import { defineProFormField } from '../FormItem/warpField'
 
 export type ProFormTextProps = ProFormFieldItemProps<InputProps>
+export type ProFormTextPasswordProps = ProFormFieldItemProps<InputPasswordProps>
 
-export type PasswordStatus = 'ok' | 'pass' | 'poor' | undefined
+const ProFormText = defineProFormField('ProFormText', 'text') as any
+const Password = defineProFormField('ProFormTextPassword', 'password')
 
-export interface PassWordStrengthProps {
-  statusRender?: (value?: string) => VNodeChild
-  popoverProps?: PopoverProps
-  strengthText?: VNodeChild
+ProFormText.Password = Password
+
+export default ProFormText as typeof ProFormText & {
+  Password: typeof Password
 }
-
-export type ProFormTextPasswordProps = ProFormFieldItemProps<InputPasswordProps & PassWordStrengthProps>
-
-const ProFormTextBase: FunctionalComponent<ProFormTextProps> = (props, { slots }) => (
-  <ProFormField valueType="text" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
-
-ProFormTextBase.displayName = 'ProFormText'
-ProFormTextBase.inheritAttrs = false
-
-const ProFormTextPassword: FunctionalComponent<ProFormTextPasswordProps> = (props, { slots }) => (
-  <ProFormField valueType="password" {...props}>
-    {slots.default?.()}
-  </ProFormField>
-)
-
-ProFormTextPassword.displayName = 'ProFormTextPassword'
-ProFormTextPassword.inheritAttrs = false
-
-const ProFormText = Object.assign(ProFormTextBase, {
-  Password: ProFormTextPassword,
-})
-
-export default ProFormText
-export { ProFormTextPassword }

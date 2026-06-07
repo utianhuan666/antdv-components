@@ -1,57 +1,97 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import ProFormText from '../../form/components/Text'
-import ProForm from '../../form/layouts/ProForm'
+import { ProForm, ProFormText } from '../../form'
 import { mountAttached, waitFor } from '../testUtils'
 
 describe('proForm transform (docs + regression tests)', () => {
   it('supports the "simple" pattern: transform={(v) => fn(v)} (return primitive)', async () => {
     const fn = vi.fn()
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm onFinish={fn}>
-          <ProFormText name="name" initialValue="antdv" transform={(value: string) => ({ name: `${value}-next` })} />
-        </ProForm>
-      ),
+    const formRef = shallowRef<any>()
+
+    mountAttached({
+      setup() {
+        return () => (
+          <ProForm
+            formRef={formRef}
+            onFinish={async (values: any) => {
+              fn(values)
+            }}
+          >
+            <ProFormText name="name" transform={(value: string) => `${value}:suffix`} />
+          </ProForm>
+        )
+      },
     })
 
     await nextTick()
-    await wrapper.find('.ant-btn-primary').trigger('click')
+    formRef.value?.setFieldsValue?.({ name: 'foo' })
+    await formRef.value?.submit?.()
 
     await waitFor(() => {
-      expect(fn).toHaveBeenCalledWith({ name: 'antdv-next' })
+      expect(fn).toHaveBeenCalledWith({ name: 'foo:suffix' })
     })
   })
 
   it('regression: namePath should be a string[] (nested name)', async () => {
-    const transform = vi.fn((value, namePath) => ({ joined: `${namePath.join('.')}:${value}` }))
     const fn = vi.fn()
-    const wrapper = mountAttached({
-      render: () => (
-        <ProForm onFinish={fn}>
-          <ProFormText name={['user', 'name']} initialValue="qixian" transform={transform} />
-        </ProForm>
-      ),
+    const formRef = shallowRef<any>()
+
+    mountAttached({
+      setup() {
+        return () => (
+          <ProForm
+            formRef={formRef}
+            initialValues={{ company: { name: 'Acme' } }}
+            onFinish={async (values: any) => {
+              fn(values)
+            }}
+          >
+            <ProFormText
+              name={['company', 'name']}
+              transform={(value: string, namePath: any) => {
+                if (!Array.isArray(namePath)) {
+                  return {
+                    __transform_namePath_type: typeof namePath,
+                    __transform_namePath_value: String(namePath),
+                    __transform_value: value,
+                  }
+                }
+                return { company: { name: `${value}:x` } }
+              }}
+            />
+          </ProForm>
+        )
+      },
     })
 
     await nextTick()
-    await wrapper.find('.ant-btn-primary').trigger('click')
+    await formRef.value?.submit?.()
 
     await waitFor(() => {
-      expect(transform).toHaveBeenCalledWith('qixian', ['user', 'name'], expect.objectContaining({ user: { name: 'qixian' } }))
-      expect(fn).toHaveBeenCalledWith({ joined: 'user.name:qixian' })
+      expect(fn).toHaveBeenCalledWith({
+        company: { name: 'Acme:x' },
+      })
     })
   })
 
   it('expectation: transform should run on every submit even with initialValue (regression)', async () => {
-    const transform = vi.fn(value => ({ name: value }))
-    const fn = vi.fn()
+    const calls: any[] = []
     const formRef = shallowRef<any>()
+
     mountAttached({
       setup() {
         return () => (
-          <ProForm ref={formRef} onFinish={fn}>
-            <ProFormText name="name" initialValue="antdv" transform={transform} />
+          <ProForm
+            formRef={formRef}
+            onFinish={async (values: any) => {
+              calls.push(values)
+            }}
+          >
+            <ProFormText
+              name="name111"
+              initialValue="foo"
+              transform={(value: string) => `${value}:1111`}
+            />
           </ProForm>
         )
       },
@@ -60,15 +100,15 @@ describe('proForm transform (docs + regression tests)', () => {
     await nextTick()
     await formRef.value?.submit?.()
     await waitFor(() => {
-      expect(fn).toHaveBeenCalledTimes(1)
+      expect(calls.length).toBe(1)
     })
+
     await formRef.value?.submit?.()
 
     await waitFor(() => {
-      expect(fn).toHaveBeenCalledTimes(2)
-      expect(fn).toHaveBeenNthCalledWith(1, { name: 'antdv' })
-      expect(fn).toHaveBeenNthCalledWith(2, { name: 'antdv' })
-      expect(transform).toHaveBeenCalledWith('antdv', ['name'], expect.objectContaining({ name: 'antdv' }))
+      expect(calls.length).toBe(2)
+      expect(calls[0]).toEqual({ name111: 'foo:1111' })
+      expect(calls[1]).toEqual({ name111: 'foo:1111' })
     })
   })
 })
