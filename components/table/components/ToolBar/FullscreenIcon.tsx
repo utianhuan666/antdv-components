@@ -2,36 +2,41 @@ import { FullscreenExitOutlined, FullscreenOutlined } from '@antdv-next/icons'
 import { Tooltip } from 'antdv-next'
 import { defineComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { isBrowser } from '../../../utils'
 
-export default defineComponent({
-  name: 'FullscreenIcon',
+const FullScreenIcon = defineComponent({
+  name: 'FullScreenIcon',
   setup() {
     const intl = useIntl()
-    const fullscreen = ref(false)
+    const fullscreen = ref<boolean>(false)
 
-    function updateFullscreen() {
-      if (typeof document !== 'undefined')
-        fullscreen.value = !!document.fullscreenElement
-    }
+    let handler: (() => void) | undefined
 
     onMounted(() => {
-      if (typeof document === 'undefined')
+      if (!isBrowser())
         return
-      updateFullscreen()
-      document.addEventListener?.('fullscreenchange', updateFullscreen)
+      handler = () => {
+        fullscreen.value = !!document.fullscreenElement
+      }
+      document.addEventListener('fullscreenchange', handler)
     })
 
     onBeforeUnmount(() => {
-      if (typeof document === 'undefined')
-        return
-      document.removeEventListener?.('fullscreenchange', updateFullscreen)
+      if (handler)
+        document.removeEventListener('fullscreenchange', handler)
     })
 
     return () => {
-      const Icon = fullscreen.value ? FullscreenExitOutlined : FullscreenOutlined
-      const title = fullscreen.value
-        ? intl.getMessage('tableToolBar.exitFullScreen', '退出全屏')
-        : intl.getMessage('tableToolBar.fullScreen', '全屏')
+      const { title, Icon } = fullscreen.value
+        ? {
+            title: intl.getMessage('tableToolBar.exitFullScreen', '退出全屏'),
+            Icon: FullscreenExitOutlined,
+          }
+        : {
+            title: intl.getMessage('tableToolBar.fullScreen', '全屏'),
+            Icon: FullscreenOutlined,
+          }
+
       return (
         <Tooltip title={title}>
           <span>
@@ -42,3 +47,5 @@ export default defineComponent({
     }
   },
 })
+
+export default FullScreenIcon

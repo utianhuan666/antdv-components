@@ -22,9 +22,10 @@ const genProListStyle: GenerateStyle<ProListToken> = (token) => {
         boxSizing: 'border-box',
       },
       'zIndex': 1,
-      [`${token.antCls}-table-wrapper ${token.antCls}-table-pagination${token.antCls}-pagination`]: {
-        marginBlockEnd: 0,
-      },
+      [`${token.antCls}-table-wrapper ${token.antCls}-table-pagination${token.antCls}-pagination`]:
+        {
+          marginBlockEnd: 0,
+        },
       '&:not(:root):fullscreen': {
         minHeight: '100vh',
         overflow: 'auto',
@@ -49,17 +50,19 @@ const genProListStyle: GenerateStyle<ProListToken> = (token) => {
           fontSize: token.fontSize,
         },
       },
-      [`${token.antCls}-table${token.antCls}-table-tbody${token.antCls}-table-wrapper:only-child${token.antCls}-table`]: {
-        marginBlock: 0,
-        marginInline: 0,
-      },
-      [`${token.antCls}-table${token.antCls}-table-middle ${token.componentCls}`]: {
-        marginBlock: 0,
-        marginInline: -8,
-        [`${token.proComponentsCls}-card`]: {
-          backgroundColor: 'initial',
+      [`${token.antCls}-table${token.antCls}-table-tbody${token.antCls}-table-wrapper:only-child${token.antCls}-table`]:
+        {
+          marginBlock: 0,
+          marginInline: 0,
         },
-      },
+      [`${token.antCls}-table${token.antCls}-table-middle ${token.componentCls}`]:
+        {
+          marginBlock: 0,
+          marginInline: -8,
+          [`${token.proComponentsCls}-card`]: {
+            backgroundColor: 'initial',
+          },
+        },
 
       '& &-search': {
         'marginBlockEnd': '16px',
@@ -74,11 +77,13 @@ const genProListStyle: GenerateStyle<ProListToken> = (token) => {
           paddingInline: 16,
           overflow: 'unset',
         },
+
         '&-light-filter': {
           marginBlockEnd: 0,
           paddingBlock: 0,
           paddingInline: 0,
         },
+
         '&-form-option': {
           [`${token.antCls}-form-item`]: {},
           [`${token.antCls}-form-item-label`]: {},
@@ -117,6 +122,7 @@ const genProListStyle: GenerateStyle<ProListToken> = (token) => {
         },
       },
 
+      // scroll.y = 'fill': auto-height, only tbody scrolls
       '&-fill-height': {
         height: '100%',
         display: 'flex',
@@ -185,7 +191,7 @@ const genProListStyle: GenerateStyle<ProListToken> = (token) => {
       },
     },
 
-    [`@media (max-width: ${token.screenXS}px)`]: {
+    [`@media (max-width: ${token.screenXS})px`]: {
       [token.componentCls]: {
         [`${token.antCls}-table`]: {
           'width': '100%',

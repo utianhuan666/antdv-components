@@ -1,195 +1,124 @@
-import type { ProColumns, ProTableProps, SearchConfig } from '../../typing'
-import { defineComponent, nextTick, shallowRef } from 'vue'
-import { getValueByNamePath, omitUndefined } from '../../../utils'
-import { isBordered } from '../../utils'
+import type { TablePaginationConfig } from 'antdv-next'
+import type { PropType, Ref } from 'vue'
+import type { ActionType, ProTableProps } from '../../typing'
+import { omit } from '@v-c/util'
+import { computed, defineComponent } from 'vue'
+import { omitUndefined, useRefFunction } from '../../../utils'
+import { isBordered } from '../../utils/index'
 import FormRender from './FormRender'
 
-interface BaseFormProps<T = any, U = any> {
-  pagination?: ProTableProps<T, U>['pagination']
+export type BaseFormProps<T, U> = {
+  pagination?: TablePaginationConfig | false
   beforeSearchSubmit?: (params: Partial<U>) => any
-  action: ProTableProps<T, U>['actionRef']
+  action: Ref<ActionType | undefined>
   onSubmit?: (params: U) => void
   onReset?: () => void
   loading: boolean
   onFormSearchSubmit: (params: U) => void
-  columns: ProColumns<T>[]
-  dateFormatter: ProTableProps<T, U>['dateFormatter']
-  formRef: ProTableProps<T, U>['formRef']
-  type: ProTableProps<T, U>['type']
-  cardBordered: ProTableProps<T, U>['cardBordered']
-  form: ProTableProps<T, U>['form']
-  search: false | SearchConfig
-  manualRequest: ProTableProps<T, U>['manualRequest']
+  columns: ProTableProps<T, U, any>['columns']
+  dateFormatter: ProTableProps<T, U, any>['dateFormatter']
+  formRef: ProTableProps<T, U, any>['formRef']
+  type: ProTableProps<T, U, any>['type']
+  cardBordered: ProTableProps<T, U, any>['cardBordered']
+  form: ProTableProps<T, U, any>['form']
+  search: ProTableProps<T, U, any>['search']
+  manualRequest: ProTableProps<T, U, any>['manualRequest']
   ghost?: boolean
 }
 
-function omitKeys<T extends Record<string, any>>(object: T, keys: string[]) {
-  const next = { ...(object || {}) }
-  keys.forEach(key => delete next[key])
-  return next
-}
-
-function getRefValue(target: any) {
-  if (!target)
-    return undefined
-  return 'value' in target ? target.value : target.current
-}
-
-function fieldName(item: Record<string, any>) {
-  return item.name || item.key || item.dataIndex
-}
-
-function isEmptyValue(value: any) {
-  return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
-}
-
-async function validateForm(formRef: any, nameList?: any[]) {
-  await nextTick()
-  await nextTick()
-  await new Promise<void>(resolve => setTimeout(resolve, 0))
-  const form = getRefValue(formRef)
-  if (form?.formInstance?.validateFields)
-    return form.formInstance.validateFields(nameList)
-  if (form?.validateFields)
-    return form.validateFields(nameList)
-  return form?.validateFieldsReturnFormatValue?.(nameList)
-}
-
+/** 查询表单相关的配置 */
 const FormSearch = defineComponent({
-  name: 'TableSearchForm',
-  props: [
-    'columns',
-    'loading',
-    'formRef',
-    'type',
-    'action',
-    'cardBordered',
-    'dateFormatter',
-    'form',
-    'search',
-    'pagination',
-    'ghost',
-    'manualRequest',
-    'beforeSearchSubmit',
-    'onSubmit',
-    'onFormSearchSubmit',
-    'onReset',
-  ],
-  setup(rawProps) {
-    const props = rawProps as BaseFormProps<Record<string, any>, Record<string, any>>
-    const innerFormRef = shallowRef<any>()
-
-    function getFormRef() {
-      return props.formRef || innerFormRef
-    }
-
-    function getValidateNameList() {
-      return (props.columns || [])
-        .filter((item: any) => item && item.search !== false && !item.hideInSearch)
-        .map((item: any) => fieldName(item))
-        .filter((name: any) => name !== undefined)
-    }
-
-    async function validateRequiredColumns() {
-      if (props.form?.ignoreRules !== false)
-        return
-
-      const form = getRefValue(getFormRef())
-      const values = form?.getFieldsValue?.(true) || form?.getFieldsValue?.() || {}
-      const fields = (props.columns || [])
-        .filter((item: any) => item && item.search !== false && !item.hideInSearch)
-        .map((item: any) => {
-          const name = fieldName(item)
-          if (name === undefined)
-            return undefined
-          const formItemProps = typeof item.formItemProps === 'function'
-            ? item.formItemProps(form, item)
-            : item.formItemProps
-          const rules = formItemProps?.rules || []
-          const requiredRule = rules.find((rule: any) => rule?.required) || (formItemProps?.required ? { required: true } : undefined)
-          if (!requiredRule || !isEmptyValue(getValueByNamePath(values, name)))
-            return undefined
-          return {
-            name,
-            errors: [requiredRule.message || 'Required'],
-          }
-        })
-        .filter(Boolean)
-
-      if (!fields.length)
-        return
-
-      form?.setFields?.(fields)
-      await nextTick()
-      throw fields
-    }
-
-    function getPageInfo() {
-      return props.pagination
+  name: 'TableFormSearch',
+  props: {
+    pagination: { type: [Object, Boolean] as PropType<TablePaginationConfig | false>, default: undefined },
+    beforeSearchSubmit: { type: Function as PropType<(params: any) => any>, default: undefined },
+    action: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
+    onSubmit: { type: Function as PropType<(params: any) => void>, default: undefined },
+    onReset: { type: Function as PropType<() => void>, default: undefined },
+    loading: { type: Boolean, default: false },
+    onFormSearchSubmit: { type: Function as PropType<(params: any) => void>, required: true },
+    columns: { type: Array as PropType<ProTableProps<any, any, any>['columns']>, default: () => [] },
+    dateFormatter: { type: [String, Function, Boolean] as PropType<ProTableProps<any, any, any>['dateFormatter']>, default: undefined },
+    formRef: { type: Object as PropType<ProTableProps<any, any, any>['formRef']>, default: undefined },
+    type: { type: String as PropType<ProTableProps<any, any, any>['type']>, default: undefined },
+    cardBordered: { type: [Boolean, Object] as PropType<ProTableProps<any, any, any>['cardBordered']>, default: undefined },
+    form: { type: Object as PropType<ProTableProps<any, any, any>['form']>, default: undefined },
+    search: { type: [Object, Boolean] as PropType<ProTableProps<any, any, any>['search']>, default: undefined },
+    manualRequest: { type: Boolean, default: undefined },
+    ghost: { type: Boolean, default: undefined },
+  },
+  setup(props) {
+    // 只传入 pagination 中的 current 和 pageSize 参数
+    const pageInfo = computed(() =>
+      props.pagination
         ? omitUndefined({
-          current: (props.pagination as any).current,
-          pageSize: (props.pagination as any).pageSize,
-        }) || {}
-        : {}
-    }
+            current: (props.pagination as TablePaginationConfig).current,
+            pageSize: (props.pagination as TablePaginationConfig).pageSize,
+          })
+        : {},
+    )
 
-    async function validateIfNeeded(firstLoad?: boolean) {
-      if (props.form?.ignoreRules !== false)
-        return true
-      if (!firstLoad && firstLoad !== undefined)
-        return true
-      try {
-        await validateForm(getFormRef(), getValidateNameList())
-        await validateRequiredColumns()
-        return true
+    const onSubmitHandler = useRefFunction((value: any, firstLoad: boolean) => {
+      const runSubmit = () => {
+        const submitParams = { ...value, _timestamp: Date.now(), ...pageInfo.value }
+        const beforeSearchSubmit
+          = props.beforeSearchSubmit ?? ((searchParams: any) => searchParams)
+        const omitParams = omit(
+          beforeSearchSubmit(submitParams),
+          Object.keys(pageInfo.value!),
+        )
+        props.onFormSearchSubmit(omitParams)
+        if (!firstLoad) {
+          // 不是第一次提交才跳回第一页，并触发 onSubmit
+          props.action.value?.setPageInfo?.({ current: 1 })
+          props.onSubmit?.(value)
+        }
       }
-      catch {
-        return false
-      }
-    }
 
-    async function onSubmitHandler(value: Record<string, any>, firstLoad: boolean) {
-      if (!(await validateIfNeeded(firstLoad)))
+      if (props.form?.ignoreRules === false && firstLoad) {
+        // 首次提交时需要先通过校验再执行
+        props.formRef?.value
+          ?.validateFields()
+          .then(runSubmit)
+          .catch(() => {})
         return
-
-      const pageInfo = getPageInfo()
-      const beforeSearchSubmit = props.beforeSearchSubmit || ((params: Partial<Record<string, any>>) => params)
-      const submitParams = { ...value, _timestamp: Date.now(), ...pageInfo }
-      const omitParams = omitKeys(beforeSearchSubmit(submitParams) || {}, Object.keys(pageInfo))
-      props.onFormSearchSubmit?.(omitParams)
-
-      if (!firstLoad) {
-        getRefValue(props.action)?.setPageInfo?.({ current: 1 })
-        props.onSubmit?.(value)
       }
-    }
+      runSubmit()
+    })
 
-    async function onResetHandler(value: Record<string, any>) {
+    const onResetHandler = useRefFunction((value: any) => {
+      const resetLogic = () => {
+        const beforeSearchSubmit
+          = props.beforeSearchSubmit ?? ((searchParams: any) => searchParams)
+        const omitParams = omit(
+          beforeSearchSubmit({ ...value, ...pageInfo.value }),
+          Object.keys(pageInfo.value!),
+        )
+        props.onFormSearchSubmit(omitParams)
+        // back first page
+        props.action.value?.setPageInfo?.({
+          current: 1,
+        })
+        props.onReset?.()
+      }
+
       if (props.form?.ignoreRules === false) {
-        try {
-          await validateForm(getFormRef(), getValidateNameList())
-          await validateRequiredColumns()
-        }
-        catch {
-          return
-        }
+        props.formRef?.value
+          ?.validateFields()
+          .then(resetLogic)
+          .catch(() => {})
+        return
       }
-
-      const pageInfo = getPageInfo()
-      const beforeSearchSubmit = props.beforeSearchSubmit || ((params: Partial<Record<string, any>>) => params)
-      const omitParams = omitKeys(beforeSearchSubmit({ ...value, ...pageInfo }) || {}, Object.keys(pageInfo))
-      props.onFormSearchSubmit?.(omitParams)
-      getRefValue(props.action)?.setPageInfo?.({ current: 1 })
-      props.onReset?.()
-    }
+      resetLogic()
+    })
 
     return () => (
       <FormRender
         submitButtonLoading={props.loading}
-        columns={props.columns || []}
+        columns={props.columns!}
         type={props.type}
         ghost={props.ghost}
-        formRef={getFormRef()}
+        formRef={props.formRef!}
         onSubmit={onSubmitHandler}
         manualRequest={props.manualRequest}
         onReset={onResetHandler}
@@ -197,9 +126,9 @@ const FormSearch = defineComponent({
         search={props.search}
         form={{
           autoFocusFirstInput: false,
-          ...(props.form || {}),
+          ...props.form,
           extraUrlParams: {
-            ...getPageInfo(),
+            ...pageInfo.value,
             ...props.form?.extraUrlParams,
           },
         }}

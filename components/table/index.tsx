@@ -1,4 +1,13 @@
 import type { App } from 'vue'
+import type { ColumnsState } from './Store/Provide'
+import type {
+  ActionType,
+  ProColumns,
+  ProColumnType,
+  ProTableProps,
+  RequestData,
+} from './typing'
+import type { RowEditableConfig } from '../utils'
 import DragSortTable from './components/DragSortTable'
 import TableDropdown from './components/Dropdown'
 import EditableProTable from './components/EditableTable'
@@ -7,20 +16,21 @@ import { RowEditorTable } from './components/EditableTable/RowEditorTable'
 import Search from './components/Form'
 import ListToolBar from './components/ListToolBar'
 import ProTable from './Table'
+import type { DragTableProps } from './components/DragSortTable'
+import type {
+  EditableFormInstance,
+  EditableProTableProps,
+} from './components/EditableTable'
+import type { ListToolBarProps } from './components/ListToolBar'
 
-const TableModule = {
+/** Vue 插件：注册表格相关组件，mirror FormModule */
+export const TableModule = {
   install(app: App) {
-    ;[
-      ProTable,
-      EditableProTable,
-      DragSortTable,
-      TableDropdown,
-      ListToolBar,
-      Search,
-    ].forEach((component: any) => {
-      if (component?.name)
-        app.component(component.name, component)
-    })
+    app.component('ProTable', ProTable)
+    app.component('EditableProTable', EditableProTable)
+    app.component('DragSortTable', DragSortTable)
+    app.component('ListToolBar', ListToolBar)
+    app.component('TableDropdown', TableDropdown)
   },
 }
 
@@ -33,21 +43,20 @@ export {
   RowEditorTable,
   Search,
   TableDropdown,
-  TableModule,
 }
 
-export type { RowEditableConfig } from '../utils'
-export type { DragTableProps } from './components/DragSortTable'
-export type { ColumnsState } from './Store/Provide'
 export type {
   ActionType,
+  ColumnsState,
+  DragTableProps,
   EditableFormInstance,
   EditableProTableProps,
-  FilterValue,
+  ListToolBarProps,
   ProColumns,
   ProColumnType,
   ProTableProps,
   RequestData,
-} from './typing'
+  RowEditableConfig,
+}
 
 export default ProTable

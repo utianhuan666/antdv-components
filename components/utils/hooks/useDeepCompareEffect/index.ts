@@ -8,7 +8,13 @@ export function isDeepEqual(a: any, b: any, ignoreKeys?: string[]) {
 }
 
 function readDependency(value: any): any {
-  return isRef(value) ? value.value : value
+  if (isRef(value))
+    return value.value
+  // 支持 getter 形式的依赖（() => reactiveValue）：在 watch source 中调用以建立响应式追踪。
+  // 这样 useFetchData / Table 等以 `[() => state.value]` 传入的依赖才能正确触发。
+  if (typeof value === 'function')
+    return (value as () => any)()
+  return value
 }
 
 function readDependencies(dependencies: any[] | undefined): any[] {

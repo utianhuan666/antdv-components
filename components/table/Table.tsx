@@ -1,693 +1,1158 @@
 import type { TablePaginationConfig } from 'antdv-next'
 import type {
+  FilterValue as AntFilterValue,
+  GetRowKey,
+  SortOrder,
+  SorterResult,
+  TableCurrentDataSource,
+} from 'antdv-next/dist/table/interface'
+import type { CSSProperties, PropType, Ref, VNodeChild } from 'vue'
+import type { ParamsType } from '../provider'
+import type { UseEditableUtilType } from '../utils'
+import type {
   ActionType,
   FilterValue,
+  Key,
+  OptionSearchProps,
   PageInfo,
   ProTableProps,
   RequestData,
-  SortOrder,
+  TableRowSelection,
+  UseFetchDataAction,
 } from './typing'
+import type { TableColumnContext } from './utils/genProColumnToColumn'
+import { clsx } from '@v-c/util'
 import { ConfigProvider, Table } from 'antdv-next'
-import { computed, defineComponent, nextTick, ref, shallowRef, watch, watchEffect } from 'vue'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
+import {
+  computed,
+  defineComponent,
+  provide,
+  ref,
+  watch,
+} from 'vue'
 import ProCard from '../card'
-import { ProConfigProvider, useIntl } from '../provider'
-import { useProPrefixCls } from '../provider/useProPrefixCls'
-import { ErrorBoundary, omitUndefined, stableStringify, useEditableArray } from '../utils'
-import Alert from './components/Alert'
-import { createTableContainer, provideTableContext } from './Store/Provide'
+import ValueTypeToComponent from '../field/ValueTypeToComponent'
+import { GridContext, ProForm } from '../form'
+import {
+  ProConfigProvider,
+  proTheme,
+  useIntl,
+  useProProviderContext,
+} from '../provider'
+import {
+  editableRowByKey,
+  ErrorBoundary,
+  isDeepEqualReact,
+  omitUndefined,
+  recordKeyToString,
+  stringify,
+  useDeepCompareEffect,
+  useDeepCompareEffectDebounce,
+  useEditableArray,
+  useRefFunction,
+} from '../utils'
+import TableAlert from './components/Alert'
+import { TableProvider, useTableContext } from './Store/Provide'
+import { useStyle } from './style'
 import { TableSearch } from './TableSearch'
 import { TableToolbar } from './TableToolbar'
-import useFetchData, { setActionRef } from './useFetchData'
+import useFetchData from './useFetchData'
 import {
   flattenColumns,
   genColumnKey,
   getServerFilterResult,
+  getServerSorterResult,
   isBordered,
-  isLocalSorter,
   mergePagination,
-  parseDataIndex,
   parseServerDefaultColumnConfig,
+  useActionType,
 } from './utils'
 import { columnSort } from './utils/columnSort'
 import { genProColumnToColumn } from './utils/genProColumnToColumn'
 
-function getRowKeyFn<T extends Record<string, any>>(rowKey: any, _name: any) {
-  if (typeof rowKey === 'function')
-    return rowKey
-  const key = rowKey ?? 'id'
-  return (record: T, index?: number) => {
-    if (index === -1)
-      return record?.[key]
-    return record?.[key] ?? index?.toString()
-  }
+function isEmpty(value: any): boolean {
+  if (value == null)
+    return true
+  if (Array.isArray(value) || typeof value === 'string')
+    return value.length === 0
+  if (typeof value === 'object')
+    return Object.keys(value).length === 0
+  return false
 }
 
-function getRefValue<T = any>(target: unknown): T | undefined {
-  if (!target || typeof target !== 'object')
-    return undefined
-  if ('value' in target)
-    return (target as { value?: T }).value
-  return (target as { current?: T }).current
-}
-
-function getSorterKey(column: any) {
-  const sorter = column?.sorter
-  if (typeof sorter === 'string')
-    return sorter
-  return parseDataIndex(column?.dataIndex) || column?.key?.toString()
-}
-
-function getSorterMultiple(column: any) {
-  const sorter = column?.sorter
-  return typeof sorter === 'object' && sorter ? sorter.multiple : undefined
-}
-
-function getDefaultSortState(columns: any[]) {
-  return flattenColumns(columns).reduce<Record<string, SortOrder>>((acc, column) => {
-    if (!column?.sorter)
-      return acc
-    const key = getSorterKey(column)
-    if (key && column.defaultSortOrder)
-      acc[key] = column.defaultSortOrder
-    return acc
-  }, {})
-}
-
-function getSortState(sorter: any, previous: Record<string, SortOrder>, columns: any[]) {
-  const items = (Array.isArray(sorter) ? sorter : [sorter]).filter(Boolean)
-  const hasMultiple = items.some(item => getSorterMultiple(item.column))
-  const multipleKeys = new Set(
-    flattenColumns(columns)
-      .filter(column => getSorterMultiple(column))
-      .map(column => getSorterKey(column))
-      .filter(Boolean),
-  )
-  const next: Record<string, SortOrder> = hasMultiple
-    ? Object.fromEntries(Object.entries(previous).filter(([key]) => multipleKeys.has(key)))
-    : {}
-
-  items.forEach((item) => {
-    const key = getSorterKey(item.column || {})
-    if (!key)
-      return
-    if (item.order)
-      next[key] = item.order
-    else
-      delete next[key]
-  })
-
-  return next
-}
-
-function getServerSortState(sortState: Record<string, SortOrder>, columns: any[]) {
-  return flattenColumns(columns).reduce<Record<string, SortOrder>>((acc, column) => {
-    if (!column?.sorter || isLocalSorter(column.sorter))
-      return acc
-    const key = getSorterKey(column)
-    if (key && sortState[key])
-      acc[key] = sortState[key]
-    return acc
-  }, {})
-}
-
-function sortLocalDataSource<T extends Record<string, any>>(dataSource: T[], columns: any[], sortState: Record<string, SortOrder>) {
-  const sorters = flattenColumns(columns)
-    .filter(column => column?.sorter && isLocalSorter(column.sorter))
-    .map((column) => {
-      const key = getSorterKey(column)
-      const order = key ? sortState[key] : undefined
-      const sorter = column.sorter
-      const compare = typeof sorter === 'function' ? sorter : sorter?.compare
-      return {
-        compare,
-        order,
-        multiple: typeof sorter === 'object' ? sorter.multiple ?? 0 : 0,
-      }
-    })
-    .filter(item => item.order && item.compare)
-    .sort((a, b) => (b.multiple || 0) - (a.multiple || 0))
-
-  if (!sorters.length)
-    return dataSource
-
-  return [...dataSource].sort((a, b) => {
-    for (const sorter of sorters) {
-      const result = sorter.compare(a, b)
-      if (result)
-        return sorter.order === 'ascend' ? result : -result
-    }
-    return 0
-  })
-}
-
-function getEditableDataSource<T extends Record<string, any>>({
+function getEditableDataSource<T>({
   dataSource,
   editableUtils,
   pagination,
+  getRowKey,
+  childrenColumnName,
 }: {
-  dataSource: T[]
-  editableUtils: any
-  pagination: ProTableProps<T>['pagination']
-}) {
-  const list = Array.isArray(dataSource) ? [...dataSource] : []
-  const newLine = editableUtils?.newLineRecord
-  if (!newLine?.defaultValue)
-    return list
-  if (newLine.options?.position === 'top')
-    return [newLine.defaultValue, ...list.filter(item => item !== newLine.defaultValue)]
-  const page = pagination && typeof pagination === 'object' ? pagination : undefined
-  if (page?.current && page?.pageSize && page.pageSize <= list.length) {
-    const index = page.current * page.pageSize - 1
-    list.splice(index, 0, newLine.defaultValue)
-    return list
+  dataSource: readonly T[] | undefined
+  editableUtils: {
+    newLineRecord?: {
+      options?: {
+        position?: 'top' | 'bottom' | string
+        parentKey?: Key | Key[]
+        recordKey?: Key | Key[]
+      }
+      defaultValue?: T
+    }
   }
-  if (!list.includes(newLine.defaultValue))
-    list.push(newLine.defaultValue)
-  return list
-}
+  pagination: ProTableProps<T, any, any>['pagination']
+  getRowKey: GetRowKey<any>
+  childrenColumnName?: string
+}): T[] {
+  const baseData = Array.isArray(dataSource) ? [...dataSource] : []
+  const newLineConfig = editableUtils?.newLineRecord
+  const defaultValue = newLineConfig?.defaultValue
 
-const ProTableImpl = defineComponent({
-  name: 'ProTable',
-  inheritAttrs: false,
-  props: [
-    'columns',
-    'toolbar',
-    'ghost',
-    'params',
-    'columnsState',
-    'onSizeChange',
-    'cardProps',
-    'tableRender',
-    'tableViewRender',
-    'tableExtraRender',
-    'searchFormRender',
-    'request',
-    'postData',
-    'defaultData',
-    'actionRef',
-    'formRef',
-    'toolBarRender',
-    'optionsRender',
-    'onLoad',
-    'onLoadingChange',
-    'onRequestError',
-    'polling',
-    'tableClassName',
-    'tableStyle',
-    'headerTitle',
-    'tooltip',
-    'options',
-    'search',
-    'form',
-    'dateFormatter',
-    'beforeSearchSubmit',
-    'tableAlertRender',
-    'tableAlertOptionRender',
-    'rowSelection',
-    'type',
-    'onSubmit',
-    'onReset',
-    'columnEmptyText',
-    'manualRequest',
-    'editable',
-    'onDataSourceChange',
-    'cardBordered',
-    'debounceTime',
-    'revalidateOnFocus',
-    'defaultSize',
-    'name',
-    'ErrorBoundary',
-    'pagination',
-    'loading',
-    'dataSource',
-    'rowKey',
-    'size',
-    'class',
-    'style',
-    'scroll',
-    'tableLayout',
-    'expandable',
-    'onChange',
-  ],
-  setup(rawProps, { attrs }) {
-    const props = rawProps as ProTableProps<Record<string, any>, Record<string, any>, any>
-    const intl = useIntl()
-    const prefixCls = useProPrefixCls('pro-table')
-    const actionRef = shallowRef<ActionType>()
-    const antTableRef = shallowRef<any>()
-    type TableKey = string | number
-    const selectedRowKeys = ref<TableKey[]>(((((props.rowSelection as any) && (props.rowSelection as any) !== false) ? (props.rowSelection as any).defaultSelectedRowKeys : []) ?? []) as TableKey[])
-    const preserveRecords = new Map<TableKey, any>()
-    const formSearch = ref<Record<string, any> | undefined>((props.manualRequest || props.search !== false) ? undefined : {})
-    const tableFilter = ref<Record<string, FilterValue>>({})
-    const proFilter = ref<Record<string, FilterValue>>({})
-    const proSort = ref<Record<string, SortOrder>>({})
-    const tableSort = ref<Record<string, SortOrder>>({})
+  if (!newLineConfig || !defaultValue) {
+    return baseData
+  }
 
-    const counter = createTableContainer({
-      get size() {
-        return props.size as any
-      },
-      get defaultSize() {
-        return props.defaultSize
-      },
-      get onSizeChange() {
-        return props.onSizeChange
-      },
-      get columns() {
-        return props.columns || []
-      },
-      get columnsState() {
-        return props.columnsState
-      },
-    } as any)
-    provideTableContext(counter)
+  const { options: newLineOptions } = newLineConfig
+  const childrenName = childrenColumnName || 'children'
 
-    function resetColumnState() {
-      const { sort, filter } = parseServerDefaultColumnConfig(flattenColumns(props.columns || []))
-      tableSort.value = getDefaultSortState(props.columns || [])
-      proSort.value = sort
-      proFilter.value = filter
-      tableFilter.value = flattenColumns(props.columns || []).reduce<Record<string, FilterValue>>((acc, column) => {
-        const dataIndex = Array.isArray(column.dataIndex) ? column.dataIndex.join(',') : column.dataIndex?.toString()
-        if (dataIndex && column.filters)
-          acc[dataIndex] = (column.defaultFilteredValue as FilterValue) ?? null
-        return acc
-      }, {})
+  if (newLineOptions?.parentKey) {
+    const newRow = {
+      ...defaultValue,
+      map_row_parentKey: recordKeyToString(
+        newLineOptions.parentKey as any,
+      )?.toString(),
+    }
+    const actionProps = {
+      data: baseData,
+      getRowKey,
+      row: newRow,
+      key: newLineOptions?.recordKey ?? getRowKey(newRow as T, -1),
+      childrenColumnName: childrenName,
     }
 
-    watchEffect(() => {
-      resetColumnState()
+    return editableRowByKey(
+      actionProps as any,
+      newLineOptions?.position === 'top' ? 'top' : 'update',
+    ) as T[]
+  }
+
+  if (newLineOptions?.position === 'top') {
+    return [defaultValue, ...baseData]
+  }
+
+  const pageConfig
+    = pagination && typeof pagination === 'object' ? pagination : undefined
+
+  if (pageConfig?.current && pageConfig?.pageSize) {
+    if (pageConfig.pageSize > baseData.length) {
+      baseData.push(defaultValue)
+      return baseData
+    }
+    const insertIndex = pageConfig.current * pageConfig.pageSize - 1
+    baseData.splice(insertIndex, 0, defaultValue)
+    return baseData
+  }
+
+  baseData.push(defaultValue)
+  return baseData
+}
+
+function getTableCardBodyStyle({
+  propsCardProps,
+  notNeedCardDom,
+  name,
+  hideToolbar,
+  toolbarDom,
+}: {
+  propsCardProps: ProTableProps<any, any, any>['cardProps']
+  notNeedCardDom: boolean
+  name: ProTableProps<any, any, any>['name']
+  hideToolbar: boolean
+  toolbarDom: VNodeChild
+}): CSSProperties {
+  // cardProps === false 或存在 name 的场景不需要额外 padding 处理
+  if (propsCardProps === false || notNeedCardDom || !!name) {
+    return {}
+  }
+
+  // 显式隐藏 toolbar 时，统一不留 padding（避免误用 paddingBlockStart）
+  if (hideToolbar) {
+    return { padding: 0 }
+  }
+
+  // 有 toolbar 的场景，需要让 ProCard body 顶部与 toolbar 对齐
+  if (toolbarDom) {
+    return { paddingBlockStart: 0 }
+  }
+
+  return { padding: 0 }
+}
+
+function buildRowKey<T>(
+  rowKey: ProTableProps<T, any, any>['rowKey'],
+  name: ProTableProps<T, any, any>['name'],
+): GetRowKey<any> {
+  // mirror: useRowKey —— rowKey 在 render 中通过 props 读取，故每次构建即可
+  if (typeof rowKey === 'function') {
+    return rowKey as GetRowKey<any>
+  }
+  return (record: T, index?: number) => {
+    if (index === -1) {
+      return (record as any)?.[rowKey as string]
+    }
+    if (name) {
+      return index?.toString() as any
+    }
+    return (record as any)?.[rowKey as string] ?? index?.toString()
+  }
+}
+
+const emptyObj = {} as Record<string, any>
+
+/**
+ * ProTable 引擎本体（对应 React 的内部 ProTable）。
+ * 通过 useTableContext 注入由外层 TableProvider 提供的 Store。
+ */
+const ProTable = defineComponent({
+  name: 'ProTable',
+  inheritAttrs: false,
+  props: {
+    proTableProps: {
+      type: Object as PropType<ProTableProps<any, any, any> & { defaultClassName: string }>,
+      required: true,
+    },
+  },
+  setup(componentProps) {
+    const counter = useTableContext()
+    const intl = useIntl()
+    const themeToken = proTheme.useToken()
+    const { wrapSSR, hashId } = useStyle(componentProps.proTableProps.defaultClassName)
+
+    /** 通用的来操作子节点的工具类 */
+    const actionRef = ref<ActionType>()
+    // antd Table 实例 ref（仅用于转发 scrollTo 能力）
+    const antTableRef = ref<any>(null)
+
+    const defaultFormRef = ref<any>()
+
+    /** 单选多选的相关逻辑：受控/非受控合并 */
+    const selectedRowKeysInner = ref<(string | number)[] | Key[] | undefined>(
+      (() => {
+        const propsRowSelection = componentProps.proTableProps.rowSelection
+        return propsRowSelection
+          ? propsRowSelection?.defaultSelectedRowKeys || []
+          : undefined
+      })(),
+    )
+    const selectedRowKeys = computed<(string | number)[] | Key[] | undefined>(() => {
+      const propsRowSelection = componentProps.proTableProps.rowSelection
+      const controlled
+        = propsRowSelection ? propsRowSelection.selectedRowKeys : undefined
+      return controlled !== undefined ? (controlled as any) : selectedRowKeysInner.value
+    })
+    const setSelectedRowKeys = (keys: (string | number)[] | Key[] | undefined) => {
+      selectedRowKeysInner.value = keys
+    }
+
+    const formSearch = ref<Record<string, any> | undefined>(
+      (() => {
+        const { manualRequest, search } = componentProps.proTableProps
+        // 如果手动模式，或者 search 不存在的时候设置为 undefined
+        // undefined 就不会触发首次加载
+        if (manualRequest || search !== false) {
+          return undefined
+        }
+        return {}
+      })(),
+    )
+
+    /**
+     * `actionRef.current?.reset()` 会在同一事件循环里同步调用 `action.reload()`。
+     * 使用 ref 作为请求参数的同步来源，保证 reset/toolbar 等场景下参数与表单展示一致。
+     */
+    const formSearchRef = ref<Record<string, any> | undefined>(formSearch.value)
+    const setFormSearchWithRef = useRefFunction(
+      (next: any) => {
+        const nextValue
+          = typeof next === 'function' ? next(formSearchRef.value) : next
+        formSearchRef.value = nextValue
+        formSearch.value = nextValue
+      },
+    )
+
+    const propsColumns = computed(() => componentProps.proTableProps.columns ?? [])
+
+    const defaultProConfig = computed(() => {
+      const { sort, filter } = parseServerDefaultColumnConfig(
+        flattenColumns(propsColumns.value),
+      )
+      return {
+        defaultProFilter: filter,
+        defaultProSort: sort,
+      }
     })
 
+    const proFilter = ref<Record<string, FilterValue>>(defaultProConfig.value.defaultProFilter)
+    const proSort = ref<Record<string, SortOrder>>(defaultProConfig.value.defaultProSort)
+
+    /**
+     * 只有在 proColumns 变化的时候，才会重新更新 proFilter 和 proSort
+     */
+    useDeepCompareEffect(() => {
+      proFilter.value = defaultProConfig.value.defaultProFilter
+      proSort.value = defaultProConfig.value.defaultProSort
+    }, [() => defaultProConfig.value.defaultProFilter, () => defaultProConfig.value.defaultProSort])
+
+    /** 需要初始化 不然默认可能报错 */
+    const fetchPagination = computed(() => {
+      const propsPagination = componentProps.proTableProps.pagination
+      return typeof propsPagination === 'object'
+        ? (propsPagination as TablePaginationConfig)
+        : { defaultCurrent: 1, defaultPageSize: 20, pageSize: 20, current: 1 }
+    })
+
+    // 设置 name 到 store 中，必须在 render 阶段同步 set
+    // mirror: counter.setPrefixName(props.name) 必须同步在 render 顶部执行
+    const syncPrefixName = () => {
+      counter.setPrefixName?.(componentProps.proTableProps.name)
+    }
+    syncPrefixName()
+
+    // ============================ useFetchData ============================
     const fetchData = computed(() => {
-      if (!props.request)
+      const { request, params = emptyObj } = componentProps.proTableProps
+      if (!request)
         return undefined
       return async (pageParams?: Record<string, any>) => {
         const actionParams = {
           ...(pageParams || {}),
-          ...(formSearch.value || {}),
-          ...(props.params || {}),
+          ...(formSearchRef.value || {}),
+          ...params,
         }
+
         delete actionParams._timestamp
-        return await props.request!(
+        const response = await request(
           actionParams as any,
           proSort.value,
           proFilter.value,
-        ) as RequestData<Record<string, any>>
+        )
+        return response as RequestData<any>
       }
     })
 
-    const fetchPagination = computed(() => {
-      if (typeof props.pagination === 'object')
-        return props.pagination as TablePaginationConfig
-      return { defaultCurrent: 1, defaultPageSize: 20, pageSize: 20, current: 1 }
-    })
-
-    const action = useFetchData<Record<string, any>>(
-      fetchData.value,
-      props.defaultData,
+    const action = useFetchData(
+      ((p?: any) => fetchData.value?.(p)) as any,
+      componentProps.proTableProps.defaultData,
       {
-        get dataSource() {
-          return props.dataSource as any
+        get pageInfo() {
+          return componentProps.proTableProps.pagination === false
+            ? false
+            : fetchPagination.value
         },
         get loading() {
-          return props.loading as any
+          return componentProps.proTableProps.loading
         },
-        onDataSourceChange: props.onDataSourceChange as any,
-        onLoad: props.onLoad,
-        onLoadingChange: props.onLoadingChange,
-        onRequestError: props.onRequestError,
-        postData: props.postData as any,
-        get revalidateOnFocus() {
-          return props.revalidateOnFocus
+        get dataSource() {
+          return componentProps.proTableProps.dataSource
         },
+        onDataSourceChange: componentProps.proTableProps.onDataSourceChange,
+        onLoad: componentProps.proTableProps.onLoad as any,
+        onLoadingChange: componentProps.proTableProps.onLoadingChange,
+        onRequestError: componentProps.proTableProps.onRequestError,
+        postData: componentProps.proTableProps.postData,
+        revalidateOnFocus: componentProps.proTableProps.revalidateOnFocus ?? false,
         get manual() {
           return formSearch.value === undefined
         },
         get polling() {
-          return props.polling
+          return componentProps.proTableProps.polling
         },
-        get effects() {
-          return [
-            stableStringify(props.params || {}),
-            stableStringify(formSearch.value || {}),
-            stableStringify(proFilter.value),
-            stableStringify(proSort.value),
-          ]
-        },
-        get debounceTime() {
-          return props.debounceTime
-        },
-        get pageInfo() {
-          return props.pagination === false ? false : fetchPagination.value
-        },
+        effects: [
+          () => stringify(componentProps.proTableProps.params),
+          () => stringify(formSearch.value),
+          () => stringify(proFilter.value),
+          () => stringify(proSort.value),
+        ] as any,
+        debounceTime: componentProps.proTableProps.debounceTime,
         onPageInfoChange: (pageInfo: PageInfo) => {
-          if (!props.pagination || !fetchData.value) {
+          const propsPagination = componentProps.proTableProps.pagination
+          if (!propsPagination || !fetchData.value)
             return
-          }
-          ;(props.pagination as any)?.onChange?.(pageInfo.current, pageInfo.pageSize)
-          ;(props.pagination as any)?.onShowSizeChange?.(pageInfo.current, pageInfo.pageSize)
+          // 总是触发一下 onChange 和 onShowSizeChange
+          ;(propsPagination as TablePaginationConfig)?.onChange?.(pageInfo.current, pageInfo.pageSize)
+          ;(propsPagination as TablePaginationConfig)?.onShowSizeChange?.(pageInfo.current, pageInfo.pageSize)
         },
       } as any,
     )
+    // ============================ END ============================
 
-    const getRowKey = computed(() => getRowKeyFn(props.rowKey, props.name))
-
+    /** 聚焦的时候重新请求数据 */
+    const onVisibilityChange = useRefFunction(() => {
+      if (document.visibilityState !== 'visible')
+        return
+      const props = componentProps.proTableProps
+      if (
+        props.manualRequest
+        || !props.request
+        || !(props.revalidateOnFocus ?? false)
+        || props.form?.ignoreRules
+      ) {
+        return
+      }
+      action.reload()
+    })
     watch(
-      () => action.dataSource,
-      (list) => {
-        list?.forEach((record, index) => preserveRecords.set(getRowKey.value(record, index), record))
+      () => true,
+      () => {
+        document.addEventListener('visibilitychange', onVisibilityChange)
       },
-      { deep: true, immediate: true },
+      { immediate: true, flush: 'post' },
     )
 
-    const pagination = computed(() => mergePagination(
-      props.pagination as any,
-      {
+    /** SelectedRowKeys受控处理selectRows */
+    const preserveRecordsRef = ref(new Map<any, any>())
+
+    // ============================ RowKey ============================
+    const getRowKey = computed<GetRowKey<any>>(() =>
+      buildRowKey(componentProps.proTableProps.rowKey, componentProps.proTableProps.name),
+    )
+
+    useDeepCompareEffect(() => {
+      if (!action.dataSource?.length) {
+        return
+      }
+      action.dataSource.forEach((data: any) => {
+        const dataRowKey = getRowKey.value(data, -1)
+        preserveRecordsRef.value.set(dataRowKey, data)
+      })
+    }, [() => action.dataSource, getRowKey])
+
+    /** 页面编辑的计算 */
+    const pagination = computed(() => {
+      const propsPagination = componentProps.proTableProps.pagination
+      const { request, type = 'table' } = componentProps.proTableProps
+      const newPropsPagination
+        = propsPagination === false ? false : { ...(propsPagination || {}) }
+      const pageConfig = {
         ...action.pageInfo,
         setPageInfo: ({ pageSize, current }: PageInfo) => {
-          if (pageSize === action.pageInfo.pageSize || action.pageInfo.current === 1) {
+          const pageInfo = action.pageInfo
+          if (pageSize === pageInfo.pageSize || pageInfo.current === 1) {
             action.setPageInfo({ pageSize, current })
             return
           }
-          if (props.request)
+          if (request)
             action.setDataSource([])
-          action.setPageInfo({ pageSize, current: props.type === 'list' ? current : 1 })
+          action.setPageInfo({
+            pageSize,
+            current: type === 'list' ? current : 1,
+          })
         },
-      },
-      intl,
-    ))
+      }
+      if (request && newPropsPagination) {
+        delete (newPropsPagination as TablePaginationConfig).onChange
+        delete (newPropsPagination as TablePaginationConfig).onShowSizeChange
+      }
+      return mergePagination<any>(
+        newPropsPagination as TablePaginationConfig | false | undefined,
+        pageConfig as any,
+        intl,
+      )
+    })
 
-    const editableUtils = useEditableArray<Record<string, any>>({
-      ...(props.editable || {}),
-      get tableName() {
-        return props.name as any
-      },
-      get columns() {
-        return props.columns || []
-      },
-      get dataSource() {
-        return action.dataSource
-      },
-      setDataSource: (data: any) => action.setDataSource(data),
-      getRowKey: (record: Record<string, any>, index?: number) => getRowKey.value(record, index),
-      childrenColumnName: (props.expandable as any)?.childrenColumnName || 'children',
-    } as any)
+    // 监听 pagination 的变化，修正 pageSize
+    useDeepCompareEffect(() => {
+      const p = pagination.value
+      if (
+        p
+        && (p.current !== action.pageInfo.current
+          || p.pageSize !== action.pageInfo.pageSize)
+      ) {
+        action.setPageInfo({
+          current: p.current,
+          pageSize: p.pageSize,
+        })
+      }
+    }, [pagination])
 
-    function cleanSelected() {
-      ;(props.rowSelection as any) && (props.rowSelection as any) !== false && (props.rowSelection as any).onChange?.([], [], { type: 'none' } as any)
-      selectedRowKeys.value = []
+    useDeepCompareEffect(() => {
+      const props = componentProps.proTableProps
+      // request 存在且params不为空，且已经请求过数据才需要设置。
+      if (
+        props.request
+        && !isEmpty(props.params)
+        && action.dataSource
+        && !isDeepEqualReact(action.dataSource, props.defaultData)
+        && action?.pageInfo?.current !== 1
+      ) {
+        action.setPageInfo({
+          current: 1,
+        })
+      }
+    }, [() => componentProps.proTableProps.params])
+
+    // 设置 columnsState 到 store 中（仅在受控 value 时同步）
+    watch(
+      () => componentProps.proTableProps.columnsState?.value,
+      (value) => {
+        if (value !== undefined) {
+          counter.setColumnsMap(value)
+        }
+      },
+      { immediate: true, flush: 'post' },
+    )
+
+    /** 清空所有的选中项 */
+    const onCleanSelected = useRefFunction(() => {
+      const propsRowSelection = componentProps.proTableProps.rowSelection
+      if (propsRowSelection && propsRowSelection.onChange) {
+        propsRowSelection.onChange([], [], {
+          type: 'none',
+        })
+      }
+      setSelectedRowKeys([])
+    })
+
+    // mirror: counter.propsRef.current = props
+    const syncPropsRef = () => {
+      if (counter.propsRef)
+        counter.propsRef.value = componentProps.proTableProps as any
     }
+    syncPropsRef()
 
-    const coreAction = computed<ActionType>(() => ({
-      ...editableUtils,
-      pageInfo: action.pageInfo,
-      nativeElement: counter.rootDomRef.value,
-      focus: () => counter.rootDomRef.value?.focus(),
-      reload: async (resetPageIndex?: boolean) => {
-        if (resetPageIndex)
-          await action.setPageInfo({ current: 1 })
-        await action.reload()
+    /** 可编辑行的相关配置 */
+    const editableUtils = useEditableArray<any>({
+      ...componentProps.proTableProps.editable,
+      tableName: componentProps.proTableProps.name as any,
+      dateFormatter:
+        componentProps.proTableProps.editable?.dateFormatter
+        ?? componentProps.proTableProps.dateFormatter,
+      getRowKey: getRowKey.value,
+      childrenColumnName:
+        componentProps.proTableProps.expandable?.childrenColumnName || 'children',
+      get dataSource() {
+        return action.dataSource || []
       },
-      reloadAndRest: async () => {
-        cleanSelected()
-        await action.setPageInfo({ current: 1 })
-        await action.reload()
+      setDataSource: (data: any) => {
+        componentProps.proTableProps.editable?.onValuesChange?.(undefined as any, data)
+        action.setDataSource(data)
       },
-      reset: async () => {
-        cleanSelected()
-        counter.setKeyWords(undefined)
-        resetColumnState()
-        const form = getRefValue<any>(props.formRef)
-        if (form?.resetFields) {
-          form.resetFields()
-          await nextTick()
+    } as any) as UseEditableUtilType
+
+    // ============================ Render ============================
+
+    /** 绑定 action */
+    useActionType(actionRef, action, {
+      get nativeElement() {
+        return counter.rootDomRef?.value || undefined
+      },
+      focus: () => {
+        counter.rootDomRef?.value?.focus()
+      },
+      fullScreen: () => {
+        if (!counter.rootDomRef?.value || !document.fullscreenEnabled) {
+          return
+        }
+        if (document.fullscreenElement) {
+          document.exitFullscreen()
         }
         else {
-          formSearch.value = {}
+          counter.rootDomRef?.value.requestFullscreen()
         }
-        await action.reset()
-        await action.reload()
       },
-      clearSelected: cleanSelected,
-      setPageInfo: (info: Partial<PageInfo>) => action.setPageInfo(info),
-      fullScreen: () => {
-        const el = counter.rootDomRef.value
-        if (!el || typeof document === 'undefined')
-          return
-        if (document.fullscreenElement)
-          document.exitFullscreen?.()
-        else
-          el.requestFullscreen?.()
+      onCleanSelected: () => {
+        onCleanSelected()
       },
-      scrollTo: (arg: any) => antTableRef.value?.scrollTo?.(arg),
-    } as ActionType))
-
-    watchEffect(() => {
-      actionRef.value = coreAction.value
-      counter.setAction(coreAction.value)
-      counter.propsRef.value = props
-      counter.setPrefixName(props.name)
-      setActionRef(props.actionRef, coreAction.value)
-    })
-
-    const tableColumn = computed(() => {
-      void (editableUtils.editableKeys || []).map((key: any) => String(key)).join(';')
-      return genProColumnToColumn({
-        columns: props.columns || [],
-        context: {
-          counter,
-          columnEmptyText: props.columnEmptyText ?? '-',
-          type: props.type || 'table',
-          editableUtils,
-          rowKey: getRowKey.value,
-          childrenColumnName: (props.expandable as any)?.childrenColumnName ?? 'children',
-          proFilter: proFilter.value,
-          tableFilter: tableFilter.value,
-          proSort: tableSort.value,
-        },
-      }).sort(columnSort(counter.columnsMap.value))
-    })
-
-    watch(tableColumn, (columns) => {
-      counter.setSortKeyColumns(columns.map((item: any, index) => genColumnKey(item.key, index)))
-    }, { immediate: true, deep: true })
-
-    const visibleColumns = computed(() => {
-      const loop = (columns: any[]): any[] => columns
-        .map((column, index) => {
-          const key = genColumnKey(column.key, column.index ?? index)
-          const state = counter.columnsMap.value?.[key]
-          if (state?.show === false)
-            return false
-          const next = { ...column, fixed: state?.fixed ?? column.fixed }
-          if (next.children)
-            next.children = loop(next.children)
-          return next
+      resetAll: () => {
+        const { beforeSearchSubmit } = componentProps.proTableProps
+        // 清空选中行
+        onCleanSelected()
+        // 清空 toolbar 搜索
+        counter.setKeyWords(undefined)
+        // 重置页码
+        action.setPageInfo({
+          current: 1,
         })
-        .filter(Boolean)
-      return loop(tableColumn.value)
-    })
+        // 重置绑定筛选值
+        proFilter.value = defaultProConfig.value.defaultProFilter
+        // 重置绑定排序值
+        proSort.value = defaultProConfig.value.defaultProSort
+        // 重置表单
+        // 用户传入的 formRef 可能是 Vue Ref(.value) 或 React 风格 createRef({ current })，两者都要兼容；
+        // 否则取不到表单实例，reset 后拿不到初始值，refetch 丢失表单参数（见 protable-reset-params）。
+        const userFormRef = componentProps.proTableProps.formRef as any
+        const formRefValue = userFormRef?.value ?? userFormRef?.current ?? defaultFormRef.value
+        formRefValue?.resetFields?.()
+        // 同步更新请求参数
+        const resetValues
+          = formRefValue?.getFieldsFormatValue?.(true)
+            ?? formRefValue?.getFieldsValue?.(true)
+            ?? {}
+        const nextSearch = beforeSearchSubmit
+          ? beforeSearchSubmit(resetValues)
+          : resetValues
+        setFormSearchWithRef((nextSearch ?? {}) as any)
+      },
+      editableUtils,
+      scrollTo: (arg: any) => antTableRef.value?.scrollTo?.(arg),
+    } as any)
 
-    const mergedSelectedRowKeys = computed(() => {
-      const rowSelectionProps = props.rowSelection || {}
-      return (((rowSelectionProps as any).selectedRowKeys ?? selectedRowKeys.value) || []) as TableKey[]
-    })
+    /** 同步 action */
+    counter.setAction(actionRef.value)
 
-    const rowSelection = computed(() => {
-      if (!props.rowSelection || (props.rowSelection as any) === false)
-        return undefined
-      const rowSelectionProps = props.rowSelection || {}
-      return {
-        ...rowSelectionProps,
-        selectedRowKeys: mergedSelectedRowKeys.value,
-        onChange: (keys: TableKey[], rows: any[], info: any) => {
-          selectedRowKeys.value = keys || []
-          ;(rowSelectionProps as any).onChange?.(keys, rows, info)
-        },
+    // mirror: useImperativeHandle(propsActionRef, () => actionRef.current)
+    watch(
+      [actionRef, () => componentProps.proTableProps.actionRef],
+      () => {
+        const propsActionRef = componentProps.proTableProps.actionRef
+        if (propsActionRef) {
+          if (typeof propsActionRef === 'function') {
+            (propsActionRef as (ref: ActionType | undefined) => void)(actionRef.value)
+          }
+          else {
+            // mirror React useImperativeHandle: 同时支持 Vue Ref(.value) 与 React createRef({ current })
+            (propsActionRef as Ref<ActionType | undefined>).value = actionRef.value
+            ;(propsActionRef as unknown as { current?: ActionType }).current = actionRef.value
+          }
+        }
+      },
+      { immediate: true, flush: 'post' },
+    )
+
+    // ---------- 列计算相关 start  -----------------
+    const tableColumn = computed(() => {
+      const props = componentProps.proTableProps
+      const columnContext: TableColumnContext<any> = {
+        counter,
+        columnEmptyText: props.columnEmptyText ?? '-',
+        type: props.type ?? 'table',
+        editableUtils,
+        marginSM: themeToken.token.value.marginSM,
+        rowKey: (props.rowKey ?? 'id') as any,
+        childrenColumnName: props.expandable?.childrenColumnName ?? 'children',
+        proFilter: proFilter.value,
+        proSort: proSort.value,
       }
+      return genProColumnToColumn<any>({
+        columns: propsColumns.value,
+        context: columnContext,
+      }).sort(columnSort(counter.columnsMap ?? {}))
     })
 
-    const selectedRows = computed(() => mergedSelectedRowKeys.value.map(key => preserveRecords.get(key)).filter(Boolean))
-    const isLightFilter = computed(() => props.search !== false && props.search?.filterType === 'light')
-    const hideToolbar = computed(() => props.options === false && !props.headerTitle && !props.toolBarRender && !props.toolbar && !isLightFilter.value)
+    /** Table Column 变化的时候更新一下 */
+    useDeepCompareEffectDebounce(
+      () => {
+        const cols = tableColumn.value
+        if (cols && cols.length > 0) {
+          const columnKeys = cols.map((item: any) =>
+            genColumnKey(item.key, item.index),
+          )
+          counter.setSortKeyColumns(columnKeys)
+        }
+      },
+      [tableColumn],
+      ['render', 'formItemRender'],
+      100,
+    )
 
-    function onFormSearchSubmit(values: Record<string, any>) {
-      const options: any = props.options
+    /** 同步 Pagination，支持受控的 页码 和 pageSize */
+    useDeepCompareEffect(() => {
+      const propsPagination = componentProps.proTableProps.pagination
+      const pageInfo = action.pageInfo
+      const { current = pageInfo?.current, pageSize = pageInfo?.pageSize }
+        = (propsPagination as TablePaginationConfig) || {}
+      if (
+        propsPagination
+        && (current || pageSize)
+        && (pageSize !== pageInfo?.pageSize || current !== pageInfo?.current)
+      ) {
+        action.setPageInfo({
+          pageSize: pageSize || pageInfo.pageSize,
+          current: current || pageInfo.current,
+        })
+      }
+    }, [
+      () => (componentProps.proTableProps.pagination as TablePaginationConfig)?.pageSize,
+      () => (componentProps.proTableProps.pagination as TablePaginationConfig)?.current,
+    ])
+
+    /** 行选择相关的问题 */
+    const handleRowSelectionChange = (keys: Key[], rows: any[], info: any) => {
+      const propsRowSelection = componentProps.proTableProps.rowSelection
+      if (propsRowSelection && propsRowSelection.onChange) {
+        propsRowSelection.onChange(keys as any, rows, info)
+      }
+      setSelectedRowKeys(keys as any)
+    }
+
+    const rowSelection = computed<TableRowSelection | undefined>(() => {
+      const propsRowSelection = componentProps.proTableProps.rowSelection
+      if (propsRowSelection === false || propsRowSelection == null)
+        return undefined
+      return {
+        selectedRowKeys: selectedRowKeys.value,
+        ...propsRowSelection,
+        onChange: handleRowSelectionChange,
+      } as any
+    })
+
+    /** LightFilter（轻量筛选）时工具栏把 search 插到左侧 */
+    const isLightFilter = computed<boolean>(() => {
+      const search = componentProps.proTableProps.search
+      return search !== false && search?.filterType === 'light'
+    })
+
+    const onFormSearchSubmit = useRefFunction((values: any): any => {
+      const { options } = componentProps.proTableProps
+      // 判断search.onSearch返回值决定是否更新formSearch
       if (options && options.search) {
-        const search = options.search === true ? {} : options.search
-        const success = search.onSearch?.(counter.keyWords.value)
+        const { name = 'keyword' }
+          = options.search === true ? {} : options.search
+        const success = (options.search as OptionSearchProps)?.onSearch?.(
+          counter.keyWords!,
+        )
         if (success !== false) {
-          formSearch.value = { ...values, [search.name || 'keyword']: counter.keyWords.value }
+          setFormSearchWithRef({
+            ...values,
+            [name]: counter.keyWords,
+          })
           return
         }
       }
-      formSearch.value = values
+      setFormSearchWithRef(values)
+    })
+
+    const loading = computed(() => {
+      if (typeof action.loading === 'object') {
+        return action.loading?.spinning || false
+      }
+      return action.loading
+    })
+
+    const selectedRows = computed<any[]>(() => {
+      // eslint-disable-next-line ts/no-unused-expressions
+      action.dataSource
+      return (selectedRowKeys.value?.map(key =>
+        preserveRecordsRef.value?.get(key),
+      ) ?? []) as any[]
+    })
+
+    const hideToolbar = computed<boolean>(() => {
+      const { options, headerTitle, toolBarRender, toolbar } = componentProps.proTableProps
+      return (
+        options === false
+        && !headerTitle
+        && !toolBarRender
+        && !toolbar
+        && !isLightFilter.value
+      )
+    })
+
+    const mergedDataSource = computed(() => {
+      return getEditableDataSource<any>({
+        dataSource: action.dataSource,
+        editableUtils,
+        pagination: pagination.value as any,
+        getRowKey: getRowKey.value,
+        childrenColumnName:
+          componentProps.proTableProps.expandable?.childrenColumnName || 'children',
+      })
+    })
+
+    const columns = computed(() => {
+      const loopFilter = (column: any[]): any[] => {
+        return column
+          .map((item) => {
+            const columnKey = genColumnKey(item.key, item.index)
+            const config = counter.columnsMap?.[columnKey]
+            if (config && config.show === false) {
+              return false
+            }
+            if (item.children) {
+              return {
+                ...item,
+                children: loopFilter(item.children),
+              }
+            }
+            return item
+          })
+          .filter(Boolean)
+      }
+      return loopFilter(tableColumn.value)
+    })
+
+    const useFilterColumns = computed(() => {
+      const _columns: any[] = flattenColumns(columns.value)
+      return _columns.filter(column => !!column.filters)
+    })
+
+    const onSortChange = (sortConfig?: Record<string, SortOrder>) => {
+      if (isDeepEqualReact(sortConfig, proSort.value))
+        return
+      proSort.value = sortConfig ?? {}
     }
 
-    const searchNode = computed(() => (
-      <TableSearch
-        search={props.search}
-        type={props.type}
-        pagination={pagination.value}
-        beforeSearchSubmit={props.beforeSearchSubmit}
-        action={actionRef}
-        columns={props.columns || []}
-        onFormSearchSubmit={onFormSearchSubmit}
-        ghost={props.ghost}
-        onReset={props.onReset}
-        onSubmit={props.onSubmit}
-        loading={Boolean(typeof action.loading === 'object' ? action.loading.spinning : action.loading)}
-        manualRequest={props.manualRequest}
-        form={props.form}
-        formRef={props.formRef}
-        cardBordered={props.cardBordered}
-        dateFormatter={props.dateFormatter}
-      />
-    ))
-
-    function handleTableChange(changePagination: any, filters: Record<string, any>, sorter: any, extra: any) {
-      props.onChange?.(changePagination, filters, sorter, extra)
-      tableFilter.value = omitUndefined(filters) || {}
-      tableSort.value = omitUndefined(getSortState(sorter, tableSort.value, visibleColumns.value)) || {}
-      proFilter.value = omitUndefined(getServerFilterResult(filters, flattenColumns(visibleColumns.value))) || {}
-      proSort.value = omitUndefined(getServerSortState(tableSort.value, visibleColumns.value)) || {}
+    const onFilterChange = (filterConfig: Record<string, FilterValue>) => {
+      if (isDeepEqualReact(filterConfig, proFilter.value))
+        return
+      proFilter.value = filterConfig ?? {}
     }
+
+    const handleTableChange = (
+      changePagination: TablePaginationConfig,
+      filters: Record<string, AntFilterValue | null>,
+      sorter: SorterResult<any> | SorterResult<any>[],
+      extra: TableCurrentDataSource<any>,
+    ) => {
+      componentProps.proTableProps.onChange?.(changePagination, filters, sorter, extra)
+      const serverFilter = getServerFilterResult(filters, useFilterColumns.value)
+      onFilterChange(omitUndefined(serverFilter) as any)
+      const serverSorter = getServerSorterResult(sorter)
+      onSortChange(omitUndefined(serverSorter) as any)
+    }
+
+    const isFillHeight = computed(() => (componentProps.proTableProps as any).scroll?.y === 'fill')
+
+    const resolvedRest = computed(() => {
+      const {
+        cardBordered: _cardBordered,
+        request: _request,
+        className: _className,
+        params: _params,
+        defaultData: _defaultData,
+        headerTitle: _headerTitle,
+        postData: _postData,
+        ghost: _ghost,
+        pagination: _pagination,
+        actionRef: _actionRef,
+        toolBarRender: _toolBarRender,
+        optionsRender: _optionsRender,
+        onLoad: _onLoad,
+        onRequestError: _onRequestError,
+        style: _style,
+        cardProps: _cardProps,
+        tableStyle: _tableStyle,
+        tableClassName: _tableClassName,
+        options: _options,
+        search: _search,
+        name: _name,
+        onLoadingChange: _onLoadingChange,
+        rowSelection: _rowSelection,
+        beforeSearchSubmit: _beforeSearchSubmit,
+        tableAlertRender: _tableAlertRender,
+        tableAlertOptionRender: _tableAlertOptionRender,
+        defaultClassName: _defaultClassName,
+        formRef: _formRef,
+        type: _type,
+        columnEmptyText: _columnEmptyText,
+        toolbar: _toolbar,
+        rowKey: _rowKey,
+        manualRequest: _manualRequest,
+        polling: _polling,
+        tooltip: _tooltip,
+        revalidateOnFocus: _revalidateOnFocus,
+        searchFormRender: _searchFormRender,
+        columns: _columns,
+        columnsState: _columnsState,
+        loading: _loading,
+        dataSource: _dataSource,
+        onDataSourceChange: _onDataSourceChange,
+        debounceTime: _debounceTime,
+        editable: _editable,
+        ErrorBoundary: _ErrorBoundary,
+        tableRender: _tableRender,
+        tableViewRender: _tableViewRender,
+        tableExtraRender: _tableExtraRender,
+        onChange: _onChange,
+        onReset: _onReset,
+        onSubmit: _onSubmit,
+        form: _form,
+        dateFormatter: _dateFormatter,
+        defaultSize: _defaultSize,
+        size: _size,
+        onSizeChange: _onSizeChange,
+        ...rest
+      } = componentProps.proTableProps as any
+
+      if (!isFillHeight.value)
+        return rest
+      const { scroll, ...otherRest } = rest as any
+      const { y: _y, ...restScroll } = scroll || {}
+      return { ...otherRest, scroll: { ...restScroll, y: '100%' } }
+    })
+
+    const mergedTableProps = computed(() => ({
+      ...resolvedRest.value,
+      size: counter.tableSize,
+      class: componentProps.proTableProps.tableClassName,
+      style: componentProps.proTableProps.tableStyle,
+      loading: action.loading,
+      dataSource: mergedDataSource.value,
+      pagination: pagination.value,
+      columns: columns.value,
+      rowSelection: rowSelection.value,
+      onChange: handleTableChange,
+    }))
 
     return () => {
-      const className = [
-        prefixCls.value,
-        (props as any).class,
-        (props.scroll as any)?.y === 'fill' ? `${prefixCls.value}-fill-height` : '',
-        action.pollingLoading ? `${prefixCls.value}-polling` : '',
-      ].filter(Boolean).join(' ')
+      const props = componentProps.proTableProps
+      const defaultClassName = props.defaultClassName
 
-      const toolbarDom = (
+      const className = clsx(defaultClassName, props.className, hashId, {
+        [`${defaultClassName}-fill-height`]: isFillHeight.value,
+      })
+
+      const isEditorTable = props.name
+      const notNeedCardDom = props.search === false && hideToolbar.value
+
+      const searchNode: VNodeChild = (
+        <TableSearch
+          search={props.search}
+          type={props.type}
+          pagination={pagination.value}
+          beforeSearchSubmit={props.beforeSearchSubmit}
+          actionRef={actionRef}
+          columns={propsColumns.value}
+          onFormSearchSubmit={(values: any) => onFormSearchSubmit(values)}
+          ghost={props.ghost}
+          onReset={props.onReset}
+          onSubmit={props.onSubmit}
+          loading={!!loading.value}
+          manualRequest={props.manualRequest}
+          form={props.form}
+          formRef={(props.formRef as any) || defaultFormRef}
+          cardBordered={props.cardBordered}
+          dateFormatter={props.dateFormatter}
+          searchFormRender={props.searchFormRender}
+          proTableProps={props}
+        />
+      )
+
+      const toolbarDom: VNodeChild = (
         <TableToolbar
           toolBarRender={props.toolBarRender}
           headerTitle={props.headerTitle}
           hideToolbar={hideToolbar.value}
           selectedRows={selectedRows.value}
-          selectedRowKeys={mergedSelectedRowKeys.value}
+          selectedRowKeys={selectedRowKeys.value as any}
           tableColumn={tableColumn.value}
           tooltip={props.tooltip}
           toolbar={props.toolbar}
           isLightFilter={isLightFilter.value}
-          searchNode={searchNode.value}
+          searchNode={searchNode}
           options={props.options}
           optionsRender={props.optionsRender}
           actionRef={actionRef}
-          setFormSearch={(value: any) => {
-            formSearch.value = typeof value === 'function' ? value(formSearch.value) : value
-          }}
+          setFormSearch={setFormSearchWithRef as any}
           formSearch={formSearch.value}
         />
       )
-      const alertDom = (
-        <Alert
-          selectedRowKeys={mergedSelectedRowKeys.value as any}
-          selectedRows={selectedRows.value}
-          onCleanSelected={cleanSelected}
-          alertOptionRender={props.tableAlertOptionRender}
-          alertInfoRender={props.tableAlertRender}
-          alwaysShowAlert={(props.rowSelection as any)?.alwaysShowAlert}
-        />
-      )
-      const mergedDataSource = getEditableDataSource({
-        dataSource: action.dataSource,
-        editableUtils,
-        pagination: pagination.value as any,
-      })
-      const sortedDataSource = sortLocalDataSource(mergedDataSource, visibleColumns.value, tableSort.value)
-      const editableTableKey = (editableUtils.editableKeys || []).map((key: any) => String(key)).join(';')
-      const restTableProps: Record<string, any> = {
-        ...attrs,
-        tableLayout: props.tableLayout,
-        expandable: props.expandable,
-        scroll: (props.scroll as any)?.y === 'fill'
-          ? { ...(props.scroll as any), y: '100%' }
-          : props.scroll,
-      }
-      const tableProps = {
-        ...restTableProps,
-        ref: antTableRef,
-        rowKey: props.rowKey,
-        size: counter.tableSize.value,
-        class: props.tableClassName,
-        style: props.tableStyle,
-        loading: action.loading,
-        dataSource: sortedDataSource,
-        pagination: pagination.value,
-        columns: visibleColumns.value,
-        rowSelection: rowSelection.value,
-        onChange: handleTableChange,
-      }
-      const baseTableDom = () => <Table key={editableTableKey} {...tableProps as any} />
-      const tableDom = props.tableViewRender
-        ? props.tableViewRender(tableProps as any, baseTableDom)
-        : baseTableDom()
-      const safeTableDom = <ErrorBoundary>{tableDom}</ErrorBoundary>
 
-      const tableContentDom = props.editable && !props.name
-        ? (
-            <>
-              {toolbarDom}
-              {alertDom}
-              {safeTableDom}
-            </>
-          )
-        : (
-            <>
-              {toolbarDom}
-              {alertDom}
-              {safeTableDom}
-            </>
-          )
-      const notNeedCardDom = props.search === false && hideToolbar.value
-      const useCard = props.cardProps !== false && !props.name && !notNeedCardDom
-      const tableAreaDom = useCard
+      const alertDom: VNodeChild
+        = props.rowSelection === false || props.rowSelection == null
+          ? null
+          : (
+              <TableAlert
+                selectedRowKeys={selectedRowKeys.value as any}
+                selectedRows={selectedRows.value}
+                onCleanSelected={onCleanSelected}
+                alertOptionRender={props.tableAlertOptionRender}
+                alertInfoRender={props.tableAlertRender}
+                alwaysShowAlert={props.rowSelection?.alwaysShowAlert}
+              />
+            )
+
+      const getBaseTableDom = () => (
+        <GridContextProvider>
+          <Table {...mergedTableProps.value} rowKey={props.rowKey} ref={antTableRef} />
+        </GridContextProvider>
+      )
+
+      const tableDom = props.tableViewRender
+        ? props.tableViewRender({ ...mergedTableProps.value }, getBaseTableDom)
+        : getBaseTableDom()
+
+      const tableContentDom
+        = props.editable && !isEditorTable
+          ? (
+              <>
+                {toolbarDom}
+                {alertDom}
+                <ProForm
+                  {...(props.editable.formProps as any)}
+                  formRef={(props.editable.formProps as any)?.formRef}
+                  component={false}
+                  form={props.editable.form}
+                  onValuesChange={(editableUtils as any).onValuesChange}
+                  key="table"
+                  submitter={false}
+                  omitNil={false}
+                  dateFormatter={props.dateFormatter}
+                >
+                  {tableDom}
+                </ProForm>
+              </>
+            )
+          : (
+              <>
+                {toolbarDom}
+                {alertDom}
+                {tableDom}
+              </>
+            )
+
+      const cardBodyStyle = getTableCardBodyStyle({
+        propsCardProps: props.cardProps,
+        notNeedCardDom,
+        name: props.name,
+        hideToolbar: hideToolbar.value,
+        toolbarDom,
+      })
+
+      const useCardForTable
+        = props.cardProps !== false && !props.name && !notNeedCardDom
+      const useCardForList = props.cardProps !== false && props.type === 'list'
+      const useCard = useCardForTable || useCardForList
+
+      const resolvedCardProps = props.cardProps === false ? {} : (props.cardProps ?? {})
+
+      const tableAreaDom: VNodeChild = useCard
         ? (
             <ProCard
-              {...(props.cardProps || {}) as any}
+              {...resolvedCardProps}
               ghost={props.ghost}
               variant={isBordered('table', props.cardBordered) ? 'outlined' : 'borderless'}
-              styles={{ body: { padding: toolbarDom ? '0 0 24px' : 0, ...((props.cardProps as any)?.styles?.body || {}) } }}
+              styles={{
+                body: {
+                  ...cardBodyStyle,
+                  ...(resolvedCardProps.styles?.body ?? {}),
+                },
+                header: resolvedCardProps.styles?.header,
+              }}
             >
               {tableContentDom}
             </ProCard>
           )
-        : tableContentDom
+        : (
+            tableContentDom
+          )
 
-      const renderedTable = props.tableRender
-        ? props.tableRender(props, tableAreaDom, { toolbar: toolbarDom, alert: alertDom, table: tableDom })
-        : tableAreaDom
+      const renderTable = (): VNodeChild => {
+        if (props.tableRender) {
+          return props.tableRender(props, tableAreaDom!, {
+            toolbar: toolbarDom || undefined,
+            alert: alertDom || undefined,
+            table: tableDom || undefined,
+          })
+        }
+        return tableAreaDom
+      }
 
-      const body = (
-        <div class={className} style={(props as any).style} ref={counter.rootDomRef} data-testid="pro-table" tabindex={-1}>
-          {isLightFilter.value ? null : props.searchFormRender ? props.searchFormRender(props, searchNode.value) : searchNode.value}
-          {props.type !== 'form' && props.tableExtraRender ? <div class={`${prefixCls.value}-extra`}>{props.tableExtraRender(props, action.dataSource)}</div> : null}
-          {props.type !== 'form' ? renderedTable : null}
+      const proTableDom = (
+        <div
+          class={clsx(className, {
+            [`${defaultClassName}-polling`]: action.pollingLoading,
+          })}
+          style={props.style as any}
+          ref={counter.rootDomRef}
+          data-testid="pro-table"
+        >
+          {isLightFilter.value ? null : searchNode}
+          {props.type !== 'form' && props.tableExtraRender && (
+            <div class={clsx(className, `${defaultClassName}-extra`)}>
+              {props.tableExtraRender(props, action.dataSource || [])}
+            </div>
+          )}
+          {props.type !== 'form' && renderTable()}
         </div>
       )
 
-      const wrapped = (
-        <ProConfigProvider>
-          {body}
-        </ProConfigProvider>
+      if (!props.options || !props.options?.fullScreen) {
+        return wrapSSR(proTableDom)
+      }
+      return wrapSSR(
+        <ConfigProvider
+          getPopupContainer={() => {
+            return (counter.rootDomRef.value || document.body) as any
+          }}
+        >
+          {proTableDom}
+        </ConfigProvider>,
       )
-      return props.options && (props.options as any).fullScreen
-        ? <ConfigProvider getPopupContainer={() => counter.rootDomRef.value || document.body}>{wrapped}</ConfigProvider>
-        : wrapped
     }
   },
 })
 
-const ProTable = ProTableImpl as typeof ProTableImpl & {
-  Summary?: typeof Table.Summary
-  new(): { $props: ProTableProps<any, any, any> }
-}
+/**
+ * 内部用于在 Table 周围注入 grid=false 的 GridContext。
+ * mirror: <GridContext.Provider value={{ grid: false, ... }}>
+ */
+const GridContextProvider = defineComponent({
+  name: 'TableGridContextProvider',
+  setup(_, { slots }) {
+    // mirror: <GridContext.Provider value={{ grid: false, ... }}>
+    provide(GridContext, {
+      grid: false,
+      colProps: undefined,
+      rowProps: undefined,
+    } as any)
+    return () => slots.default?.()
+  },
+})
 
-ProTable.Summary = Table.Summary
+const PassthroughFragment = defineComponent({
+  name: 'PassthroughFragment',
+  setup(_, { slots }) {
+    return () => slots.default?.()
+  },
+})
 
-export default ProTable
+/**
+ * 🏆 Use Ant Design Table like a Pro! 更快 更好 更方便
+ */
+const ProviderTableContainer = defineComponent({
+  name: 'ProTableContainer',
+  inheritAttrs: false,
+  setup(_, { attrs }) {
+    const config = useConfig()
+    const context = useProProviderContext()
+
+    return () => {
+      const props = attrs as unknown as ProTableProps<any, any, any>
+      const ErrorComponent
+        = (props.ErrorBoundary === false
+          ? PassthroughFragment
+          : props.ErrorBoundary || ErrorBoundary) as any
+
+      const defaultClassName = `${config.value.getPrefixCls('pro-table')}`
+
+      return (
+        <TableProvider
+          initValue={{
+            ...(props as any),
+            columnsState: props.columnsState,
+            columns: props.columns,
+            onSizeChange: props.onSizeChange,
+            size: (props.size as any) || undefined,
+            defaultSize: (props.defaultSize as any) || undefined,
+          }}
+        >
+          <ProConfigProvider
+            valueTypeMap={{ ...context.valueTypeMap, ...ValueTypeToComponent }}
+            needDeps
+          >
+            <ErrorComponent>
+              <ProTable
+                proTableProps={{ ...(props as any), defaultClassName }}
+              />
+            </ErrorComponent>
+          </ProConfigProvider>
+        </TableProvider>
+      )
+    }
+  },
+}) as any
+
+;(ProviderTableContainer as any).Summary = (Table as any).Summary
+
+export default ProviderTableContainer
+export { ProviderTableContainer as ProTable }

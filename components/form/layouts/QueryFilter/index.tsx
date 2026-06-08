@@ -4,6 +4,7 @@ import type { ProFormProps } from '../ProForm'
 import { clsx } from '@v-c/util'
 import { Col, FormItem, Row } from 'antdv-next'
 import { computed, defineComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import BaseForm from '../../BaseForm'
 import { flattenChildren, getVNodeProps } from '../_shared/vueHelpers'
@@ -76,6 +77,7 @@ export const QueryFilter = defineComponent({
     const containerRef = ref<HTMLElement | null>(null)
     const width = ref(1024)
     const innerCollapsed = ref((attrs.defaultCollapsed as boolean | undefined) ?? true)
+    const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-query-filter')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
     let resizeObserver: ResizeObserver | undefined
@@ -96,6 +98,19 @@ export const QueryFilter = defineComponent({
     return () => {
       const props = attrs as QueryFilterProps
       const preserve = props.preserve ?? true
+      const resetText = props.resetText || intl.getMessage('tableForm.reset', '重置')
+      const searchText = props.searchText || intl.getMessage('tableForm.search', '搜索')
+      const baseSubmitter = (props as any).submitter
+      const mergedSubmitter = baseSubmitter === false
+        ? false
+        : {
+            ...(typeof baseSubmitter === 'object' ? baseSubmitter : {}),
+            searchConfig: {
+              resetText,
+              submitText: searchText,
+              ...(typeof baseSubmitter === 'object' ? baseSubmitter?.searchConfig : undefined),
+            },
+          }
       const collapsed = props.collapsed ?? innerCollapsed.value
       const setCollapsed = (nextCollapsed: boolean) => {
         innerCollapsed.value = nextCollapsed
@@ -115,6 +130,7 @@ export const QueryFilter = defineComponent({
         <div ref={containerRef} class={`${prefixCls.value}-container`} style={props.containerStyle}>
           <BaseForm
             {...props as any}
+            submitter={mergedSubmitter}
             isKeyPressSubmit
             preserve={preserve}
             class={clsx(prefixCls.value, hashId, props.className)}

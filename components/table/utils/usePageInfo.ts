@@ -1,7 +1,13 @@
-import type { PageInfo } from '../typing'
-import type { UseFetchProps } from '../useFetchData'
-import { ref, watch } from 'vue'
+import type { Ref } from 'vue'
+import type { PageInfo, UseFetchProps } from '../typing'
+import { ref } from 'vue'
+import { useRefFunction } from '../../utils'
 
+/**
+ * 组合用户的配置和默认值
+ *
+ * @param param0
+ */
 function mergeOptionAndPageInfo({ pageInfo }: UseFetchProps) {
   if (pageInfo) {
     const { current, defaultCurrent, pageSize, defaultPageSize } = pageInfo
@@ -14,10 +20,25 @@ function mergeOptionAndPageInfo({ pageInfo }: UseFetchProps) {
   return { current: 1, total: 0, pageSize: 20 }
 }
 
-export function usePageInfo(options: UseFetchProps) {
+/**
+ * 专门用于处理分页信息更新的 Hook
+ * 解决了 total 缺失导致的死循环问题
+ */
+export function usePageInfo(options: UseFetchProps): readonly [Ref<PageInfo>, (changePageInfo: Partial<PageInfo>) => void] {
   const pageInfo = ref<PageInfo>(mergeOptionAndPageInfo(options))
 
-  const setPageInfo = (changePageInfo: Partial<PageInfo>) => {
+  const setPageInfoState = useRefFunction(
+    (updater: PageInfo | ((prev: PageInfo) => PageInfo)) => {
+      const next
+        = typeof updater === 'function'
+          ? (updater as (p: PageInfo) => PageInfo)(pageInfo.value)
+          : updater
+      options?.onPageInfoChange?.(next)
+      pageInfo.value = next
+    },
+  )
+
+  const setPageInfo = useRefFunction((changePageInfo: Partial<PageInfo>) => {
     const newPageInfo = {
       ...pageInfo.value,
       ...changePageInfo,
@@ -28,21 +49,9 @@ export function usePageInfo(options: UseFetchProps) {
       || newPageInfo.pageSize !== pageInfo.value.pageSize
       || newPageInfo.total !== pageInfo.value.total
     ) {
-      pageInfo.value = newPageInfo as PageInfo
-      options?.onPageInfoChange?.(newPageInfo as PageInfo)
+      setPageInfoState(newPageInfo as PageInfo)
     }
-  }
-
-  watch(
-    () => options.pageInfo,
-    () => {
-      if (options.pageInfo === false)
-        return
-      const next = mergeOptionAndPageInfo(options)
-      setPageInfo(next)
-    },
-    { deep: true },
-  )
+  })
 
   return [pageInfo, setPageInfo] as const
 }

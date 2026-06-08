@@ -15,6 +15,7 @@ import {
   render,
   waitFor,
 } from '../testUtils'
+import './tableTestSetup'
 
 interface DataItem {
   id: number

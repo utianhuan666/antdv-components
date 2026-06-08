@@ -34,7 +34,7 @@ const genProStyle: GenerateStyle<ProToken> = (token) => {
   }
 }
 
-export default function useStyle(prefixCls: string) {
+export function useStyle(prefixCls: string) {
   return useAntdStyle('ProTableAlert', (token) => {
     const proToken: ProToken = {
       ...token,

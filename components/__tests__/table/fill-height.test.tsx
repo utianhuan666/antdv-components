@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { ProTable } from '../../index'
+import ProTable from '../../table'
 import { cleanup, render } from '../testUtils'
 import { columns } from './fixtures'
+import './tableTestSetup'
 
 afterEach(() => {
   cleanup()

@@ -1,454 +1,593 @@
-import type { VNodeChild } from 'vue'
+import type { TableColumnType } from 'antdv-next'
+import type { DataNode } from 'antdv-next/dist/tree'
+import type { PropType, VNodeChild } from 'vue'
 import type { ColumnsState } from '../../Store/Provide'
 import type { ProColumns } from '../../typing'
+import type { SettingOptionType } from '../ToolBar'
 import {
   SettingOutlined,
   VerticalAlignBottomOutlined,
   VerticalAlignMiddleOutlined,
   VerticalAlignTopOutlined,
 } from '@antdv-next/icons'
-import { Checkbox, Space, Tooltip, Typography } from 'antdv-next'
-import { computed, defineComponent, ref } from 'vue'
+import { omit } from '@v-c/util'
+import { clsx } from '@v-c/util'
+import { Checkbox, Popover, Space, Tooltip, Tree, Typography } from 'antdv-next'
+import { computed, defineComponent } from 'vue'
+import { useProProviderContext } from '../../../provider'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
-import { runFunction } from '../../../utils'
+import { runFunction, useRefFunction } from '../../../utils'
 import { useTableContext } from '../../Store/Provide'
-import { genColumnKey } from '../../utils'
-import useStyle from './style'
+import { genColumnKey } from '../../utils/index'
+import { useStyle } from './style'
 
-type ColumnNode = Omit<ProColumns, 'children' | 'fixed'> & {
-  index?: number
-  parentKey?: string
-  columnKey: string
-  fixed?: 'left' | 'right'
-  titleNode?: VNodeChild
-  children?: ColumnNode[]
+export type ColumnSettingProps<T = any> = SettingOptionType & {
+  // `columns` 类型与 ToolBar 保持一致（TableColumnType<T> & { index? }），
+  // 使用与 ToolBar 一致的类型，以便消费 index 等字段。
+  columns: (TableColumnType<T> & { index?: number })[]
 }
 
-function getColumnKey(column: any, index: number | string, parentKey?: string) {
-  return genColumnKey(column.key ?? column.dataIndex, parentKey ? `${parentKey}-${index}` : index)
-}
-
-function getColumnTitle(column: any): VNodeChild {
-  if (typeof column.title === 'function')
-    return column.title(column, 'table', null)
-  return column.title
-}
-
-function getDisableConfig(state?: ColumnsState) {
-  const disable = state?.disable
-  return {
-    disabled: disable === true,
-    checkboxDisabled: disable === true || (typeof disable === 'object' && disable.checkbox),
-  }
-}
-
-function normalizeFixed(fixed: any): 'left' | 'right' | undefined {
-  return fixed === 'left' || fixed === 'right' ? fixed : undefined
-}
-
-function buildTree(columns: any[] = [], columnsMap: Record<string, ColumnsState>, parentKey?: string): ColumnNode[] {
-  return columns
-    .filter(column => column && !column.hideInSetting)
-    .map((column, index) => {
-      const columnKey = getColumnKey(column, column.index ?? index, parentKey)
-      const state = columnsMap[columnKey]
-      const children = column.children ? buildTree(column.children, columnsMap, columnKey) : undefined
-      return {
-        ...column,
-        columnKey,
-        parentKey,
-        fixed: state?.fixed ?? normalizeFixed(column.fixed),
-        titleNode: getColumnTitle(column),
-        children,
-      }
-    })
-}
-
-function flattenTree(tree: ColumnNode[]): ColumnNode[] {
-  return tree.flatMap(node => node.children?.length ? [node, ...flattenTree(node.children)] : [node])
-}
-
-export default defineComponent({
-  name: 'ColumnSetting',
-  props: [
-    'columns',
-    'draggable',
-    'checkable',
-    'showListItemOption',
-    'checkedReset',
-    'listsHeight',
-    'extra',
-    'children',
-    'settingIcon',
-  ],
+const ToolTipIcon = defineComponent({
+  name: 'ColumnSettingToolTipIcon',
+  props: {
+    title: { type: String, required: true },
+    columnKey: { type: [String, Number] as PropType<string | number>, required: true },
+    show: { type: Boolean, required: true },
+    fixed: { type: String as PropType<'left' | 'right' | undefined>, default: undefined },
+  },
   setup(props, { slots }) {
-    const intl = useIntl()
-    const counter = useTableContext()
-    const open = ref(false)
-    const expandedKeys = ref<Set<string>>(new Set())
-    const draggingKey = ref<string>()
-    const prefixCls = useProPrefixCls('pro-table-column-setting')
-    const { wrapSSR, hashId } = useStyle(prefixCls.value)
-
-    const columnsMap = computed(() => counter?.columnsMap.value || {})
-    const settingColumns = computed(() => {
-      const propsColumns = counter?.propsRef.value?.columns
-      return Array.isArray(propsColumns) && propsColumns.length ? propsColumns : (props.columns || [])
-    })
-    const localColumns = computed(() => buildTree(settingColumns.value, columnsMap.value))
-    const flatColumns = computed(() => flattenTree(localColumns.value))
-
-    function setColumnsMap(value: Record<string, ColumnsState>) {
-      counter?.setColumnsMap(value)
-    }
-
-    function setColumnShow(columnKey: string, show: boolean) {
-      const map = { ...columnsMap.value }
-      const treeMap = new Map(flatColumns.value.map(node => [node.columnKey, node]))
-
-      const loopSetShow = (key: string) => {
-        const node = treeMap.get(key)
-        const current = map[key] || {}
-        const disable = getDisableConfig(current)
-        map[key] = {
-          ...current,
-          show: disable.checkboxDisabled ? current.show : show,
-        }
-
-        node?.children?.forEach(child => loopSetShow(child.columnKey))
-
-        if (node?.parentKey) {
-          if (show) {
-            map[node.parentKey] = { ...(map[node.parentKey] || {}), show: true }
-            return
-          }
-
-          const parent = treeMap.get(node.parentKey)
-          const allSiblingsUnchecked = (parent?.children || []).every((child) => {
-            const state = map[child.columnKey]
-            return state && state.show === false
-          })
-          if (allSiblingsUnchecked)
-            map[node.parentKey] = { ...(map[node.parentKey] || {}), show: false }
-        }
-      }
-
-      loopSetShow(columnKey)
-      setColumnsMap(map)
-    }
-
-    function setColumnFixed(columnKey: string, fixed?: 'left' | 'right') {
-      setColumnsMap({
-        ...columnsMap.value,
-        [columnKey]: {
-          ...(columnsMap.value[columnKey] || {}),
-          fixed,
-        },
-      })
-    }
-
-    function setAllSelectAction(show = true) {
-      const map = { ...columnsMap.value }
-      const loop = (nodes: ColumnNode[]) => {
-        nodes.forEach((node) => {
-          const current = map[node.columnKey] || {}
-          const disable = getDisableConfig(current)
-          map[node.columnKey] = {
-            ...current,
-            show: disable.checkboxDisabled ? current.show : show,
-            fixed: current.fixed ?? node.fixed,
-            disable: current.disable ?? node.disable,
-            order: current.order,
-          }
-          if (node.children?.length)
-            loop(node.children)
-        })
-      }
-      loop(localColumns.value)
-      setColumnsMap(map)
-    }
-
-    function clearClick() {
-      counter?.clearPersistenceStorage()
-      const propsRef = counter?.propsRef.value || {}
-      if (propsRef.columnsState?.value && propsRef.columnsState?.defaultValue)
-        counter?.setColumnsMap(propsRef.columnsState.value)
-      counter?.setColumnsMap(
-        propsRef.columnsState?.defaultValue
-        || propsRef.columnsState?.value
-        || counter.defaultColumnKeyMap.value,
-      )
-    }
-
-    function getNodeState(node: ColumnNode): 'checked' | 'unchecked' | 'indeterminate' {
-      if (node.children?.length) {
-        const states = node.children.map(getNodeState)
-        if (states.every(state => state === 'checked'))
-          return 'checked'
-        if (states.every(state => state === 'unchecked'))
-          return columnsMap.value[node.columnKey]?.show === false ? 'unchecked' : 'indeterminate'
-        return 'indeterminate'
-      }
-      return columnsMap.value[node.columnKey]?.show === false ? 'unchecked' : 'checked'
-    }
-
-    const allChecked = computed(() => flatColumns.value.length > 0 && flatColumns.value.every(node => getNodeState(node) === 'checked'))
-    const indeterminate = computed(() => !allChecked.value && flatColumns.value.some(node => getNodeState(node) !== 'unchecked'))
-
-    function moveColumn(dragKey?: string, targetKey?: string, dropPosition = 1) {
-      if (!dragKey || !targetKey || dragKey === targetKey)
-        return
-      const keys = counter?.sortKeyColumns.value?.length
-        ? [...counter.sortKeyColumns.value]
-        : flatColumns.value.map(node => node.columnKey)
-      const fromIndex = keys.indexOf(dragKey)
-      const toIndex = keys.indexOf(targetKey)
-      if (fromIndex < 0 || toIndex < 0)
-        return
-
-      const [item] = keys.splice(fromIndex, 1)
-      if (item === undefined)
-        return
-      const insertIndex = dropPosition <= 0 ? toIndex : toIndex + (fromIndex < toIndex ? 0 : 1)
-      keys.splice(Math.max(0, insertIndex), 0, item)
-      const nextMap = { ...columnsMap.value }
-      keys.forEach((key, order) => {
-        nextMap[key] = { ...(nextMap[key] || {}), order }
-      })
-      counter?.setSortKeyColumns(keys)
-      setColumnsMap(nextMap)
-    }
-
-    function renderPinAction(node: ColumnNode) {
-      const fixed = columnsMap.value[node.columnKey]?.fixed ?? node.fixed
-      const showListItemOption = props.showListItemOption ?? true
-      if (!showListItemOption || node.parentKey)
-        return null
-
-      const iconProps = [
-        {
-          fixed: 'left' as const,
-          title: intl.getMessage('tableToolBar.leftPin', '固定在列首'),
-          show: fixed !== 'left',
-          icon: <VerticalAlignTopOutlined />,
-        },
-        {
-          fixed: undefined,
-          title: intl.getMessage('tableToolBar.noPin', '不固定'),
-          show: !!fixed,
-          icon: <VerticalAlignMiddleOutlined />,
-        },
-        {
-          fixed: 'right' as const,
-          title: intl.getMessage('tableToolBar.rightPin', '固定在列尾'),
-          show: fixed !== 'right',
-          icon: <VerticalAlignBottomOutlined />,
-        },
-      ]
-
-      return (
-        <span class={[`${prefixCls.value}-list-item-option`, hashId]}>
-          {iconProps.map(item => item.show
-            ? (
-                <Tooltip key={item.title} title={item.title}>
-                  <span
-                    onClick={(event: MouseEvent) => {
-                      event.stopPropagation()
-                      event.preventDefault()
-                      setColumnFixed(node.columnKey, item.fixed)
-                    }}
-                  >
-                    {item.icon}
-                  </span>
-                </Tooltip>
-              )
-            : null)}
-        </span>
-      )
-    }
-
-    function renderTreeNode(node: ColumnNode, level = 0): VNodeChild {
-      const state = getNodeState(node)
-      const disable = getDisableConfig(columnsMap.value[node.columnKey])
-      const expanded = expandedKeys.value.has(node.columnKey)
-      const hasChildren = !!node.children?.length
-      const checkable = props.checkable !== false
-
-      return (
-        <>
-          <div
-            key={node.columnKey}
-            class={[
-              'ant-tree-treenode',
-              'ant-tree-treenode-switcher-open',
-              disable.disabled ? 'ant-tree-treenode-disabled' : undefined,
-            ]}
-            draggable={(props.draggable ?? true) && flatColumns.value.length > 1}
-          >
-            <span
-              class={['ant-tree-indent']}
-              style={{ display: 'inline-block', width: `${level * 24}px` }}
-            />
-            <span
-              class={['ant-tree-switcher', hasChildren ? 'ant-tree-switcher_open' : 'ant-tree-switcher-noop']}
-              onClick={(event: MouseEvent) => {
-                event.stopPropagation()
-                if (!hasChildren)
-                  return
-                const next = new Set(expandedKeys.value)
-                if (next.has(node.columnKey))
-                  next.delete(node.columnKey)
-                else
-                  next.add(node.columnKey)
-                expandedKeys.value = next
-              }}
-            >
-              {hasChildren ? (expanded ? '-' : '+') : null}
-            </span>
-            {checkable
-              ? (
-                  <span
-                    class={[
-                      'ant-tree-checkbox',
-                      state === 'checked' ? 'ant-tree-checkbox-checked' : undefined,
-                      state === 'indeterminate' ? 'ant-tree-checkbox-indeterminate' : undefined,
-                      disable.checkboxDisabled ? 'ant-tree-checkbox-disabled' : undefined,
-                    ]}
-                    onClick={(event: MouseEvent) => {
-                      event.stopPropagation()
-                      if (!disable.checkboxDisabled)
-                        setColumnShow(node.columnKey, state !== 'checked')
-                    }}
-                  >
-                    <span class="ant-tree-checkbox-inner" />
-                  </span>
-                )
-              : null}
-            <span
-              class="ant-tree-node-content-wrapper"
-              onClick={() => {
-                if (!disable.checkboxDisabled && checkable)
-                  setColumnShow(node.columnKey, state !== 'checked')
-              }}
-              onDragstart={() => draggingKey.value = node.columnKey}
-              onDragenter={() => {}}
-              onDragover={(event: DragEvent) => event.preventDefault()}
-              onDrop={(event: DragEvent) => {
-                event.preventDefault()
-                moveColumn(draggingKey.value, node.columnKey, 1)
-                draggingKey.value = undefined
-              }}
-              onDragend={() => draggingKey.value = undefined}
-            >
-              <span class={[`${prefixCls.value}-list-item`, hashId]}>
-                <div class={[`${prefixCls.value}-list-item-title`, hashId]}>
-                  <Typography.Text style={{ width: '80px' }} ellipsis={{ tooltip: runFunction(node.titleNode, node) }}>
-                    {node.titleNode}
-                  </Typography.Text>
-                </div>
-                {renderPinAction(node)}
-              </span>
-            </span>
-          </div>
-          {expanded && hasChildren ? node.children!.map(child => renderTreeNode(child, level + 1)) : null}
-        </>
-      )
-    }
-
-    function renderCheckboxList(list: ColumnNode[], title: string, showTitle = true) {
-      if (!list.length)
-        return null
-      return (
-        <>
-          {showTitle ? <span class={[`${prefixCls.value}-list-title`, hashId]}>{title}</span> : null}
-          <div class="ant-tree ant-tree-block-node">
-            <div class="ant-tree-list">
-              <div class="ant-tree-list-holder" style={{ maxHeight: props.listsHeight ? `${props.listsHeight}px` : '280px', overflow: 'auto' }}>
-                <div class="ant-tree-list-holder-inner">
-                  {list.map(node => renderTreeNode(node))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )
-    }
-
-    function renderGroupList() {
-      const leftList: ColumnNode[] = []
-      const rightList: ColumnNode[] = []
-      const list: ColumnNode[] = []
-      localColumns.value.forEach((node) => {
-        const fixed = columnsMap.value[node.columnKey]?.fixed ?? node.fixed
-        if (fixed === 'left') {
-          leftList.push(node)
-          return
-        }
-        if (fixed === 'right') {
-          rightList.push(node)
-          return
-        }
-        list.push(node)
-      })
-      const showLeft = leftList.length > 0
-      const showRight = rightList.length > 0
-      return (
-        <div class={[`${prefixCls.value}-list`, showLeft || showRight ? `${prefixCls.value}-list-group` : undefined, hashId]}>
-          {renderCheckboxList(leftList, intl.getMessage('tableToolBar.leftFixedTitle', '固定在左侧'))}
-          {renderCheckboxList(list, intl.getMessage('tableToolBar.noFixedTitle', '不固定'), showLeft || showRight)}
-          {renderCheckboxList(rightList, intl.getMessage('tableToolBar.rightFixedTitle', '固定在右侧'))}
-        </div>
-      )
-    }
-
+    const { columnsMap, setColumnsMap } = useTableContext()
     return () => {
-      const checkedReset = props.checkedReset ?? true
-      const overlay = open.value
-        ? (
-            <div class={['ant-popover', `${prefixCls.value}-overlay`, hashId]}>
-              <div class="ant-popover-content">
-                <div class="ant-popover-inner">
-                  <div class={[`${prefixCls.value}-title`, hashId]}>
-                    {props.checkable === false
-                      ? <div />
-                      : (
-                          <Checkbox
-                            indeterminate={indeterminate.value}
-                            checked={allChecked.value}
-                            onChange={(event: any) => setAllSelectAction(event?.target?.checked)}
-                          >
-                            {intl.getMessage('tableToolBar.columnDisplay', '列展示')}
-                          </Checkbox>
-                        )}
-                    {checkedReset
-                      ? (
-                          <a class={[`${prefixCls.value}-action-rest-button`, hashId]} onClick={clearClick}>
-                            {intl.getMessage('tableToolBar.reset', '重置')}
-                          </a>
-                        )
-                      : null}
-                    {props.extra ? <Space size={12} align="center">{props.extra}</Space> : null}
-                  </div>
-                  {renderGroupList()}
-                </div>
-              </div>
-            </div>
-          )
-        : null
-
-      const trigger = props.children || slots.default?.() || (
-        <Tooltip title={intl.getMessage('tableToolBar.columnSetting', '列设置')}>
-          {props.settingIcon || <SettingOutlined />}
+      if (!props.show)
+        return null
+      return (
+        <Tooltip title={props.title}>
+          <span
+            onClick={(e: MouseEvent) => {
+              e.stopPropagation()
+              e.preventDefault()
+              const config = columnsMap?.[props.columnKey] || {}
+              const columnKeyMap = {
+                ...columnsMap,
+                [props.columnKey]: { ...config, fixed: props.fixed } as ColumnsState,
+              }
+              setColumnsMap(columnKeyMap)
+            }}
+          >
+            {slots.default?.()}
+          </span>
         </Tooltip>
-      )
-
-      return wrapSSR(
-        <span class={hashId}>
-          <span onClick={() => open.value = true}>{trigger}</span>
-          {overlay}
-        </span>,
       )
     }
   },
 })
+
+const CheckboxListItem = defineComponent({
+  name: 'ColumnSettingCheckboxListItem',
+  props: {
+    columnKey: { type: [String, Number] as PropType<string | number>, required: true },
+    className: { type: String, default: undefined },
+    title: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
+    fixed: { type: [Boolean, String] as PropType<boolean | 'left' | 'right'>, default: undefined },
+    showListItemOption: { type: Boolean, default: undefined },
+    isLeaf: { type: Boolean, default: undefined },
+  },
+  setup(props) {
+    const intl = useIntl()
+    const { hashId } = useProProviderContext()
+
+    return () => {
+      const { className, columnKey, fixed, isLeaf, showListItemOption, title } = props
+      const dom = (
+        <span class={clsx(`${className}-list-item-option`, hashId)}>
+          <ToolTipIcon
+            columnKey={columnKey}
+            fixed="left"
+            title={intl.getMessage('tableToolBar.leftPin', '固定在列首')}
+            show={fixed !== 'left'}
+          >
+            <VerticalAlignTopOutlined />
+          </ToolTipIcon>
+          <ToolTipIcon
+            columnKey={columnKey}
+            fixed={undefined}
+            title={intl.getMessage('tableToolBar.noPin', '不固定')}
+            show={!!fixed}
+          >
+            <VerticalAlignMiddleOutlined />
+          </ToolTipIcon>
+          <ToolTipIcon
+            columnKey={columnKey}
+            fixed="right"
+            title={intl.getMessage('tableToolBar.rightPin', '固定在列尾')}
+            show={fixed !== 'right'}
+          >
+            <VerticalAlignBottomOutlined />
+          </ToolTipIcon>
+        </span>
+      )
+      return (
+        <span class={clsx(`${className}-list-item`, hashId)} key={columnKey}>
+          <div class={clsx(`${className}-list-item-title`, hashId)}>
+            {title}
+          </div>
+          {showListItemOption && !isLeaf ? dom : null}
+        </span>
+      )
+    }
+  },
+})
+
+const CheckboxList = defineComponent({
+  name: 'ColumnSettingCheckboxList',
+  props: {
+    list: { type: Array as PropType<(ProColumns<any> & { index?: number })[]>, required: true },
+    className: { type: String, default: undefined },
+    title: { type: String, required: true },
+    draggable: { type: Boolean, required: true },
+    checkable: { type: Boolean, required: true },
+    showListItemOption: { type: Boolean, required: true },
+    showTitle: { type: Boolean, default: true },
+    listHeight: { type: Number, default: 280 },
+  },
+  setup(props) {
+    const { hashId } = useProProviderContext()
+
+    const { columnsMap, setColumnsMap, sortKeyColumns, setSortKeyColumns } = useTableContext()
+    const show = computed(() => props.list && props.list.length > 0)
+
+    const treeDataConfig = computed(() => {
+      if (!show.value)
+        return {} as { list?: DataNode[], keys?: string[], map?: Map<string | number, DataNode & { parentKey?: string }> }
+      const checkedKeys: string[] = []
+      const treeMap = new Map<string | number, DataNode & { parentKey?: string }>()
+
+      const loopData = (
+        data: any[],
+        parentConfig?: ColumnsState & { columnKey: string },
+      ): DataNode[] =>
+        data.map(({ key, dataIndex: _dataIndex, children, ...rest }) => {
+          const columnKey = genColumnKey(
+            key,
+            [parentConfig?.columnKey, rest.index].filter(Boolean).join('-'),
+          )
+          const config = columnsMap?.[columnKey || 'null'] || { show: true }
+          if (config.show !== false && !children)
+            checkedKeys.push(columnKey)
+
+          const item: DataNode = {
+            key: columnKey,
+            ...omit(rest, ['className']),
+            selectable: false,
+            disabled: config.disable === true,
+            disableCheckbox:
+              typeof config.disable === 'boolean'
+                ? config.disable
+                : config.disable?.checkbox,
+            isLeaf: parentConfig ? true : undefined,
+          }
+
+          if (children) {
+            item.children = loopData(children, {
+              ...config,
+              columnKey,
+            })
+            // 如果children 已经全部是show了，把自己也设置为show
+            if (
+              item.children?.every(childrenItem =>
+                checkedKeys?.includes(childrenItem.key as string),
+              )
+            ) {
+              checkedKeys.push(columnKey)
+            }
+          }
+          // 必须用 columnKey（Tree 节点的 key）而非原始 column.key 存入 treeMap，
+          // 否则 onCheckTree.loopSetShow 通过 e.node.key（= columnKey）查父子关系时
+          // treeMap.get 永远返回 undefined，导致嵌套列的父子联动全部失效。
+          treeMap.set(columnKey, { ...item, parentKey: parentConfig?.columnKey })
+          return item
+        })
+      return { list: loopData(props.list), keys: checkedKeys, map: treeMap }
+    })
+
+    /** 移动到指定的位置 */
+    const move = useRefFunction(
+      (id: string | number, targetId: string | number, dropPosition: number) => {
+        const newMap = { ...columnsMap }
+        const newColumns = [...sortKeyColumns]
+        const findIndex = newColumns.findIndex(columnKey => columnKey === id)
+        const targetIndex = newColumns.findIndex(columnKey => columnKey === targetId)
+        const isDownWard = dropPosition >= findIndex
+        if (findIndex < 0)
+          return
+        const targetItem = newColumns[findIndex]
+        newColumns.splice(findIndex, 1)
+
+        if (dropPosition === 0) {
+          newColumns.unshift(targetItem)
+        }
+        else {
+          newColumns.splice(
+            isDownWard ? targetIndex : targetIndex + 1,
+            0,
+            targetItem,
+          )
+        }
+        // 重新生成排序数组
+        newColumns.forEach((key, order) => {
+          newMap[key] = { ...(newMap[key] || {}), order }
+        })
+        // 更新数组
+        setColumnsMap(newMap)
+        setSortKeyColumns(newColumns)
+      },
+    )
+
+    /** 选中反选功能 */
+    const onCheckTree = useRefFunction((e: { checked: boolean, node: { key: string | number } }) => {
+      const newColumnMap = { ...columnsMap }
+      const config = treeDataConfig.value
+
+      const loopSetShow = (key: string | number) => {
+        const newSetting = { ...newColumnMap[key] }
+        newSetting.show = e.checked
+
+        // 如果含有子节点，也要同步子节点状态
+        if (config.map?.get(key)?.children) {
+          config.map
+            .get(key)
+            ?.children?.forEach(item => loopSetShow(item.key as string))
+        }
+
+        // 先写入当前节点，再检查父节点 —— 顺序至关重要：
+        // 父节点逻辑需要读取兄弟节点的最新状态，当前节点必须先写入 newColumnMap，
+        // 否则读到的仍是旧值，导致 allSiblingsUnchecked 判断出错。
+        newColumnMap[key] = newSetting
+
+        // 勾选方向：子节点选中时父节点自动设为 true
+        // 取消方向：检查所有兄弟节点是否已全部取消，若是则父节点也取消
+        const parentKey = config.map?.get(key)?.parentKey
+        if (parentKey) {
+          if (e.checked) {
+            newColumnMap[parentKey] = { ...newColumnMap[parentKey], show: true }
+          }
+          else {
+            const siblings = config.map?.get(parentKey)?.children ?? []
+            const allSiblingsUnchecked = siblings.every((sibling) => {
+              const siblingState = newColumnMap[sibling.key as string]
+              return siblingState && siblingState.show === false
+            })
+            if (allSiblingsUnchecked) {
+              newColumnMap[parentKey] = {
+                ...newColumnMap[parentKey],
+                show: false,
+              }
+            }
+          }
+        }
+      }
+      loopSetShow(e.node.key)
+      setColumnsMap({ ...newColumnMap })
+    })
+
+    return () => {
+      if (!show.value)
+        return null
+
+      const config = treeDataConfig.value
+      const { className, checkable, draggable, showListItemOption, showTitle, title: listTitle, listHeight } = props
+
+      const listDom = (
+        <Tree
+          itemHeight={24}
+          draggable={
+            draggable
+            && !!config.list?.length
+            && config.list?.length > 1
+          }
+          checkable={checkable}
+          // antdv-next Tree 的 @drop 事件 payload 与 antd onDrop 一致：
+          // { node, dragNode, dropPosition, dropToGap }，沿用同一套 reorder 数学。
+          onDrop={(info: any) => {
+            const dropKey = info.node.key
+            const dragKey = info.dragNode.key
+            const { dropPosition, dropToGap } = info
+            const position
+              = dropPosition === -1 || !dropToGap ? dropPosition + 1 : dropPosition
+            move(dragKey, dropKey, position)
+          }}
+          blockNode
+          // antdv-next Tree 的 @check 第二参为 CheckInfo（含 checked / node），
+          // 与 antd 一致，直接转发给 onCheckTree。
+          onCheck={(_: any, e: any) => onCheckTree(e)}
+          checkedKeys={config.keys}
+          showLine={false}
+          titleRender={(_node: any) => {
+            const node = { ..._node, children: undefined }
+            if (!node.title)
+              return null
+            const normalizedTitle = runFunction(node.title, node)
+            const wrappedTitle = (
+              <Typography.Text
+                style={{ width: '80px' }}
+                ellipsis={{ tooltip: normalizedTitle }}
+              >
+                {normalizedTitle}
+              </Typography.Text>
+            )
+
+            return (
+              <CheckboxListItem
+                className={className}
+                {...omit(node, ['key'])}
+                showListItemOption={showListItemOption}
+                title={wrappedTitle}
+                columnKey={node.key as string}
+              />
+            )
+          }}
+          height={listHeight}
+          treeData={config.list?.map(
+            ({
+              disabled: _disabled /* 不透传 disabled，使子节点禁用时也可以拖动调整顺序 */,
+              ...rest
+            }) => rest,
+          )}
+        />
+      )
+      return (
+        <>
+          {showTitle && (
+            <span class={clsx(`${className}-list-title`, hashId)}>
+              {listTitle}
+            </span>
+          )}
+          {listDom}
+        </>
+      )
+    }
+  },
+})
+
+const GroupCheckboxList = defineComponent({
+  name: 'ColumnSettingGroupCheckboxList',
+  props: {
+    localColumns: { type: Array as PropType<(ProColumns<any> & { index?: number })[]>, required: true },
+    className: { type: String, default: undefined },
+    draggable: { type: Boolean, required: true },
+    checkable: { type: Boolean, required: true },
+    showListItemOption: { type: Boolean, required: true },
+    listsHeight: { type: Number, default: undefined },
+  },
+  setup(props) {
+    const { hashId } = useProProviderContext()
+    const intl = useIntl()
+
+    return () => {
+      const rightList: (ProColumns<any> & { index?: number })[] = []
+      const leftList: (ProColumns<any> & { index?: number })[] = []
+      const list: (ProColumns<any> & { index?: number })[] = []
+
+      props.localColumns.forEach((item) => {
+        /** 不在 setting 中展示的 */
+        if (item.hideInSetting)
+          return
+
+        const { fixed } = item
+        if (fixed === 'left') {
+          leftList.push(item)
+          return
+        }
+        if (fixed === 'right') {
+          rightList.push(item)
+          return
+        }
+        list.push(item)
+      })
+
+      const showRight = rightList && rightList.length > 0
+      const showLeft = leftList && leftList.length > 0
+      const { className, checkable, draggable, showListItemOption, listsHeight } = props
+      return (
+        <div
+          class={clsx(`${className}-list`, hashId, {
+            [`${className}-list-group`]: showRight || showLeft,
+          })}
+        >
+          <CheckboxList
+            title={intl.getMessage('tableToolBar.leftFixedTitle', '固定在左侧')}
+            list={leftList}
+            draggable={draggable}
+            checkable={checkable}
+            showListItemOption={showListItemOption}
+            className={className}
+            listHeight={listsHeight}
+          />
+          {/* 如果没有任何固定，不需要显示title */}
+          <CheckboxList
+            list={list}
+            draggable={draggable}
+            checkable={checkable}
+            showListItemOption={showListItemOption}
+            title={intl.getMessage('tableToolBar.noFixedTitle', '不固定')}
+            showTitle={showLeft || showRight}
+            className={className}
+            listHeight={listsHeight}
+          />
+          <CheckboxList
+            title={intl.getMessage('tableToolBar.rightFixedTitle', '固定在右侧')}
+            list={rightList}
+            draggable={draggable}
+            checkable={checkable}
+            showListItemOption={showListItemOption}
+            className={className}
+            listHeight={listsHeight}
+          />
+        </div>
+      )
+    }
+  },
+})
+
+const ColumnSetting = defineComponent({
+  name: 'ColumnSetting',
+  props: {
+    columns: { type: Array as PropType<(TableColumnType<any> & { index?: number })[]>, default: () => [] },
+    draggable: { type: Boolean, default: undefined },
+    checkable: { type: Boolean, default: undefined },
+    showListItemOption: { type: Boolean, default: undefined },
+    checkedReset: { type: Boolean, default: true },
+    listsHeight: { type: Number, default: undefined },
+    extra: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
+    settingIcon: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
+  },
+  setup(props, { slots }) {
+    // 获得当前上下文
+    const counter = useTableContext()
+
+    const localColumns = computed(() => props.columns as (TableColumnType<any> & {
+      index?: number
+      fixed?: any
+      key?: any
+    })[])
+
+    const { columnsMap, setColumnsMap, clearPersistenceStorage } = counter
+
+    /**
+     * 设置全部选中，或全部未选中
+     */
+    const setAllSelectAction = useRefFunction((show: boolean = true) => {
+      const columnKeyMap = {} as Record<string, any>
+      const loopColumns = (columns: any) => {
+        columns.forEach(({ key, fixed, index, children, disable }: any) => {
+          const columnKey = genColumnKey(key, index)
+          if (columnKey) {
+            columnKeyMap[columnKey] = {
+              // 子节点 disable 时，不修改节点显示状态
+              show: disable ? columnsMap?.[columnKey]?.show : show,
+              fixed,
+              disable,
+              order: columnsMap?.[columnKey]?.order,
+            }
+          }
+          if (children)
+            loopColumns(children)
+        })
+      }
+      loopColumns(localColumns.value)
+      setColumnsMap(columnKeyMap)
+    })
+
+    /** 全选和反选 */
+    const checkedAll = useRefFunction((e: any) => {
+      if (e.target.checked)
+        setAllSelectAction()
+      else
+        setAllSelectAction(false)
+    })
+
+    /** 重置项目 */
+    const clearClick = useRefFunction(() => {
+      clearPersistenceStorage?.()
+      // 直接从 propsRef 读取最新 columnsState.value，消除 mount-only 缓存的 stale 问题。
+      setColumnsMap(
+        counter.propsRef.value?.columnsState?.defaultValue
+        || counter.propsRef.value?.columnsState?.value
+        || counter.defaultColumnKeyMap!,
+      )
+    })
+
+    // 未选中的 key 列表 —— 从 localColumns（当前可见列）派生，而非从 columnsMap 全量派生。
+    const unCheckedKeys = computed(() => {
+      return localColumns.value.filter(({ key, dataIndex }: any, index: number) => {
+        const columnKey = genColumnKey(key ?? (dataIndex as string), index)
+        const state = columnsMap?.[columnKey]
+        return state && state.show === false
+      })
+    })
+
+    // 是否全部列都已选中
+    const allChecked = computed(() => unCheckedKeys.value.length === 0 && localColumns.value.length > 0)
+
+    // 是否部分选中（indeterminate）
+    const indeterminate = computed(() =>
+      unCheckedKeys.value.length > 0 && unCheckedKeys.value.length < localColumns.value.length,
+    )
+
+    const intl = useIntl()
+    const prefixCls = useProPrefixCls('pro-table-column-setting')
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
+
+    return () => {
+      const className = prefixCls.value
+      return wrapSSR(
+        <Popover
+          arrow={false}
+          title={(
+            <div class={clsx(`${className}-title`, hashId)}>
+              {props.checkable === false
+                ? (
+                    <div />
+                  )
+                : (
+                    <Checkbox
+                      indeterminate={indeterminate.value}
+                      checked={allChecked.value}
+                      onChange={(e: any) => {
+                        checkedAll(e)
+                      }}
+                    >
+                      {intl.getMessage('tableToolBar.columnDisplay', '列展示')}
+                    </Checkbox>
+                  )}
+              {props.checkedReset
+                ? (
+                    <a
+                      onClick={clearClick}
+                      class={clsx(`${className}-action-rest-button`, hashId)}
+                    >
+                      {intl.getMessage('tableToolBar.reset', '重置')}
+                    </a>
+                  )
+                : null}
+              {props?.extra
+                ? (
+                    <Space size={12} align="center">
+                      {props.extra}
+                    </Space>
+                  )
+                : null}
+            </div>
+          )}
+          classNames={{
+            root: clsx(`${className}-overlay`, hashId),
+          }}
+          trigger="click"
+          placement="bottomRight"
+          content={(
+            <GroupCheckboxList
+              checkable={props.checkable ?? true}
+              draggable={props.draggable ?? true}
+              showListItemOption={props.showListItemOption ?? true}
+              className={className}
+              localColumns={localColumns.value as any}
+              listsHeight={props.listsHeight}
+            />
+          )}
+        >
+          {slots.default?.() || (
+            <Tooltip
+              title={intl.getMessage('tableToolBar.columnSetting', '列设置')}
+            >
+              {props.settingIcon ?? <SettingOutlined />}
+            </Tooltip>
+          )}
+        </Popover>,
+      )
+    }
+  },
+})
+
+export default ColumnSetting
+export { ColumnSetting }

@@ -1,7 +1,9 @@
 import { Input } from 'antdv-next'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ProConfigProvider, ProTable } from '../../index'
+import ProTable from '../../table'
+import { ProProvider } from '../../provider'
 import { act, cleanup, fireEvent, render, waitForWaitTime } from '../testUtils'
+import './tableTestSetup'
 
 const cascaderOptions = [
   {
@@ -86,19 +88,23 @@ afterEach(() => {
 describe('basicTable valueType', () => {
   it('🎏 table support user valueType', async () => {
     const html = render(
-      <ProConfigProvider
-        valueTypeMap={{
-          link: {
-            render: (text: any) => <a id="link">{text}</a>,
-            formItemRender: (_: any, props: any) => (
-              <Input
-                placeholder="请输入链接"
-                id="name"
-                {...props?.fieldProps}
-              />
-            ),
-          },
-        }}
+      <ProProvider.Provider
+        value={
+          {
+            valueTypeMap: {
+              link: {
+                render: (text: any) => <a id="link">{text}</a>,
+                formItemRender: (_: any, props: any) => (
+                  <Input
+                    placeholder="请输入链接"
+                    id="name"
+                    {...props?.fieldProps}
+                  />
+                ),
+              },
+            },
+          } as any
+        }
       >
         <ProTable
           form={{
@@ -106,7 +112,7 @@ describe('basicTable valueType', () => {
           }}
           {...defaultProps}
         />
-      </ProConfigProvider>,
+      </ProProvider.Provider>,
     )
     await waitForWaitTime(1200)
 
@@ -123,24 +129,28 @@ describe('basicTable valueType', () => {
 
   it('🎏 table valueType render support fieldProps', async () => {
     const html = render(
-      <ProConfigProvider
-        valueTypeMap={{
-          link: {
-            render: (text: any, { fieldProps }: any) => (
-              <a id="link">
-                {text}
-                {fieldProps.color}
-              </a>
-            ),
-            formItemRender: (_: any, props: any) => (
-              <Input
-                placeholder="请输入链接"
-                id="name"
-                {...props?.fieldProps}
-              />
-            ),
-          },
-        }}
+      <ProProvider.Provider
+        value={
+          {
+            valueTypeMap: {
+              link: {
+                render: (text: any, { fieldProps }: any) => (
+                  <a id="link">
+                    {text}
+                    {fieldProps.color}
+                  </a>
+                ),
+                formItemRender: (_: any, props: any) => (
+                  <Input
+                    placeholder="请输入链接"
+                    id="name"
+                    {...props?.fieldProps}
+                  />
+                ),
+              },
+            },
+          } as any
+        }
       >
         <ProTable
           form={{
@@ -148,7 +158,7 @@ describe('basicTable valueType', () => {
           }}
           {...defaultProps}
         />
-      </ProConfigProvider>,
+      </ProProvider.Provider>,
     )
     await waitForWaitTime(1200)
 
@@ -162,11 +172,12 @@ describe('basicTable valueType', () => {
 
     html.unmount()
   })
+
   it('🎏 table support filter when valueType is treeSelect', async () => {
     const html = render(<ProTable {...defaultProps} />)
     await waitForWaitTime(1200)
 
-    act(() => {
+    await act(() => {
       fireEvent.change(html.baseElement.querySelector('input#treeSelect')!, {
         target: {
           value: 'Ja',
@@ -187,7 +198,7 @@ describe('basicTable valueType', () => {
       0,
     )
 
-    act(() => {
+    await act(() => {
       fireEvent.change(html.baseElement.querySelector('input#treeSelect')!, {
         target: {
           value: 'Javasc',
@@ -207,8 +218,6 @@ describe('basicTable valueType', () => {
     expect(html.baseElement.querySelectorAll('span[title="Go"]').length).toBe(
       0,
     )
-    // 经过两轮 filter 后，treeSelect 的下拉项仅匹配 Javascript
-    // 验证选中项与表格主体均渲染正常
     expect(html.baseElement.querySelector('input#treeSelect')).toBeTruthy()
     expect(html.baseElement.querySelector('.ant-table')).toBeTruthy()
 

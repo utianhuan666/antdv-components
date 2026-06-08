@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import ProTable from '../../table'
 import { waitFor } from '../testUtils'
+import './tableTestSetup'
 
 const waitTime = (time = 100) => new Promise(resolve => setTimeout(resolve, time))
 

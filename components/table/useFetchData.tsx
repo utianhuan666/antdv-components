@@ -89,10 +89,14 @@ export default function useFetchData<T extends Record<string, any>>(
   const requestSeq = ref(0)
 
   const pageInfo = ref<PageInfo>(mergeOptionAndPageInfo(options))
+  // 与 React 一致：内部 tableDataList 初值为 defaultData（未传时为 undefined），
+  // 而非 `[]`。Table 的 params effect 用 `action.dataSource && !isEqual(...)` 判定
+  // 「是否已经请求过数据」，若初值就是 `[]`（truthy）会在首次挂载、数据尚未返回时
+  // 误判为已加载，从而把 current 重置成 1，吞掉 defaultCurrent（见 base use 测试）。
   const dataSource = resolveControlledRef(
     () => options.dataSource,
     value => options.onDataSourceChange?.(value),
-    defaultData ?? [],
+    defaultData as T[],
   )
 
   const controlledLoading = computed(() => {
@@ -306,7 +310,7 @@ export default function useFetchData<T extends Record<string, any>>(
     },
   )
 
-  const effectsKey = computed(() => stableStringify((options.effects || []).map(item => unref(item as any))))
+  const effectsKey = computed(() => stableStringify((options.effects || []).map(item => (typeof item === 'function' ? (item as any)() : unref(item as any)))))
 
   watch(
     () => [effectsKey.value, options.manual] as const,
@@ -347,7 +351,11 @@ export default function useFetchData<T extends Record<string, any>>(
 
   return {
     get dataSource() {
-      return dataSource.value || []
+      // 与 React 一致：返回原始值（未加载时为 undefined），不强制 `|| []`。
+      // Table 的 params effect 依赖 `action.dataSource` 为 undefined 来判定「尚未请求过」，
+      // 若强制成 `[]` 会在首次挂载误判已加载并把 current 重置为 1（见 base use 测试）。
+      // 所有消费方均已用 `?.length` / `|| []` 兜底。
+      return dataSource.value
     },
     setDataSource(value) {
       dataSource.value = typeof value === 'function' ? value(dataSource.value || []) : value

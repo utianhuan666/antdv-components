@@ -3,6 +3,7 @@ import { ProTable, TableDropdown } from '../../index'
 import { act, cleanup, fireEvent, render, waitForWaitTime } from '../testUtils'
 
 import { request } from './fixtures'
+import './tableTestSetup'
 
 afterEach(() => {
   cleanup()

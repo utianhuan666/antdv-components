@@ -111,6 +111,12 @@ function cloneValue<T>(value: T): T {
   if (Array.isArray(value))
     return value.map(item => cloneValue(item)) as T
   if (value && typeof value === 'object') {
+    // 仅深拷贝「普通对象」：dayjs / moment / Date / 其他类实例必须按引用保留，
+    // 否则会被拆成 { $L, $d, ... } 这种普通对象，丢失原型，导致
+    // dayjs.isDayjs() 失效、日期值无法被 conversionMomentValue 正确格式化。
+    const proto = Object.getPrototypeOf(value)
+    if (proto !== Object.prototype && proto !== null)
+      return value
     return Object.keys(value as Record<string, any>).reduce<Record<string, any>>((result, key) => {
       result[key] = cloneValue((value as Record<string, any>)[key])
       return result
@@ -122,7 +128,14 @@ function cloneValue<T>(value: T): T {
 function mergeValues(target: Record<string, any>, source: Record<string, any>) {
   Object.keys(source || {}).forEach((key) => {
     const value = source[key]
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
+    // 仅对「普通对象」做深合并：dayjs / moment / Date / 其他类实例按引用保留，
+    // 否则 { ...dayjs } 会拆成普通对象，丢失原型导致日期格式化失效。
+    const isPlainObj
+      = value
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
+    if (isPlainObj) {
       target[key] = mergeValues({ ...(target[key] || {}) }, value)
     }
     else {
@@ -151,8 +164,16 @@ export const BaseForm = defineComponent({
       syncToInitialValues: computed(() => props.syncToInitialValues ?? true),
       extraUrlParams: computed(() => props.extraUrlParams),
     })
+    // 记录各字段（列）通过 initialValue 注册的初始值。React/antd 里 resetFields 会同步把字段
+    // 恢复到其 initialValue；本实现以 model 为单一数据源，故需把列级 initialValue 记录下来，
+    // 供 reset 时合并恢复（见 protable-reset-params 第二段断言）。
+    const fieldsInitialValues = ref<Record<string, any>>({})
     const getMergedInitialValues = (urlParams: Record<string, any>) => {
-      const initialValues = cloneValue((props.model || props.initialValues || {}) as Record<string, any>)
+      // 列级 initialValue 优先级最低，被表单级 initialValues / url 覆盖。
+      const initialValues = mergeValues(
+        cloneValue(fieldsInitialValues.value),
+        cloneValue((props.model || props.initialValues || {}) as Record<string, any>),
+      )
       if (props.syncToUrlAsImportant)
         return mergeValues(initialValues, urlParams)
       return mergeValues(cloneValue(urlParams), initialValues)
@@ -306,6 +327,12 @@ export const BaseForm = defineComponent({
             replaceValues(model.value, nextModel)
         }
       },
+      // 字段注册 initialValue 时记录，供 reset 同步恢复列级初始值
+      setFieldInitialValue: (name: NamePath, value: any) => {
+        const namePath = toNamePath(name)
+        if (namePath)
+          fieldsInitialValues.value = namePathSet(cloneValue(fieldsInitialValues.value), namePath, value)
+      },
       formComponentType: props.formComponentType,
       formKey: props.formKey,
       formRef,
@@ -338,6 +365,11 @@ export const BaseForm = defineComponent({
       target.current = formInstance.value
     }
 
+    // mirror React：ref 在渲染期同步赋值。formInstance 的方法（submit/setFieldsValue 等）
+    // 均为委托内部 form 的稳定闭包，故可在挂载前就把外部 formRef 指过去；否则测试在
+    // render 后的同步 act 里读取 formRef.current 会得到 undefined（之前仅在 onMounted 异步赋值）。
+    watch(formInstance, updateExternalFormRef, { immediate: true })
+
     watch(() => props.loading, (value) => {
       loading.value = Boolean(value)
     })
@@ -368,8 +400,10 @@ export const BaseForm = defineComponent({
       }
       await nextTick()
       updateExternalFormRef()
-      if (typeof props.onInit === 'function')
-        props.onInit(model.value as any, formInstance.value)
+      if (typeof props.onInit === 'function') {
+        // mirror React BaseForm: onInit 接收格式化后的值（date→string 等），而非原始 model
+        props.onInit(transformValues(getCurrentValues()) as any, formInstance.value)
+      }
     })
 
     expose(Object.assign(formInstance.value, {

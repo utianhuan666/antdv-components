@@ -3,16 +3,18 @@ import { Input, message } from 'antdv-next'
 import dayjs from 'dayjs'
 import { FieldStatus, TableDropdown } from '../../index'
 
-function getFetchData(size: number): {
-  key: string | number
-  name: string
-  age: string | number
-  address: string
-  money: number
-  sex: string
-  date: number
-  status: number
-}[] {
+function getFetchData(
+  size: number,
+): {
+    key: string | number
+    name: string
+    age: string | number
+    address: string
+    money: number
+    sex: string
+    date: number
+    status: number
+  }[] {
   const data: {
     key: string | number
     name: string
@@ -145,7 +147,7 @@ export const columns: ProColumns[] = [
     valueType: 'option',
     key: 'option',
     dataIndex: 'id',
-    render: (text, row, index, action) => [
+    render: (_text, _row, index, action) => [
       <a
         key="delete"
         onClick={() => {
@@ -182,14 +184,14 @@ export function request(params?: {
   pageSize?: number
   current?: number
 }): Promise<{
-  data: {
-    key: string | number
-    name: string
-    age: string | number
-    address: string
-  }[]
-  success: true
-}> {
+    data: {
+      key: string | number
+      name: string
+      age: string | number
+      address: string
+    }[]
+    success: true
+  }> {
   return Promise.resolve({
     data: getFetchData(params?.pageSize || 46),
     total: 200,

@@ -1,238 +1,595 @@
 import type {
-  FormInstance,
+  InputSearchProps as SearchProps,
+  SizeType,
   SpinProps,
-  TableColumnType,
   TableProps,
 } from 'antdv-next'
+import type {
+  ColumnFilterItem,
+  ColumnType,
+  CompareFn,
+  SorterResult,
+  SortOrder,
+} from 'antdv-next/dist/table/interface'
+import type dayjs from 'dayjs'
 import type { CSSProperties, Ref, VNodeChild } from 'vue'
 import type { ProCardProps } from '../card'
 import type { ProFieldEmptyText } from '../field'
-import type { ProFormInstance, ProFormProps, QueryFilterProps } from '../form'
-import type { ProListSlot } from '../list/constants'
+import type { ProFormProps, QueryFilterProps } from '../form'
 import type {
   LabelTooltipType,
   NamePath,
-  PageInfo,
   ProCoreActionType,
+  ProEllipsis,
   ProSchema,
   ProSchemaComponentTypes,
+  ProTableEditableFnType,
+  RowEditableConfig,
   SearchTransformKeyFn,
 } from '../utils'
-import type { RecordKey, RowEditableConfig, UseEditableUtilType } from '../utils/useEditableArray'
 import type { AlertRenderType } from './components/Alert'
+import type { SearchConfig, TableFormItem } from './components/Form/FormRender'
 import type { ListToolBarProps } from './components/ListToolBar'
 import type { OptionConfig, ToolBarProps } from './components/ToolBar'
 import type { DensitySize } from './components/ToolBar/DensityIcon'
-import type { ColumnsState } from './Store/Provide'
+import type { ColumnsState, ContainerType } from './Store/Provide'
 
-export type { PageInfo }
+export type Key = string | number
+
+export interface PageInfo {
+  pageSize: number
+  total: number
+  current: number
+}
 
 export type RequestData<T> = {
-  data?: T[]
+  data: T[] | undefined
   success?: boolean
   total?: number
 } & Record<string, any>
 
-export type FilterValue = (string | number | boolean)[] | null
-export type SortOrder = 'ascend' | 'descend' | null | undefined
+export interface UseFetchDataAction<T = any> {
+  dataSource: T[]
+  setDataSource: (dataSource: T[]) => void
+  loading: boolean | SpinProps | undefined
+  pageInfo: PageInfo
+  reload: () => Promise<void>
+  fullScreen?: () => void
+  reset: () => void
+  pollingLoading: boolean
+  setPageInfo: (pageInfo: Partial<PageInfo>) => void
+}
+
+/** 转化列的定义 */
+export interface ColumnRenderInterface<T> {
+  item: ProColumns<T>
+  text: any
+  row: T
+  index: number
+  columnEmptyText?: ProFieldEmptyText
+  type: ProSchemaComponentTypes
+  counter: ReturnType<ContainerType>
+}
+
+export type TableRowSelection = TableProps<any>['rowSelection']
+
+/**
+ * Request filter 參數
+ * @description 与 antd 不同，Pro 有自己定义的 request FilterValue 类型，主要做了值内容的转换
+ */
+export type FilterValue = (string | number)[] | null
 
 export type ProSorter<T>
-  = | string
+  = | string // 支持变更请求时字段名称
     | boolean
-    | ((a: T, b: T) => number)
+    | CompareFn<T>
     | {
-      compare?: (a: T, b: T) => number
+      compare?: CompareFn<T>
+      /** Config multiple sorter order priority */
       multiple?: number
     }
 
+export type ProSorterResult<T> = Omit<SorterResult<T>, 'column'> & {
+  column?: ColumnType<T> & {
+    sorter?: ProSorter<T>
+  }
+}
+
 export type ExtraProColumnType<T> = Omit<
-  TableColumnType<T>,
-  'children' | 'customRender' | 'dataIndex' | 'filters' | 'onFilter' | 'render' | 'sorter' | 'title'
+  ColumnType<T>,
+  'render' | 'children' | 'title' | 'filters' | 'onFilter' | 'sorter'
 > & {
   sorter?: ProSorter<T>
-  children?: ProColumns<T>[]
-  filters?: boolean | any[]
-  onFilter?: boolean | ((value: any, record: T) => boolean)
-  defaultFilteredValue?: any[]
-  filteredValue?: any[]
-  defaultSortOrder?: SortOrder
-  sortOrder?: SortOrder
 }
 
 export type ProColumnType<T = unknown, ValueType = 'text'> = ProSchema<
   T,
   ExtraProColumnType<T> & {
-    colSize?: number
-    initialValue?: any
-    ellipsis?: boolean | { showTitle?: boolean }
-    copyable?: boolean
-    search?: boolean | { transform: SearchTransformKeyFn }
-    hideInTable?: boolean
-    hideInSearch?: boolean
-    hideInForm?: boolean
-    hideInSetting?: boolean
-    /**
-     * Used by ProList to map the column into a list item slot.
-     */
-    listSlot?: ProListSlot
-    order?: number
-    readonly?: boolean
-    disable?: boolean | { checkbox: boolean }
+    children?: ProColumns<T>[]
     index?: number
-    render?: (
-      dom: VNodeChild,
-      entity: T,
-      index: number,
-      action: ActionType | undefined,
-      schema: any,
-    ) => VNodeChild | { children?: VNodeChild, props?: Record<string, any> }
+    /**
+     * 每个表单占据的格子大小
+     *
+     * @param 总宽度 = span* colSize
+     * @param 默认为 1
+     */
+    colSize?: number
+
+    /** 搜索表单的默认值 */
+    initialValue?: any
+
+    /** @name 是否缩略 */
+    ellipsis?: ProEllipsis
+    /** @name 是否拷贝 */
+    copyable?: boolean
+
+    /** 在查询表单中隐藏 */
+    search?:
+      | boolean
+      | {
+        /**
+         * Transform: (value: any) => ({ startTime: value[0], endTime: value[1] }),
+         *
+         * @name 转化值的key, 一般用于时间区间的转化
+         */
+        transform: SearchTransformKeyFn
+      }
+
+    /** @name 在 table 中隐藏 */
+    hideInTable?: boolean
+
+    /** @name 在新建表单中删除 */
+    hideInForm?: boolean
+
+    /** @name 不在配置工具中显示 */
+    hideInSetting?: boolean
+
+    /** @name 表头的筛选菜单项 */
+    filters?: boolean | ColumnFilterItem[]
+
+    /** @name 筛选的函数，设置为 false 会关闭自带的本地筛选 */
+    onFilter?: boolean | ColumnType<T>['onFilter']
+
+    /** @name Form 的排序 */
+    order?: number
+
+    /** @name 可编辑表格是否可编辑 */
+    editable?: boolean | ProTableEditableFnType<T>
+
+    /**
+     * 用于 ProList，指定该列映射到列表项的哪个插槽位置
+     *
+     * @name 列表项插槽
+     * @example listSlot: 'title'
+     * @example listSlot: 'avatar'
+     */
+    listSlot?:
+      | 'title'
+      | 'subTitle'
+      | 'avatar'
+      | 'description'
+      | 'content'
+      | 'actions'
+      | 'aside'
+      | 'type'
+      | (string & {})
+
+    /** @name 只读 */
+    readonly?: boolean
+
+    /** @name 列设置的 disabled */
+    disable?:
+      | boolean
+      | {
+        checkbox: boolean
+      }
   },
   ProSchemaComponentTypes,
   ValueType
 >
 
-export type ProColumns<T = any, ValueType = 'text'> = ProColumnType<T, ValueType>
+export type ProColumns<T = any, ValueType = 'text'> = ProColumnType<
+  T,
+  ValueType
+>
 
 export type BorderedType = 'search' | 'table'
-export type Bordered = boolean | { search?: boolean, table?: boolean }
+
+export type Bordered
+  = | boolean
+    | {
+      search?: boolean
+      table?: boolean
+    }
 
 export interface ColumnStateType {
+  /**
+   * 持久化的类型，支持 localStorage 和 sessionStorage
+   *
+   * @param localStorage 设置在关闭浏览器后也是存在的
+   * @param sessionStorage 关闭浏览器后会丢失
+   */
   persistenceType?: 'localStorage' | 'sessionStorage'
+  /** 持久化的key，用于存储到 storage 中 */
   persistenceKey?: string
+  /** ColumnsState 的值 */
   defaultValue?: Record<string, ColumnsState>
+  /** ColumnsState 的值 */
   value?: Record<string, ColumnsState>
   onChange?: (map: Record<string, ColumnsState>) => void
 }
 
-export interface UseFetchDataAction<T = any> {
-  dataSource: T[]
-  setDataSource: (dataSource: T[] | ((dataSource: T[]) => T[])) => void
-  loading: boolean | SpinProps | undefined
-  pageInfo: PageInfo
-  reload: () => Promise<void>
-  reset: () => Promise<void>
-  pollingLoading: boolean
-  setPageInfo: (pageInfo: Partial<PageInfo>) => Promise<void>
-}
+/** ProTable 的类型定义 继承自 antd 的 Table */
+export type ProTableProps<DataSource, U, ValueType = 'text'> = {
+  /**
+   * @name 列配置能力，支持一个数组
+   */
+  columns?: ProColumns<DataSource, ValueType>[]
+  /**
+   * @name ListToolBar 的属性
+   */
+  toolbar?: ListToolBarProps
+  /**
+   * @name 幽灵模式，即是否取消卡片内容区域的 padding 和 卡片的背景颜色。
+   */
+  ghost?: boolean
 
-export type ActionType = ProCoreActionType<{
+  /**
+   * request 的参数，修改之后会触发更新
+   *
+   * @example pathname 修改重新触发 request
+   * params={{ pathName }}
+   */
+  params?: U
+
+  /** @name 列状态的配置，可以用来操作列功能 */
+  columnsState?: ColumnStateType
+
+  onSizeChange?: (size: DensitySize) => void
+
+  /**
+   * @name table 外面卡片的设置
+   */
+  cardProps?: ProCardProps | false
+
+  /**
+   * @name 渲染 table
+   */
+  tableRender?: (
+    props: ProTableProps<DataSource, U, ValueType>,
+    defaultDom: VNodeChild,
+    /** 各个区域的 dom */
+    domList: {
+      toolbar: VNodeChild
+      alert: VNodeChild
+      table: VNodeChild
+    },
+  ) => VNodeChild
+
+  /**
+   * @name 渲染 table 视图，用于定制 ProList，不推荐直接使用
+   */
+  tableViewRender?: (
+    props: TableProps<DataSource>,
+    /** 懒执行：为函数时请在需要默认 Table 时调用，避免 ProList 等仅替换视图时创建未挂载的 Table */
+    defaultDom: VNodeChild | (() => VNodeChild),
+  ) => VNodeChild | undefined
+
+  /**
+   * @name table 和搜索表单之间的 dom 渲染
+   *
+   * @example 在table 上方增加一个统计表单
+   *
+   * tableExtraRender={()=> <Statistic title="统计" value={10} />}
+   */
+  tableExtraRender?: (
+    props: ProTableProps<DataSource, U, ValueType>,
+    dataSource: DataSource[],
+  ) => VNodeChild
+
+  /**
+   * @name 渲染搜索表单
+   */
+  searchFormRender?: (
+    props: ProTableProps<DataSource, U, ValueType>,
+    defaultDom: VNodeChild,
+  ) => VNodeChild
+
+  /** @name 一个获得 dataSource 的方法 */
+  request?: (
+    params: U & {
+      pageSize?: number
+      current?: number
+      keyword?: string
+    },
+    sort: Record<string, SortOrder>,
+    filter: Record<string, FilterValue>,
+  ) => Promise<Partial<RequestData<DataSource>>>
+
+  /** @name 对数据进行一些处理 */
+  postData?: any
+  /** @name 默认的数据 */
+  defaultData?: DataSource[]
+
+  /**
+   * @name 初始化的参数，可以操作 table
+   *
+   * @example 重新刷新表格
+   * actionRef.current?.reload();
+   *
+   * @example 重置表格
+   * actionRef.current?.reset();
+   */
+  actionRef?: Ref<ActionType | undefined>
+
+  /**
+   * @name 操作自带的 form
+   */
+  formRef?: TableFormItem<DataSource>['formRef']
+  /**
+   * @name 渲染操作栏
+   */
+  toolBarRender?: ToolBarProps<DataSource>['toolBarRender'] | false
+
+  optionsRender?: ToolBarProps<DataSource>['optionsRender']
+
+  /**
+   * @name 数据加载完成后触发
+   */
+  onLoad?: (dataSource: DataSource[]) => void
+
+  /**
+   * @name loading 被修改时触发，一般是网络请求导致的
+   */
+  onLoadingChange?: (loading: boolean | SpinProps | undefined) => void
+
+  /**
+   * @name 数据加载失败时触发
+   */
+  onRequestError?: (e: Error) => void
+
+  /**
+   * 是否轮询 ProTable 它不会自动提交表单，如果你想自动提交表单的功能，需要在 onValueChange 中调用 formRef.current?.submit()
+   * @property {number} polling 表示轮询的时间间隔，0 表示关闭轮询，大于 0 表示开启轮询，最小的轮询时间为 2000ms
+   * @param dataSource 返回当前的表单数据，你可以用它判断要不要打开轮询
+   */
+  polling?: number | ((dataSource: DataSource[]) => number)
+
+  /** @name 给封装的 table 的 className */
+  tableClassName?: string
+
+  /** @name 给封装的 table 的 style */
+  tableStyle?: CSSProperties
+
+  /** @name 左上角的 title */
+  headerTitle?: VNodeChild
+
+  /** @name 标题旁边的 tooltip */
+  tooltip?: string | LabelTooltipType
+
+  /** @name 操作栏配置 */
+  options?: OptionConfig | false
+
+  /**
+   * @type SearchConfig
+   * @name 是否显示搜索表单
+   */
+  search?: false | SearchConfig
+
+  /**
+   * 基本配置与 antd Form 相同, 但是劫持了 form onFinish 的配置
+   *
+   * @name type="form" 和 搜索表单 的 Form 配置
+   */
+  form?: Omit<ProFormProps & QueryFilterProps, 'form'>
+  /**
+   * 暂时只支持 dayjs - string 会格式化为 YYYY-DD-MM - number 代表时间戳
+   *
+   * @name 如何格式化日期
+   */
+  dateFormatter?:
+    | (string & {})
+    | 'string'
+    | 'number'
+    | ((value: dayjs.Dayjs, valueType: string) => string | number)
+    | false
+  /** @name 格式化搜索表单提交数据 */
+  beforeSearchSubmit?: (params: Partial<U>) => any
+  /**
+   * 设置或者返回false 即可关闭
+   *
+   * @name 自定义 table 的 alert
+   */
+  tableAlertRender?: AlertRenderType<DataSource>
+  /**
+   * 设置或者返回false 即可关闭
+   *
+   * @name 自定义 table 的 alert 的操作
+   */
+  tableAlertOptionRender?: AlertRenderType<DataSource>
+
+  /** @name 选择项配置 */
+  rowSelection?:
+    | (TableProps<DataSource>['rowSelection'] & {
+      alwaysShowAlert?: boolean
+    })
+    | false
+
+  style?: CSSProperties
+
+  /** 支持 ProTable 的类型 */
+  type?: ProSchemaComponentTypes
+
+  /** @name 提交表单时触发 */
+  onSubmit?: (params: U) => void
+
+  /** @name 重置表单时触发 */
+  onReset?: () => void
+
+  /** @name 空值时显示 */
+  columnEmptyText?: ProFieldEmptyText
+
+  /** @name 是否手动触发请求 */
+  manualRequest?: boolean
+  /**
+   * @name 编辑行相关的配置
+   *
+   * @example 支持多行编辑
+   * editable={{type:"multiple"}}
+   *
+   * @example 保存的时候请求后端
+   * editable={{ onSave:async (rows)=>{ await save(rows) } }}
+   */
+  editable?: RowEditableConfig<DataSource>
+
+  /**
+   * @name 可编辑表格修改数据的改变
+   */
+  onDataSourceChange?: (dataSource: DataSource[]) => void
+  /** @name 查询表单和 Table 的卡片 border 配置 */
+  cardBordered?: Bordered
+  /** @name 去抖时间 */
+  debounceTime?: number
+  /**
+   * 只在request 存在的时候生效，可编辑表格也不会生效
+   *
+   * @default false
+   * @name 窗口聚焦时自动重新请求
+   */
+  revalidateOnFocus?: boolean
+  /** 默认的表格大小 */
+  defaultSize?: SizeType
+  /**
+   * @name, 可编辑表格的name,通过这个name 可以直接与 form通信，无需嵌套
+   */
+  name?: NamePath
+  /**
+   * 错误边界自定义
+   */
+  ErrorBoundary?: any | false
+} & Omit<TableProps<DataSource>, 'columns' | 'rowSelection'>
+
+export type ActionType = ProCoreActionType & {
+  /** 原生 DOM 元素引用 */
   nativeElement?: HTMLDivElement
+  /** 聚焦方法 */
   focus?: () => void
   fullScreen?: () => void
   setPageInfo?: (page: Partial<PageInfo>) => void
-  scrollTo?: (arg: number | { index?: number, key?: string | number, top?: number }) => void
-}, Partial<UseEditableUtilType>>
-
-export interface TableFormItem<_T = any> {
-  formRef?: Ref<FormInstance | ProFormInstance | undefined> | { current?: FormInstance | ProFormInstance }
+  /**
+   * 对齐 antd Table ScrollConfig
+   * - number: 作为 top 处理
+   * - { index?, key?, top? }
+   */
+  scrollTo?: (
+    arg:
+      | number
+      | {
+        index?: number
+        key?: Key
+        top?: number
+      },
+  ) => void
 }
 
-export type ProTableProps<DataSource = Record<string, any>, U = Record<string, any>, ValueType = 'text'>
-  = Omit<TableProps<DataSource>, 'columns' | 'rowSelection' | 'onChange'> & {
-    columns?: ProColumns<DataSource, ValueType>[]
-    toolbar?: ListToolBarProps
-    ghost?: boolean
-    params?: U
-    columnsState?: ColumnStateType
-    onSizeChange?: (size: DensitySize) => void
-    cardProps?: ProCardProps | false
-    tableRender?: (
-      props: ProTableProps<DataSource, U, ValueType>,
-      defaultDom: VNodeChild,
-      domList: { toolbar?: VNodeChild, alert?: VNodeChild, table?: VNodeChild },
-    ) => VNodeChild
-    tableViewRender?: (props: TableProps<DataSource>, defaultDom: VNodeChild | (() => VNodeChild)) => VNodeChild | undefined
-    tableExtraRender?: (props: ProTableProps<DataSource, U, ValueType>, dataSource: DataSource[]) => VNodeChild
-    searchFormRender?: (props: ProTableProps<DataSource, U, ValueType>, defaultDom: VNodeChild) => VNodeChild
-    request?: (
-      params: U & { pageSize?: number, current?: number, keyword?: string },
-      sort: Record<string, SortOrder>,
-      filter: Record<string, FilterValue>,
-    ) => Promise<Partial<RequestData<DataSource>> | null | undefined>
-    postData?: (data: DataSource[]) => DataSource[]
-    defaultData?: DataSource[]
-    actionRef?: Ref<ActionType | undefined> | { current?: ActionType }
-    formRef?: TableFormItem<DataSource>['formRef']
-    toolBarRender?: ToolBarProps<DataSource>['toolBarRender'] | false
-    optionsRender?: ToolBarProps<DataSource>['optionsRender']
-    onLoad?: (dataSource: DataSource[], extra?: Record<string, any>) => void
-    onLoadingChange?: (loading: boolean | SpinProps | undefined) => void
-    onRequestError?: (e: Error) => void
-    polling?: number | ((dataSource: DataSource[]) => number)
-    tableClassName?: string
-    tableStyle?: CSSProperties
-    headerTitle?: VNodeChild
-    tooltip?: string | LabelTooltipType
-    options?: OptionConfig | false
-    search?: false | SearchConfig
-    form?: Omit<ProFormProps & QueryFilterProps, 'form'>
-    dateFormatter?: string | number | false | ((value: any, valueType: string) => string | number)
-    beforeSearchSubmit?: (params: Partial<U>) => any
-    tableAlertRender?: AlertRenderType<DataSource>
-    tableAlertOptionRender?: AlertRenderType<DataSource>
-    rowSelection?: (TableProps<DataSource>['rowSelection'] & { alwaysShowAlert?: boolean }) | false
-    type?: ProSchemaComponentTypes
-    onSubmit?: (params: U) => void
-    onReset?: () => void
-    columnEmptyText?: ProFieldEmptyText
-    manualRequest?: boolean
-    editable?: RowEditableConfig<DataSource>
-    onDataSourceChange?: (dataSource: DataSource[]) => void
-    cardBordered?: Bordered
-    debounceTime?: number
-    revalidateOnFocus?: boolean
-    defaultSize?: DensitySize
-    name?: NamePath
-    ErrorBoundary?: any | false
-    onChange?: (...args: any[]) => void
-  }
+/**
+ * 用于定义 useFetch 的参数类型
+ */
+export interface UseFetchProps {
+  /**
+   * 数据源
+   * @type {any}
+   */
+  dataSource?: any
 
-export type SearchConfig = false | {
-  filterType?: 'query' | 'light'
-  searchText?: string
-  resetText?: string
-  span?: number | Record<string, number>
-  labelWidth?: number | 'auto'
-  defaultCollapsed?: boolean
-  collapsed?: boolean
-  collapseRender?: false | ((collapsed: boolean, showCollapseButton?: boolean, hiddenNum?: false | number) => VNodeChild)
-  optionRender?: false | ((searchConfig: any, props: any, dom: VNodeChild[]) => VNodeChild[])
-  searchGutter?: number | [number, number]
-  showHiddenNum?: boolean
-  [key: string]: any
+  /**
+   * 是否处于加载状态
+   * @type {UseFetchDataAction['loading']}
+   */
+  loading: UseFetchDataAction['loading']
+
+  /**
+   * 加载状态改变时的回调函数
+   * @type {(loading: UseFetchDataAction['loading']) => void}
+   */
+  onLoadingChange?: (loading: UseFetchDataAction['loading']) => void
+
+  /**
+   * 数据加载完成后的回调函数
+   * @type {(dataSource: any[], extra: any) => void}
+   */
+  onLoad?: (dataSource: any[], extra: any) => void
+
+  /**
+   * 数据源变化时的回调函数
+   * @type {(dataSource?: any) => void}
+   */
+  onDataSourceChange?: (dataSource?: any) => void
+
+  /**
+   * 请求时附带的数据
+   * @type {any}
+   */
+  postData: (dataSource: any[]) => any[]
+
+  /**
+   * 分页信息
+   */
+  pageInfo:
+    | {
+      current?: number
+      pageSize?: number
+      defaultCurrent?: number
+      defaultPageSize?: number
+    }
+    | false
+
+  /**
+   * 分页信息变化时的回调函数
+   * @type {(pageInfo: PageInfo) => void}
+   */
+  onPageInfoChange?: (pageInfo: PageInfo) => void
+
+  /**
+   * 请求相关的副作用
+   * @type {any[]}
+   */
+  effects?: any[]
+
+  /**
+   * 请求出错时的回调函数
+   * @type {(e: Error) => void}
+   */
+  onRequestError?: (e: Error) => void
+
+  /**
+   * 是否手动触发请求
+   * @type {boolean}
+   */
+  manual: boolean
+
+  /**
+   * 请求防抖时间
+   * @type {number}
+   */
+  debounceTime?: number
+
+  /**
+   * 数据源轮询间隔时间或轮询触发条件
+   * @type {number | ((dataSource: any[]) => number)}
+   */
+  polling?: number | ((dataSource: any[]) => number)
+
+  /**
+   * 是否在页面获得焦点时重新验证数据
+   * @type {boolean}
+   */
+  revalidateOnFocus?: boolean
 }
 
-export type EditableFormInstance<T = any> = FormInstance & {
-  getRowData?: (rowIndex: string | number) => T | undefined
-  getRowsData?: () => T[] | undefined
-  setRowData?: (rowIndex: string | number, data: Partial<T>) => void
-}
-
-export interface RecordCreatorProps<DataSourceType> {
-  record: DataSourceType | ((index: number, dataSource: DataSourceType[]) => DataSourceType)
-  position?: 'top' | 'bottom'
-  newRecordType?: 'dataSource' | 'cache'
-  parentKey?: RecordKey | ((index: number, dataSource: DataSourceType[]) => RecordKey)
-  creatorButtonText?: VNodeChild
-  [key: string]: any
-}
-
-export type EditableProTableProps<T = Record<string, any>, U = Record<string, any>, ValueType = 'text'>
-  = Omit<ProTableProps<T, U, ValueType>, 'onChange'> & {
-    defaultValue?: readonly T[]
-    value?: readonly T[]
-    onChange?: (value: T[]) => void
-    onTableChange?: ProTableProps<T, U>['onChange']
-    editableFormRef?: Ref<EditableFormInstance<T> | undefined> | { current?: EditableFormInstance<T> }
-    recordCreatorProps?: (RecordCreatorProps<T> & { [key: string]: any }) | false
-    maxLength?: number
-    onValuesChange?: (values: T[], record: T) => void
-    controlled?: boolean
-    formItemProps?: any
-  }
-
-export interface OptionSearchProps {
-  name?: string
-  onSearch?: (keyword: string) => Promise<boolean | undefined> | boolean | undefined
-  [key: string]: any
+export type OptionSearchProps = Omit<SearchProps, 'onSearch'> & {
+  /** 如果 onSearch 返回一个false，直接拦截请求 */
+  onSearch?: (
+    keyword: string,
+  ) => Promise<boolean | undefined> | boolean | undefined
 }

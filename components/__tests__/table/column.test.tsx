@@ -1,15 +1,16 @@
-import { Badge, ConfigProvider, Table } from 'antdv-next'
+import { Badge, ConfigProvider, EXPAND_COLUMN, SELECTION_COLUMN } from 'antdv-next'
 import dayjs from 'dayjs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ProTable } from '../../index'
+import ProTable from '../../table'
 import { cleanup, render, waitFor } from '../testUtils'
 import { request } from './fixtures'
+import './tableTestSetup'
 
 afterEach(() => {
   cleanup()
 })
 
-describe('table ColumnSetting', () => {
+describe('Table ColumnSetting', () => {
   it('🎏 render', async () => {
     const callBack = vi.fn()
     render(
@@ -52,7 +53,7 @@ describe('table ColumnSetting', () => {
             date: dayjs(),
           },
         }}
-        request={async (params) => {
+        request={async (params: any) => {
           callBack(params.date)
           return {
             data: [
@@ -177,12 +178,12 @@ describe('table ColumnSetting', () => {
             key: 'name',
             valueType: 'select',
             dataIndex: 'name',
-            params: (rowData) => {
+            params: (rowData: any) => {
               return {
                 key: rowData.key,
               }
             },
-            request: async (params) => {
+            request: async (params: any) => {
               paramsKeys.push(params.key)
               return []
             },
@@ -223,8 +224,8 @@ describe('table ColumnSetting', () => {
             key: 'name',
             dataIndex: 'name',
           },
-          Table.EXPAND_COLUMN,
-          Table.SELECTION_COLUMN,
+          EXPAND_COLUMN,
+          SELECTION_COLUMN,
         ]}
         dataSource={[
           {
@@ -237,13 +238,13 @@ describe('table ColumnSetting', () => {
           },
         ]}
         expandable={{
-          expandedRowRender: record => <div>{record.name}</div>,
+          expandedRowRender: (record: any) => <div>{record.name}</div>,
         }}
         rowSelection={{}}
       />,
     )
 
-    // 应正确渲染 Table.EXPAND_COLUMN 和 Table.SELECTION_COLUMN
+    // 应正确渲染 EXPAND_COLUMN 和 SELECTION_COLUMN
     expect(container.querySelector('.ant-table')).toBeTruthy()
     // 应有 2 行数据
     expect(container.querySelectorAll('.ant-table-row').length).toBe(2)
@@ -291,7 +292,7 @@ describe('table ColumnSetting', () => {
 
     // When selecting/copying the cell text, trailing whitespace should not exist.
     expect(text).toBe(text.trimEnd())
-    expect(text.endsWith('\u00A0')).toBe(false)
+    expect(text.endsWith(' ')).toBe(false)
   })
 
   it('🐛 ellipsis tooltip 不显示 [object Object] 当 renderText 返回 JSX', async () => {
@@ -305,7 +306,7 @@ describe('table ColumnSetting', () => {
             dataIndex: 'phone',
             width: 80,
             ellipsis: true,
-            renderText: (text, row) =>
+            renderText: (text: any, row: any) =>
               text
                 ? (
                     <span>
@@ -316,7 +317,7 @@ describe('table ColumnSetting', () => {
                         : (
                             <Badge status="error" />
                           )}
-                  &nbsp;
+                      &nbsp;
                       {text}
                     </span>
                   )

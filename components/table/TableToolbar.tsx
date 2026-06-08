@@ -1,139 +1,75 @@
-import type { VNodeChild } from 'vue'
-import type { ActionType, ProTableProps } from './typing'
-import { computed, defineComponent } from 'vue'
-import ListToolBar from './components/ListToolBar'
-import ToolBar from './components/ToolBar'
+import type { TableColumnType } from 'antdv-next'
+import type { PropType, Ref, VNodeChild } from 'vue'
+import type { ActionType, Key, ProTableProps } from './typing'
+import { defineComponent } from 'vue'
+import Toolbar from './components/ToolBar'
 
-export interface TableToolbarProps<T extends Record<string, any>> {
-  toolBarRender: ProTableProps<T>['toolBarRender']
-  headerTitle: ProTableProps<T>['headerTitle']
+export type TableToolbarProps<T extends Record<string, any>> = {
+  toolBarRender: ProTableProps<T, any, any>['toolBarRender']
+  headerTitle: ProTableProps<T, any, any>['headerTitle']
   hideToolbar: boolean
   selectedRows: T[]
-  selectedRowKeys: (string | number)[]
-  tableColumn: any[]
-  tooltip: ProTableProps<T>['tooltip']
-  toolbar: ProTableProps<T>['toolbar']
+  selectedRowKeys: (string | number | Key)[] | undefined
+  tableColumn: (TableColumnType<T> & { index?: number })[]
+  tooltip: ProTableProps<T, any, any>['tooltip']
+  toolbar: ProTableProps<T, any, any>['toolbar']
   isLightFilter: boolean
   searchNode: VNodeChild
-  options: ProTableProps<T>['options']
-  optionsRender: ProTableProps<T>['optionsRender']
-  actionRef: { value?: ActionType, current?: ActionType }
-  setFormSearch: (value: Record<string, any> | ((value: Record<string, any> | undefined) => Record<string, any>)) => void
+  options: ProTableProps<T, any, any>['options']
+  optionsRender: ProTableProps<T, any, any>['optionsRender']
+  actionRef: Ref<ActionType | undefined>
+  setFormSearch: (value: Record<string, any> | undefined) => void
   formSearch: Record<string, any> | undefined
-}
-
-function getAction(actionRef: any) {
-  return actionRef?.value || actionRef?.current
-}
-
-function normalizeNodeList(value: any) {
-  if (Array.isArray(value))
-    return value
-  if (value === undefined || value === null || value === false)
-    return []
-  return [value]
 }
 
 export const TableToolbar = defineComponent({
   name: 'TableToolbar',
-  props: [
-    'toolBarRender',
-    'headerTitle',
-    'hideToolbar',
-    'selectedRows',
-    'selectedRowKeys',
-    'tableColumn',
-    'tooltip',
-    'toolbar',
-    'isLightFilter',
-    'searchNode',
-    'options',
-    'optionsRender',
-    'actionRef',
-    'setFormSearch',
-    'formSearch',
-  ],
-  setup(rawProps) {
-    const props = rawProps as TableToolbarProps<Record<string, any>>
-
-    const optionSearch = computed(() => {
-      const options: any = props.options
-      if (!options || !options.search)
-        return false
-
-      const defaultSearchConfig = {
-        onSearch: (keyword: string) => {
-          const search = options.search === true ? {} : options.search
-          const success = search?.onSearch?.(keyword)
-          if (success === false)
-            return false
-
-          getAction(props.actionRef)?.setPageInfo?.({ current: 1 })
-          props.setFormSearch?.({
-            ...(props.formSearch || {}),
-            _timestamp: Date.now(),
-            [search?.name || 'keyword']: keyword,
-          })
-          return undefined
-        },
-      }
-      return options.search === true
-        ? defaultSearchConfig
-        : { ...defaultSearchConfig, ...options.search }
-    })
-
+  props: {
+    toolBarRender: { type: [Function, Boolean] as PropType<ProTableProps<any, any, any>['toolBarRender'] | false>, default: undefined },
+    headerTitle: { type: [Object, String, Number, Boolean, Array] as PropType<ProTableProps<any, any, any>['headerTitle']>, default: undefined },
+    hideToolbar: { type: Boolean, default: false },
+    selectedRows: { type: Array as PropType<any[]>, default: () => [] },
+    selectedRowKeys: { type: Array as PropType<(string | number | Key)[] | undefined>, default: undefined },
+    tableColumn: { type: Array as PropType<(TableColumnType<any> & { index?: number })[]>, default: () => [] },
+    tooltip: { type: [String, Object] as PropType<ProTableProps<any, any, any>['tooltip']>, default: undefined },
+    toolbar: { type: Object as PropType<ProTableProps<any, any, any>['toolbar']>, default: undefined },
+    isLightFilter: { type: Boolean, default: false },
+    searchNode: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
+    options: { type: [Object, Boolean] as PropType<ProTableProps<any, any, any>['options']>, default: undefined },
+    optionsRender: { type: Function as PropType<ProTableProps<any, any, any>['optionsRender']>, default: undefined },
+    actionRef: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
+    setFormSearch: { type: Function as PropType<(value: Record<string, any> | undefined) => void>, required: true },
+    formSearch: { type: Object as PropType<Record<string, any> | undefined>, default: undefined },
+  },
+  setup(props) {
     return () => {
-      if (props.toolBarRender === false || props.hideToolbar)
+      if (props.toolBarRender === false)
         return null
 
-      const settingsOptions = props.options && typeof props.options === 'object'
-        ? { ...props.options, search: false }
-        : props.options
-      const actions = props.toolBarRender
-        ? props.toolBarRender(getAction(props.actionRef), {
-            selectedRows: props.selectedRows,
-            selectedRowKeys: props.selectedRowKeys,
-          })
-        : []
-
-      const settingsNode = (
-        <ToolBar
-          key="options"
-          options={settingsOptions}
-          optionsRender={props.optionsRender}
-          actionRef={props.actionRef}
-          tableColumn={props.tableColumn}
+      return (
+        <Toolbar
+          headerTitle={props.headerTitle}
+          hideToolbar={props.hideToolbar}
           selectedRows={props.selectedRows}
-          selectedRowKeys={props.selectedRowKeys}
-          setFormSearch={(value: any) => {
-            getAction(props.actionRef)?.setPageInfo?.({ current: 1 })
-            props.setFormSearch?.((previous: any) => {
-              const next = typeof value === 'function' ? value(previous) : value
-              return {
-                ...(next || {}),
-                _timestamp: Date.now(),
-              }
+          selectedRowKeys={props.selectedRowKeys! as (string | number)[]}
+          tableColumn={props.tableColumn}
+          tooltip={props.tooltip}
+          toolbar={props.toolbar}
+          onFormSearchSubmit={(newValues: any) => {
+            props.setFormSearch({
+              ...(props.formSearch || {}),
+              ...newValues,
             })
           }}
-        />
-      )
-
-      return (
-        <ListToolBar
-          filter={props.isLightFilter ? props.searchNode : undefined}
-          title={props.headerTitle}
-          tooltip={props.tooltip as any}
-          search={optionSearch.value || props.toolbar?.search}
-          onSearch={(keyword: string) => {
-            const search = optionSearch.value as any
-            if (search?.onSearch)
-              void search.onSearch(keyword)
-          }}
-          actions={normalizeNodeList(actions)}
-          settings={[settingsNode]}
-          {...(props.toolbar || {})}
+          searchNode={props.isLightFilter ? props.searchNode : null}
+          options={props.options}
+          optionsRender={props.optionsRender}
+          actionRef={props.actionRef}
+          toolBarRender={props.toolBarRender as any}
         />
       )
     }
   },
 })
+
+export default TableToolbar

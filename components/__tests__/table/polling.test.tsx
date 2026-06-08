@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import ProTable from '../../table'
+import './tableTestSetup'
 
 const columns = [
   {

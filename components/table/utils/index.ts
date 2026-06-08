@@ -1,5 +1,10 @@
 import type { TablePaginationConfig } from 'antdv-next'
-import type { Ref } from 'vue'
+import type {
+  FilterValue as AntFilterValue,
+  SorterResult,
+  SortOrder,
+} from 'antdv-next/dist/table/interface'
+import type { Ref, VNodeChild } from 'vue'
 import type { IntlType } from '../../provider'
 import type { UseEditableUtilType } from '../../utils'
 import type {
@@ -7,190 +12,119 @@ import type {
   Bordered,
   BorderedType,
   FilterValue,
+  Key,
   ProColumns,
   ProColumnType,
   ProSorter,
-  SortOrder,
   UseFetchDataAction,
 } from '../typing'
 
-export const checkUndefinedOrNull = (value: any) => value !== undefined && value !== null
+/**
+ * 获取行 key 的方法类型，与 antd TableProps.rowKey 的 GetRowKey 对齐。
+ */
+export type GetRowKey<RecordType> = (record: RecordType, index?: number) => Key
 
-export function genColumnKey(key?: string | number | (string | number)[], index?: number | string): string {
-  if (key)
-    return Array.isArray(key) ? key.join('-') : String(key)
-  return `${index}`
+/**
+ * 检查值是否存在 为了 避开 0 和 false
+ *
+ * @param value
+ */
+export function checkUndefinedOrNull(value: any) {
+  return value !== undefined && value !== null
 }
 
-export function parseDataIndex(dataIndex: ProColumnType['dataIndex']): string | undefined {
-  if (Array.isArray(dataIndex))
-    return dataIndex.join(',')
-  return dataIndex?.toString()
-}
-
-export function flattenColumns(data: any[] = []): any[] {
-  const list: any[] = []
-  data.forEach((item) => {
-    if (item?.children)
-      list.push(...flattenColumns(item.children))
-    else
-      list.push(item)
-  })
-  return list
-}
-
-export function isBordered(borderType: BorderedType, border?: Bordered) {
-  if (border === undefined)
-    return false
-  if (typeof border === 'boolean')
-    return border
-  return border[borderType]
-}
-
-export function isLocalSorter<T>(sorter?: ProSorter<T>) {
-  return typeof sorter === 'function' || (typeof sorter === 'object' && typeof sorter?.compare === 'function')
-}
-
-export function isLocalFilter<T>(filters: ProColumnType<T>['filters'], onFilter: ProColumnType<T>['onFilter']) {
-  return Boolean(filters && onFilter)
-}
-
-export function getServerFilterResult<T>(filters: Record<string, any>, columns: ProColumnType<T>[]) {
-  return Object.entries(filters || {}).reduce<Record<string, FilterValue>>((acc, [key, value]) => {
-    const column = columns.find(column => parseDataIndex(column.dataIndex) === key)
-    if (column && !isLocalFilter(column.filters, column.onFilter))
-      acc[key] = value as FilterValue
-    return acc
-  }, {})
-}
-
-export function getServerSorterResult<T>(sorterResult: any) {
-  const result = Array.isArray(sorterResult) ? sorterResult : [sorterResult]
-  return result.reduce<Record<string, SortOrder>>((acc, item) => {
-    const column = item?.column || {}
-    const sorter = column.sorter
-    if (sorter && isLocalSorter<T>(sorter))
-      return acc
-    const key = typeof sorter === 'string' ? sorter : parseDataIndex(column.dataIndex)
-    if (key)
-      acc[key] = item?.order
-    return acc
-  }, {})
-}
-
-export function parseServerDefaultColumnConfig<T, Value>(columns: ProColumns<T, Value>[]) {
-  const filter: Record<string, FilterValue> = {}
-  const sort: Record<string, SortOrder> = {}
-  columns.forEach((column) => {
-    const dataIndex = parseDataIndex(column.dataIndex)
-    if (!dataIndex)
-      return
-    if (column.filters && !isLocalFilter(column.filters, column.onFilter))
-      filter[dataIndex] = (column.defaultFilteredValue as FilterValue) ?? null
-    if (column.sorter && !isLocalSorter(column.sorter)) {
-      const key = typeof column.sorter === 'string' ? column.sorter : dataIndex
-      sort[key] = column.defaultSortOrder ?? null
-    }
-  })
-  return { sort, filter }
-}
-
-export function parseProSortOrder<T>(proSort: Record<string, SortOrder>, column: ProColumnType<T>) {
-  if (column.sortOrder !== undefined)
-    return column.sortOrder
-  if (!column.sorter)
-    return undefined
-  if (isLocalSorter(column.sorter))
-    return undefined
-  const key = typeof column.sorter === 'string' ? column.sorter : parseDataIndex(column.dataIndex)
-  return key ? proSort[key] : undefined
-}
-
-export function parseProFilteredValue<T>(proFilter: Record<string, FilterValue>, column: ProColumnType<T>) {
-  if (column.filteredValue !== undefined)
-    return column.filteredValue as FilterValue
-  if (!column.filters)
-    return undefined
-  if (isLocalFilter(column.filters, column.onFilter))
-    return undefined
-  const key = parseDataIndex(column.dataIndex)
-  return key ? proFilter[key] : undefined
-}
-
+/**
+ * 合并用户 props 和 预设的 props
+ *
+ * @param pagination
+ * @param action
+ * @param intl
+ */
 export function mergePagination<T>(
   pagination: TablePaginationConfig | boolean | undefined,
-  pageInfo: UseFetchDataAction<T>['pageInfo'] & { setPageInfo: any },
+  pageInfo: UseFetchDataAction<T>['pageInfo'] & {
+    setPageInfo: any
+  },
   intl: IntlType,
 ): TablePaginationConfig | false | undefined {
-  if (pagination === false)
+  if (pagination === false) {
     return false
+  }
   const { total, current, pageSize, setPageInfo } = pageInfo
-  const defaultPagination = typeof pagination === 'object' ? pagination : {}
+  const defaultPagination: TablePaginationConfig
+    = typeof pagination === 'object' ? pagination : {}
+
   return {
-    showTotal: (all: number, range: [number, number]) =>
-      `${intl.getMessage('pagination.total.range', '第')} ${range[0]}-${range[1]} ${intl.getMessage('pagination.total.total', '条/总共')} ${all} ${intl.getMessage('pagination.total.item', '条')}`,
+    showTotal: (all, range) =>
+      `${intl.getMessage('pagination.total.range', '第')} ${range[0]}-${
+        range[1]
+      } ${intl.getMessage(
+        'pagination.total.total',
+        '条/总共',
+      )} ${all} ${intl.getMessage('pagination.total.item', '条')}`,
     total,
-    ...defaultPagination,
-    current: pagination !== true && pagination
-      ? ((pagination as TablePaginationConfig).current ?? current)
-      : current,
-    pageSize: pagination !== true && pagination
-      ? ((pagination as TablePaginationConfig).pageSize ?? pageSize)
-      : pageSize,
+    ...(defaultPagination as TablePaginationConfig),
+    current:
+      pagination !== true && pagination
+        ? (pagination.current ?? current)
+        : current,
+    pageSize:
+      pagination !== true && pagination
+        ? (pagination.pageSize ?? pageSize)
+        : pageSize,
     onChange: (page: number, newPageSize?: number) => {
-      ;(pagination as TablePaginationConfig)?.onChange?.(page, newPageSize || 20)
-      if (newPageSize !== pageSize || current !== page)
+      const { onChange } = pagination as TablePaginationConfig
+      onChange?.(page, newPageSize || 20)
+      // pageSize 改变之后就没必要切换页码
+      if (newPageSize !== pageSize || current !== page) {
         setPageInfo({ pageSize: newPageSize, current: page })
+      }
     },
   }
 }
 
-export function postDataPipeline<T>(data: T, pipeline: ((data: T) => T)[]) {
-  if (pipeline.filter(item => item).length < 1)
-    return data
-  return pipeline.reduce((result, fn) => fn(result), data)
-}
-
-export function resolveTableViewDefaultDom(defaultDom: any) {
-  return typeof defaultDom === 'function' ? defaultDom() : defaultDom
-}
-
-function setRefValue<T>(target: Ref<T | undefined> | { current?: T } | undefined, value: T) {
-  if (!target)
-    return
-  if ('value' in target) {
-    ;(target as Ref<T | undefined>).value = value
-    return
-  }
-  ;(target as { current?: T }).current = value
-}
-
+/**
+ * 获取用户的 action 信息
+ *
+ * @param actionRef
+ * @param counter
+ * @param onCleanSelected
+ */
 export function useActionType<T>(
-  actionRef: Ref<ActionType | undefined> | { current?: ActionType } | undefined,
+  ref: Ref<ActionType | undefined>,
   action: UseFetchDataAction<T>,
   props: {
     nativeElement?: HTMLDivElement
     focus?: () => void
     fullScreen: () => void
     onCleanSelected: () => void
-    resetAll: () => void | Promise<void>
+    resetAll: () => void
     editableUtils: UseEditableUtilType
+    /** 透传给 ActionType 的滚动能力 */
     scrollTo?: ActionType['scrollTo']
   },
 ) {
+  /** 这里生成action的映射，保证 action 总是使用的最新 只需要渲染一次即可 */
   const userAction: ActionType = {
     ...props.editableUtils,
     pageInfo: action.pageInfo,
     nativeElement: props.nativeElement,
     focus: props.focus,
     reload: async (resetPageIndex?: boolean) => {
-      if (resetPageIndex)
-        await action.setPageInfo({ current: 1 })
+      // 如果为 true，回到第一页
+      if (resetPageIndex) {
+        await action.setPageInfo({
+          current: 1,
+        })
+      }
       await action?.reload()
     },
     reloadAndRest: async () => {
+      // reload 之后大概率会切换数据，清空一下选择。
       props.onCleanSelected()
-      await action.setPageInfo({ current: 1 })
+      await action.setPageInfo({
+        current: 1,
+      })
       await action?.reload()
     },
     reset: async () => {
@@ -201,37 +135,318 @@ export function useActionType<T>(
     fullScreen: () => props.fullScreen(),
     clearSelected: () => props.onCleanSelected(),
     setPageInfo: rest => action.setPageInfo(rest),
+    // 透出 scrollTo（如上层提供）
     scrollTo: props.scrollTo,
   }
-  setRefValue(actionRef, userAction)
+  ref.value = userAction
 }
 
-export const isMergeCell = (dom: any) => dom && typeof dom === 'object' && dom?.props?.colSpan
+type PostDataType<T> = (data: T) => T
 
+/**
+ * 一个转化的 pipeline 列表
+ *
+ * @param data
+ * @param pipeline
+ */
+export function postDataPipeline<T>(data: T, pipeline: PostDataType<T>[]) {
+  if (pipeline.filter(item => item).length < 1) {
+    return data
+  }
+  return pipeline.reduce((pre, postData) => {
+    return postData(pre)
+  }, data)
+}
+
+export function isBordered(borderType: BorderedType, border?: Bordered) {
+  if (border === undefined) {
+    return false
+  }
+  if (typeof border === 'boolean') {
+    return border
+  }
+  return border[borderType]
+}
+
+export function isMergeCell(dom: any) {
+  return dom && typeof dom === 'object' && dom?.props?.colSpan
+}
+
+/**
+ * 根据 key 和 dataIndex 生成唯一 id
+ *
+ * @param key 用户设置的 key
+ * @param dataIndex 在对象中的数据
+ * @param index 序列号，理论上唯一
+ */
+export function genColumnKey(key?: string | number | Key, index?: number | string): string {
+  if (key) {
+    return Array.isArray(key) ? key.join('-') : key.toString()
+  }
+  return `${index}`
+}
+
+/**
+ * 将 ProTable - column - dataIndex 转为字符串形式
+ *
+ * @param dataIndex Column 中的 dataIndex
+ */
+export function parseDataIndex(dataIndex: ProColumnType['dataIndex']): string | undefined {
+  if (Array.isArray(dataIndex)) {
+    return dataIndex.join(',')
+  }
+  return (dataIndex as any)?.toString()
+}
+
+/**
+ * 平铺所有columns, 用于判断是用的是本地筛选/排序
+ * @param data 列配置
+ * @returns 平铺后的列配置
+ */
+export function flattenColumns(data: any[]) {
+  const _columns: any[] = []
+
+  for (let i = 0; i < data.length; i++) {
+    const _curItem = data[i]
+    // 兼容 Table.EXPAND_COLUMN / Table.SELECTION_COLUMN 等占位列（在 Vue JSX 中可能为 undefined）
+    if (_curItem && _curItem.children) {
+      _columns.push(...flattenColumns(_curItem.children))
+    }
+    else {
+      _columns.push(_curItem)
+    }
+  }
+
+  return _columns
+}
+
+/**
+ * 判断是否为本地筛选
+ * @param filters 筛选配置
+ * @param onFilter 筛选函数
+ * @returns 是否为本地筛选
+ */
+export function isLocalFilter<T>(filters: ProColumnType<T>['filters'], onFilter: ProColumnType<T>['onFilter']) {
+  return !!filters && !!onFilter
+}
+
+/**
+ * 判断是否为本地排序
+ * @param sorter 排序配置
+ * @returns 是否为本地排序
+ */
+export function isLocalSorter<T>(sorter: ProSorter<T>) {
+  return (
+    typeof sorter === 'function'
+    || (typeof sorter === 'object' && typeof sorter.compare === 'function')
+  )
+}
+
+/**
+ * 获取服务端筛选数据
+ * @param filters 筛选数据
+ * @param columns 列配置
+ * @returns 服务端筛选数据
+ */
+export function getServerFilterResult<T>(filters: Record<string, AntFilterValue | null>, columns: ProColumnType<T>[]) {
+  // 过滤掉本地筛选的列
+  return Object.entries(filters).reduce<Record<string, FilterValue>>(
+    (acc, [key, value]) => {
+      const column = columns.find(
+        column => parseDataIndex(column.dataIndex) === key,
+      )
+      if (column != null && !isLocalFilter(column.filters, column.onFilter))
+        acc[key] = value as FilterValue
+
+      return acc
+    },
+    {},
+  )
+}
+
+/**
+ * 获取服务端排序数据
+ * @param sorterResult 排序数据
+ * @returns 服务端排序数据
+ */
+export function getServerSorterResult<T>(sorterResult: SorterResult<T> | SorterResult<T>[]) {
+  const result = Array.isArray(sorterResult) ? sorterResult : [sorterResult]
+
+  const serverSorter = result.reduce<Record<string, SortOrder | undefined>>(
+    (acc, item) => {
+      const sorter = (item.column as any)?.sorter
+      if (sorter != null && isLocalSorter<T>(sorter))
+        return acc
+
+      const sortKey
+        = typeof sorter === 'string'
+          ? sorter
+          : parseDataIndex(item.column?.dataIndex as any)
+      if (sortKey != null)
+        acc[sortKey] = item.order
+
+      return acc
+    },
+    {},
+  )
+  return serverSorter
+}
+
+/**
+ * 从 ProColumns 数组中取出默认的服务端排序和筛选数据
+ * @param columns ProColumns
+ */
+export function parseServerDefaultColumnConfig<T, Value>(columns: ProColumns<T, Value>[]) {
+  const filter: Record<string, FilterValue> = {}
+  const sort: Record<string, SortOrder> = {}
+  columns.forEach((column) => {
+    // 兼容 Table.EXPAND_COLUMN / Table.SELECTION_COLUMN 等占位列（在 Vue JSX 中可能为 undefined）
+    if (!column || typeof column !== 'object')
+      return
+    // 转换 dataIndex
+    const dataIndex = parseDataIndex(column.dataIndex)
+    if (!dataIndex)
+      return // 没有 dataIndex 的列不参与服务端排序/筛选
+
+    // 当 column 启用服务端 filters 功能时，取出默认的筛选值
+    if (column.filters && !isLocalFilter(column.filters, column.onFilter)) {
+      filter[dataIndex] = (column.defaultFilteredValue as FilterValue) ?? null
+    }
+
+    // 当 column 启用服务端 sorter 功能时，取出默认的排序值
+    if (column.sorter && !isLocalSorter(column.sorter)) {
+      if (typeof column.sorter === 'string') {
+        sort[column.sorter] = column.defaultSortOrder ?? null
+      }
+      else {
+        sort[dataIndex] = column.defaultSortOrder ?? null
+      }
+    }
+  })
+  return { sort, filter }
+}
+
+/**
+ * 解析对应排序值，用作双向绑定
+ * @param proSort 排序配置
+ * @param columnProps 列配置
+ * @returns 排序值
+ */
+export function parseProSortOrder<T>(proSort: Record<string, SortOrder>, columnProps: ProColumnType<T>): SortOrder | undefined {
+  const { sorter, sortOrder: columnSortOrder, dataIndex } = columnProps
+
+  // 优先使用用户明确设置的 sortOrder
+  if (columnSortOrder !== undefined)
+    return columnSortOrder
+
+  // 如果没有排序器配置，直接返回 undefined
+  if (sorter == null)
+    return undefined
+
+  // 如果是本地排序，不使用 proSort 中的值
+  if (isLocalSorter(sorter))
+    return undefined
+
+  // 服务端排序：确定排序键
+  const sortKey
+    = typeof sorter === 'string' ? sorter : parseDataIndex(dataIndex)
+
+  // 返回对应的排序值
+  return sortKey ? proSort[sortKey] : undefined
+}
+
+/**
+ * 解析对应筛选值，用作双向绑定
+ * @param proFilter 筛选配置
+ * @param columnProps 列配置
+ * @returns 筛选值
+ */
+export function parseProFilteredValue<T>(proFilter: Record<string, FilterValue>, columnProps: ProColumnType<T>): FilterValue | undefined {
+  const {
+    filters,
+    onFilter,
+    filteredValue: columnFilteredValue,
+    dataIndex,
+  } = columnProps
+
+  // 优先使用用户设置的 filteredValue
+  if (columnFilteredValue !== undefined)
+    return columnFilteredValue as FilterValue
+
+  // 如果没有筛选配置，直接返回 undefined
+  if (filters == null)
+    return undefined
+
+  // 如果是本地筛选，不使用 proFilter 中的值
+  if (isLocalFilter(filters, onFilter))
+    return undefined
+
+  // 服务端排序：获取筛选键
+  const filterKey = parseDataIndex(dataIndex)
+
+  // 返回对应的筛选值
+  return filterKey ? proFilter[filterKey] : undefined
+}
+
+/**
+ * 解析 tableViewRender 的 defaultDom：兼容 Element 或惰性工厂（避免在未使用时构造 Table）。
+ */
+export function resolveTableViewDefaultDom(
+  defaultDom: VNodeChild | (() => VNodeChild),
+): VNodeChild {
+  return typeof defaultDom === 'function' ? defaultDom() : defaultDom
+}
+
+/**
+ * 生成可编辑表格的 getRowKey 函数，供 CellEditorTable / RowEditorTable 复用。
+ *
+ * 规则与 Table.tsx useRowKey / EditableTable getRowKey 保持一致：
+ *  - index === -1 时（内部标识新行）直接取字段值，不走 index fallback
+ *  - name 模式下使用 index.toString() 作为 key（便于转换为数组索引）
+ *  - 否则取 rowKey 字段值，fallback 到 index.toString()
+ *
+ * rowKey 类型兼容 antd TableProps.rowKey 的完整联合类型：
+ *   string | number | symbol | GetRowKey<DataType>
+ * number / symbol 类型在运行时作为属性名使用（通过 String() 转换）。
+ */
 export function buildEditableTableRowKey<DataType extends Record<string, any>>(
-  rowKey: string | number | symbol | ((record: DataType, index?: number) => string | number),
-  _name: any,
-) {
-  if (typeof rowKey === 'function')
-    return rowKey
-
+  rowKey:
+    | string
+    | number
+    | symbol
+    | GetRowKey<DataType>,
+  name: any,
+): GetRowKey<DataType> {
+  if (typeof rowKey === 'function') {
+    return rowKey as GetRowKey<DataType>
+  }
   const rowKeyStr = String(rowKey)
-  return (record: DataType, index?: number) => {
-    if (index === -1)
+  return (record: DataType, index?: number): Key => {
+    if (index === -1) {
       return (record as any)?.[rowKeyStr]
+    }
+    if (name) {
+      return index?.toString() ?? ''
+    }
     return (record as any)?.[rowKeyStr] ?? index?.toString() ?? ''
   }
 }
 
-export function resolveEditingPayloadForRowEditableOnChange<DataType extends Record<string, any>>(
-  keys: (string | number)[],
+/**
+ * 将 editableKeys 解析为 RowEditableConfig.onChange 的第二参数，
+ * 与 useEditableArray 内 setEditableRowKeys 一致：single 为单条（可为空场景下的 undefined），multiple 为数组。
+ */
+export function resolveEditingPayloadForRowEditableOnChange<
+  DataType extends Record<string, any>,
+>(
+  keys: Key[],
   dataSource: readonly DataType[] | undefined,
-  getRowKey: (record: DataType, index?: number) => string | number,
+  getRowKey: GetRowKey<DataType>,
   editableType: 'single' | 'multiple' | undefined,
   childrenColumnName = 'children',
 ): DataType | DataType[] {
   const cleanKeys = keys.filter(key => key !== undefined)
-  const kvMap = new Map<string | number, DataType>()
+  const kvMap = new Map<Key, DataType>()
   const dig = (records: readonly DataType[]) => {
     records.forEach((record, index) => {
       const rowKey = getRowKey(record, index)
@@ -248,6 +463,8 @@ export function resolveEditingPayloadForRowEditableOnChange<DataType extends Rec
   dig(dataSource ?? [])
   const editingRecords = cleanKeys
     .map(key => kvMap.get(key))
-    .filter((record): record is DataType => record !== undefined)
-  return ((editableType || 'single') === 'single' ? editingRecords[0] : editingRecords) as DataType | DataType[]
+    .filter((k): k is DataType => k !== undefined)
+  const type = editableType || 'single'
+  const editingPayload = type === 'single' ? editingRecords[0] : editingRecords
+  return editingPayload as DataType | DataType[]
 }

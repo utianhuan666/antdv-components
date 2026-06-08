@@ -136,6 +136,13 @@ export function renderFormItem(
 
 export function useRegisterFormItem(getProps: () => ProFormFieldItemProps) {
   const fieldContext = useFieldContext()
+  // initialValue 只在字段首次注册时写入一次（对齐 React/antd：initialValue 仅做初始填充）。
+  // 不能每次 watchEffect 都无条件写回，否则会覆盖用户 setFieldsValue 设置的值
+  // （见 protable-reset-params：set 后 submit 仍拿到初始值）。
+  // 注意：不要在此读取 model 判定——setFieldValue 内部 replaceValues 会整体重写 model，
+  // 若 watchEffect 追踪 model 会触发递归更新。reset 时列级 initialValue 由 BaseForm 的
+  // fieldsInitialValues + getMergedInitialValues 同步恢复，无需此处重新填充。
+  let initialApplied = false
   watchEffect(() => {
     const props = getProps()
     if (!props.name || !fieldContext.setFieldValueType)
@@ -144,8 +151,12 @@ export function useRegisterFormItem(getProps: () => ProFormFieldItemProps) {
       valueType: props.valueType,
       transform: props.transform,
     })
-    if (props.initialValue !== undefined)
+    if (!initialApplied && props.initialValue !== undefined) {
+      initialApplied = true
+      // 记录列级 initialValue，供 reset 同步恢复
+      ;(fieldContext as any).setFieldInitialValue?.(props.name, props.initialValue)
       fieldContext.setFieldValue?.(props.name, props.initialValue)
+    }
   })
 }
 

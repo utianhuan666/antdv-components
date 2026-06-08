@@ -1,123 +1,141 @@
-import type { VNodeChild } from 'vue'
+import type { PropType, VNodeChild } from 'vue'
+import type { Key } from '../../typing'
 import { DownOutlined } from '@antdv-next/icons'
-import { Tabs } from 'antdv-next'
-import { computed, defineComponent, ref, watch } from 'vue'
-import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { clsx } from '@v-c/util'
+import { Dropdown, Space, Tabs } from 'antdv-next'
+import { computed, defineComponent, ref } from 'vue'
+import { useProProviderContext } from '../../../provider'
+import { useRefFunction } from '../../../utils'
 
 export interface ListToolBarMenuItem {
-  key: string | number | symbol
-  label?: VNodeChild
-  tab?: VNodeChild
+  key: Key
+  label: VNodeChild
   disabled?: boolean
 }
 
 export interface ListToolBarHeaderMenuProps {
   type?: 'inline' | 'dropdown' | 'tab'
-  activeKey?: string | number | symbol
-  defaultActiveKey?: string | number | symbol
+  activeKey?: Key
+  defaultActiveKey?: Key
   items?: ListToolBarMenuItem[]
-  onChange?: (activeKey?: string | number | symbol, oldKey?: string | number | symbol) => void
+  onChange?: (activeKey?: Key) => void
   prefixCls?: string
   hashId?: string
 }
 
-export default defineComponent({
-  name: 'HeaderMenu',
-  props: ['type', 'items', 'activeKey', 'defaultActiveKey', 'onChange', 'prefixCls', 'hashId'],
+const HeaderMenu = defineComponent({
+  name: 'ListToolBarHeaderMenu',
+  props: {
+    type: { type: String as PropType<'inline' | 'dropdown' | 'tab'>, default: 'inline' },
+    activeKey: { type: [String, Number] as PropType<Key>, default: undefined },
+    defaultActiveKey: { type: [String, Number] as PropType<Key>, default: undefined },
+    items: { type: Array as PropType<ListToolBarMenuItem[]>, default: () => [] },
+    onChange: { type: Function as PropType<(activeKey?: Key) => void>, default: undefined },
+    prefixCls: { type: String, default: undefined },
+    hashId: { type: String, default: undefined },
+  },
   setup(props) {
-    const innerActiveKey = ref<string | number | symbol | undefined>(props.activeKey ?? props.defaultActiveKey)
+    const proProvider = useProProviderContext()
 
-    watch(() => props.activeKey, (key) => {
-      if (key !== undefined)
-        innerActiveKey.value = key
+    const activeKeyInner = ref<Key | undefined>(
+      props.activeKey ?? props.defaultActiveKey,
+    )
+    const activeKey = computed<Key | undefined>(() =>
+      props.activeKey !== undefined ? props.activeKey : activeKeyInner.value,
+    )
+
+    const setActiveKey = useRefFunction((next: Key) => {
+      const prev = activeKey.value
+      ;(
+        props.onChange as
+          | ((key?: Key, prev?: Key) => void)
+          | undefined
+      )?.(next, prev)
+      activeKeyInner.value = next
     })
 
-    const prefixCls = useProPrefixCls('pro-table-list-toolbar', computed(() => props.prefixCls))
-    const activeKey = computed(() => props.activeKey ?? innerActiveKey.value)
-
-    function getLabel(item: ListToolBarMenuItem) {
-      return item.label ?? item.tab
-    }
-
-    function setActiveKey(next?: string | number | symbol) {
-      const list = (props.items || []) as ListToolBarMenuItem[]
-      const item = list.find(item => item.key === next)
-      if (item?.disabled)
-        return
-      const prev = activeKey.value
-      props.onChange?.(next, prev)
-      if (props.activeKey === undefined)
-        innerActiveKey.value = next
-    }
-
     return () => {
-      const items = ((props.items || []) as ListToolBarMenuItem[]).filter(Boolean)
+      const hashId = props.hashId ?? proProvider.hashId
+      const { items = [], type = 'inline', prefixCls } = props
+
       if (items.length < 1)
         return null
 
-      const current = items.find(item => item.key === activeKey.value) || items[0]!
-      const type = props.type || 'inline'
+      const activeItem
+        = items.find((item) => {
+          return item.key === activeKey.value
+        }) || items[0]
 
-      if (type === 'tab') {
+      if (type === 'inline') {
         return (
-          <Tabs
-            class={[`${prefixCls.value}-menu`, `${prefixCls.value}-tabs`, props.hashId]}
-            activeKey={String(current.key)}
-            items={items.map((item, index) => ({
-              ...item,
-              label: getLabel(item),
-              key: item.key?.toString() || index.toString(),
-            }))}
-            onChange={(key: string) => setActiveKey(key)}
-          />
-        )
-      }
-
-      if (type === 'dropdown') {
-        return (
-          <div class={[`${prefixCls.value}-menu`, `${prefixCls.value}-dropdownmenu`, props.hashId]}>
-            <div
-              class={[`${prefixCls.value}-dropdownmenu-label`, props.hashId]}
-            >
-              {getLabel(current)}
-              <DownOutlined />
-            </div>
-            <div class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical">
-              {items.filter(item => item.key !== current.key).map((item, index) => (
-                <div
-                  key={item.key || index}
-                  class={[
-                    'ant-dropdown-menu-item',
-                    item.disabled ? 'ant-dropdown-menu-item-disabled' : undefined,
-                  ]}
-                  onClick={() => setActiveKey(item.key)}
-                >
-                  {getLabel(item)}
-                </div>
-              ))}
-            </div>
+          <div
+            class={clsx(
+              `${prefixCls}-menu`,
+              `${prefixCls}-inline-menu`,
+              hashId,
+            )}
+          >
+            {items.map((item, index) => (
+              <div
+                key={item.key || index}
+                onClick={() => {
+                  setActiveKey(item.key)
+                }}
+                class={clsx(
+                  `${prefixCls}-inline-menu-item`,
+                  activeItem.key === item.key
+                    ? `${prefixCls}-inline-menu-item-active`
+                    : undefined,
+                  hashId,
+                )}
+              >
+                {item.label}
+              </div>
+            ))}
           </div>
         )
       }
 
+      if (type === 'tab') {
+        return (
+          <Tabs
+            items={items.map(item => ({
+              ...item,
+              key: item.key?.toString(),
+            })) as any}
+            activeKey={activeItem.key as string}
+            onTabClick={(key: string) => setActiveKey(key)}
+          />
+        )
+      }
+
       return (
-        <div class={[`${prefixCls.value}-menu`, `${prefixCls.value}-inline-menu`, props.hashId]}>
-          {items.map((item, index) => (
-            <div
-              key={item.key || index}
-              class={[
-                `${prefixCls.value}-inline-menu-item`,
-                current.key === item.key ? `${prefixCls.value}-inline-menu-item-active` : undefined,
-                item.disabled ? `${prefixCls.value}-inline-menu-item-disabled` : undefined,
-                props.hashId,
-              ]}
-              onClick={() => setActiveKey(item.key)}
-            >
-              {getLabel(item)}
-            </div>
-          ))}
+        <div
+          class={clsx(`${prefixCls}-menu`, `${prefixCls}-dropdownmenu`, hashId)}
+        >
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              selectedKeys: [activeItem.key as string],
+              onClick: (item: { key: string | number }) => {
+                setActiveKey(item.key)
+              },
+              items: items.map((item, index) => ({
+                key: item.key || index,
+                disabled: item.disabled,
+                label: item.label,
+              })) as any,
+            }}
+          >
+            <Space class={clsx(`${prefixCls}-dropdownmenu-label`, hashId)}>
+              {activeItem.label}
+              <DownOutlined />
+            </Space>
+          </Dropdown>
         </div>
       )
     }
   },
 })
+
+export default HeaderMenu

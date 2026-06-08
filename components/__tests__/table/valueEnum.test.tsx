@@ -1,45 +1,54 @@
 import { Input } from 'antdv-next'
+import { defineComponent } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ProConfigProvider, ProTable } from '../../index'
+import ProTable from '../../table'
+import { ProProvider, useProProviderContext } from '../../provider'
 import { act, cleanup, render, waitFor, waitForWaitTime } from '../testUtils'
+import './tableTestSetup'
 
-function Demo() {
-  return (
-    <ProConfigProvider
-      valueTypeMap={{
-        link: {
-          render: text => <a>{text}</a>,
-          formItemRender: (text, props) => (
-            <Input placeholder="请输入链接" {...props?.fieldProps} />
-          ),
-        },
-      }}
-    >
-      <ProTable
-        columns={[
-          {
-            title: '链接',
-            dataIndex: 'name',
-            valueType: 'link',
+const Demo = defineComponent({
+  setup() {
+    const values = useProProviderContext()
+    return () => (
+      <ProProvider.Provider
+        value={{
+          ...values,
+          valueTypeMap: {
+            link: {
+              render: (text: any) => <a>{text}</a>,
+              formItemRender: (text: any, props: any) => (
+                <Input placeholder="请输入链接" {...props?.fieldProps} />
+              ),
+            },
           },
-        ]}
-        request={() => {
-          return Promise.resolve({
-            total: 200,
-            data: [
-              {
-                key: 1,
-                name: 'test',
-              },
-            ],
-            success: true,
-          })
-        }}
-        rowKey="key"
-      />
-    </ProConfigProvider>
-  )
-}
+        } as any}
+      >
+        <ProTable
+          columns={[
+            {
+              title: '链接',
+              dataIndex: 'name',
+              valueType: 'link',
+            },
+          ]}
+          request={() => {
+            return Promise.resolve({
+              total: 200,
+              data: [
+                {
+                  key: 1,
+                  name: 'test',
+                },
+              ],
+              success: true,
+            })
+          }}
+          rowKey="key"
+        />
+      </ProProvider.Provider>
+    )
+  },
+})
 
 afterEach(() => {
   cleanup()
@@ -77,7 +86,7 @@ describe('table valueEnum', () => {
     await waitForWaitTime(1000)
 
     // 重新渲染组件，添加 valueEnum
-    act(() => {
+    await act(() => {
       html.rerender(
         <ProTable
           size="small"
@@ -117,7 +126,7 @@ describe('table valueEnum', () => {
       return html.findAllByText('已上线')
     })
 
-    act(() => {
+    await act(() => {
       html.baseElement
         .querySelector<HTMLDivElement>('form.ant-form div.ant-select')
         ?.click()
@@ -125,7 +134,7 @@ describe('table valueEnum', () => {
 
     await waitForWaitTime(500)
 
-    act(() => {
+    await act(() => {
       expect(
         html.baseElement.querySelector<HTMLDivElement>(
           'div.ant-select-dropdown',
@@ -143,7 +152,6 @@ describe('table valueEnum', () => {
     const html = render(<Demo />)
     await waitForWaitTime(1200)
     // 自定义 valueType 'link' 通过 ProProvider.valueTypeMap 注册
-    // 渲染时应将 name 字段以 <a> 标签呈现
     const cellLink = html.baseElement.querySelector('td.ant-table-cell a')
     expect(cellLink).toBeTruthy()
     expect(cellLink?.textContent).toBe('test')
@@ -163,7 +171,7 @@ describe('table valueEnum', () => {
             fieldProps: {
               open: true,
             },
-            request: async (_, config) => {
+            request: async (_: any, config: any) => {
               request(config.record)
               return []
             },

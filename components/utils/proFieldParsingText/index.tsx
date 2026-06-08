@@ -1,4 +1,4 @@
-import type { CSSProperties, Slots, VNodeChild } from 'vue'
+import type { CSSProperties, SetupContext, Slots, VNodeChild } from 'vue'
 import type { ProFieldValueEnumType, ProSchemaValueEnumMap } from '../typing'
 import { Badge, Space } from 'antdv-next'
 
@@ -23,9 +23,10 @@ function getChildren(props: StatusProps, slots?: Slots): VNodeChild {
   return slots?.default?.() ?? props.children
 }
 
-export function ProFieldBadgeColor(props: StatusProps & { color: string }, { slots }: { slots?: Slots } = {}) {
+export function ProFieldBadgeColor(props: StatusProps & { color: string }, { slots }: SetupContext) {
   return <Badge color={props.color} text={getChildren(props, slots) as any} />
 }
+ProFieldBadgeColor.displayName = 'ProFieldBadgeColor'
 
 export function objectToMap(value: ProFieldValueEnumType | undefined): ProSchemaValueEnumMap {
   if (getType(value) === 'map')
@@ -33,17 +34,27 @@ export function objectToMap(value: ProFieldValueEnumType | undefined): ProSchema
   return new Map(Object.entries(value || {})) as ProSchemaValueEnumMap
 }
 
+type BadgeStatus = 'success' | 'error' | 'default' | 'processing' | 'warning'
+
+function createStatusComponent(name: string, status: BadgeStatus) {
+  const StatusComponent = (props: StatusProps, { slots }: SetupContext) => (
+    <Badge status={status} text={getChildren(props, slots) as any} />
+  )
+  StatusComponent.displayName = name
+  return StatusComponent
+}
+
 const TableStatus = {
-  Success: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="success" text={getChildren(props, slots) as any} />,
-  Error: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="error" text={getChildren(props, slots) as any} />,
-  Default: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="default" text={getChildren(props, slots) as any} />,
-  Processing: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="processing" text={getChildren(props, slots) as any} />,
-  Warning: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="warning" text={getChildren(props, slots) as any} />,
-  success: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="success" text={getChildren(props, slots) as any} />,
-  error: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="error" text={getChildren(props, slots) as any} />,
-  default: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="default" text={getChildren(props, slots) as any} />,
-  processing: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="processing" text={getChildren(props, slots) as any} />,
-  warning: (props: StatusProps, { slots }: { slots?: Slots } = {}) => <Badge status="warning" text={getChildren(props, slots) as any} />,
+  Success: createStatusComponent('StatusSuccess', 'success'),
+  Error: createStatusComponent('StatusError', 'error'),
+  Default: createStatusComponent('StatusDefault', 'default'),
+  Processing: createStatusComponent('StatusProcessing', 'processing'),
+  Warning: createStatusComponent('StatusWarning', 'warning'),
+  success: createStatusComponent('Statussuccess', 'success'),
+  error: createStatusComponent('Statuserror', 'error'),
+  default: createStatusComponent('Statusdefault', 'default'),
+  processing: createStatusComponent('Statusprocessing', 'processing'),
+  warning: createStatusComponent('Statuswarning', 'warning'),
 } as const
 
 type ProFieldStatusType = keyof typeof TableStatus

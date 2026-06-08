@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import ProTable from '../../table'
 import { waitFor } from '../testUtils'
+import './tableTestSetup'
 
 afterEach(() => {
   document.body.innerHTML = ''

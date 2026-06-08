@@ -1,49 +1,80 @@
-import type { TableColumnType } from 'antdv-next'
-import type { VNodeChild } from 'vue'
-import type { TableContainer } from '../Store/Provide'
-import type { ProColumns, ProColumnType } from '../typing'
+import type { TableColumnType, TableProps } from 'antdv-next'
+import type { SortOrder } from 'antdv-next/dist/table/interface'
+import type { ProFieldEmptyText } from '../../field'
+import type { ProSchemaComponentTypes, UseEditableUtilType } from '../../utils'
+import type { ContainerType } from '../Store/Provide'
+import type { FilterValue, ProColumns } from '../typing'
 import { Table } from 'antdv-next'
-import { genColumnKey, parseProFilteredValue, parseProSortOrder } from '.'
 import { proFieldParsingValueEnumToArray } from '../../field'
-import { getValueByNamePath, omitBoolean, omitUndefinedAndEmptyArr, runFunction } from '../../utils'
-import { columnRender, defaultOnFilter, renderColumnsTitle } from './columnRender'
+import {
+  omitBoolean,
+  omitUndefinedAndEmptyArr,
+  runFunction,
+} from '../../utils'
+import {
+  columnRender,
+  defaultOnFilter,
+  renderColumnsTitle,
+} from './columnRender'
+import {
+  genColumnKey,
+  parseProFilteredValue,
+  parseProSortOrder,
+} from './index'
 
-export interface TableColumnContext<T> {
-  counter: TableContainer
-  columnEmptyText?: VNodeChild
-  type?: string
-  editableUtils?: any
-  rowKey?: string | number | symbol | ((record: T, index?: number) => string | number)
-  childrenColumnName?: string
-  proFilter: Record<string, any>
-  tableFilter?: Record<string, any>
-  proSort: Record<string, any>
+type ColumnToColumnReturnType<T> = (TableColumnType<T> & {
+  index?: number
+})[]
+
+export type TableColumnContext<T> = {
+  counter: ReturnType<ContainerType>
+  columnEmptyText: ProFieldEmptyText
+  type: ProSchemaComponentTypes
+  editableUtils: UseEditableUtilType
+  marginSM: number
+  rowKey: TableProps<T>['rowKey']
+  childrenColumnName: string
+  proFilter: Record<string, FilterValue>
+  proSort: Record<string, SortOrder>
 }
 
-function resolveOnFilter<T>(column: ProColumnType<T>) {
-  const { onFilter, dataIndex } = column
-  if (onFilter === true)
-    return (value: string, row: T) => defaultOnFilter(value, row, dataIndex as string[])
-  return omitBoolean(onFilter as any)
+function resolveOnFilter<T>(columnProps: ProColumns<T, any>) {
+  const { onFilter, dataIndex } = columnProps
+  if (onFilter === true) {
+    return (value: string, row: T) =>
+      defaultOnFilter(value, row, dataIndex as string[])
+  }
+  return omitBoolean(onFilter)
 }
 
-function resolveFilters<T>(column: ProColumnType<T>) {
-  const { filters = [], valueEnum } = column
+function resolveFilters<T>(columnProps: ProColumns<T, any>) {
+  const { filters = [], valueEnum } = columnProps
   if (filters === true) {
     return proFieldParsingValueEnumToArray(
-      runFunction(valueEnum, undefined),
+      runFunction<[undefined]>(valueEnum, undefined),
     ).filter(valueItem => valueItem && valueItem.value !== 'all')
   }
-  return filters as any
+  return filters
 }
 
 function getColumnConfig<T>(
   columnsMap: Record<string, { fixed?: 'left' | 'right' }> | null | undefined,
   columnKey: string,
-  column: ProColumnType<T>,
+  columnProps: ProColumns<T, any>,
 ) {
-  const config = columnsMap?.[columnKey] || { fixed: column.fixed }
+  const config = columnsMap?.[columnKey] || { fixed: columnProps.fixed }
   return { fixed: config.fixed }
+}
+
+function parseColumnFilterSort<T>(
+  proFilter: Record<string, FilterValue>,
+  proSort: Record<string, SortOrder>,
+  columnProps: ProColumns<T, any>,
+) {
+  return {
+    filteredValue: parseProFilteredValue(proFilter, columnProps),
+    sortOrder: parseProSortOrder(proSort, columnProps),
+  }
 }
 
 function updateSubNameRecord<T>(
@@ -65,127 +96,132 @@ function updateSubNameRecord<T>(
   const parentInfo = subNameRecord.get(uniqueKey) || []
   record[childrenColumnName]?.forEach((item: any) => {
     const itemUniqueKey = item[keyName]
-    if (!subNameRecord.has(itemUniqueKey))
-      subNameRecord.set(itemUniqueKey, parentInfo.concat([index, childrenColumnName]))
+    if (!subNameRecord.has(itemUniqueKey)) {
+      subNameRecord.set(
+        itemUniqueKey,
+        parentInfo.concat([index, childrenColumnName]),
+      )
+    }
   })
   return uniqueKey
 }
 
 function createCellRender<T extends Record<string, any>>(
-  column: ProColumnType<T>,
+  columnProps: ProColumns<T, any>,
   context: TableColumnContext<T>,
   subNameRecord: Map<unknown, unknown[]>,
 ) {
   let keyName: string | number | symbol = (context.rowKey ?? 'id') as string
   return function cellRender(text: any, rowData: T, index: number) {
-    if (typeof context.rowKey === 'function')
+    if (typeof context.rowKey === 'function') {
       keyName = context.rowKey(rowData, index) as string
+    }
     const uniqueKey = updateSubNameRecord(
       rowData,
       index,
       keyName,
-      context.childrenColumnName || 'children',
+      context.childrenColumnName,
       subNameRecord,
     )
-    const recordKey = typeof context.rowKey === 'function'
-      ? context.rowKey(rowData, index)
-      : (rowData as any)?.[String(context.rowKey ?? 'id')] ?? index
     return columnRender<T>({
-      columnProps: column,
+      columnProps,
       text,
       rowData,
       index,
-      columnEmptyText: context.columnEmptyText as any,
+      columnEmptyText: context.columnEmptyText,
       counter: context.counter,
-      type: context.type as any,
-      marginSM: (context as any).marginSM,
+      type: context.type,
+      marginSM: context.marginSM,
       subName: (subNameRecord.get(uniqueKey) ?? []) as string[],
       editableUtils: context.editableUtils,
-      recordKey,
     })
   }
 }
 
-export function genProColumnToColumn<T extends Record<string, any>>({
-  columns,
-  context,
-  parents,
-}: {
-  columns: ProColumns<T>[]
+/**
+ * 转化 columns 到 pro 的格式 主要是 render 方法的自行实现
+ *
+ * @param params.columns 列配置
+ * @param params.context 列计算上下文（表级配置与状态）
+ * @param params.parents 父列，递归子列时传入
+ */
+export function genProColumnToColumn<T extends Record<string, any>>(params: {
+  columns: ProColumns<T, any>[]
   context: TableColumnContext<T>
-  parents?: ProColumns<T>
-}): TableColumnType<T>[] {
+  parents?: ProColumns<T, any>
+}): ColumnToColumnReturnType<T> {
+  const { columns, context, parents } = params
   const subNameRecord = new Map<unknown, unknown[]>()
 
-  return (columns || [])
-    .map((column, index) => {
-      if (column === (Table as any).EXPAND_COLUMN)
-        return column as any
-      if (column === (Table as any).SELECTION_COLUMN)
-        return column as any
-
-      const { key, dataIndex, valueEnum, valueType = 'text', children } = column
+  return columns
+    ?.map((columnProps, columnsIndex) => {
+      // 兼容 Table.EXPAND_COLUMN / Table.SELECTION_COLUMN 等占位列
+      // （在 Vue JSX 中这些哨兵可能被序列化为 undefined，原样透传给 antdv Table）
+      if (!columnProps || typeof columnProps !== 'object')
+        return columnProps
+      if (columnProps === Table.EXPAND_COLUMN)
+        return columnProps
+      if (columnProps === Table.SELECTION_COLUMN)
+        return columnProps
+      const {
+        key,
+        dataIndex,
+        valueEnum,
+        valueType = 'text',
+        children,
+      } = columnProps as ProColumns<T, any>
       const columnKey = genColumnKey(
         key || (dataIndex as any)?.toString(),
-        [parents?.key, index].filter(Boolean).join('-'),
+        [parents?.key, columnsIndex].filter(Boolean).join('-'),
       )
       const noNeedPro = !valueEnum && !valueType && !children
       if (noNeedPro) {
         return {
-          index,
-          ...column,
-        } as TableColumnType<T> & { index?: number }
+          index: columnsIndex,
+          ...columnProps,
+        }
       }
 
-      const { fixed } = getColumnConfig(
-        context.counter.columnsMap.value,
-        columnKey,
-        column,
+      const { filteredValue, sortOrder } = parseColumnFilterSort(
+        context.proFilter,
+        context.proSort,
+        columnProps,
       )
-      const renderCell = createCellRender(column as ProColumnType<T>, context as any, subNameRecord)
-      const tempColumn = {
-        index,
+      const { fixed } = getColumnConfig(
+        context.counter.columnsMap,
+        columnKey,
+        columnProps,
+      )
+
+      const tempColumns = {
+        index: columnsIndex,
         key: columnKey,
-        ...column,
-        title: renderColumnsTitle(column as any),
+        ...columnProps,
+        title: renderColumnsTitle(columnProps),
         valueEnum,
-        filters: resolveFilters(column as any),
-        onFilter: resolveOnFilter(column as any),
-        filteredValue: parseProFilteredValue(context.proFilter, column),
-        sortOrder: parseProSortOrder(context.proSort, column),
+        filters: resolveFilters(columnProps),
+        onFilter: resolveOnFilter(columnProps),
+        filteredValue,
+        sortOrder,
         fixed,
-        width: context.type === 'list'
-          ? column.width
-          : column.width || (column.fixed ? 200 : undefined),
-        children: children
+        width:
+          context.type === 'list'
+            ? columnProps.width
+            : columnProps.width || (columnProps.fixed ? 200 : undefined),
+        children: (columnProps as ProColumns<T, any>).children
           ? genProColumnToColumn({
-              columns: children,
+              columns: (columnProps as ProColumns<T, any>)?.children ?? [],
               context,
-              parents: { ...column, key: columnKey } as ProColumns<T>,
+              parents: { ...columnProps, key: columnKey } as ProColumns<T, any>,
             })
           : undefined,
-        onCell: (record: T, rowIndex: number) => {
-          const cellProps = typeof (column as any).onCell === 'function'
-            ? (column as any).onCell(record, rowIndex)
-            : {}
-          if (column.valueType !== 'option')
-            return cellProps
-          return {
-            ...cellProps,
-            onClick: (event: MouseEvent) => {
-              ;(cellProps as any)?.onClick?.(event)
-              if (event.defaultPrevented || event.target !== event.currentTarget) {
-                return
-              }
-              ;(event.currentTarget as HTMLElement).querySelector<HTMLElement>('a,button')?.click()
-            },
-          }
-        },
-        render: renderCell,
-        customRender: ({ text, value, record, index: rowIndex }: any) =>
-          renderCell(text ?? value ?? getValueByNamePath(record as any, column.dataIndex as any), record, rowIndex),
+        render: createCellRender(columnProps, context, subNameRecord),
       }
-      return omitUndefinedAndEmptyArr(tempColumn as any) as TableColumnType<T>
+      return omitUndefinedAndEmptyArr(tempColumns)
     })
-    .filter((item: any) => !item.hideInTable) as TableColumnType<T>[]
+    ?.filter(
+      // 兼容 Vue JSX 中被序列化为 undefined 的占位列（EXPAND_COLUMN / SELECTION_COLUMN）：
+      // antdv Table 会依据 rowSelection / expandable 自动渲染对应列，无需依赖哨兵透传
+      item => item && typeof item === 'object' && !item.hideInTable,
+    ) as unknown as ColumnToColumnReturnType<T>
 }

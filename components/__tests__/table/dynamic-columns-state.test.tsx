@@ -1,21 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { ProTable } from '../../index'
+import ProTable from '../../table'
 import { act, cleanup, render, waitForWaitTime } from '../testUtils'
-
-const originalSessionStorageDescriptor = Object.getOwnPropertyDescriptor(
-  window,
-  'sessionStorage',
-)
-
-function restoreSessionStorage() {
-  if (originalSessionStorageDescriptor) {
-    Object.defineProperty(
-      window,
-      'sessionStorage',
-      originalSessionStorageDescriptor,
-    )
-  }
-}
+import './tableTestSetup'
 
 const valueEnum = {
   0: 'close',
@@ -43,8 +29,8 @@ for (let i = 0; i < 5; i += 1) {
     key: i,
     name: 'AppName',
     containers: Math.floor(Math.random() * 20),
-    creator: creators[Math.floor(Math.random() * creators.length)]!,
-    status: valueEnum[(`${Math.floor(Math.random() * 10) % 2}`) as '0'],
+    creator: creators[Math.floor(Math.random() * creators.length)],
+    status: valueEnum[((Math.floor(Math.random() * 10) % 2) + '') as '0'],
     createdAt: Date.now() - Math.floor(Math.random() * 2000),
     money: Math.floor(Math.random() * 2000) * i,
     progress: Math.ceil(Math.random() * 100) + 1,
@@ -58,8 +44,6 @@ for (let i = 0; i < 5; i += 1) {
 
 afterEach(() => {
   cleanup()
-  restoreSessionStorage()
-  window.sessionStorage.clear()
 })
 
 describe('dynamic Persistence', () => {

@@ -113,10 +113,15 @@ export const BetaSchemaForm = defineComponent({
           }
         : {}
 
+      // mirror: 这里要包裹 onInit / onValuesChange，需把原始 attrs 中的同名监听摘除，
+      // 否则 Vue 会把 spread 的监听器与下面显式的监听器合并为数组（多监听器），
+      // 导致下游 props.onInit 变成数组（非函数）而永不触发。
+      const { onInit: _attrsOnInit, onValuesChange: _attrsOnValuesChange, ...restAttrs } = attrs as any
+
       return (
         <FormRenderComponents
           {...specificProps}
-          {...attrs as any}
+          {...restAttrs}
           columns={schema.columns}
           steps={schema.steps}
           onInit={(values: any, initForm: ProFormInstance) => {

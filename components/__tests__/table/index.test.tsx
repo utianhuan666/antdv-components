@@ -14,6 +14,7 @@ import {
   waitFor,
 } from '../testUtils'
 import { columns, request } from './fixtures'
+import './tableTestSetup'
 
 afterEach(() => {
   cleanup()

@@ -1,74 +1,61 @@
-import type { CSSProperties, VNodeChild } from 'vue'
+import type { MenuProps } from 'antdv-next'
+import type { CSSProperties, PropType, VNodeChild } from 'vue'
 import { DownOutlined, EllipsisOutlined } from '@antdv-next/icons'
+import { clsx } from '@v-c/util'
 import { Button, Dropdown } from 'antdv-next'
-import { defineComponent, ref } from 'vue'
+import { defineComponent } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface MenuItems {
+  name: VNodeChild
   key: string
-  name?: VNodeChild
   disabled?: boolean
 }
 
-export interface TableDropdownProps {
+export interface DropdownProps {
   className?: string
   style?: CSSProperties
   menus?: MenuItems[]
   onSelect?: (key: string) => void
+  children?: VNodeChild
 }
 
-function buildMenu(menus: MenuItems[] | undefined, onSelect?: (key: string) => void) {
-  return {
-    items: (menus || []).map(item => ({
-      key: item.key,
-      label: item.name ?? item.key,
-      disabled: item.disabled,
-    })),
-    onClick: ({ key }: { key: string }) => {
-      const menu = menus?.find(item => item.key === key)
-      if (!menu?.disabled)
-        onSelect?.(key)
-    },
-  }
+type MenuItemType = NonNullable<NonNullable<DropdownProps['menus']>>
+
+/** 将 menus 转换为 antd Menu items 格式 */
+function buildMenuItems(menus: MenuItemType = []): NonNullable<NonNullable<MenuProps['items']>> {
+  return menus.map(({ key, name, disabled }) => ({
+    key,
+    label: name,
+    disabled,
+  })) as NonNullable<NonNullable<MenuProps['items']>>
 }
 
-function getMenuKey(info: any) {
-  return info?.key ?? info?.item?.key
-}
-
+/**
+ * 一个简单的下拉菜单
+ */
 const DropdownButton = defineComponent({
   name: 'TableDropdownButton',
-  props: ['menus', 'onSelect', 'className', 'style'],
+  props: {
+    className: { type: String, default: undefined },
+    style: { type: Object as PropType<CSSProperties>, default: undefined },
+    menus: { type: Array as PropType<MenuItems[]>, default: undefined },
+    onSelect: { type: Function as PropType<(key: string) => void>, default: undefined },
+  },
   setup(props, { slots }) {
-    const open = ref(false)
     const prefixCls = useProPrefixCls('pro-table-dropdown')
-    const triggerProps = {
-      onMouseenter: () => open.value = true,
-      onMouseover: () => open.value = true,
-      onClick: () => open.value = true,
-    } as any
-    const menu = () => buildMenu(props.menus, (key) => {
-      props.onSelect?.(key)
-      open.value = false
-    })
 
     return () => (
       <Dropdown
-        class={[prefixCls.value, props.className]}
-        menu={menu()}
-        open={open.value}
-        onOpenChange={(next: boolean) => open.value = next}
-        onMenuClick={(info: any) => {
-          const key = getMenuKey(info)
-          if (key !== undefined)
-            menu().onClick({ key })
+        menu={{
+          onClick: ({ key }: { key: string | number }) => props.onSelect?.(key as string),
+          items: buildMenuItems(props.menus),
         }}
+        class={clsx(prefixCls.value, props.className)}
       >
-        <Button
-          style={props.style}
-          {...triggerProps}
-        >
+        <Button style={props.style}>
           {slots.default?.()}
+          {' '}
           <DownOutlined />
         </Button>
       </Dropdown>
@@ -76,43 +63,30 @@ const DropdownButton = defineComponent({
   },
 })
 
-const TableDropdownImpl = defineComponent({
+const TableDropdown = defineComponent({
   name: 'TableDropdown',
-  props: ['menus', 'onSelect', 'className', 'style'],
+  props: {
+    className: { type: String, default: undefined },
+    style: { type: Object as PropType<CSSProperties>, default: undefined },
+    menus: { type: Array as PropType<MenuItems[]>, default: undefined },
+    onSelect: { type: Function as PropType<(key: string) => void>, default: undefined },
+  },
   setup(props, { slots }) {
-    const open = ref(false)
     const prefixCls = useProPrefixCls('pro-table-dropdown')
-    const menu = () => buildMenu(props.menus, (key) => {
-      props.onSelect?.(key)
-      open.value = false
-    })
 
     return () => (
       <Dropdown
-        class={[prefixCls.value, props.className]}
-        menu={menu()}
-        open={open.value}
-        onOpenChange={(next: boolean) => open.value = next}
-        onMenuClick={(info: any) => {
-          const key = getMenuKey(info)
-          if (key !== undefined)
-            menu().onClick({ key })
+        menu={{
+          onClick: ({ key }: { key: string | number }) => props.onSelect?.(key as string),
+          items: buildMenuItems(props.menus),
         }}
+        class={clsx(prefixCls.value, props.className)}
       >
-        <span
-          style={props.style}
-          onMouseenter={() => open.value = true}
-          onMouseover={() => open.value = true}
-          onClick={() => open.value = true}
-        >
-          {slots.default?.() || <EllipsisOutlined />}
-        </span>
+        <span style={props.style}>{slots.default?.() || <EllipsisOutlined />}</span>
       </Dropdown>
     )
   },
-})
-
-const TableDropdown = TableDropdownImpl as typeof TableDropdownImpl & {
+}) as ReturnType<typeof defineComponent> & {
   Button: typeof DropdownButton
 }
 
