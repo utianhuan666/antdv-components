@@ -1,6 +1,7 @@
 import type { NewLineConfig, RecordKey } from '../../utils/useEditableArray'
 import { flushPromises, mount } from '@vue/test-utils'
-import { Form } from 'antdv-next'
+import { Form, message } from 'antdv-next'
+import dayjs from 'dayjs'
 import {
   afterAll,
   afterEach,
@@ -782,5 +783,181 @@ describe('useEditableArray - Cancel Operation', () => {
         '1:test1,2:test2',
       )
     })
+  })
+
+  it('🧩 补充测试：onValuesChange 应按 64ms 防抖合并', async () => {
+    const onValuesChange = vi.fn()
+    const wrapper = mount(TestComponent, {
+      props: { onValuesChange, tableName: 'testTable' },
+    })
+
+    const editableUtils = (window as any).__editableUtils
+    // 连续两次字段更新应被防抖合并为一次回调
+    editableUtils.updateEditableRow(1, 'name', 'a')
+    editableUtils.updateEditableRow(1, 'name', 'b')
+    expect(onValuesChange).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(64)
+    await flushPromises()
+
+    await waitFor(() => {
+      expect(onValuesChange).toHaveBeenCalledTimes(1)
+    })
+
+    wrapper.unmount()
+  })
+
+  it('🧩 补充测试：保存时应按 dateFormatter 归一化 dayjs 字段', async () => {
+    const DateComp = defineComponent({
+      props: ['dateFormatter'],
+      setup(p: any) {
+        const dataSource = ref<any[]>([
+          { id: 1, name: 't1', date: dayjs('2024-01-02 03:04:05') },
+        ])
+        const editableUtils = useEditableArray<any>({
+          get dataSource() {
+            return dataSource.value
+          },
+          setDataSource: (next: any) =>
+            (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          getRowKey: (r: any) => r.id,
+          childrenColumnName: undefined,
+          onSave: async () => Promise.resolve(),
+          dateFormatter: p.dateFormatter,
+        })
+        ;(window as any).__editableUtils = editableUtils
+        return { dataSource }
+      },
+      render(this: any) {
+        return <Form><div data-testid="ds" /></Form>
+      },
+    })
+
+    // dateFormatter='number' ⇒ dayjs 字段被转换为时间戳数字
+    const numberWrapper = mount(DateComp, { props: { dateFormatter: 'number' } })
+    let editableUtils = (window as any).__editableUtils
+    editableUtils.startEditable(1)
+    await editableUtils.saveEditable(1)
+    await runTimers()
+    expect(typeof (numberWrapper.vm as any).dataSource[0].date).toBe('number')
+    numberWrapper.unmount()
+
+    // dateFormatter=false ⇒ dayjs 字段保持原样（不归一化）
+    const falseWrapper = mount(DateComp, { props: { dateFormatter: false } })
+    editableUtils = (window as any).__editableUtils
+    editableUtils.startEditable(1)
+    await editableUtils.saveEditable(1)
+    await runTimers()
+    expect(dayjs.isDayjs((falseWrapper.vm as any).dataSource[0].date)).toBe(true)
+    falseWrapper.unmount()
+  })
+
+  it('🧩 补充测试：单行模式重复编辑应弹出 message.warning', async () => {
+    const warnSpy = vi.spyOn(message, 'warning').mockImplementation((() => ({})) as any)
+    const wrapper = mount(TestComponent, { props: { tableName: 'testTable' } })
+
+    const editableUtils = (window as any).__editableUtils
+    expect(editableUtils.startEditable(1)).toBe(true)
+    expect(editableUtils.startEditable(2)).toBe(false)
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+
+    warnSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('🧩 补充测试：已存在缓存新增行时再次新增应被拦截并 warning', async () => {
+    const warnSpy = vi.spyOn(message, 'warning').mockImplementation((() => ({})) as any)
+    const wrapper = mount(TestComponent, { props: {} })
+
+    const editableUtils = (window as any).__editableUtils
+    expect(
+      editableUtils.addEditRecord({ id: 3, name: 't3' }, { recordKey: 3, newRecordType: 'cache' }),
+    ).toBe(true)
+    expect(
+      editableUtils.addEditRecord({ id: 4, name: 't4' }, { recordKey: 4, newRecordType: 'cache' }),
+    ).toBe(false)
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+
+    warnSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('🧩 补充测试：保存前应校验表单，校验失败时中止保存', async () => {
+    const onSave = vi.fn(async () => Promise.resolve())
+    const validateFields = vi.fn(async () => Promise.reject(new Error('invalid')))
+
+    const ValidateComp = defineComponent({
+      setup() {
+        const dataSource = ref<TestRecordType[]>([{ id: 1, name: 't1' }])
+        const editableUtils = useEditableArray<TestRecordType>({
+          get dataSource() {
+            return dataSource.value
+          },
+          setDataSource: (next: any) =>
+            (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          getRowKey: (r: TestRecordType) => r.id,
+          childrenColumnName: undefined,
+          onSave,
+          tableName: 'testTable',
+          formProps: { formRef: ref({ validateFields }) },
+        } as any)
+        ;(window as any).__editableUtils = editableUtils
+        return { dataSource }
+      },
+      render() {
+        return <Form />
+      },
+    })
+
+    const wrapper = mount(ValidateComp)
+    const editableUtils = (window as any).__editableUtils
+    editableUtils.startEditable(1)
+    const result = await editableUtils.saveEditable(1)
+    await runTimers()
+
+    expect(validateFields).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+    expect(result).toBe(false)
+    expect(editableUtils.editableKeys).toContain(1)
+    wrapper.unmount()
+  })
+
+  it('🧩 补充测试：表单校验通过后应正常保存', async () => {
+    const onSave = vi.fn(async () => Promise.resolve())
+    const validateFields = vi.fn(async () => Promise.resolve({}))
+
+    const ValidateComp = defineComponent({
+      setup() {
+        const dataSource = ref<TestRecordType[]>([{ id: 1, name: 't1' }])
+        const editableUtils = useEditableArray<TestRecordType>({
+          get dataSource() {
+            return dataSource.value
+          },
+          setDataSource: (next: any) =>
+            (dataSource.value = typeof next === 'function' ? next(dataSource.value) : next),
+          getRowKey: (r: TestRecordType) => r.id,
+          childrenColumnName: undefined,
+          onSave,
+          tableName: 'testTable',
+          formProps: { formRef: ref({ validateFields }) },
+        } as any)
+        ;(window as any).__editableUtils = editableUtils
+        return { dataSource }
+      },
+      render() {
+        return <Form />
+      },
+    })
+
+    const wrapper = mount(ValidateComp)
+    const editableUtils = (window as any).__editableUtils
+    editableUtils.startEditable(1)
+    const result = await editableUtils.saveEditable(1)
+    await runTimers()
+
+    expect(validateFields).toHaveBeenCalledTimes(1)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(result).toBe(true)
+    wrapper.unmount()
   })
 })

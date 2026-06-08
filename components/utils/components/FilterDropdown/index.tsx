@@ -2,7 +2,7 @@ import type { PopoverProps, TooltipPlacement } from 'antdv-next'
 import type { VNodeChild } from 'vue'
 import type { DropdownFooterProps } from '../DropdownFooter'
 import { clsx } from '@v-c/util'
-import { Popover } from 'antdv-next'
+import { ConfigProvider, Popover } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { DropdownFooter } from '../DropdownFooter'
@@ -61,7 +61,9 @@ export const FilterDropdown = defineComponent({
                 [`${prefixCls.value}-overlay-${props.placement}`]: props.placement,
               })}
             >
-              <div class={clsx(`${prefixCls.value}-content`, hashId)} style={{ padding: props.padding }}>{slots.default?.() || props.children}</div>
+              <ConfigProvider getPopupContainer={() => htmlRef.value || document.body}>
+                <div class={clsx(`${prefixCls.value}-content`, hashId)} style={{ padding: props.padding }}>{slots.default?.() || props.children}</div>
+              </ConfigProvider>
               {props.footer
                 ? (
                     <DropdownFooter

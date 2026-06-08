@@ -1,8 +1,19 @@
 import type { VNodeChild } from 'vue'
+import { LoadingOutlined } from '@antdv-next/icons'
 import { get } from '@v-c/util'
+import { message, Popconfirm } from 'antdv-next'
 import { cloneDeep } from 'es-toolkit'
-import { computed, ref, watch } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
 import { useIntl } from '../../provider'
+import { conversionMomentValue } from '../conversionMomentValue'
+import { useDebounceFn } from '../hooks/useDebounceFn'
+
+/**
+ * 显示警告信息
+ */
+function warning(messageStr: VNodeChild) {
+  return message.warning(messageStr as any)
+}
 
 export type RecordKey = string | number | (string | number)[]
 
@@ -107,42 +118,94 @@ export interface SaveEditableActionRef<T = any> {
   save: () => ReturnType<NonNullable<RowEditableConfig<T>['onSave']>> | Promise<void>
 }
 
-export function SaveEditableAction<T>(
-  props: ActionRenderConfig<T> & { row: T, onClick?: () => void | Promise<void> },
-) {
-  const save = async (event?: Event) => {
-    event?.stopPropagation?.()
-    event?.preventDefault?.()
-    if (props.onClick) {
-      await props.onClick()
-      return
+export const SaveEditableAction = defineComponent({
+  name: 'SaveEditableAction',
+  props: {
+    config: { type: Object, required: true },
+  },
+  setup(props) {
+    const loading = ref(false)
+    const save = async (event?: Event) => {
+      const c = props.config as ActionRenderConfig<any> & { row: any, children?: any, onClick?: () => void | Promise<void> }
+      event?.stopPropagation?.()
+      event?.preventDefault?.()
+      try {
+        loading.value = true
+        if (c.onClick) {
+          await c.onClick()
+          return
+        }
+        await c.onSave?.(
+          c.recordKey,
+          c.row,
+          c.preEditRowRef?.current || c.row,
+          c.newLineConfig,
+        )
+      }
+      finally {
+        loading.value = false
+      }
     }
-    await props.onSave?.(
-      props.recordKey,
-      props.row as T & { index?: number },
-      (props.preEditRowRef.current || props.row) as T & { index?: number },
-      props.newLineConfig,
-    )
-  }
-  return <a key="save" onClick={save}>{props.children || props.saveText || '保存'}</a>
-}
+    return () => {
+      const c = props.config as ActionRenderConfig<any> & { row: any, children?: any }
+      return (
+        <a key="save" onClick={save}>
+          {loading.value ? <LoadingOutlined style={{ marginInlineEnd: '8px' }} /> : null}
+          {c.children || c.saveText || '保存'}
+        </a>
+      )
+    }
+  },
+})
 
-export function DeleteEditableAction<T>(
-  props: ActionRenderConfig<T> & { row: T, onClick?: () => void | Promise<void> },
-) {
-  if (props.children === false)
-    return null
-  const remove = async (event?: Event) => {
-    event?.stopPropagation?.()
-    event?.preventDefault?.()
-    if (props.onClick) {
-      await props.onClick()
-      return
+export const DeleteEditableAction = defineComponent({
+  name: 'DeleteEditableAction',
+  props: {
+    config: { type: Object, required: true },
+  },
+  setup(props) {
+    const loading = ref(false)
+    const onConfirm = async () => {
+      const c = props.config as ActionRenderConfig<any> & { row: any, onClick?: () => void | Promise<void> }
+      try {
+        loading.value = true
+        if (c.onClick) {
+          await c.onClick()
+          return
+        }
+        const res = await c.onDelete?.(c.recordKey, c.row)
+        if (res === false)
+          return false
+        return res
+      }
+      finally {
+        loading.value = false
+        const keyStr = String(recordKeyToString(c.recordKey))
+        c.preEditRowRefs?.current?.delete(keyStr)
+        if (c.preEditRowRef)
+          c.preEditRowRef.current = null
+      }
     }
-    await props.onDelete?.(props.recordKey, props.row as T & { index?: number })
-  }
-  return <a key="delete" onClick={remove}>{props.children || props.deleteText || '删除'}</a>
-}
+    return () => {
+      const c = props.config as ActionRenderConfig<any> & { row: any, children?: any }
+      if (c.children === false)
+        return null
+      return (
+        <Popconfirm
+          key="delete"
+          title={(c.deletePopconfirmMessage || '确定要删除这条记录吗？') as any}
+          onConfirm={onConfirm}
+          getPopupContainer={(triggerNode: HTMLElement) => triggerNode.parentElement || document.body}
+        >
+          <a>
+            {loading.value ? <LoadingOutlined style={{ marginInlineEnd: '8px' }} /> : null}
+            {c.children || c.deleteText || '删除'}
+          </a>
+        </Popconfirm>
+      )
+    }
+  },
+})
 
 export function defaultActionRender<T>(row: T, config: ActionRenderConfig<T>) {
   const saveRef: { current: SaveEditableActionRef<T> | null } = {
@@ -157,11 +220,17 @@ export function defaultActionRender<T>(row: T, config: ActionRenderConfig<T>) {
       },
     },
   }
-  const save = SaveEditableAction({ ...config, row })
-  const deleteDom = DeleteEditableAction({ ...config, row })
+  const keyStr = recordKeyToString(config.recordKey)
+  // 与 React 对齐：新增行不渲染删除按钮（取消即删除）
+  const isNewLine = config.newLineConfig != null
+    && isSameRecordKey(config.newLineConfig.options.recordKey, config.recordKey)
+  const save = <SaveEditableAction key={`save${keyStr}`} config={{ ...config, row, children: config.saveText }} />
+  const deleteDom = isNewLine
+    ? undefined
+    : <DeleteEditableAction key={`delete${keyStr}`} config={{ ...config, row, children: config.deleteText }} />
   const cancel = (
     <a
-      key="cancel"
+      key={`cancel${keyStr}`}
       onClick={(event: Event) => {
         event.stopPropagation()
         event.preventDefault()
@@ -353,6 +422,32 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
   const preEditRowMap = new Map<string, RecordType & { index?: number }>()
   const newLineRecord = ref<NewLineConfig<RecordType> | undefined>()
 
+  const normalizeRowDateValues = (row: RecordType | null | undefined): RecordType => {
+    if (row == null || typeof row !== 'object')
+      return row as unknown as RecordType
+    return conversionMomentValue(row, props.dateFormatter ?? 'string', {}, false) as RecordType
+  }
+
+  const propsOnValuesChange = useDebounceFn((record: RecordType, dataSource: RecordType[]) => {
+    props.onValuesChange?.(record, dataSource)
+  }, 64)
+
+  const resolveFormInstance = (): any => {
+    const formRef = props.formProps?.formRef
+    return formRef?.value ?? formRef?.current ?? props.form
+  }
+
+  const validateRowFields = async (recordKey: RecordKey): Promise<void> => {
+    const form = resolveFormInstance()
+    if (!form || typeof form.validateFields !== 'function')
+      return
+    // 为了兼容类型为 array 的 dataIndex，当 recordKey 是数组时只取第一项作为表单字段路径
+    const namePath = [props.tableName ?? '', Array.isArray(recordKey) ? recordKey[0] : recordKey]
+      .flat(1)
+      .filter(pathKey => pathKey || pathKey === 0)
+    await form.validateFields(namePath, { recursive: true })
+  }
+
   watch(
     () => props.editableKeys?.map(recordKeyToString).join(';'),
     () => {
@@ -375,6 +470,52 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
     return props.dataSource.findIndex((item, index) => String(props.getRowKey(item, index)) === String(key))
   }
 
+  const buildFormFieldPath = (recordKey: string): (string | number)[] =>
+    [props.tableName ?? '', recordKey].flat(1).filter(key => key || key === 0) as (string | number)[]
+
+  const updateDataSourceWithEditableRows = (dataSource: RecordType[], values: any): RecordType[] => {
+    let updatedDataSource = dataSource
+    editableKeys.value.forEach((eachRecordKey) => {
+      if (newLineRecord.value && isSameRecordKey(newLineRecord.value.options.recordKey, eachRecordKey))
+        return
+      const recordKey = recordKeyToString(eachRecordKey)
+      const editRow = get(values, buildFormFieldPath(String(recordKey)))
+      if (!editRow)
+        return
+      updatedDataSource = updateRecordByKey(
+        updatedDataSource,
+        recordKey,
+        normalizeRowDateValues(editRow),
+        props.getRowKey,
+        props.childrenColumnName || 'children',
+      )
+    })
+    return updatedDataSource
+  }
+
+  const getCurrentEditRow = (value: any, values: any, dataSource: RecordType[]): RecordType => {
+    const valueKeys = Object.keys(value || {})
+    if (valueKeys.length === 0)
+      return (newLineRecord.value?.defaultValue || {}) as RecordType
+    const recordKey = String(valueKeys[valueKeys.length - 1] ?? '')
+    if (!recordKey)
+      return (newLineRecord.value?.defaultValue || {}) as RecordType
+    const newLineRecordData = normalizeRowDateValues({
+      ...newLineRecord.value?.defaultValue,
+      ...get(values, buildFormFieldPath(recordKey)),
+    } as RecordType)
+    const found = editableRowByKey(recordKey, dataSource, props.getRowKey, props.childrenColumnName)
+    return (found || newLineRecordData) as RecordType
+  }
+
+  const onValuesChange = (value: RecordType, values: RecordType) => {
+    if (!props.onValuesChange)
+      return
+    const updatedDataSource = updateDataSourceWithEditableRows(props.dataSource, values)
+    const editRow = getCurrentEditRow(value, values, updatedDataSource)
+    propsOnValuesChange.run(editRow, updatedDataSource)
+  }
+
   const updateEditableRow = (recordKey: RecordKey, dataIndex: RecordKey, value: any) => {
     const key = recordKeyToString(recordKey)
     let changedRecord: RecordType | undefined
@@ -392,7 +533,7 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
       return changedRecord || item
     })
     if (changedRecord)
-      props.onValuesChange?.(changedRecord, nextDataSource)
+      propsOnValuesChange.run(changedRecord, nextDataSource)
     if (changedRecord) {
       const changedPath = Array.isArray(dataIndex) ? dataIndex.join('.') : String(dataIndex)
       flattenColumns(props.columns).forEach((column) => {
@@ -419,10 +560,26 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
     return keys.includes(recordKeyToString(recordKey as RecordKey))
   }
 
+  const validateCanStartEdit = (): boolean => {
+    const hasEditableKeys = editableKeys.value.length > 0
+    if (
+      hasEditableKeys
+      && (props.type || 'single') === 'single'
+      && props.onlyOneLineEditorAlertMessage !== false
+    ) {
+      warning(
+        props.onlyOneLineEditorAlertMessage
+        || intl.getMessage('editableTable.onlyOneLineEditor', '只能同时编辑一行'),
+      )
+      return false
+    }
+    return true
+  }
+
   const startEditable = (recordKey: RecordKey, record?: RecordType) => {
     if (isEditable(recordKey))
       return true
-    if ((props.type || 'single') === 'single' && editableKeys.value.length > 0)
+    if (!validateCanStartEdit())
       return false
     const row = record || editableRowByKey(recordKey, props.dataSource, props.getRowKey, props.childrenColumnName)
     if (row) {
@@ -456,6 +613,13 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
   }
 
   const saveEditable = async (recordKey: RecordKey) => {
+    try {
+      await validateRowFields(recordKey)
+    }
+    catch {
+      // 校验失败时中止保存；表单会自动展示对应字段的错误信息
+      return false
+    }
     const key = recordKeyToString(recordKey)
     const currentNewLine = newLineRecord.value && recordKeyToString(newLineRecord.value.options.recordKey ?? '') === key ? newLineRecord.value : undefined
     const current = editableRowByKey(recordKey, props.dataSource, props.getRowKey, props.childrenColumnName)
@@ -476,7 +640,7 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
       patchDataSource(props.dataSource, props.setDataSource, data =>
         insertRecordByOptions(
           data,
-          normalizeRowForDataSource(current, currentNewLine.defaultValue),
+          normalizeRowDateValues(normalizeRowForDataSource(current, currentNewLine.defaultValue)),
           currentNewLine.options,
           props.getRowKey,
           props.childrenColumnName || 'children',
@@ -487,7 +651,7 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
         updateRecordByKey(
           data,
           recordKey,
-          current,
+          normalizeRowDateValues(current),
           props.getRowKey,
           props.childrenColumnName || 'children',
         ))
@@ -513,6 +677,15 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
   }
 
   const addEditRecord = (record: RecordType, options: NewLineConfig<RecordType>['options'] = {}) => {
+    if (newLineRecord.value && props.onlyAddOneLineAlertMessage !== false) {
+      warning(
+        props.onlyAddOneLineAlertMessage
+        || intl.getMessage('editableTable.onlyAddOneLine', '只能新增一行'),
+      )
+      return false
+    }
+    if (!validateCanStartEdit())
+      return false
     const recordKey = options.recordKey ?? props.getRowKey(record, props.dataSource.length)
     newLineRecord.value = { options: { ...options, recordKey }, defaultValue: record }
     preEditRowMap.set(recordKeyToString(recordKey), record)
@@ -584,6 +757,7 @@ export function useEditableArray<RecordType extends Record<string, any>>(props: 
     setEditableRowKeys,
     getRealIndex,
     updateEditableRow,
+    onValuesChange,
     isEditable,
     startEditable,
     cancelEditable,
