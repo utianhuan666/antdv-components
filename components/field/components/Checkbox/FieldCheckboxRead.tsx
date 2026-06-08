@@ -1,6 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
-import { objectToMap, proFieldParsingText } from '../Select'
+import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type Props = NonNullable<ProFieldFC<GroupProps>['__props']> & {
   optionsValueEnum: Record<string, any> | undefined

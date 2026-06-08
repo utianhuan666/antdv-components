@@ -80,7 +80,7 @@ export function FieldDatePickerLightEdit(props: Props) {
       downIcon={dayValue || open ? false : undefined}
       variant={variant}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 

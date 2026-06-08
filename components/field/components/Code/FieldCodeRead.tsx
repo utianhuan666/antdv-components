@@ -6,10 +6,14 @@ type FieldCodeReadProps = NonNullable<ProFieldFC<{
   language?: 'json' | 'text'
 }>['__props']> & {
   code: string
+  token: {
+    colorTextSecondary: string
+    fontFamilyCode: string
+  }
 }
 
 export function FieldCodeRead(props: FieldCodeReadProps) {
-  const { code, mode, render, fieldProps } = props
+  const { code, mode, render, fieldProps, token } = props
   const dom = (
     <pre
       {...fieldProps}
@@ -18,8 +22,8 @@ export function FieldCodeRead(props: FieldCodeReadProps) {
         overflow: 'auto',
         fontSize: '85%',
         lineHeight: 1.45,
-        color: 'rgba(0, 0, 0, 0.45)',
-        fontFamily: 'SFMono-Regular, Consolas, \'Liberation Mono\', Menlo, Courier, monospace',
+        color: token.colorTextSecondary,
+        fontFamily: token.fontFamilyCode,
         backgroundColor: 'rgba(150, 150, 150, 0.1)',
         borderRadius: 3,
         width: 'min-content',

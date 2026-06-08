@@ -91,7 +91,7 @@ export function FieldTimeRangePickerLightEdit(props: Props) {
       variant={variant}
       placeholder={placeholder}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 

@@ -74,7 +74,7 @@ export function FieldCascaderLightEdit(props: Props) {
       style={notEmpty ? { paddingInlineEnd: 0 } : undefined}
       allowClear={false}
       downIcon={notEmpty || open ? false : undefined}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 }

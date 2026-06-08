@@ -1,6 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from './types'
-import { objectToMap, proFieldParsingText } from './index'
+import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<FieldSelectProps>['__props']

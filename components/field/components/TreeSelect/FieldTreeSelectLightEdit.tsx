@@ -190,7 +190,7 @@ export function FieldTreeSelectLightEdit({
       style={notEmpty ? { paddingInlineEnd: 0 } : undefined}
       allowClear={false}
       downIcon={false}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 }

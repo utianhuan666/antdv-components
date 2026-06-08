@@ -47,14 +47,6 @@ const FieldSegmented = defineComponent({
     const inputRef = ref<HTMLInputElement | null>(null)
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
-    const segmentedOptions = computed(() =>
-      options.value.map((item: any) => ({
-        label: item.label ?? item.text,
-        value: item.value,
-        disabled: item.disabled,
-        icon: item.icon,
-      })).filter((item: any) => item.value !== undefined),
-    )
     const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
     const mergedProps = computed<FieldSegmentedProps>(() => ({
       ...props,
@@ -83,7 +75,7 @@ const FieldSegmented = defineComponent({
       if (isProFieldEditOrUpdateMode(fieldProps.mode)) {
         return FieldSegmentedEdit({
           ...fieldProps,
-          options: segmentedOptions.value,
+          options: options.value,
           loading: loading.value,
           inputRef,
         })

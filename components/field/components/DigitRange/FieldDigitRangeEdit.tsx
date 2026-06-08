@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitRangeProps, Value, ValuePair } from './types'
 import { omit } from '@v-c/util'
-import { Input, InputNumber } from 'antdv-next'
+import { Input, InputNumber, SpaceCompact } from 'antdv-next'
 
 type Props = NonNullable<ProFieldFC<FieldDigitRangeProps>['__props']> & {
   valuePair: ValuePair | undefined
@@ -63,7 +63,7 @@ export function FieldDigitRangeEdit(props: Props) {
   const restFieldProps = omit(fieldProps || {}, ['value', 'defaultValue', 'onChange', 'id'])
 
   const dom = (
-    <span style={{ display: 'inline-flex', alignItems: 'center', width: '100%' }} onBlur={handleGroupBlur}>
+    <SpaceCompact {...({ block: true, onBlur: handleGroupBlur } as any)}>
       <InputNumber
         {...({
           ...restFieldProps,
@@ -101,7 +101,7 @@ export function FieldDigitRangeEdit(props: Props) {
           onChange: (changedValue: Value) => handleChange(1, changedValue),
         } as any)}
       />
-    </span>
+    </SpaceCompact>
   )
 
   if (formItemRender)

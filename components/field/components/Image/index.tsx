@@ -20,7 +20,9 @@ const FieldImage: ProFieldFC<FieldImageProps> = (props) => {
       text,
       mode,
       render: typedProps.render,
+      formItemRender: typedProps.formItemRender,
       fieldProps: typedProps.fieldProps,
+      placeholder: typedProps.placeholder,
       width: typedProps.width,
     })
   }
@@ -30,8 +32,11 @@ const FieldImage: ProFieldFC<FieldImageProps> = (props) => {
     return FieldImageEdit({
       text,
       mode,
+      render: typedProps.render,
       formItemRender: typedProps.formItemRender,
       fieldProps: typedProps.fieldProps,
+      placeholder: typedProps.placeholder,
+      width: typedProps.width,
       placeholderValue,
     })
   }

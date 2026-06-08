@@ -92,7 +92,7 @@ export function FieldTimePickerLightEdit(props: Props) {
       downIcon={dayValue || open ? false : undefined}
       variant={variant ?? fieldProps?.variant}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 

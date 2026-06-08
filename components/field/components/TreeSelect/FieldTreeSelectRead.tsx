@@ -1,6 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from '../Select'
-import { objectToMap, proFieldParsingText } from '../Select'
+import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type Props = NonNullable<ProFieldFC<{} & FieldSelectProps>['__props']> & {
   optionsValueEnum: Map<any, any> | undefined

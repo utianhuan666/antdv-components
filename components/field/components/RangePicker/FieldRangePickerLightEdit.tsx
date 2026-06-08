@@ -99,7 +99,7 @@ export function FieldRangePickerLightEdit(props: Props) {
       downIcon={dayValue || open ? false : undefined}
       variant={propsVariant}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
-      onLabelClick={handleLabelClick}
+      onClick={handleLabelClick}
     />
   )
 

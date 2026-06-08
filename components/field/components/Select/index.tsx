@@ -2,11 +2,12 @@ import type { SelectProps } from 'antdv-next'
 import type { Ref, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, ProFieldValueEnumType, RequestOptionsType } from './types'
-import { Badge, useConfig } from 'antdv-next'
+import { useConfig } from 'antdv-next'
 import { debounce } from 'es-toolkit'
 import useSWRV from 'swrv'
-import { computed, defineComponent, h, onUnmounted, ref, watch } from 'vue'
+import { computed, defineComponent, onUnmounted, ref, watch } from 'vue'
 import { useIntl, useProProviderSWRVContext } from '../../../provider'
+import { objectToMap } from '../../../utils'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSelectLightEdit from './FieldSelectLightEdit'
 import FieldSelectRead from './FieldSelectRead'
@@ -38,49 +39,15 @@ type FieldSelectComponentProps = NonNullable<
   }>['__props']
 >
 
-export function objectToMap(value: ProFieldValueEnumType): Map<any, any> {
-  if (value instanceof Map)
-    return value
-  return new Map(Object.entries(value || {}))
-}
-
-export function proFieldParsingText(text: any, valueEnumParams: ProFieldValueEnumType): any {
-  if (Array.isArray(text))
-    return text.map(value => proFieldParsingText(value, valueEnumParams)).join(',')
-
-  const valueEnum = objectToMap(valueEnumParams)
-  if (!valueEnum.has(text) && !valueEnum.has(`${text}`))
-    return text?.label ?? text
-
-  const domText = valueEnum.get(text) || valueEnum.get(`${text}`)
-  if (!domText)
-    return text?.label ?? text
-
-  if (typeof domText === 'object') {
-    if (domText.status) {
-      return h(Badge, {
-        status: String(domText.status).toLowerCase() as any,
-        text: domText.text || domText.label,
-      })
-    }
-    if (domText.color) {
-      return h(Badge, {
-        color: domText.color,
-        text: domText.text || domText.label,
-      })
-    }
-    return domText.text || domText.label || domText
-  }
-
-  return domText
-}
-
 export function proFieldParsingValueEnumToArray(valueEnumParams: ProFieldValueEnumType): RequestOptionsType[] {
   const enumArray: RequestOptionsType[] = []
   const valueEnum = objectToMap(valueEnumParams)
 
   valueEnum.forEach((_, key) => {
-    const value = valueEnum.get(key) || valueEnum.get(`${key}`)
+    const value = (valueEnum.get(key) || valueEnum.get(`${key}`)) as {
+      text: VNodeChild
+      disabled?: boolean
+    }
     if (value == null)
       return
 
@@ -95,9 +62,9 @@ export function proFieldParsingValueEnumToArray(valueEnumParams: ProFieldValueEn
     }
 
     enumArray.push({
-      text: value as VNodeChild,
+      text: value as unknown as VNodeChild,
       value: key,
-      label: value as VNodeChild,
+      label: value as unknown as VNodeChild,
     })
   })
 

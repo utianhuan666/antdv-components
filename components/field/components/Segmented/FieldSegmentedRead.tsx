@@ -2,7 +2,7 @@ import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from '../Select'
 import type { ProFieldValueEnumType } from '../Select/types'
-import { objectToMap, proFieldParsingText } from '../Select'
+import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type FieldSegmentedProps = NonNullable<ProFieldFC<{
   text: string

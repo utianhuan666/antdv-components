@@ -30,6 +30,9 @@ export function formatDate(
   if (Array.isArray(parsed) || !parsed || !parsed.isValid())
     return '-'
 
+  if (typeof parsed.format !== 'function')
+    return String(text)
+
   if (typeof format === 'function')
     return format(parsed)
 
