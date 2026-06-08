@@ -5,11 +5,11 @@ interface LineProps {
   padding?: string | number
 }
 
-export const Line = defineComponent({
+export const Line = defineComponent<LineProps>({
   name: 'Line',
   props: ['padding'],
   setup(rawProps) {
-    const props = rawProps as LineProps
+    const props = rawProps
 
     return () => (
       <div
@@ -32,14 +32,16 @@ export const MediaQueryKeyEnum = {
   xxl: 6,
 }
 
-const StatisticSkeleton = defineComponent({
+interface StatisticSkeletonProps {
+  size?: number
+  active?: boolean
+}
+
+const StatisticSkeleton = defineComponent<StatisticSkeletonProps>({
   name: 'StatisticSkeleton',
   props: ['size', 'active'],
   setup(rawProps) {
-    const props = rawProps as {
-      size?: number
-      active?: boolean
-    }
+    const props = rawProps
     const defaultCol: Record<string, boolean> = {
       lg: true,
       md: true,
@@ -118,13 +120,15 @@ const StatisticSkeleton = defineComponent({
   },
 })
 
-export const ListSkeletonItem = defineComponent({
+interface ListSkeletonItemProps {
+  active: boolean
+}
+
+export const ListSkeletonItem = defineComponent<ListSkeletonItemProps>({
   name: 'ListSkeletonItem',
   props: ['active'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-    }
+    const props = rawProps
 
     return () => (
       <>
@@ -184,15 +188,17 @@ export const ListSkeletonItem = defineComponent({
   },
 })
 
-export const ListSkeleton = defineComponent({
+interface ListSkeletonProps {
+  size: number
+  active?: boolean
+  actionButton?: boolean
+}
+
+export const ListSkeleton = defineComponent<ListSkeletonProps>({
   name: 'ListSkeleton',
   props: ['size', 'active', 'actionButton'],
   setup(rawProps) {
-    const props = rawProps as {
-      size: number
-      active?: boolean
-      actionButton?: boolean
-    }
+    const props = rawProps
 
     return () => (
       <Card
@@ -236,13 +242,15 @@ export const ListSkeleton = defineComponent({
   },
 })
 
-export const PageHeaderSkeleton = defineComponent({
+interface PageHeaderSkeletonProps {
+  active: boolean
+}
+
+export const PageHeaderSkeleton = defineComponent<PageHeaderSkeletonProps>({
   name: 'PageHeaderSkeleton',
   props: ['active'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-    }
+    const props = rawProps
 
     return () => (
       <div
@@ -271,13 +279,15 @@ export interface ListPageSkeletonProps {
   list?: number | false
 }
 
-export const ListToolbarSkeleton = defineComponent({
+interface ListToolbarSkeletonProps {
+  active: boolean
+}
+
+export const ListToolbarSkeleton = defineComponent<ListToolbarSkeletonProps>({
   name: 'ListToolbarSkeleton',
   props: ['active'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-    }
+    const props = rawProps
 
     return () => (
       <Card
@@ -309,11 +319,11 @@ export const ListToolbarSkeleton = defineComponent({
   },
 })
 
-const ListPageSkeleton = defineComponent({
+const ListPageSkeleton = defineComponent<ListPageSkeletonProps>({
   name: 'ListPageSkeleton',
   props: ['active', 'pageHeader', 'statistic', 'actionButton', 'toolbar', 'list'],
   setup(rawProps) {
-    const props = rawProps as ListPageSkeletonProps
+    const props = rawProps
 
     return () => (
       <div

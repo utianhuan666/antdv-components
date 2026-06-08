@@ -11,7 +11,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('ProForm Dependency component', () => {
+describe('proForm Dependency component', () => {
   afterEach(() => {
     cleanup()
   })
@@ -105,7 +105,7 @@ describe('ProForm Dependency component', () => {
         html.baseElement.querySelector<HTMLDivElement>('input.ant-input')!,
         {
           target: {
-            value: "Don't update",
+            value: 'Don\'t update',
           },
         },
       )
@@ -149,7 +149,7 @@ describe('ProForm Dependency component', () => {
             />
             <ProFormDependency name={['name', 'nickName']}>
               {({ name, nickName }) => {
-                dependencyFn(name + ' ' + nickName)
+                dependencyFn(`${name} ${nickName}`)
                 return <div id="show">{name || 'first'}</div>
               }}
             </ProFormDependency>

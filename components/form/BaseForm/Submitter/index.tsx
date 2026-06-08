@@ -16,11 +16,11 @@ export interface SubmitterProps<T = any> {
   onReset?: () => void
 }
 
-const Submitter = defineComponent({
+const Submitter = defineComponent<SubmitterProps>({
   name: 'ProFormSubmitter',
   props: ['form', 'submitButtonProps', 'resetButtonProps', 'searchConfig', 'render', 'onSubmit', 'onReset'],
   setup(rawProps) {
-    const props = rawProps as SubmitterProps
+    const props = rawProps
     return () => {
       const dom = [
         <Button {...props.resetButtonProps as any} onClick={props.onReset}>{props.searchConfig?.resetText ?? '重 置'}</Button>,

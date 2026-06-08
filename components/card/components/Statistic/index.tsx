@@ -20,7 +20,7 @@ export interface StatisticProps extends AntStatisticProps {
   children?: VNodeChild
 }
 
-const Statistic = defineComponent({
+const Statistic = defineComponent<StatisticProps>({
   name: 'ProStatistic',
   inheritAttrs: false,
   props: [
@@ -41,7 +41,7 @@ const Statistic = defineComponent({
     'style',
   ],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as StatisticProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-card-statistic')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 

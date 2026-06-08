@@ -10,12 +10,12 @@ export interface ProCardLoadingProps {
   style?: CSSProperties
 }
 
-const Loading = defineComponent({
+const Loading = defineComponent<ProCardLoadingProps>({
   name: 'ProCardLoading',
   inheritAttrs: false,
   props: ['className', 'prefix', 'style'],
   setup(rawProps) {
-    const props = rawProps as ProCardLoadingProps
+    const props = rawProps
     const prefix = useProPrefixCls('pro-card', computed(() => props.prefix))
     const { wrapSSR } = useStyle(prefix.value)
 

@@ -151,13 +151,13 @@ function replaceValues(target: Record<string, any>, source: Record<string, any>)
   return target
 }
 
-export const BaseForm = defineComponent({
+export const BaseForm = defineComponent<BaseFormProps>({
   name: 'BaseForm',
   inheritAttrs: false,
-  props: formPropNames as unknown as Record<string, PropType<any>>,
+  props: formPropNames,
   emits: ['finish', 'finishFailed', 'valuesChange', 'loadingChange'],
   setup(rawProps, { attrs, emit, expose, slots }) {
-    const props = rawProps as BaseFormProps
+    const props = rawProps
     const formRef = ref<ProFormInstance<any>>()
     const urlSync = useUrlSync({
       syncToUrl: computed(() => props.syncToUrl),

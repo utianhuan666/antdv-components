@@ -17,7 +17,7 @@ export type StatisticCardProps = CardProps & {
   footer?: VNodeChild
 }
 
-const StatisticCardBase = defineComponent({
+const StatisticCardBase = defineComponent<StatisticCardProps>({
   name: 'StatisticCard',
   inheritAttrs: false,
   props: [
@@ -62,7 +62,7 @@ const StatisticCardBase = defineComponent({
   ],
   emits: ['collapse', 'click', 'checked'],
   setup(rawProps, { attrs, emit, slots }) {
-    const props = rawProps as StatisticCardProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-statistic-card')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 

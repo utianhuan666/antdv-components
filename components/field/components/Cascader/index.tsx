@@ -62,11 +62,11 @@ const fieldCascaderPropNames = [
   'cacheForSwr',
 ]
 
-const FieldCascader = defineComponent({
+const FieldCascader = defineComponent<FieldCascaderComponentProps>({
   name: 'FieldCascader',
   props: fieldCascaderPropNames,
   setup(rawProps, { expose }) {
-    const props = rawProps as unknown as FieldCascaderComponentProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-cascader')
     const cascaderRef = ref<any>(null)
     const open = ref(false)

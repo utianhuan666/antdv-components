@@ -11,7 +11,7 @@ type FieldTextProps = NonNullable<ProFieldFC<{
   emptyText?: VNodeChild
 }>['__props']>
 
-const FieldText = defineComponent({
+const FieldText = defineComponent<FieldTextProps>({
   name: 'FieldText',
   props: [
     'text',
@@ -22,7 +22,7 @@ const FieldText = defineComponent({
     'emptyText',
   ],
   setup(rawProps, { expose }) {
-    const props = rawProps as FieldTextProps
+    const props = rawProps
     const intl = useIntl()
     const inputRef = ref<any>(null)
 

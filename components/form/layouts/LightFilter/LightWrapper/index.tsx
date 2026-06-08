@@ -33,12 +33,12 @@ export interface LightWrapperProps {
   placement?: TooltipPlacement
 }
 
-export const LightWrapper = defineComponent({
+export const LightWrapper = defineComponent<LightWrapperProps>({
   name: 'LightWrapper',
   inheritAttrs: false,
   props: ['label', 'disabled', 'placeholder', 'size', 'value', 'onChange', 'onBlur', 'style', 'className', 'children', 'valuePropName', 'customLightMode', 'light', 'labelFormatter', 'variant', 'otherFieldProps', 'valueType', 'allowClear', 'footerRender', 'placement'],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as LightWrapperProps & Record<string, any>
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-light-wrapper')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
     const open = ref(false)

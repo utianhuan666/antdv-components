@@ -23,12 +23,12 @@ export interface DropdownProps {
   children?: VNodeChild
 }
 
-export const FilterDropdown = defineComponent({
+export const FilterDropdown = defineComponent<DropdownProps>({
   name: 'ProFilterDropdown',
   props: ['label', 'footer', 'footerRender', 'padding', 'disabled', 'onOpenChange', 'open', 'placement', 'popoverProps', 'children'],
   emits: ['update:open', 'openChange'],
   setup(rawProps, { slots, emit }) {
-    const props = rawProps as DropdownProps
+    const props = rawProps
     const htmlRef = ref<HTMLDivElement | null>(null)
     const prefixCls = useProPrefixCls('pro-core-field-dropdown')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)

@@ -15,7 +15,7 @@ import useStyle from './style'
 // 对应 React 的 ProCardChildType（React.ReactElement<CardProps, ... & { isProCard?: boolean }>）。
 type ProCardChildType = VNode
 
-const Card = defineComponent({
+const Card = defineComponent<CardProps>({
   name: 'ProCard',
   inheritAttrs: false,
   props: [
@@ -56,7 +56,7 @@ const Card = defineComponent({
   ],
   emits: ['collapse', 'click', 'checked'],
   setup(rawProps, { attrs, emit, slots }) {
-    const props = rawProps as CardProps
+    const props = rawProps
     const config = useConfig()
     const screensRef = useBreakpoint()
     // 用于 loading 占位 padding 兜底（body padding 被显式置 0 时使用 token.paddingLG）

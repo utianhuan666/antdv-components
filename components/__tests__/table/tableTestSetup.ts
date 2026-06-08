@@ -2,7 +2,7 @@
 // React 端是全局生效，这里限定在 table 测试范围内（被各 table 测试文件 import），
 // 以保证迁移测试的断言与 React 完全一致，同时不影响仓库内其它已存在的测试套件。
 import MockDate from 'mockdate'
-import { afterAll, beforeAll, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 
 // 2016-11-22 15:22:44 —— 与 React setupTests 固定时间一致
 const MOCK_NOW = 1479828164000
@@ -22,7 +22,7 @@ const localStorageMock = (() => {
       store[key] = null
     },
     clear() {
-      store = {}
+      store = { umi_locale: 'zh-CN' }
     },
   }
 })()
@@ -42,6 +42,17 @@ beforeAll(() => {
     writable: true,
     configurable: true,
   })
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: localStorageMock,
+    writable: true,
+    configurable: true,
+  })
+})
+
+// 每个测试后清理状态，避免测试间干扰
+afterEach(() => {
+  localStorageMock.clear()
+  vi.clearAllMocks()
 })
 
 afterAll(() => {

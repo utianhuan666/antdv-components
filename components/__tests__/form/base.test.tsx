@@ -34,7 +34,7 @@ import { act, cleanup, fireEvent, render, userEvent, waitFor, waitForWaitTime } 
 
 const TEST_INITIAL_URL = 'http://localhost?layoutTheme=realDark&layout=side&colorPrimary=techBlue&splitMenus=false&fixedHeader=true'
 
-describe('ProForm', () => {
+describe('proForm', () => {
   beforeAll(() => vi.useFakeTimers())
   afterAll(() => vi.useRealTimers())
 
@@ -930,11 +930,13 @@ describe('ProForm', () => {
                 ]}
                 width="md"
                 name="useMode"
-                label={
-                  <span id="label_text">{`与《${values?.name || ''}》 与 《${
-                    values?.name2?.text || ''
-                  }》合同约定生效方式`}</span>
-                }
+                label={(
+                  <span id="label_text">
+                    {`与《${values?.name || ''}》 与 《${
+                      values?.name2?.text || ''
+                    }》合同约定生效方式`}
+                  </span>
+                )}
               />
             )
           }}
@@ -4042,7 +4044,7 @@ describe('ProForm', () => {
         <ProFormText
           name="price"
           transform={(value: string) => ({
-            price: parseFloat(value),
+            price: Number.parseFloat(value),
             currency: 'USD',
           })}
         />
@@ -4150,7 +4152,7 @@ describe('ProForm', () => {
         <ProFormText
           name="price"
           transform={(value: string) => ({
-            price: parseFloat(value),
+            price: Number.parseFloat(value),
             currency: 'USD',
           })}
         />
@@ -4222,7 +4224,7 @@ describe('ProForm', () => {
   })
 })
 
-describe('ProForm 修复增强用例', () => {
+describe('proForm 修复增强用例', () => {
   it('onFinish reject 后按钮 loading 能关闭', async () => {
     const fn = vi.fn()
     const wrapper = render(
@@ -4247,7 +4249,7 @@ describe('ProForm 修复增强用例', () => {
     wrapper.unmount()
   })
 
-  it('SearchSelect 多选 autoClearSearchValue=true/false 行为', async () => {
+  it('searchSelect 多选 autoClearSearchValue=true/false 行为', async () => {
     const options = [
       { label: 'A', value: 'a' },
       { label: 'B', value: 'b' },

@@ -21,13 +21,15 @@ const MediaQueryKeyEnum = {
   xxl: 4,
 }
 
-const DescriptionsLargeItemSkeleton = defineComponent({
+interface DescriptionsLargeItemSkeletonProps {
+  active?: boolean
+}
+
+const DescriptionsLargeItemSkeleton = defineComponent<DescriptionsLargeItemSkeletonProps>({
   name: 'DescriptionsLargeItemSkeleton',
   props: ['active'],
   setup(rawProps) {
-    const props = rawProps as {
-      active?: boolean
-    }
+    const props = rawProps
 
     return () => (
       <div
@@ -101,14 +103,16 @@ const DescriptionsLargeItemSkeleton = defineComponent({
   },
 })
 
-const DescriptionsItemSkeleton = defineComponent({
+interface DescriptionsItemSkeletonProps {
+  size?: number
+  active?: boolean
+}
+
+const DescriptionsItemSkeleton = defineComponent<DescriptionsItemSkeletonProps>({
   name: 'DescriptionsItemSkeleton',
   props: ['size', 'active'],
   setup(rawProps) {
-    const props = rawProps as {
-      size?: number
-      active?: boolean
-    }
+    const props = rawProps
     const defaultCol: Record<string, boolean> = {
       lg: true,
       md: true,
@@ -166,14 +170,16 @@ const DescriptionsItemSkeleton = defineComponent({
   },
 })
 
-export const TableItemSkeleton = defineComponent({
+interface TableItemSkeletonProps {
+  active: boolean
+  header?: boolean
+}
+
+export const TableItemSkeleton = defineComponent<TableItemSkeletonProps>({
   name: 'TableItemSkeleton',
   props: ['active', 'header'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-      header?: boolean
-    }
+    const props = rawProps
     const defaultCol: Record<string, boolean> = {
       lg: true,
       md: true,
@@ -240,14 +246,16 @@ export const TableItemSkeleton = defineComponent({
   },
 })
 
-export const TableSkeleton = defineComponent({
+interface TableSkeletonProps {
+  active: boolean
+  size?: number
+}
+
+export const TableSkeleton = defineComponent<TableSkeletonProps>({
   name: 'TableSkeleton',
   props: ['active', 'size'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-      size?: number
-    }
+    const props = rawProps
 
     return () => (
       <Card variant="borderless">
@@ -283,13 +291,15 @@ export const TableSkeleton = defineComponent({
   },
 })
 
-export const DescriptionsSkeleton = defineComponent({
+interface DescriptionsSkeletonProps {
+  active: boolean
+}
+
+export const DescriptionsSkeleton = defineComponent<DescriptionsSkeletonProps>({
   name: 'DescriptionsSkeleton',
   props: ['active'],
   setup(rawProps) {
-    const props = rawProps as {
-      active: boolean
-    }
+    const props = rawProps
 
     return () => (
       <Card
@@ -311,11 +321,11 @@ export const DescriptionsSkeleton = defineComponent({
   },
 })
 
-const DescriptionsPageSkeleton = defineComponent({
+const DescriptionsPageSkeleton = defineComponent<DescriptionsPageSkeletonProps>({
   name: 'DescriptionsPageSkeleton',
   props: ['active', 'pageHeader', 'list'],
   setup(rawProps) {
-    const props = rawProps as DescriptionsPageSkeletonProps
+    const props = rawProps
 
     return () => (
       <div

@@ -9,11 +9,11 @@ export interface ProCardActionsProps {
   prefixCls?: string
 }
 
-const Actions = defineComponent({
+const Actions = defineComponent<ProCardActionsProps>({
   name: 'ProCardActions',
   props: ['actions', 'prefixCls'],
   setup(rawProps) {
-    const props = rawProps as ProCardActionsProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-card', computed(() => props.prefixCls))
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 

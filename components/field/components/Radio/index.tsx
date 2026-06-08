@@ -24,7 +24,7 @@ function buildOptionsValueEnum(options: any[] | undefined) {
   }, {})
 }
 
-const FieldRadio = defineComponent({
+const FieldRadio = defineComponent<RadioFieldProps>({
   name: 'FieldRadio',
   props: [
     'text',
@@ -45,7 +45,7 @@ const FieldRadio = defineComponent({
     'layout',
   ],
   setup(rawProps, { expose }) {
-    const props = rawProps as RadioFieldProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-radio')
     const radioRef = ref<unknown>(null)
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)

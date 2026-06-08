@@ -10,13 +10,13 @@ import {
   ProFormFieldSet,
   ProFormText,
 } from '../../form'
-import { cleanup, fireEvent, render, waitFor } from '../testUtils'
+import { cleanup, fireEvent, render, screen, waitFor } from '../testUtils'
 
 afterEach(() => {
   cleanup()
 })
 
-describe('ProFormFieldSet', () => {
+describe('proFormFieldSet', () => {
   it('😊 ProFormFieldSet should render', async () => {
     const { container } = render(
       <ProForm>
@@ -44,7 +44,7 @@ describe('ProFormFieldSet', () => {
     })
 
     // Check that the submit button exists
-    const submitButton = await container.findByText('提 交')
+    const submitButton = await screen.findByText('提 交')
     expect(submitButton).toBeTruthy()
   })
 
@@ -187,7 +187,7 @@ describe('ProFormFieldSet', () => {
         <ProFormFieldSet
           name="list"
           convertValue={(value: string) => {
-            return value.split(',').map((item) => Number(item))
+            return value.split(',').map(item => Number(item))
           }}
         >
           <ProFormText
@@ -209,7 +209,7 @@ describe('ProFormFieldSet', () => {
             id: 'filedSet3',
           }}
           convertValue={(value: string) => {
-            return value + '-2'
+            return `${value}-2`
           }}
           name="listKey"
           key="filedSet3"

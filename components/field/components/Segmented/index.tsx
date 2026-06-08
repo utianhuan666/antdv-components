@@ -24,7 +24,7 @@ function buildOptionsValueEnum(options: any[] | undefined) {
   }, {})
 }
 
-const FieldSegmented = defineComponent({
+const FieldSegmented = defineComponent<FieldSegmentedProps>({
   name: 'FieldSegmented',
   props: [
     'text',
@@ -43,7 +43,7 @@ const FieldSegmented = defineComponent({
     'emptyText',
   ],
   setup(rawProps, { expose }) {
-    const props = rawProps as FieldSegmentedProps
+    const props = rawProps
     const inputRef = ref<HTMLInputElement | null>(null)
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))

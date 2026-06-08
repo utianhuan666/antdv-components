@@ -12,17 +12,12 @@ type StepsFormProps<T, ValueType> = ProFormPropsType<T, ValueType>
     grid?: ProFormGridConfig['grid']
   }
 
-const StepsForm = defineComponent({
+const StepsForm = defineComponent<StepsFormProps<any, any>>({
   name: 'SchemaStepsForm',
   inheritAttrs: false,
-  props: {
-    steps: { type: Array as PropType<Array<Record<string, any>>> },
-    columns: { type: Array as PropType<ProFormColumnsType[][]>, default: () => [] },
-    forceUpdate: Function as PropType<() => void>,
-    grid: Boolean,
-  },
+  props: ['steps', 'columns', 'forceUpdate', 'grid'],
   setup(rawProps, { attrs }) {
-    const props = rawProps as StepsFormProps<any, any>
+    const props = rawProps
     return () => (
       <ProStepsForm
         {...attrs as any}

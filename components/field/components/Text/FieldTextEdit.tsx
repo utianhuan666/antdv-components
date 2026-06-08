@@ -13,6 +13,7 @@ type FieldTextEditProps = NonNullable<ProFieldFC<{
 
 export function FieldTextEdit(props: FieldTextEditProps) {
   const { text, mode, formItemRender, fieldProps, inputRef, intl } = props
+
   const dom = (
     <Input
       ref={inputRef}
@@ -22,10 +23,19 @@ export function FieldTextEdit(props: FieldTextEditProps) {
     />
   )
 
-  if (formItemRender)
-    return formItemRender(text, { mode, ...fieldProps }, dom)
+  // If an id is specified, wrap in a span with the id since antdv-next Input doesn't forward id prop
+  const finalDom = fieldProps?.id
+    ? (
+        <span id={fieldProps.id} style={{ display: 'contents' }}>
+          {dom}
+        </span>
+      )
+    : dom
 
-  return dom
+  if (formItemRender)
+    return formItemRender(text, { mode, ...fieldProps }, finalDom)
+
+  return finalDom
 }
 
 export default FieldTextEdit

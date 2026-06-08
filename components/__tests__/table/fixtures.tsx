@@ -6,15 +6,15 @@ import { FieldStatus, TableDropdown } from '../../index'
 function getFetchData(
   size: number,
 ): {
-    key: string | number
-    name: string
-    age: string | number
-    address: string
-    money: number
-    sex: string
-    date: number
-    status: number
-  }[] {
+  key: string | number
+  name: string
+  age: string | number
+  address: string
+  money: number
+  sex: string
+  date: number
+  status: number
+}[] {
   const data: {
     key: string | number
     name: string
@@ -184,14 +184,14 @@ export function request(params?: {
   pageSize?: number
   current?: number
 }): Promise<{
-    data: {
-      key: string | number
-      name: string
-      age: string | number
-      address: string
-    }[]
-    success: true
-  }> {
+  data: {
+    key: string | number
+    name: string
+    age: string | number
+    address: string
+  }[]
+  success: true
+}> {
   return Promise.resolve({
     data: getFetchData(params?.pageSize || 46),
     total: 200,

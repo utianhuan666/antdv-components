@@ -17,7 +17,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('ProForm.Item', () => {
+describe('proForm.Item', () => {
   it('📦 ProForm support fieldProps.onBlur', async () => {
     const onBlur = vi.fn()
     const { container } = render(
@@ -29,7 +29,7 @@ describe('ProForm.Item', () => {
         <ProFormText
           fieldProps={{
             id: 'layoutTheme',
-            onBlur: (e) => onBlur(e.target.value),
+            onBlur: e => onBlur(e.target.value),
           }}
           name="layoutTheme"
         />
@@ -54,7 +54,7 @@ describe('ProForm.Item', () => {
         onValuesChange={({ name }) => onValuesChange(name)}
       >
         <ProForm.Item name="name">
-          <Input onChange={(e) => onChange(e.target.value)} id="name" />
+          <Input onChange={e => onChange(e.target.value)} id="name" />
         </ProForm.Item>
       </ProForm>,
     )
@@ -119,9 +119,9 @@ describe('ProForm.Item', () => {
     expect(getByText('主组织')).toBeInTheDocument()
 
     const onBlurWarning = consoleSpy.mock.calls.find(
-      (args) =>
-        String(args[0]).includes('onBlur') &&
-        String(args[0]).includes('function'),
+      args =>
+        String(args[0]).includes('onBlur')
+        && String(args[0]).includes('function'),
     )
     consoleSpy.mockRestore()
     expect(

@@ -55,7 +55,7 @@ export interface CheckCardGroupProps {
  * 由 Group 组件向下传递，CheckCard 子组件通过 inject 消费。
  * 对应 React 的 CheckCardGroupContextType（纯值，非 ref）。
  */
-export type CheckCardGroupContextType = {
+export interface CheckCardGroupContextType {
   /** 切换选项选中状态 */
   toggleOption?: (option: CheckCardOptionType) => void
   /** 当前选中值（单选为单值，多选为数组） */
@@ -78,11 +78,11 @@ export type CheckCardGroupContextType = {
 
 export const CheckCardGroupContext: InjectionKey<CheckCardGroupContextType | null> = Symbol('CheckCardGroupContext')
 
-export const CardLoading = defineComponent({
+export const CardLoading = defineComponent<{ prefixCls: string, hashId?: string }>({
   name: 'ProCheckCardLoading',
   props: ['prefixCls', 'hashId'],
   setup(rawProps) {
-    const props = rawProps as { prefixCls: string, hashId?: string }
+    const props = rawProps
     return () => (
       <div class={clsx(`${props.prefixCls}-loading-content`, props.hashId)}>
         <Skeleton loading active paragraph={{ rows: 4 }} title={false} />
@@ -122,7 +122,7 @@ const SubCheckCardGroup = defineComponent({
   },
 })
 
-const CheckCardGroup = defineComponent({
+const CheckCardGroup = defineComponent<CheckCardGroupProps>({
   name: 'CheckCardGroup',
   inheritAttrs: false,
   props: [
@@ -141,7 +141,7 @@ const CheckCardGroup = defineComponent({
   ],
   emits: ['change', 'update:value'],
   setup(rawProps, { attrs, emit, slots }) {
-    const props = rawProps as CheckCardGroupProps
+    const props = rawProps
     const antdContext = useConfig()
 
     const getOptions = () => {

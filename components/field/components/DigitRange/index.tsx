@@ -9,9 +9,21 @@ import FieldDigitRangeRead from './FieldDigitRangeRead'
 export type { FieldDigitRangeProps, Value, ValuePair }
 type FieldDigitRangeFieldProps = NonNullable<ProFieldFC<FieldDigitRangeProps>['__props']>
 
-const FieldDigitRange = defineComponent(
-  (rawProps: { [key: string]: unknown }) => {
-    const props = rawProps as FieldDigitRangeFieldProps
+const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
+  name: 'FieldDigitRange',
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+    'placeholder',
+    'separator',
+    'separatorWidth',
+  ],
+  setup(rawProps) {
+    const props = rawProps
     const intl = useIntl()
     const fieldProps = () => props.fieldProps ?? {}
     const valuePair = ref<ValuePair | undefined>(fieldProps().value ?? fieldProps().defaultValue)
@@ -82,20 +94,6 @@ const FieldDigitRange = defineComponent(
       return null
     }
   },
-  {
-    name: 'FieldDigitRange',
-    props: [
-      'text',
-      'mode',
-      'render',
-      'formItemRender',
-      'fieldProps',
-      'emptyText',
-      'placeholder',
-      'separator',
-      'separatorWidth',
-    ],
-  },
-)
+})
 
 export default FieldDigitRange

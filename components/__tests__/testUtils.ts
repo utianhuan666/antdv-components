@@ -2,6 +2,9 @@ import type { VueWrapper } from '@vue/test-utils'
 import type { VNodeChild } from 'vue'
 import { mount } from '@vue/test-utils'
 import { vi } from 'vitest'
+// Custom matchers for testing library compatibility
+import { expect } from 'vitest'
+
 import { defineComponent, nextTick, shallowRef } from 'vue'
 
 type Matcher = string | RegExp | ((content: string, element: Element | null) => boolean)
@@ -33,6 +36,73 @@ interface RenderResult extends RenderQueries {
   rerender: (next: VNodeChild) => Promise<void>
   unmount: () => void
   asFragment: () => HTMLElement
+}
+
+// 同步冲刷 Vue 调度器：
+// React 的 `act(() => fireEvent.click(x))` 会同步冲刷，使打开的下拉/浮层在紧接着的
+// 下一条同步 `act(() => fireEvent.click(menuItem))` 语句里就已经在 DOM 中。Vue 的渲染
+// 走微任务（nextTick），同步语句之间还来不及提交，导致第二次点击「target element is
+// missing」。忠实复用的 React 测试在两个 act 之间并不 await（见 “🎏 size icon test”）。
+//
+// Vue 的调度器通过 `currentFlushPromise = resolvedPromise.then(flushJobs)` 把 flushJobs
+// 挂到一个微任务上。这里在一小段窗口内临时替换 `Promise.prototype.then`，只捕获名为
+// `flushJobs` 的回调（Vue 调度器冲刷函数），并同步执行它，从而把待处理的渲染 job 及
+// @v-c/trigger 的 Teleport 弹层在控制权返回测试前提交到 DOM。flushJobs 自身幂等
+// （冲刷后 queue 清空、currentFlushPromise 置空），原 then 仍会照常再排一次微任务，
+// 届时在空队列上空跑，无副作用。循环冲刷以覆盖「冲刷触发新 job」的级联场景。
+// 在 `run()` 执行期间临时替换 `Promise.prototype.then`，捕获 Vue 调度器挂到微任务上的
+// `flushJobs` 回调（`currentFlushPromise = resolvedPromise.then(flushJobs)`），不让它只
+// 在微任务里跑，而是在 run 同步结束后立刻同步执行，把渲染 job + Teleport 弹层提交到 DOM。
+// flushJobs 幂等：原微任务届时仍会再跑一次，在空队列上空转，无副作用。
+function withSyncFlush<T>(run: () => T): T {
+  const originalThen = Promise.prototype.then
+  const captured: Array<() => void> = []
+  ;(Promise.prototype as any).then = function (
+    this: Promise<any>,
+    onFulfilled?: any,
+    ...rest: any[]
+  ) {
+    if (typeof onFulfilled === 'function' && onFulfilled.name === 'flushJobs')
+      captured.push(onFulfilled)
+    return originalThen.call(this, onFulfilled, ...rest)
+  }
+  let result: T
+  try {
+    result = run()
+  }
+  finally {
+    ;(Promise.prototype as any).then = originalThen
+  }
+  // 同步冲刷已捕获的 flushJobs；冲刷过程中可能产生级联 job，循环直至稳定。
+  let loops = 0
+  while (captured.length && loops < 50) {
+    const jobs = captured.splice(0)
+    // 再次在执行 job 期间捕获新的 flushJobs（级联渲染）
+    ;(Promise.prototype as any).then = function (
+      this: Promise<any>,
+      onFulfilled?: any,
+      ...rest: any[]
+    ) {
+      if (typeof onFulfilled === 'function' && onFulfilled.name === 'flushJobs')
+        captured.push(onFulfilled)
+      return originalThen.call(this, onFulfilled, ...rest)
+    }
+    try {
+      for (const job of jobs) {
+        try {
+          job()
+        }
+        catch {
+          // 与 Vue 内部错误处理保持一致：吞掉以免打断冲刷循环
+        }
+      }
+    }
+    finally {
+      ;(Promise.prototype as any).then = originalThen
+    }
+    loops++
+  }
+  return result!
 }
 
 function normalizeText(text: string) {
@@ -121,10 +191,13 @@ export async function waitFor<T>(
 ): Promise<T> {
   const timeout = typeof options === 'number' ? options : options.timeout ?? 1000
   const interval = typeof options === 'number' ? 10 : options.interval ?? 10
-  const startedAt = Date.now()
+  // 使用 performance.now() 而非 Date.now() 计时：table 测试通过 MockDate 冻结了 Date，
+  // 若用 Date.now() 计算耗时，waitFor 的超时永远不会触发，断言失败会被拖到 vitest 的
+  // 5000ms 测试超时（表现为 hang），掩盖真正的行为差异。performance.now() 不受 MockDate 影响。
+  const startedAt = performance.now()
   let lastError: unknown
 
-  while (Date.now() - startedAt < timeout) {
+  while (performance.now() - startedAt < timeout) {
     try {
       const result = await assertion()
       await nextTick()
@@ -146,7 +219,19 @@ export function mountAttached(component: any): any {
 }
 
 export async function act<T>(callback: () => T | Promise<T>): Promise<T> {
-  const result = await callback()
+  // 同步执行 callback 并同步冲刷 Vue 渲染，使紧随其后的下一条同步 act 语句能看到本次
+  // act 引发的 DOM 变更（React act 的同步冲刷语义）。callback 若返回 Promise 再 await。
+  let result!: T
+  let pending: Promise<T> | undefined
+  withSyncFlush(() => {
+    const ret = callback()
+    if (ret && typeof (ret as any).then === 'function')
+      pending = ret as Promise<T>
+    else
+      result = ret as T
+  })
+  if (pending)
+    result = await pending
   await nextTick()
   if (vi.isFakeTimers())
     await vi.advanceTimersByTimeAsync(0)
@@ -210,7 +295,7 @@ export function render(vnode: VNodeChild): RenderResult {
       return () => current.value as any
     },
   })
-  const wrapper = mount(Host, { attachTo: root })
+  const wrapper = withSyncFlush(() => mount(Host, { attachTo: root }))
   mountedWrappers.add(wrapper)
 
   return {
@@ -251,7 +336,10 @@ function dispatch(element: MaybeElement, type: string, init: any = {}) {
       value,
     })
   })
-  element.dispatchEvent(event)
+  // 同步派发并同步冲刷 Vue 渲染：事件处理器改变响应式状态后，Vue 把渲染挂到微任务；
+  // 这里同步执行 flushJobs，使 DOM（含 Teleport 弹层）在控制权返回测试下一条同步语句
+  // 前就已提交，从而忠实复用 React 同步 act 风格的测试。
+  withSyncFlush(() => element.dispatchEvent(event))
   return event
 }
 
@@ -280,9 +368,31 @@ export const fireEvent = Object.assign(
     mouseDown: (element: MaybeElement, init?: any) => dispatch(element, 'mousedown', init),
     mouseMove: (element: MaybeElement, init?: any) => dispatch(element, 'mousemove', init),
     mouseUp: (element: MaybeElement, init?: any) => dispatch(element, 'mouseup', init),
-    mouseOver: (element: MaybeElement, init?: any) => dispatch(element, 'mouseover', init),
-    mouseEnter: (element: MaybeElement, init?: any) => dispatch(element, 'mouseenter', init),
-    mouseLeave: (element: MaybeElement, init?: any) => dispatch(element, 'mouseleave', init),
+    // React 会从原生 mouseover 合成 onMouseEnter；Vue 无此合成，@v-c/trigger 监听的是
+    // mouseenter/pointerenter。为忠实复用 React 测试里的 fireEvent.mouseOver/mouseEnter，
+    // 这里同时派发 mouseenter + pointerenter（冒泡，便于命中祖先 trigger 元素上的监听）。
+    mouseOver: (element: MaybeElement, init?: any) => {
+      const event = dispatch(element, 'mouseover', init)
+      dispatch(element, 'mouseenter', init)
+      dispatch(element, 'pointerenter', init)
+      return event
+    },
+    mouseEnter: (element: MaybeElement, init?: any) => {
+      const event = dispatch(element, 'mouseenter', init)
+      dispatch(element, 'pointerenter', init)
+      return event
+    },
+    mouseOut: (element: MaybeElement, init?: any) => {
+      const event = dispatch(element, 'mouseout', init)
+      dispatch(element, 'mouseleave', init)
+      dispatch(element, 'pointerleave', init)
+      return event
+    },
+    mouseLeave: (element: MaybeElement, init?: any) => {
+      const event = dispatch(element, 'mouseleave', init)
+      dispatch(element, 'pointerleave', init)
+      return event
+    },
     drop: (element: MaybeElement, init?: any) => dispatch(element, 'drop', init),
   },
 )
@@ -305,7 +415,25 @@ export function within(container: HTMLElement) {
 }
 
 export function createRef<T = any>() {
-  return { current: undefined as T | undefined }
+  // React refs expose `.current`; Vue's form/action layers write through `.value`.
+  // Bridge both names to a single backing slot so a ref handed to ProTable as either
+  // formRef (set via `.value` by the form layer) or actionRef is always readable as
+  // `.current` from the React-style test, and vice versa.
+  let inner: T | undefined
+  return {
+    get current() {
+      return inner
+    },
+    set current(next: T | undefined) {
+      inner = next
+    },
+    get value() {
+      return inner
+    },
+    set value(next: T | undefined) {
+      inner = next
+    },
+  }
 }
 
 export const userEvent = {
@@ -319,3 +447,17 @@ export const userEvent = {
     await nextTick()
   },
 }
+
+expect.extend({
+  toHaveValue(received: any, expected: any) {
+    const element = received as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    const actual = element?.value
+    const pass = actual === expected
+    return {
+      pass,
+      message: () => pass
+        ? `expected element not to have value ${expected}`
+        : `expected element to have value ${expected}, but got ${actual}`,
+    }
+  },
+})

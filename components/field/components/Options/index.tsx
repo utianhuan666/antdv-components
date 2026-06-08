@@ -39,11 +39,11 @@ function renderOptions(
   )
 }
 
-const FieldOptions = defineComponent({
+const FieldOptions = defineComponent<FieldOptionsProps>({
   name: 'FieldOptions',
   props: ['text', 'mode', 'render', 'fieldProps'],
   setup(rawProps) {
-    const props = rawProps as FieldOptionsProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-option')
     const { wrapSSR, hashId } = useStyle('FieldOptions', token => ({
       [`.${prefixCls.value}`]: {

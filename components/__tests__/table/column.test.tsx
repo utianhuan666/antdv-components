@@ -10,7 +10,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('Table ColumnSetting', () => {
+describe('table ColumnSetting', () => {
   it('🎏 render', async () => {
     const callBack = vi.fn()
     render(

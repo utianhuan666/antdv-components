@@ -111,12 +111,12 @@ function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
   return value === '' ? true : !!value
 }
 
-const SearchSelect = defineComponent({
+const SearchSelect = defineComponent<SearchSelectProps>({
   name: 'SearchSelect',
   inheritAttrs: false,
   props: searchSelectPropNames,
   setup(rawProps, { attrs, expose }) {
-    const props = rawProps as unknown as SearchSelectProps
+    const props = rawProps
     const selectRef = ref<any>(null)
     const innerSearchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
     const prefixCls = useProPrefixCls('pro-filed-search-select', computed(() => props.prefixCls))

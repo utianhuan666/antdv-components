@@ -11,11 +11,11 @@ export interface LoginFormHeaderProps {
   hashId?: string
 }
 
-export const LoginFormHeader = defineComponent({
+export const LoginFormHeader = defineComponent<LoginFormHeaderProps>({
   name: 'ProLoginFormHeader',
   props: ['logo', 'title', 'subTitle', 'prefixCls', 'hashId'],
   setup(rawProps) {
-    const props = rawProps as LoginFormHeaderProps
+    const props = rawProps
     const defaultPrefixCls = useProPrefixCls('pro-form-login')
     const prefixCls = computed(() => props.prefixCls || defaultPrefixCls.value)
     const getCls = (className: string) => `${prefixCls.value}-${className}`

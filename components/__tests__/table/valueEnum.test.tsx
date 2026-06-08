@@ -1,8 +1,8 @@
 import { Input } from 'antdv-next'
-import { defineComponent } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import ProTable from '../../table'
+import { defineComponent } from 'vue'
 import { ProProvider, useProProviderContext } from '../../provider'
+import ProTable from '../../table'
 import { act, cleanup, render, waitFor, waitForWaitTime } from '../testUtils'
 import './tableTestSetup'
 

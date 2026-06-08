@@ -1,8 +1,8 @@
 import type { ProFieldValueTypeInput } from '../../../utils/typing'
 import type { ProFormFieldItemProps } from '../../typing'
-import { defineComponent } from 'vue'
+import { cloneVNode, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
-import { renderFormItem, renderProField, useRegisterFormItem } from '../_util'
+import { mergeFieldProps, renderFormItem, renderProField, useRegisterFormItem } from '../_util'
 
 export type ProFormFieldProps<
   T = any,
@@ -28,9 +28,18 @@ const ProFormField = defineComponent({
     return () => {
       const current = { ...attrs, ...props } as ProFormFieldProps
       const children = slots.default?.()
-      const dom = children?.length
+      let dom = children?.length
         ? children
         : renderProField(current, current.valueType || 'text', {}, fieldContext)
+
+      if (children?.length && current.name) {
+        const fieldProps = mergeFieldProps(current, {}, fieldContext)
+        const firstChild = children[0]
+        if (firstChild && typeof firstChild === 'object') {
+          dom = [cloneVNode(firstChild, fieldProps), ...children.slice(1)]
+        }
+      }
+
       return renderFormItem(current, dom)
     }
   },

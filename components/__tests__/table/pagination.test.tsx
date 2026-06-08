@@ -30,7 +30,7 @@ describe('basicTable pagination', () => {
           })
         }}
         pagination={{
-          onChange: onChangeFn(),
+          onChange: onChangeFn,
         }}
         onRequestError={fn}
         rowKey="key"

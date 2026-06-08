@@ -74,7 +74,7 @@ export interface ListItemMetaProps {
   title?: VNodeChild
 }
 
-export const ProListItemMeta = defineComponent({
+export const ProListItemMeta = defineComponent<ListItemMetaProps>({
   name: 'ProListItemMeta',
   inheritAttrs: false,
   props: [
@@ -88,7 +88,7 @@ export const ProListItemMeta = defineComponent({
     'title',
   ],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as ListItemMetaProps
+    const props = rawProps
     const config = useConfig()
     return () => {
       const prefixCls = config.value.getPrefixCls('pro-list', props.prefixCls)
@@ -124,7 +124,7 @@ export interface ListItemProps extends HTMLAttributes {
   actions?: VNodeChild[]
 }
 
-const InternalProListItem = defineComponent({
+const InternalProListItem = defineComponent<ListItemProps>({
   name: 'ProListItem',
   inheritAttrs: false,
   props: [
@@ -137,7 +137,7 @@ const InternalProListItem = defineComponent({
     'actions',
   ],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as ListItemProps
+    const props = rawProps
     const context = useProListContext()
     const config = useConfig()
 
@@ -223,7 +223,7 @@ const DEFAULT_SCREENS = {
   xxl: false,
 }
 
-export const ProListContainer = defineComponent({
+export const ProListContainer = defineComponent<ListProps>({
   name: 'ProListContainer',
   inheritAttrs: false,
   props: [
@@ -253,7 +253,7 @@ export const ProListContainer = defineComponent({
     'suppressContainerDataSlice',
   ],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as ListProps
+    const props = rawProps
     const config = useConfig()
     const screensRef = useBreakpoint()
     const paginationCurrent = ref((props.pagination && typeof props.pagination === 'object' ? (props.pagination.defaultCurrent ?? props.pagination.current) : undefined) ?? 1)

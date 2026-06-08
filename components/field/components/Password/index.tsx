@@ -11,9 +11,19 @@ type FieldPasswordProps = NonNullable<ProFieldFC<{
   onOpenChange?: (open: boolean) => void
 }>['__props']>
 
-const FieldPassword = defineComponent(
-  (rawProps: { [key: string]: unknown }) => {
-    const props = rawProps as FieldPasswordProps
+const FieldPassword = defineComponent<FieldPasswordProps>({
+  name: 'FieldPassword',
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'open',
+    'onOpenChange',
+  ],
+  setup(rawProps) {
+    const props = rawProps
     const intl = useIntl()
     const openRef = ref(false)
     const getOpen = () => props.open ?? openRef.value
@@ -53,18 +63,6 @@ const FieldPassword = defineComponent(
       return null
     }
   },
-  {
-    name: 'FieldPassword',
-    props: [
-      'text',
-      'mode',
-      'render',
-      'formItemRender',
-      'fieldProps',
-      'open',
-      'onOpenChange',
-    ],
-  },
-)
+})
 
 export default FieldPassword

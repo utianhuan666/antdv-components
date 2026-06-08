@@ -41,7 +41,7 @@ export interface CheckCardProps {
   ghost?: boolean
 }
 
-const CheckCard = defineComponent({
+const CheckCard = defineComponent<CheckCardProps>({
   name: 'CheckCard',
   inheritAttrs: false,
   props: [
@@ -69,7 +69,7 @@ const CheckCard = defineComponent({
   ],
   emits: ['change', 'click', 'mouseenter', 'mouseleave'],
   setup(rawProps, { emit, slots }) {
-    const props = rawProps as CheckCardProps
+    const props = rawProps
 
     const [stateChecked, setStateCheckedInner] = useMergedState<boolean>(props.defaultChecked || false, {
       value: computed(() => props.checked) as ComputedRef<boolean>,

@@ -17,11 +17,11 @@ afterEach(() => {
   cleanup()
 })
 
-const FRAGMENT_AUTOFOCUS_WARNING =
-  'Invalid prop `autoFocus` supplied to `React.Fragment`'
+const FRAGMENT_AUTOFOCUS_WARNING
+  = 'Invalid prop `autoFocus` supplied to `React.Fragment`'
 
 describe('autoFocus with React.Fragment', () => {
-  it('ProForm with autoFocusFirstInput should not pass autoFocus to Fragment when first child is Fragment', () => {
+  it('proForm with autoFocusFirstInput should not pass autoFocus to Fragment when first child is Fragment', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(
@@ -33,7 +33,7 @@ describe('autoFocus with React.Fragment', () => {
       </ProForm>,
     )
 
-    const fragmentWarningCalls = errorSpy.mock.calls.filter((call) =>
+    const fragmentWarningCalls = errorSpy.mock.calls.filter(call =>
       String(call[0]).includes(FRAGMENT_AUTOFOCUS_WARNING),
     )
     expect(fragmentWarningCalls).toHaveLength(0)
@@ -41,7 +41,7 @@ describe('autoFocus with React.Fragment', () => {
     errorSpy.mockRestore()
   })
 
-  it('QueryFilter with autoFocusFirstInput should not pass autoFocus to Fragment when first child is Fragment', () => {
+  it('queryFilter with autoFocusFirstInput should not pass autoFocus to Fragment when first child is Fragment', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(
@@ -53,7 +53,7 @@ describe('autoFocus with React.Fragment', () => {
       </QueryFilter>,
     )
 
-    const fragmentWarningCalls = errorSpy.mock.calls.filter((call) =>
+    const fragmentWarningCalls = errorSpy.mock.calls.filter(call =>
       String(call[0]).includes(FRAGMENT_AUTOFOCUS_WARNING),
     )
     expect(fragmentWarningCalls).toHaveLength(0)
@@ -61,7 +61,7 @@ describe('autoFocus with React.Fragment', () => {
     errorSpy.mockRestore()
   })
 
-  it('ProFormGroup with autoFocus should not pass autoFocus to Fragment when first child is Fragment', () => {
+  it('proFormGroup with autoFocus should not pass autoFocus to Fragment when first child is Fragment', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(
@@ -75,7 +75,7 @@ describe('autoFocus with React.Fragment', () => {
       </ProForm>,
     )
 
-    const fragmentWarningCalls = errorSpy.mock.calls.filter((call) =>
+    const fragmentWarningCalls = errorSpy.mock.calls.filter(call =>
       String(call[0]).includes(FRAGMENT_AUTOFOCUS_WARNING),
     )
     expect(fragmentWarningCalls).toHaveLength(0)
@@ -83,7 +83,7 @@ describe('autoFocus with React.Fragment', () => {
     errorSpy.mockRestore()
   })
 
-  it('ProForm with autoFocusFirstInput should still pass autoFocus when first child is not Fragment', async () => {
+  it('proForm with autoFocusFirstInput should still pass autoFocus when first child is not Fragment', async () => {
     const { container } = render(
       <ProForm autoFocusFirstInput>
         <ProFormText label="a" name="a" />
@@ -125,7 +125,7 @@ describe('autoFocus with React.Fragment', () => {
       </ProForm>,
     )
 
-    const fragmentWarningCalls = errorSpy.mock.calls.filter((call) =>
+    const fragmentWarningCalls = errorSpy.mock.calls.filter(call =>
       String(call[0]).includes(FRAGMENT_AUTOFOCUS_WARNING),
     )
     expect(fragmentWarningCalls).toHaveLength(0)

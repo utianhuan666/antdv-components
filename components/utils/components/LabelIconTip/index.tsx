@@ -8,16 +8,18 @@ import { defineComponent, isVNode } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { useStyle } from './style'
 
-export const LabelIconTip = defineComponent({
+interface LabelIconTipProps {
+  label: VNodeChild
+  subTitle?: VNodeChild
+  tooltip?: string | LabelTooltipType
+  ellipsis?: ProEllipsis
+}
+
+export const LabelIconTip = defineComponent<LabelIconTipProps>({
   name: 'ProLabelIconTip',
   props: ['label', 'subTitle', 'tooltip', 'ellipsis'],
   setup(rawProps) {
-    const props = rawProps as {
-      label: VNodeChild
-      subTitle?: VNodeChild
-      tooltip?: string | LabelTooltipType
-      ellipsis?: ProEllipsis
-    }
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-core-label-tip')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 

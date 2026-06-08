@@ -23,7 +23,7 @@ function buildOptionsValueEnum(options: any[] | undefined) {
   }, {})
 }
 
-const FieldCheckbox = defineComponent({
+const FieldCheckbox = defineComponent<CheckboxFieldProps>({
   name: 'FieldCheckbox',
   props: [
     'text',
@@ -43,7 +43,7 @@ const FieldCheckbox = defineComponent({
     'layout',
   ],
   setup(rawProps, { expose }) {
-    const props = rawProps as CheckboxFieldProps
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-checkbox')
     const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
     const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))

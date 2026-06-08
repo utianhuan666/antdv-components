@@ -45,11 +45,11 @@ const defaultCollapseRender: NonNullable<ActionsProps['collapseRender']> = (
   </>
 )
 
-const Actions = defineComponent({
+const Actions = defineComponent<ActionsProps>({
   name: 'QueryFilterActions',
   props: ['submitter', 'collapsed', 'onCollapse', 'setCollapsed', 'isForm', 'style', 'collapseRender', 'hiddenNum'],
   setup(rawProps) {
-    const props = rawProps as ActionsProps
+    const props = rawProps
     const intl = useIntl()
     const proProvider = useProProviderContext()
     const prefixCls = useProPrefixCls('pro-query-filter-collapse-button')

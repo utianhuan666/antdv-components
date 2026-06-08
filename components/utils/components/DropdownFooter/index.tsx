@@ -16,11 +16,11 @@ export interface DropdownFooterProps {
   children?: VNodeChild
 }
 
-export const DropdownFooter = defineComponent({
+export const DropdownFooter = defineComponent<DropdownFooterProps>({
   name: 'ProDropdownFooter',
   props: ['onClear', 'onConfirm', 'disabled', 'footerRender', 'children'],
   setup(rawProps, { slots }) {
-    const props = rawProps as DropdownFooterProps
+    const props = rawProps
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-core-dropdown-footer')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)

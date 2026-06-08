@@ -1,7 +1,7 @@
 import { Input } from 'antdv-next'
 import { afterEach, describe, expect, it } from 'vitest'
-import ProTable from '../../table'
 import { ProProvider } from '../../provider'
+import ProTable from '../../table'
 import { act, cleanup, fireEvent, render, waitForWaitTime } from '../testUtils'
 import './tableTestSetup'
 

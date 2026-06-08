@@ -171,12 +171,12 @@ const proListPropNames = [
   'actionRef',
 ]
 
-const InternalProList = defineComponent({
+const InternalProList = defineComponent<ProListProps>({
   name: 'InternalProList',
   inheritAttrs: false,
   props: proListPropNames,
   setup(rawProps, { attrs }) {
-    const props = rawProps as ProListProps<Record<string, any>, Record<string, any>, any>
+    const props = rawProps
     const actionRef = shallowRef<ActionType>()
 
     watchEffect(() => {

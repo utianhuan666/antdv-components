@@ -171,11 +171,17 @@ export function renderProField(
     ? 'read'
     : props.proFieldProps?.mode || props.mode || 'edit'
 
+  // Get value and apply convertValue if present
+  let fieldValue = getFieldValue(props, fieldProps, fieldContext)
+  if (props.convertValue && fieldValue !== undefined && fieldValue !== null) {
+    fieldValue = props.convertValue(fieldValue, props)
+  }
+
   return (
     <ProField
       {...props.proFieldProps}
-      text={getFieldValue(props, fieldProps, fieldContext)}
-      value={props.value}
+      text={fieldValue}
+      value={fieldValue}
       valueType={valueType}
       mode={mode}
       readonly={props.readonly}

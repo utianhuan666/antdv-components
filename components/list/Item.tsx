@@ -149,7 +149,7 @@ export interface ItemProps<RecordType> {
     | false
 }
 
-const ProListItem = defineComponent({
+const ProListItem = defineComponent<ItemProps<any>>({
   name: 'ProListItem',
   inheritAttrs: false,
   props: [
@@ -185,7 +185,7 @@ const ProListItem = defineComponent({
     'itemTitleRender',
   ],
   setup(rawProps, { attrs }) {
-    const props = rawProps as ItemProps<any>
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-list', computed(() => props.prefixCls))
     const proProvider = useProProviderContext()
     const innerExpanded = ref(!!props.expand)

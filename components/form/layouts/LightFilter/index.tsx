@@ -24,11 +24,24 @@ export type LightFilterProps<T = Record<string, any>, U = Record<string, any>> =
   popoverProps?: Omit<PopoverProps, 'children' | 'content' | 'trigger' | 'open' | 'onOpenChange' | 'placement'>
 }
 
-const LightFilterContainer = defineComponent({
+interface LightFilterContainerProps {
+  items?: VNodeChild[]
+  values?: Record<string, any>
+  onValuesChange?: (values: Record<string, any>) => void
+  collapse?: boolean
+  collapseLabel?: VNodeChild
+  variant?: 'outlined' | 'filled' | 'borderless'
+  footerRender?: LightFilterFooterRender
+  placement?: TooltipPlacement
+  popoverProps?: Omit<PopoverProps, 'children' | 'content' | 'trigger' | 'open' | 'onOpenChange' | 'placement'>
+  size?: 'small' | 'middle' | 'large'
+}
+
+const LightFilterContainer = defineComponent<LightFilterContainerProps>({
   name: 'LightFilterContainer',
   props: ['items', 'values', 'onValuesChange', 'collapse', 'collapseLabel', 'variant', 'footerRender', 'placement', 'popoverProps', 'size'],
   setup(rawProps) {
-    const props = rawProps as any
+    const props = rawProps
     const open = ref(false)
     const moreValues = ref<Record<string, any>>({ ...props.values })
     const intl = useIntl()

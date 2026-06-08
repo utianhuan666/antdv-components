@@ -21,17 +21,19 @@ const FIX_INLINE_STYLE = {
   marginInlineEnd: 0,
 }
 
-const InlineErrorFormItemPopover = defineComponent({
+interface InlineErrorFormItemPopoverProps {
+  inputProps: FormItemProps & { errors?: any[], warnings?: any[] }
+  input: any
+  errorList: any
+  extra: any
+  popoverProps?: PopoverProps
+}
+
+const InlineErrorFormItemPopover = defineComponent<InlineErrorFormItemPopoverProps>({
   name: 'ProInlineErrorFormItemPopover',
   props: ['inputProps', 'input', 'errorList', 'extra', 'popoverProps'],
   setup(rawProps) {
-    const props = rawProps as {
-      inputProps: FormItemProps & { errors?: any[], warnings?: any[] }
-      input: any
-      errorList: any
-      extra: any
-      popoverProps?: PopoverProps
-    }
+    const props = rawProps
     const open = ref<boolean | undefined>(false)
     const messages = ref({ errors: [] as any[], warnings: [] as any[] })
     const config = useConfig()
@@ -91,11 +93,11 @@ const InlineErrorFormItemPopover = defineComponent({
   },
 })
 
-export const InlineErrorFormItem = defineComponent({
+export const InlineErrorFormItem = defineComponent<InlineErrorFormItemProps>({
   name: 'ProInlineErrorFormItem',
   props: ['errorType', 'rules', 'name', 'popoverProps'],
   setup(rawProps, { attrs, slots }) {
-    const props = rawProps as InlineErrorFormItemProps
+    const props = rawProps
     const errors = ref<any[]>([])
     const warnings = ref<any[]>([])
     const validateStatus = ref<FormItemProps['validateStatus']>('')

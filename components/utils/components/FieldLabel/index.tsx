@@ -32,7 +32,7 @@ function resolveBoolean(value: unknown, fallback = false) {
   return value === '' || value === true
 }
 
-export const FieldLabel = defineComponent({
+export const FieldLabel = defineComponent<FieldLabelProps>({
   name: 'ProFieldLabel',
   props: [
     'label',
@@ -53,7 +53,7 @@ export const FieldLabel = defineComponent({
     'onLabelClick',
   ],
   setup(rawProps, { expose }) {
-    const props = rawProps as FieldLabelProps
+    const props = rawProps
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-core-field-label')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)

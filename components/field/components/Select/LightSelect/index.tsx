@@ -66,12 +66,12 @@ function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
   return value === '' ? true : !!value
 }
 
-const LightSelect = defineComponent({
+const LightSelect = defineComponent<LightSelectProps>({
   name: 'LightSelect',
   inheritAttrs: false,
   props: lightSelectPropNames,
   setup(rawProps, { attrs, expose }) {
-    const props = rawProps as unknown as LightSelectProps
+    const props = rawProps
     const selectRef = ref<any>(null)
     const open = ref(false)
     const keyword = ref('')

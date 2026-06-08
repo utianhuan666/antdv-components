@@ -98,7 +98,7 @@ function isRenderedCell(value: unknown): value is { children?: VNodeChild } {
   return !!value && typeof value === 'object' && !isVNode(value) && ('children' in value || 'props' in value)
 }
 
-const ListViewImpl = defineComponent({
+const ListViewImpl = defineComponent<ListViewProps<Record<string, any>>>({
   name: 'ProListView',
   inheritAttrs: false,
   props: [
@@ -136,7 +136,7 @@ const ListViewImpl = defineComponent({
     'locale',
   ],
   setup(rawProps, { attrs }) {
-    const props = rawProps as ListViewProps<Record<string, any>>
+    const props = rawProps
     const context = useProProviderContext()
     const hashId = computed(() => props.hashId ?? context.hashId)
     const prefixCls = useProPrefixCls('pro-list', computed(() => props.prefixCls))
