@@ -1,25 +1,6 @@
 import { Card, Divider, Skeleton, SkeletonButton, Space, useBreakpoint } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 
-const DEFAULT_COL: Record<string, boolean> = {
-  lg: true,
-  md: true,
-  sm: false,
-  xl: false,
-  xs: false,
-  xxl: false,
-}
-
-function useReactColSize() {
-  const col = useBreakpoint()
-
-  return computed(() => {
-    const screens = (col.value || DEFAULT_COL) as Record<string, boolean | undefined>
-
-    return Object.keys(screens).filter(key => screens[key] === true)[0] || 'md'
-  })
-}
-
 interface LineProps {
   padding?: string | number
 }
@@ -59,7 +40,20 @@ const StatisticSkeleton = defineComponent({
       size?: number
       active?: boolean
     }
-    const colSize = useReactColSize()
+    const defaultCol: Record<string, boolean> = {
+      lg: true,
+      md: true,
+      sm: false,
+      xl: false,
+      xs: false,
+      xxl: false,
+    }
+    const col = useBreakpoint()
+    const colSize = computed(() => {
+      const screens = (col.value || defaultCol) as Record<string, boolean | undefined>
+
+      return Object.keys(screens).filter(key => screens[key] === true)[0] || 'md'
+    })
     const arraySize = computed(() =>
       props.size === undefined
         ? MediaQueryKeyEnum[colSize.value as 'md'] || 6

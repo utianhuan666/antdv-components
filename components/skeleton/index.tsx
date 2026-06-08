@@ -34,41 +34,18 @@ const ProSkeletonComponent = defineComponent<ProSkeletonProps>({
   name: 'ProSkeleton',
   props: proSkeletonPropNames,
   setup(rawProps) {
-    const props = rawProps as ProSkeletonProps
-
     return () => {
-      const type = props.type ?? 'list'
-      const active = props.active ?? true
+      const { type = 'list', ...rest } = rawProps as ProSkeletonProps
 
       if (type === 'result') {
-        return (
-          <ResultPageSkeleton
-            active={active}
-            pageHeader={props.pageHeader}
-          />
-        )
+        return <ResultPageSkeleton {...rest} />
       }
 
       if (type === 'descriptions') {
-        return (
-          <DescriptionsPageSkeleton
-            active={active}
-            pageHeader={props.pageHeader}
-            list={props.list}
-          />
-        )
+        return <DescriptionsPageSkeleton {...rest} />
       }
 
-      return (
-        <ListPageSkeleton
-          active={active}
-          pageHeader={props.pageHeader}
-          statistic={props.statistic}
-          actionButton={props.actionButton}
-          toolbar={props.toolbar}
-          list={props.list}
-        />
-      )
+      return <ListPageSkeleton {...rest} />
     }
   },
 })

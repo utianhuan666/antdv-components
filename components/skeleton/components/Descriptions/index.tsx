@@ -2,25 +2,6 @@ import { Card, Skeleton, SkeletonButton, useBreakpoint } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
 import { Line, PageHeaderSkeleton } from '../List'
 
-const DEFAULT_COL: Record<string, boolean> = {
-  lg: true,
-  md: true,
-  sm: false,
-  xl: false,
-  xs: false,
-  xxl: false,
-}
-
-function useReactColSize() {
-  const col = useBreakpoint()
-
-  return computed(() => {
-    const screens = (col.value || DEFAULT_COL) as Record<string, boolean | undefined>
-
-    return Object.keys(screens).filter(key => screens[key] === true)[0] || 'md'
-  })
-}
-
 function titleStyles(style: Record<string, string | number>) {
   return { title: style }
 }
@@ -128,7 +109,20 @@ const DescriptionsItemSkeleton = defineComponent({
       size?: number
       active?: boolean
     }
-    const colSize = useReactColSize()
+    const defaultCol: Record<string, boolean> = {
+      lg: true,
+      md: true,
+      sm: false,
+      xl: false,
+      xs: false,
+      xxl: false,
+    }
+    const col = useBreakpoint()
+    const colSize = computed(() => {
+      const screens = (col.value || defaultCol) as Record<string, boolean | undefined>
+
+      return Object.keys(screens).filter(key => screens[key] === true)[0] || 'md'
+    })
     const arraySize = computed(() =>
       props.size === undefined ? MediaQueryKeyEnum[colSize.value as 'md'] || 3 : props.size,
     )
@@ -180,7 +174,20 @@ export const TableItemSkeleton = defineComponent({
       active: boolean
       header?: boolean
     }
-    const colSize = useReactColSize()
+    const defaultCol: Record<string, boolean> = {
+      lg: true,
+      md: true,
+      sm: false,
+      xl: false,
+      xs: false,
+      xxl: false,
+    }
+    const col = useBreakpoint()
+    const colSize = computed(() => {
+      const screens = (col.value || defaultCol) as Record<string, boolean | undefined>
+
+      return Object.keys(screens).filter(key => screens[key] === true)[0] || 'md'
+    })
     const arraySize = computed(() => MediaQueryKeyEnum[colSize.value as 'md'] || 3)
 
     return () => (
