@@ -1,4 +1,4 @@
-import type { CSSProperties, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import { clsx } from '@v-c/util'
 import { computed, defineComponent } from 'vue'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
@@ -7,13 +7,11 @@ import useStyle from './style'
 export interface ProCardActionsProps {
   actions?: VNodeChild[] | VNodeChild
   prefixCls?: string
-  className?: any
-  style?: CSSProperties
 }
 
 const Actions = defineComponent({
   name: 'ProCardActions',
-  props: ['actions', 'prefixCls', 'className', 'style'],
+  props: ['actions', 'prefixCls'],
   setup(rawProps) {
     const props = rawProps as ProCardActionsProps
     const prefixCls = useProPrefixCls('pro-card', computed(() => props.prefixCls))
@@ -23,7 +21,7 @@ const Actions = defineComponent({
       const actions = props.actions
       if (Array.isArray(actions) && actions.length) {
         return wrapSSR(
-          <ul class={clsx(`${prefixCls.value}-actions`, hashId, props.className)} style={props.style}>
+          <ul class={clsx(`${prefixCls.value}-actions`, hashId)}>
             {actions.map((action, index) => (
               <li
                 key={`action-${index}`}
@@ -38,7 +36,7 @@ const Actions = defineComponent({
       }
 
       return wrapSSR(
-        <ul class={clsx(`${prefixCls.value}-actions`, hashId, props.className)} style={props.style}>
+        <ul class={clsx(`${prefixCls.value}-actions`, hashId)}>
           {actions}
         </ul>,
       )

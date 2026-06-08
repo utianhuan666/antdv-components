@@ -10,11 +10,8 @@ import type { StatisticCardProps } from './components/StatisticCard'
 import type { ProCardProps, ProCardType } from './ProCard'
 import type {
   CardType,
-  ProCardSlots,
   ProCardTabPaneProps,
   ProCardTabsProps,
-  StatisticCardSlots,
-  StatisticSlots,
 } from './typing'
 import CheckCard from './components/CheckCard'
 import Statistic from './components/Statistic'
@@ -38,14 +35,11 @@ export type {
   ProCardDividerProps,
   ProCardOperationProps,
   ProCardProps,
-  ProCardSlots,
   ProCardTabPaneProps,
   ProCardTabsProps,
   ProCardType,
   StatisticCardProps,
-  StatisticCardSlots,
   StatisticProps,
-  StatisticSlots,
 }
 
 export default ProCard

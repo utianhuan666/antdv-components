@@ -1,35 +1,35 @@
 import type { GenerateStyle, ProAliasToken } from '../../../provider'
 import { useStyle as useAntdStyle } from '../../../provider'
 
-interface StatisticCardToken extends ProAliasToken {
+export interface StatisticCardToken extends ProAliasToken {
   componentCls: string
 }
 
 const genStatisticCardStyle: GenerateStyle<StatisticCardToken> = token => ({
   [token.componentCls]: {
+    'boxSizing': 'border-box',
+    '&-chart': {
+      'display': 'flex',
+      'flexDirection': 'column',
+      'marginBlockStart': 8,
+      'marginBlockEnd': 8,
+      '&-left': { marginBlockStart: 0, marginInlineEnd: '16px' },
+      '&-right': { marginBlockStart: 0, marginInlineStart: '16px' },
+    },
     '&-content': {
       'display': 'flex',
       'flexDirection': 'column',
-      'gap': token.margin,
       '&-horizontal': {
         flexDirection: 'row',
-        alignItems: 'center',
-      },
-    },
-    '&-chart': {
-      'flex': 1,
-      'minWidth': 0,
-      '&-left': {
-        marginInlineEnd: token.margin,
-      },
-      '&-right': {
-        marginInlineStart: token.margin,
+        [`${token.componentCls}-chart`]: {
+          alignItems: 'center',
+          alignSelf: 'flex-start',
+        },
       },
     },
     '&-footer': {
-      marginBlockStart: token.margin,
-      paddingBlockStart: token.paddingSM,
-      color: token.colorTextSecondary,
+      marginBlockStart: token.marginXS,
+      paddingBlockStart: token.padding,
       borderBlockStart: `${token.lineWidth}px ${token.lineType} ${token.colorSplit}`,
     },
   },

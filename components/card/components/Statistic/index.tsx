@@ -47,12 +47,26 @@ const Statistic = defineComponent({
 
     return () => {
       const layout = props.layout || 'inline'
+      const trend = props.trend
+      const status = props.status
       const title = slots.title?.() ?? props.title
       const prefix = slots.prefix?.() ?? props.prefix
       const suffix = slots.suffix?.() ?? props.suffix
       const description = slots.description?.() ?? props.description
       const tip = slots.tip?.() ?? props.tip
       const icon = slots.icon?.() ?? props.icon
+
+      const classString = clsx(prefixCls.value, props.class, props.className, hashId)
+      const statusClass = clsx(`${prefixCls.value}-status`, hashId)
+      const iconClass = clsx(`${prefixCls.value}-icon`, hashId)
+      const wrapperClass = clsx(`${prefixCls.value}-wrapper`, hashId)
+      const contentClass = clsx(`${prefixCls.value}-content`, hashId)
+
+      const statisticClassName = clsx(hashId, {
+        [`${prefixCls.value}-layout-${layout}`]: layout,
+        [`${prefixCls.value}-trend-${trend}`]: trend,
+      })
+
       const tipDom = tip
         ? (
             <Tooltip title={tip as any}>
@@ -60,23 +74,25 @@ const Statistic = defineComponent({
             </Tooltip>
           )
         : null
-      const trendDom = props.trend
+
+      const trendIconClassName = clsx(`${prefixCls.value}-trend-icon`, hashId, {
+        [`${prefixCls.value}-trend-icon-${trend}`]: trend,
+      })
+
+      const trendDom = trend ? <div class={trendIconClassName} /> : null
+
+      const statusDom = status
         ? (
-            <div
-              class={clsx(`${prefixCls.value}-trend-icon`, hashId, {
-                [`${prefixCls.value}-trend-icon-${props.trend}`]: props.trend,
-              })}
-            />
-          )
-        : null
-      const statusDom = props.status
-        ? (
-            <div class={clsx(`${prefixCls.value}-status`, hashId)}>
-              <Badge status={props.status} text={null} />
+            <div class={statusClass}>
+              <Badge status={status} text={null} />
             </div>
           )
         : null
-      const iconDom = icon ? <div class={clsx(`${prefixCls.value}-icon`, hashId)}>{icon}</div> : null
+
+      const iconDom = icon ? <div class={iconClass}>{icon}</div> : null
+
+      // antdv-next Statistic 通过 slots 承载 title/prefix/suffix/formatter（React antd 用 props），
+      // 此处把 React 的 title/prefix 组合转换为对应的 scoped slot。
       const statisticSlots: Record<string, any> = {}
       if (title || tipDom) {
         statisticSlots.title = () => (
@@ -102,19 +118,16 @@ const Statistic = defineComponent({
       }
 
       return wrapSSR(
-        <div class={clsx(prefixCls.value, props.class, props.className, hashId)} style={props.style}>
+        <div class={classString} style={props.style}>
           {iconDom}
-          <div class={clsx(`${prefixCls.value}-wrapper`, hashId)}>
+          <div class={wrapperClass}>
             {statusDom}
-            <div class={clsx(`${prefixCls.value}-content`, hashId)}>
+            <div class={contentClass}>
               <AntStatistic
                 {...attrs}
                 value={props.value}
                 valueStyle={props.valueStyle}
-                class={clsx(hashId, {
-                  [`${prefixCls.value}-layout-${layout}`]: layout,
-                  [`${prefixCls.value}-trend-${props.trend}`]: props.trend,
-                })}
+                class={statisticClassName}
                 v-slots={statisticSlots}
               />
               {description

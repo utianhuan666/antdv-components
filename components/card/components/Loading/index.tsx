@@ -5,34 +5,23 @@ import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { useStyle } from './style'
 
 export interface ProCardLoadingProps {
+  className?: string
   prefix?: string
   style?: CSSProperties
-  contentStyle?: CSSProperties
-  padding?: number | string
 }
 
 const Loading = defineComponent({
   name: 'ProCardLoading',
   inheritAttrs: false,
-  props: ['prefix', 'style', 'contentStyle', 'padding'],
-  setup(rawProps, { attrs }) {
+  props: ['className', 'prefix', 'style'],
+  setup(rawProps) {
     const props = rawProps as ProCardLoadingProps
     const prefix = useProPrefixCls('pro-card', computed(() => props.prefix))
     const { wrapSSR } = useStyle(prefix.value)
 
     return () => {
-      const contentStyle = props.contentStyle
-        || (attrs.contentStyle as CSSProperties | undefined)
-        || (attrs['content-style'] as CSSProperties | undefined)
-        || props.style
-        || (attrs.style as CSSProperties | undefined)
-      const padding = typeof props.padding === 'number' ? `${props.padding}px` : props.padding
-      const mergedStyle = props.padding != null
-        ? { ...(contentStyle || {}), padding }
-        : contentStyle
-
       return wrapSSR(
-        <div class={`${prefix.value}-loading-content`} style={mergedStyle}>
+        <div class={`${prefix.value}-loading-content`} style={props.style}>
           <Row gutter={8}>
             <Col span={22}>
               <div class={`${prefix.value}-loading-block`} />

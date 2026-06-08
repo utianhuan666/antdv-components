@@ -255,18 +255,16 @@ describe('card', () => {
     expect(wrapper.find('.ant-pro-card').exists()).toBe(false)
   })
 
-  it('supports semantic classNames, styles, and actions styles', () => {
+  it('supports semantic classNames and styles', () => {
     const wrapper = mount({
       render: () => withProvider(
         <ProCard
           classNames={{
             root: 'root-class',
             body: 'body-class',
-            actions: 'actions-class',
           }}
           styles={{
             body: { padding: '0px' },
-            actions: { marginTop: '4px' },
           }}
           actions={[<span class="action-one">Action</span>]}
         >
@@ -278,8 +276,6 @@ describe('card', () => {
     expect(wrapper.find('.ant-pro-card').classes()).toContain('root-class')
     expect(wrapper.find('.ant-pro-card-body').classes()).toContain('body-class')
     expect(wrapper.find('.ant-pro-card-body').attributes('style')).toContain('padding: 0px')
-    expect(wrapper.find('.ant-pro-card-actions').classes()).toContain('actions-class')
-    expect(wrapper.find('.ant-pro-card-actions').attributes('style')).toContain('margin-top: 4px')
     expect(wrapper.find('.action-one').text()).toBe('Action')
   })
 

@@ -74,49 +74,63 @@ const StatisticCardBase = defineComponent({
         footer: _footer,
         class: classProp,
         className,
-        ...cardProps
+        ...others
       } = props as any
-      const statistic = props.statistic
-        ? <Statistic layout="vertical" {...props.statistic} />
-        : null
+
       const chart = slots.chart?.() ?? props.chart
       const footer = slots.footer?.() ?? props.footer
-      const chartDom = chart
-        ? (
-            <div
-              class={clsx(`${prefixCls.value}-chart`, hashId, {
-                [`${prefixCls.value}-chart-left`]: props.chartPlacement === 'left' && statistic,
-                [`${prefixCls.value}-chart-right`]: props.chartPlacement === 'right' && statistic,
-              })}
-            >
-              {chart}
-            </div>
-          )
+
+      const classString = clsx(prefixCls.value, classProp, className, hashId)
+
+      // 在 StatisticCard 中时默认为 vertical。
+      const statisticDom = props.statistic
+        ? <Statistic layout="vertical" {...props.statistic} />
         : null
+
+      const chartCls = clsx(`${prefixCls.value}-chart`, hashId, {
+        [`${prefixCls.value}-chart-left`]: props.chartPlacement === 'left' && chart && props.statistic,
+        [`${prefixCls.value}-chart-right`]: props.chartPlacement === 'right' && chart && props.statistic,
+      })
+
+      const chartDom = chart ? <div class={chartCls}>{chart}</div> : null
+
       const contentCls = clsx(`${prefixCls.value}-content`, hashId, {
         [`${prefixCls.value}-content-horizontal`]: props.chartPlacement === 'left' || props.chartPlacement === 'right',
       })
-      const contentDom = (chartDom || statistic)
-        ? (
-            <div class={contentCls}>
-              {props.chartPlacement === 'left' ? chartDom : statistic}
-              {props.chartPlacement === 'left' ? statistic : chartDom}
-            </div>
-          )
+
+      // 默认上下结构
+      const contentDom = (chartDom || statisticDom)
+        ? (props.chartPlacement === 'left'
+            ? (
+                <div class={contentCls}>
+                  {chartDom}
+                  {statisticDom}
+                </div>
+              )
+            : (
+                <div class={contentCls}>
+                  {statisticDom}
+                  {chartDom}
+                </div>
+              ))
+        : null
+
+      const footerDom = footer
+        ? <div class={clsx(`${prefixCls.value}-footer`, hashId)}>{footer}</div>
         : null
 
       return wrapSSR(
         <Card
           {...attrs}
-          {...cardProps}
-          class={clsx(prefixCls.value, hashId, classProp, className)}
+          {...others}
+          class={classString}
           onCollapse={(value: boolean) => emit('collapse', value)}
           onClick={(event: MouseEvent) => emit('click', event)}
           onChecked={(event: MouseEvent) => emit('checked', event)}
         >
           {contentDom}
           {slots.default?.()}
-          {footer ? <div class={clsx(`${prefixCls.value}-footer`, hashId)}>{footer}</div> : null}
+          {footerDom}
         </Card>,
       )
     }
@@ -131,9 +145,9 @@ const Group = defineComponent({
   setup(props, { attrs, emit, slots }) {
     return () => (
       <StatisticCardBase
+        styles={{ body: { padding: 0 } }}
         {...attrs}
         {...props}
-        styles={{ ...(props as any).styles, body: { ...(props as any).styles?.body, padding: 0 } }}
         onCollapse={(value: boolean) => emit('collapse', value)}
         onClick={(event: MouseEvent) => emit('click', event)}
         onChecked={(event: MouseEvent) => emit('checked', event)}

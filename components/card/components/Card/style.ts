@@ -31,7 +31,8 @@ const genProCardStyle: GenerateStyle<ProCardToken> = (token) => {
       ...resetComponent(token),
 
       '&-box-shadow': {
-        boxShadow: token.boxShadowTertiary,
+        boxShadow:
+          '0 1px 2px -2px #00000029, 0 3px 6px #0000001f, 0 5px 12px 4px #00000017',
         borderColor: 'transparent',
       },
       '&-col': {
@@ -66,7 +67,8 @@ const genProCardStyle: GenerateStyle<ProCardToken> = (token) => {
         'transition': 'box-shadow 0.3s, border-color 0.3s',
         '&:hover': {
           borderColor: 'transparent',
-          boxShadow: token.boxShadowTertiary,
+          boxShadow:
+            '0 1px 2px -2px #00000029, 0 3px 6px #0000001f, 0 5px 12px 4px #00000017',
         },
         [`&${componentCls}-checked:hover`]: {
           borderColor: token.controlOutline,
@@ -300,6 +302,20 @@ function genColStyle(index: number, componentCls: string) {
   }
 }
 
+/**
+ * 25 个列宽规则与 token 数值无关，按 prefixCls 缓存，避免每个 useStyle
+ * 实例重复构造数组与对象。绝大多数应用 prefixCls 唯一，命中缓存稳定。
+ */
+const gridStyleCache = new Map<string, ReturnType<typeof genColStyle>[]>()
+function getGridStyleByCls(componentCls: string) {
+  const cached = gridStyleCache.get(componentCls)
+  if (cached)
+    return cached
+  const result = Array.from({ length: GRID_COLUMNS + 1 }, (_, index) => genColStyle(index, componentCls))
+  gridStyleCache.set(componentCls, result)
+  return result
+}
+
 export default function useStyle(prefixCls: string) {
   return useAntdStyle('ProCard', (token) => {
     const proCardToken: ProCardToken = {
@@ -309,7 +325,7 @@ export default function useStyle(prefixCls: string) {
 
     return [
       genProCardStyle(proCardToken),
-      Array.from({ length: GRID_COLUMNS + 1 }, (_, index) => genColStyle(index, proCardToken.componentCls)),
+      getGridStyleByCls(proCardToken.componentCls),
     ]
   })
 }

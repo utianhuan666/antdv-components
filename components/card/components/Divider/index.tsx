@@ -9,18 +9,17 @@ export interface ProCardDividerProps {
   class?: any
   className?: any
   orientation?: 'horizontal' | 'vertical'
-  type?: 'horizontal' | 'vertical'
 }
 
 const Divider = defineComponent({
   name: 'ProCardDivider',
-  props: ['type', 'orientation', 'class', 'className', 'style'],
+  props: ['orientation', 'class', 'className', 'style'],
   setup(props) {
     const prefixCls = useProPrefixCls('pro-card')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
 
     return () => {
-      const orientation = props.orientation || props.type || 'vertical'
+      const orientation = props.orientation || 'vertical'
 
       return wrapSSR(
         <div

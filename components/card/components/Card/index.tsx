@@ -1,68 +1,19 @@
-import type { CSSProperties, VNode } from 'vue'
-import type { Breakpoint, CardProps, ColSpanType, Gutter, ProCardTabItem } from '../../typing'
+import type { ComputedRef, CSSProperties, VNode } from 'vue'
+import type { Breakpoint, CardProps, ColSpanType, Gutter } from '../../typing'
 import { RightOutlined } from '@antdv-next/icons'
-import { clsx } from '@v-c/util'
+import { clsx, omit, useMergedState } from '@v-c/util'
 import { Tabs, useBreakpoint } from 'antdv-next'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
-import { computed, defineComponent, ref } from 'vue'
-import LabelIconTip from '../../../utils/components/LabelIconTip'
+import { computed, defineComponent, isVNode } from 'vue'
+import { proTheme } from '../../../provider'
+import { LabelIconTip, useRefFunction } from '../../../utils'
 import Actions from '../Actions'
 import Loading from '../Loading'
 import useStyle from './style'
 
-const responsiveArray: Breakpoint[] = ['xxl', 'xl', 'lg', 'md', 'sm', 'xs']
-
-function hasOwn(target: object, key: string) {
-  return Object.prototype.hasOwnProperty.call(target, key)
-}
-
-function getResponsiveValue<T>(
-  value: T | Partial<Record<Breakpoint, T>> | undefined,
-  screens: Partial<Record<Breakpoint, boolean>> | undefined,
-): T | undefined {
-  if (value && typeof value === 'object') {
-    const key = responsiveArray.find(name => screens?.[name] && (value as Partial<Record<Breakpoint, T>>)[name] != null)
-    return key ? (value as Partial<Record<Breakpoint, T>>)[key] : undefined
-  }
-  return value as T | undefined
-}
-
-function normalizeGutter(
-  gutter: Gutter | Gutter[] | undefined,
-  screens: Partial<Record<Breakpoint, boolean>> | undefined,
-): [number, number] {
-  const normalized = Array.isArray(gutter) ? gutter : [gutter || 0, 0]
-  return normalized.map((value) => {
-    if (typeof value === 'number')
-      return value
-    return getResponsiveValue(value, screens) ?? 0
-  }) as [number, number]
-}
-
-function normalizeColSpan(
-  colSpan: CardProps['colSpan'],
-  screens: Partial<Record<Breakpoint, boolean>> | undefined,
-) {
-  const span = getResponsiveValue<ColSpanType>(colSpan as any, screens)
-  const isFixedWidth = typeof span === 'string' && /\d%|\dpx/i.test(span)
-  return {
-    span,
-    colSpanStyle: isFixedWidth
-      ? { width: span as string, flexShrink: 0 } as CSSProperties
-      : undefined,
-  }
-}
-
-function isProCardVNode(node: VNode) {
-  return !!((node.type as any)?.isProCard)
-}
-
-function normalizeTabItems(items?: ProCardTabItem[]) {
-  return items?.map(item => ({
-    ...item,
-    content: item.content ?? item.children,
-  }))
-}
+// 子卡片元素类型：Vue VNode，其组件类型上可能带 isProCard 标记。
+// 对应 React 的 ProCardChildType（React.ReactElement<CardProps, ... & { isProCard?: boolean }>）。
+type ProCardChildType = VNode
 
 const Card = defineComponent({
   name: 'ProCard',
@@ -107,219 +58,350 @@ const Card = defineComponent({
   setup(rawProps, { attrs, emit, slots }) {
     const props = rawProps as CardProps
     const config = useConfig()
-    const screens = useBreakpoint()
-    const prefixCls = computed(() => props.prefixCls || config.value.getPrefixCls('pro-card'))
+    const screensRef = useBreakpoint()
+    // 用于 loading 占位 padding 兜底（body padding 被显式置 0 时使用 token.paddingLG）
+    const themeToken = proTheme.useToken()
+    const prefixCls = computed(() => config.value.getPrefixCls('pro-card'))
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
-    const innerCollapsed = ref(!!props.defaultCollapsed)
 
-    const controlledCollapsed = computed(() => hasOwn(rawProps, 'collapsed') && props.collapsed !== undefined)
-    const mergedCollapsed = computed(() => controlledCollapsed.value ? !!props.collapsed : innerCollapsed.value)
+    // 对应 React useControlledState<boolean>(defaultCollapsed, controlCollapsed)
+    const [collapsed, setCollapsedInner] = useMergedState<boolean>(props.defaultCollapsed ?? false, {
+      value: computed(() => props.collapsed) as ComputedRef<boolean>,
+    })
 
-    const setCollapsed = (value: boolean) => {
-      if (!controlledCollapsed.value)
-        innerCollapsed.value = value
-      emit('collapse', value)
-    }
+    /**
+     * 使用 useRefFunction 包装回调，确保引用稳定
+     */
+    const onCollapseCallback = useRefFunction((c: boolean) => {
+      emit('collapse', c)
+    })
 
-    const handleCollapsibleIconClick = (event: MouseEvent) => {
-      if (props.collapsible !== 'icon')
-        return
-      event.stopPropagation()
-      setCollapsed(!mergedCollapsed.value)
-    }
-
-    const renderCollapsibleButton = () => {
-      if (!props.collapsible)
-        return null
-
-      return (
-        <span
-          role="button"
-          tabindex={props.collapsible === 'icon' ? 0 : undefined}
-          class={`${prefixCls.value}-collapsible-icon`}
-          onClick={handleCollapsibleIconClick}
-          onKeydown={(event: KeyboardEvent) => {
-            if (props.collapsible === 'icon' && (event.key === 'Enter' || event.key === ' ')) {
-              event.preventDefault()
-              setCollapsed(!mergedCollapsed.value)
-            }
-          }}
-        >
-          {props.collapsibleIconRender
-            ? props.collapsibleIconRender({ collapsed: mergedCollapsed.value })
-            : <RightOutlined rotate={!mergedCollapsed.value ? 90 : undefined} />}
-        </span>
-      )
-    }
-
-    const renderChildren = () => {
-      const children = slots.default?.() || []
-      let containProCard = false
-      const currentScreens = (screens.value ?? undefined) as Partial<Record<Breakpoint, boolean>> | undefined
-      const [horizontalGutter, verticalGutter] = normalizeGutter(props.gutter, currentScreens)
-
-      const nodes = children.map((node, index) => {
-        if (!isProCardVNode(node))
-          return node
-
-        containProCard = true
-        const childProps = (node.props || {}) as CardProps
-        const { span, colSpanStyle } = normalizeColSpan(childProps.colSpan, currentScreens)
-        const columnClassName = clsx(`${prefixCls.value}-col`, hashId, {
-          [`${prefixCls.value}-split-vertical`]: props.split === 'vertical' && index !== children.length - 1,
-          [`${prefixCls.value}-split-horizontal`]: props.split === 'horizontal' && index !== children.length - 1,
-          [`${prefixCls.value}-col-${span}`]: typeof span === 'number' && span >= 0 && span <= 24,
-        })
-
-        return (
-          <div
-            key={`pro-card-col-${String(node.key ?? index)}`}
-            class={columnClassName}
-            style={{
-              ...colSpanStyle,
-              ...(horizontalGutter > 0
-                ? {
-                    paddingInlineEnd: horizontalGutter / 2,
-                    paddingInlineStart: horizontalGutter / 2,
-                  }
-                : {}),
-              ...(verticalGutter > 0
-                ? {
-                    paddingBlockStart: verticalGutter / 2,
-                    paddingBlockEnd: verticalGutter / 2,
-                  }
-                : {}),
-              ...props.colStyle,
-            }}
-          >
-            {node}
-          </div>
-        )
+    /**
+     * 使用 queueMicrotask 延迟回调调用，避免在渲染阶段调用外部回调导致的 React 警告
+     * "Cannot update a component while rendering a different component"
+     */
+    const setCollapsed = (updater: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof updater === 'function' ? updater(collapsed.value) : updater
+      setCollapsedInner(next)
+      queueMicrotask(() => {
+        onCollapseCallback(next)
       })
-
-      return { containProCard, nodes }
     }
 
     return () => {
-      const childrenResult = renderChildren()
-      const collapsed = mergedCollapsed.value
-      const variant = props.variant ?? 'outlined'
-      const styles = props.styles || {}
-      const classNames = props.classNames || {}
+      const {
+        className,
+        rootClassName,
+        style,
+        styles,
+        wrap = false,
+        layout,
+        loading,
+        gutter = 0,
+        tooltip,
+        split,
+        headerBordered = false,
+        variant: customVariant,
+        classNames,
+        boxShadow = false,
+        size,
+        ghost = false,
+        hoverable = false,
+        direction,
+        collapsible = false,
+        collapsibleIconRender,
+        colStyle,
+        checked,
+        tabs,
+        type,
+      } = props
+
       const title = slots.title?.() ?? props.title
+      const subTitle = slots.subTitle?.() ?? props.subTitle
       const extra = slots.extra?.() ?? props.extra
       const cover = slots.cover?.() ?? props.cover
       const actions = slots.actions?.() ?? props.actions
-      const collapsibleButton = renderCollapsibleButton()
-      const bodyStylePadding = styles.body?.padding
-      const loadingDom = typeof props.loading === 'boolean'
-        ? (
-            <Loading
-              prefix={prefixCls.value}
-              padding={bodyStylePadding === 0 || bodyStylePadding === '0px' ? 24 : undefined}
-            />
+
+      const variant = customVariant ?? 'outlined'
+
+      const mergedStyles = {
+        header: styles?.header,
+        body: styles?.body,
+        root: styles?.root,
+        extra: styles?.extra,
+        title: styles?.title,
+        actions: styles?.actions,
+        cover: styles?.cover,
+      }
+
+      const token = themeToken.token.value
+
+      const screens = screensRef.value || {
+        lg: true,
+        md: true,
+        sm: true,
+        xl: false,
+        xs: false,
+        xxl: false,
+      }
+
+      // 顺序决定如何进行响应式取值，按最大响应值依次取值，请勿修改。
+      const responsiveArray: Breakpoint[] = ['xxl', 'xl', 'lg', 'md', 'sm', 'xs']
+      // 直接使用 tabs.items，不再支持旧的 TabPane 写法。
+      // antdv-next Tabs 的 item 用 content 字段承载内容（React antd 用 children），此处做键名转换。
+      const ModifyTabItemsContent = tabs?.items?.map(item => ({
+        ...item,
+        content: item.content ?? item.children,
+      }))
+      const tabsRestProps: Record<string, any> = tabs ? omit(tabs as Record<string, any>, ['cardProps']) : {}
+
+      /**
+       * 根据响应式获取 gutter, 参考 antd 实现
+       *
+       * @param gutter Gutter
+       */
+      const getNormalizedGutter = (gut: Gutter | Gutter[]) => {
+        const results: [number, number] = [0, 0]
+        const normalizedGutter = Array.isArray(gut) ? gut : [gut, 0]
+        normalizedGutter.forEach((g, index) => {
+          if (typeof g === 'object') {
+            for (let i = 0; i < responsiveArray.length; i += 1) {
+              const breakpoint: Breakpoint = responsiveArray[i]!
+              if (screens[breakpoint] && (g as Partial<Record<Breakpoint, number>>)[breakpoint] !== undefined) {
+                results[index] = (g as Partial<Record<Breakpoint, number>>)[breakpoint] as number
+                break
+              }
+            }
+          }
+          else {
+            results[index] = (g as number) || 0
+          }
+        })
+        return results
+      }
+
+      const getColSpanStyle = (colSpan: CardProps['colSpan']) => {
+        let span = colSpan
+
+        // colSpan 响应式
+        if (typeof colSpan === 'object') {
+          for (let i = 0; i < responsiveArray.length; i += 1) {
+            const breakpoint: Breakpoint = responsiveArray[i]!
+            if (screens?.[breakpoint] && (colSpan as Partial<Record<Breakpoint, ColSpanType>>)?.[breakpoint] !== undefined) {
+              span = (colSpan as Partial<Record<Breakpoint, ColSpanType>>)[breakpoint]
+              break
+            }
+          }
+        }
+
+        // 当 colSpan 为 30% 或 300px 时
+        const isPercentOrPxWidth = typeof span === 'string' && /\d%|\dpx/i.test(span)
+        const colSpanStyle: CSSProperties = isPercentOrPxWidth
+          ? { width: span as string, flexShrink: 0 }
+          : {}
+
+        return { span, colSpanStyle }
+      }
+
+      const [horizontalGutter, verticalGutter] = getNormalizedGutter(gutter)
+
+      // 判断是否套了卡片，如果套了的话将自身卡片内部内容的 padding 设置为0
+      let containProCard = false
+      const childrenArray = (slots.default?.() || []) as ProCardChildType[]
+
+      const childrenModified = childrenArray.map((element, index) => {
+        if ((element.type as any)?.isProCard) {
+          containProCard = true
+
+          // 宽度
+          const { colSpan } = (element.props || {}) as CardProps
+          const { span, colSpanStyle } = getColSpanStyle(colSpan)
+
+          const columnClassName = clsx(`${prefixCls.value}-col`, hashId, {
+            [`${prefixCls.value}-split-vertical`]:
+              split === 'vertical' && index !== childrenArray.length - 1,
+            [`${prefixCls.value}-split-horizontal`]:
+              split === 'horizontal' && index !== childrenArray.length - 1,
+            [`${prefixCls.value}-col-${span}`]:
+              typeof span === 'number' && span >= 0 && span <= 24,
+          })
+
+          return wrapSSR(
+            <div
+              key={`pro-card-col-${(element.key as any) || index}`}
+              style={{
+                ...colSpanStyle,
+                ...(horizontalGutter > 0
+                  ? {
+                      paddingInlineEnd: horizontalGutter / 2,
+                      paddingInlineStart: horizontalGutter / 2,
+                    }
+                  : {}),
+                ...(verticalGutter > 0
+                  ? {
+                      paddingBlockStart: verticalGutter / 2,
+                      paddingBlockEnd: verticalGutter / 2,
+                    }
+                  : {}),
+                ...colStyle,
+              }}
+              class={columnClassName}
+            >
+              {element}
+            </div>,
           )
-        : props.loading
+        }
+        return element
+      })
 
       const cardCls = clsx(
         prefixCls.value,
-        hashId,
         props.class,
-        props.className,
-        props.rootClassName,
-        classNames.root,
+        className,
+        rootClassName,
+        hashId,
+        classNames?.root,
         {
           [`${prefixCls.value}-border`]: variant === 'outlined',
-          [`${prefixCls.value}-box-shadow`]: props.boxShadow,
-          [`${prefixCls.value}-contain-card`]: childrenResult.containProCard,
-          [`${prefixCls.value}-loading`]: props.loading,
-          [`${prefixCls.value}-split`]: props.split === 'vertical' || props.split === 'horizontal',
-          [`${prefixCls.value}-ghost`]: props.ghost,
-          [`${prefixCls.value}-hoverable`]: props.hoverable,
-          [`${prefixCls.value}-size-${props.size}`]: props.size,
-          [`${prefixCls.value}-type-${props.type}`]: props.type,
-          [`${prefixCls.value}-collapse`]: collapsed,
-          [`${prefixCls.value}-checked`]: props.checked,
+          [`${prefixCls.value}-box-shadow`]: boxShadow,
+          [`${prefixCls.value}-contain-card`]: containProCard,
+          [`${prefixCls.value}-loading`]: loading,
+          [`${prefixCls.value}-split`]: split === 'vertical' || split === 'horizontal',
+          [`${prefixCls.value}-ghost`]: ghost,
+          [`${prefixCls.value}-hoverable`]: hoverable,
+          [`${prefixCls.value}-size-${size}`]: size,
+          [`${prefixCls.value}-type-${type}`]: type,
+          [`${prefixCls.value}-collapse`]: collapsed.value,
+          [`${prefixCls.value}-checked`]: checked,
         },
       )
 
-      const bodyCls = clsx(`${prefixCls.value}-body`, hashId, classNames.body, {
-        [`${prefixCls.value}-body-center`]: props.layout === 'center',
-        [`${prefixCls.value}-body-direction-column`]: props.split === 'horizontal' || props.direction === 'column',
-        [`${prefixCls.value}-body-wrap`]: props.wrap && childrenResult.containProCard,
+      const bodyCls = clsx(`${prefixCls.value}-body`, hashId, classNames?.body, {
+        [`${prefixCls.value}-body-center`]: layout === 'center',
+        [`${prefixCls.value}-body-direction-column`]:
+          split === 'horizontal' || direction === 'column',
+        [`${prefixCls.value}-body-wrap`]: wrap && containProCard,
       })
 
-      const headerCls = clsx(`${prefixCls.value}-header`, hashId, classNames.header, {
-        [`${prefixCls.value}-header-border`]: props.headerBordered || props.type === 'inner',
+      const bodyStylePadding = mergedStyles.body?.padding
+
+      // body padding 被显式置 0 时，loading 占位需要补回默认 padding，
+      // 否则骨架屏会贴到边缘。这里对齐 body 的默认 padding（token.paddingLG）。
+      const loadingDOM = isVNode(loading)
+        ? loading
+        : (
+            <Loading
+              prefix={prefixCls.value}
+              style={
+                bodyStylePadding === 0 || bodyStylePadding === '0px'
+                  ? { padding: `${token.paddingLG}px` }
+                  : undefined
+              }
+            />
+          )
+
+      const handleCollapsibleIconClick = () => {
+        if (collapsible === 'icon')
+          setCollapsed((prev: boolean) => !prev)
+      }
+
+      const collapsibleButton = collapsible && (
+        <span
+          role="button"
+          tabindex={collapsible === 'icon' ? 0 : undefined}
+          class={clsx(`${prefixCls.value}-collapsible-icon`, hashId)}
+          onClick={collapsible === 'icon' ? handleCollapsibleIconClick : undefined}
+          onKeydown={
+            collapsible === 'icon'
+              ? (e: KeyboardEvent) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleCollapsibleIconClick()
+                  }
+                }
+              : undefined
+          }
+        >
+          {collapsibleIconRender
+            ? collapsibleIconRender({ collapsed: collapsed.value })
+            : <RightOutlined rotate={!collapsed.value ? 90 : undefined} />}
+        </span>
+      )
+
+      const headerCls = clsx(`${prefixCls.value}-header`, hashId, classNames?.header, {
+        [`${prefixCls.value}-header-border`]: headerBordered || type === 'inner',
         [`${prefixCls.value}-header-collapsible`]: collapsibleButton,
       })
 
-      const header = (title || extra || collapsibleButton)
-        ? (
-            <div
-              class={headerCls}
-              style={styles.header}
-              onClick={() => {
-                if (props.collapsible === 'header' || props.collapsible === true)
-                  setCollapsed(!collapsed)
-              }}
-            >
-              <div class={clsx(`${prefixCls.value}-title`, hashId, classNames.title)} style={styles.title}>
-                {collapsibleButton}
-                <LabelIconTip label={title} tooltip={props.tooltip} subTitle={props.subTitle} />
-              </div>
-              {extra
-                ? (
-                    <div
-                      class={clsx(`${prefixCls.value}-extra`, hashId, classNames.extra)}
-                      style={styles.extra}
-                      onClick={(event: MouseEvent) => event.stopPropagation()}
-                    >
-                      {extra}
-                    </div>
-                  )
-                : null}
-            </div>
-          )
-        : null
+      const titleCls = clsx(`${prefixCls.value}-title`, hashId, classNames?.title)
+      const extraCls = clsx(`${prefixCls.value}-extra`, hashId, classNames?.extra)
 
-      const tabs = props.tabs
-      const tabDom = tabs
-        ? (
-            <div class={clsx(`${prefixCls.value}-tabs`, hashId)}>
-              {props.loading
-                ? loadingDom
-                : (
-                    <Tabs
-                      {...Object.fromEntries(Object.entries(tabs).filter(([key]) => key !== 'cardProps' && key !== 'onChange'))}
-                      items={normalizeTabItems(tabs.items) as any}
-                      onChange={(key: string) => tabs.onChange?.(key)}
-                    />
-                  )}
-            </div>
-          )
-        : null
+      const rootStyle = { ...mergedStyles.root, ...(style as CSSProperties) }
 
       return wrapSSR(
         <div
           {...attrs}
           class={cardCls}
-          style={[styles.root, props.style] as any}
-          onClick={(event: MouseEvent) => {
-            emit('checked', event)
-            emit('click', event)
+          style={rootStyle}
+          onClick={(e: MouseEvent) => {
+            emit('checked', e)
+            emit('click', e)
           }}
         >
-          {header}
-          {cover && !collapsed
-            ? <div class={clsx(`${prefixCls.value}-cover`, hashId, classNames.cover)} style={styles.cover}>{cover}</div>
-            : null}
-          {tabDom ?? (
-            <div class={bodyCls} style={styles.body}>
-              {props.loading ? loadingDom : childrenResult.nodes}
+          {(title || extra || collapsibleButton) && (
+            <div
+              class={headerCls}
+              style={mergedStyles.header}
+              onClick={() => {
+                if (collapsible === 'header' || collapsible === true)
+                  setCollapsed(!collapsed.value)
+              }}
+            >
+              <div class={titleCls} style={mergedStyles.title}>
+                {collapsibleButton}
+                <LabelIconTip label={title} tooltip={tooltip} subTitle={subTitle} />
+              </div>
+              {extra && (
+                <div
+                  class={extraCls}
+                  style={mergedStyles.extra}
+                  onClick={(e: MouseEvent) => e.stopPropagation()}
+                >
+                  {extra}
+                </div>
+              )}
             </div>
           )}
-          {actions ? <Actions actions={actions} prefixCls={prefixCls.value} className={classNames.actions} style={styles.actions} /> : null}
+          {cover && !collapsed.value && (
+            <div
+              class={clsx(`${prefixCls.value}-cover`, hashId, classNames?.cover)}
+              style={mergedStyles.cover}
+            >
+              {cover}
+            </div>
+          )}
+          {tabs
+            ? (
+                // antdv-next Tabs 仅通过 items 渲染，传 children 会被忽略。
+                // loading 状态下，把骨架屏放到 Tabs 容器外层，避免 children 被吞。
+                <div class={clsx(`${prefixCls.value}-tabs`, hashId)}>
+                  {loading
+                    ? loadingDOM
+                    : (
+                        <Tabs
+                          onChange={tabs.onChange as any}
+                          {...tabsRestProps}
+                          items={ModifyTabItemsContent as any}
+                        />
+                      )}
+                </div>
+              )
+            : (
+                <div class={bodyCls} style={mergedStyles.body}>
+                  {loading ? loadingDOM : childrenModified}
+                </div>
+              )}
+          {actions ? <Actions actions={actions} prefixCls={prefixCls.value} /> : null}
         </div>,
       )
     }
