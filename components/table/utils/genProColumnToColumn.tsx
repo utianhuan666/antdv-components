@@ -26,7 +26,7 @@ type ColumnToColumnReturnType<T> = (TableColumnType<T> & {
   index?: number
 })[]
 
-export type TableColumnContext<T> = {
+export interface TableColumnContext<T> {
   counter: ReturnType<ContainerType>
   columnEmptyText: ProFieldEmptyText
   type: ProSchemaComponentTypes

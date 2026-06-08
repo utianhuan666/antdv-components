@@ -1,5 +1,5 @@
 import type { MenuProps } from 'antdv-next'
-import type { CSSProperties, PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import { DownOutlined, EllipsisOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Button, Dropdown } from 'antdv-next'
@@ -34,15 +34,11 @@ function buildMenuItems(menus: MenuItemType = []): NonNullable<NonNullable<MenuP
 /**
  * 一个简单的下拉菜单
  */
-const DropdownButton = defineComponent({
+const DropdownButton = defineComponent<DropdownProps>({
   name: 'TableDropdownButton',
-  props: {
-    className: { type: String, default: undefined },
-    style: { type: Object as PropType<CSSProperties>, default: undefined },
-    menus: { type: Array as PropType<MenuItems[]>, default: undefined },
-    onSelect: { type: Function as PropType<(key: string) => void>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: ['className', 'style', 'menus', 'onSelect'],
+  setup(rawProps, { slots }) {
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-table-dropdown')
 
     return () => (
@@ -63,15 +59,11 @@ const DropdownButton = defineComponent({
   },
 })
 
-const TableDropdown = defineComponent({
+const TableDropdown = defineComponent<DropdownProps>({
   name: 'TableDropdown',
-  props: {
-    className: { type: String, default: undefined },
-    style: { type: Object as PropType<CSSProperties>, default: undefined },
-    menus: { type: Array as PropType<MenuItems[]>, default: undefined },
-    onSelect: { type: Function as PropType<(key: string) => void>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: ['className', 'style', 'menus', 'onSelect'],
+  setup(rawProps, { slots }) {
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-table-dropdown')
 
     return () => (

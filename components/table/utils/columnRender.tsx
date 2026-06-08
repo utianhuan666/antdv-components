@@ -10,12 +10,12 @@ import type { ContainerType } from '../Store/Provide'
 import type { ActionType, ProColumns } from '../typing'
 import { get } from '@v-c/util'
 import { isVNode } from 'vue'
-import { genCopyable, isNil, LabelIconTip } from '../../utils'
 import { isMergeCell } from '.'
+import { genCopyable, isNil, LabelIconTip } from '../../utils'
 import cellRenderToFromItem from './cellRenderToFromItem'
 
 /** 转化列的定义 */
-type ColumnRenderInterface<T> = {
+interface ColumnRenderInterface<T> {
   columnProps: ProColumns<T>
   text: any
   rowData: T

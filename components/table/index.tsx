@@ -1,4 +1,11 @@
 import type { App } from 'vue'
+import type { RowEditableConfig } from '../utils'
+import type { DragTableProps } from './components/DragSortTable'
+import type {
+  EditableFormInstance,
+  EditableProTableProps,
+} from './components/EditableTable'
+import type { ListToolBarProps } from './components/ListToolBar'
 import type { ColumnsState } from './Store/Provide'
 import type {
   ActionType,
@@ -7,7 +14,6 @@ import type {
   ProTableProps,
   RequestData,
 } from './typing'
-import type { RowEditableConfig } from '../utils'
 import DragSortTable from './components/DragSortTable'
 import TableDropdown from './components/Dropdown'
 import EditableProTable from './components/EditableTable'
@@ -16,12 +22,6 @@ import { RowEditorTable } from './components/EditableTable/RowEditorTable'
 import Search from './components/Form'
 import ListToolBar from './components/ListToolBar'
 import ProTable from './Table'
-import type { DragTableProps } from './components/DragSortTable'
-import type {
-  EditableFormInstance,
-  EditableProTableProps,
-} from './components/EditableTable'
-import type { ListToolBarProps } from './components/ListToolBar'
 
 /** Vue 插件：注册表格相关组件，mirror FormModule */
 export const TableModule = {

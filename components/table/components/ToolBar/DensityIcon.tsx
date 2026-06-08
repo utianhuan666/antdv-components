@@ -1,4 +1,4 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import { ColumnHeightOutlined } from '@antdv-next/icons'
 import { Dropdown, Tooltip } from 'antdv-next'
 import { defineComponent } from 'vue'
@@ -7,12 +7,15 @@ import { useTableContext } from '../../Store/Provide'
 
 export type DensitySize = 'middle' | 'small' | 'large' | undefined
 
-const DensityIcon = defineComponent({
+interface DensityIconProps {
+  icon?: VNodeChild
+}
+
+const DensityIcon = defineComponent<DensityIconProps>({
   name: 'DensityIcon',
-  props: {
-    icon: { type: [Object, String, Number, Boolean, Array, Function] as PropType<VNodeChild>, default: undefined },
-  },
-  setup(props) {
+  props: ['icon'],
+  setup(rawProps) {
+    const props = rawProps
     const counter = useTableContext()
     const intl = useIntl()
 

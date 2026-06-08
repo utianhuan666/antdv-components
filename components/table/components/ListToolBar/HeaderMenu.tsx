@@ -1,4 +1,4 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import type { Key } from '../../typing'
 import { DownOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
@@ -23,18 +23,11 @@ export interface ListToolBarHeaderMenuProps {
   hashId?: string
 }
 
-const HeaderMenu = defineComponent({
+const HeaderMenu = defineComponent<ListToolBarHeaderMenuProps>({
   name: 'ListToolBarHeaderMenu',
-  props: {
-    type: { type: String as PropType<'inline' | 'dropdown' | 'tab'>, default: 'inline' },
-    activeKey: { type: [String, Number] as PropType<Key>, default: undefined },
-    defaultActiveKey: { type: [String, Number] as PropType<Key>, default: undefined },
-    items: { type: Array as PropType<ListToolBarMenuItem[]>, default: () => [] },
-    onChange: { type: Function as PropType<(activeKey?: Key) => void>, default: undefined },
-    prefixCls: { type: String, default: undefined },
-    hashId: { type: String, default: undefined },
-  },
-  setup(props) {
+  props: ['type', 'activeKey', 'defaultActiveKey', 'items', 'onChange', 'prefixCls', 'hashId'],
+  setup(rawProps) {
+    const props = rawProps
     const proProvider = useProProviderContext()
 
     const activeKeyInner = ref<Key | undefined>(

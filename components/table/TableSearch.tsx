@@ -4,7 +4,7 @@ import type { ActionType, ProTableProps } from './typing'
 import { defineComponent } from 'vue'
 import FormRender from './components/Form'
 
-export type TableSearchProps<T extends Record<string, any>, U, ValueType> = {
+export interface TableSearchProps<T extends Record<string, any>, U, ValueType> {
   search: ProTableProps<T, U, ValueType>['search']
   type: ProTableProps<T, U, ValueType>['type']
   pagination: ProTableProps<T, U, ValueType>['pagination']

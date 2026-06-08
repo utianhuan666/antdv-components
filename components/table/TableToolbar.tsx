@@ -4,7 +4,7 @@ import type { ActionType, Key, ProTableProps } from './typing'
 import { defineComponent } from 'vue'
 import Toolbar from './components/ToolBar'
 
-export type TableToolbarProps<T extends Record<string, any>> = {
+export interface TableToolbarProps<T extends Record<string, any>> {
   toolBarRender: ProTableProps<T, any, any>['toolBarRender']
   headerTitle: ProTableProps<T, any, any>['headerTitle']
   hideToolbar: boolean

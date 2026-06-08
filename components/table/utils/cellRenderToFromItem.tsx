@@ -7,11 +7,12 @@ import type {
   ProSchemaComponentTypes,
   UseEditableUtilType,
 } from '../../utils'
-import type { Key, ProColumnType } from '../typing'
 import type { ContainerType } from '../Store/Provide'
+import type { Key, ProColumnType } from '../typing'
 import { get } from '@v-c/util'
 import { computed, defineComponent, ref, watch } from 'vue'
-import { FieldContext, ProFormField } from '../../form'
+import { ProFormField } from '../../form'
+import { useFieldContext } from '../../form/FieldContext'
 import {
   getFieldPropsOrFormItemProps,
   InlineErrorFormItem,
@@ -19,7 +20,6 @@ import {
   runFunction,
   useProFormContext,
 } from '../../utils'
-import { useFieldContext } from '../../form/FieldContext'
 
 const SHOW_EMPTY_TEXT_LIST = ['', null, undefined]
 
@@ -28,8 +28,9 @@ const SHOW_EMPTY_TEXT_LIST = ['', null, undefined]
  *
  * @deprecated 请使用 buildNamePath，spellNamePath 是历史命名，保留以兼容外部引用
  */
-export const spellNamePath = (...rest: any[]): Key[] =>
-  buildNamePath(...rest)
+export function spellNamePath(...rest: any[]): Key[] {
+  return buildNamePath(...rest)
+}
 
 /**
  * 拼接用于编辑的表单字段路径（name path）
@@ -46,7 +47,7 @@ export function buildNamePath(...rest: any[]): Key[] {
     .flat(1)
 }
 
-export type CellRenderFromItemProps<T extends Record<string, any>> = {
+export interface CellRenderFromItemProps<T extends Record<string, any>> {
   text: string | number | (string | number)[]
   valueType: ProColumnType['valueType']
   index: number

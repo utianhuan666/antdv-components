@@ -1,5 +1,5 @@
 import type { TableColumnType } from 'antdv-next'
-import type { PropType, Ref, VNodeChild } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { LabelTooltipType } from '../../../utils'
 import type {
@@ -151,23 +151,11 @@ function renderDefaultOption<T>(
     .filter(item => item) as VNodeChild[]
 }
 
-const ToolBar = defineComponent({
+const ToolBar = defineComponent<ToolBarProps<any>>({
   name: 'ToolBar',
-  props: {
-    headerTitle: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Object] as PropType<string | LabelTooltipType>, default: undefined },
-    toolBarRender: { type: Function as PropType<ToolBarProps<any>['toolBarRender']>, default: undefined },
-    action: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
-    options: { type: [Object, Boolean] as PropType<OptionConfig | false>, default: undefined },
-    selectedRowKeys: { type: Array as PropType<(string | number)[]>, default: undefined },
-    selectedRows: { type: Array as PropType<any[]>, default: undefined },
-    toolbar: { type: Object as PropType<ListToolBarProps>, default: undefined },
-    onSearch: { type: Function as PropType<(keyWords: string) => void>, default: undefined },
-    columns: { type: Array as PropType<(TableColumnType<any> & { index?: number })[]>, default: () => [] },
-    optionsRender: { type: Function as PropType<ToolbarRenderProps<any>['optionsRender']>, default: undefined },
-    className: { type: String, default: undefined },
-  },
-  setup(props) {
+  props: ['headerTitle', 'tooltip', 'toolBarRender', 'action', 'options', 'selectedRowKeys', 'selectedRows', 'toolbar', 'onSearch', 'columns', 'optionsRender', 'className'],
+  setup(rawProps) {
+    const props = rawProps
     const counter = useTableContext()
     const intl = useIntl()
 
@@ -288,24 +276,11 @@ export interface ToolbarRenderProps<T> {
 }
 
 /** 这里负责与table交互 */
-const ToolbarRender = defineComponent({
+const ToolbarRender = defineComponent<ToolbarRenderProps<any>>({
   name: 'ToolbarRender',
-  props: {
-    hideToolbar: { type: Boolean, required: true },
-    onFormSearchSubmit: { type: Function as PropType<(params: any) => void>, required: true },
-    searchNode: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    tableColumn: { type: Array as PropType<any[]>, default: () => [] },
-    tooltip: { type: [String, Object] as PropType<string | LabelTooltipType>, default: undefined },
-    selectedRows: { type: Array as PropType<any[]>, default: () => [] },
-    selectedRowKeys: { type: Array as PropType<(string | number)[]>, default: () => [] },
-    headerTitle: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    toolbar: { type: Object as PropType<ProTableProps<any, any, any>['toolbar']>, default: undefined },
-    options: { type: [Object, Boolean] as PropType<ProTableProps<any, any, any>['options']>, default: undefined },
-    optionsRender: { type: Function as PropType<ToolbarRenderProps<any>['optionsRender']>, default: undefined },
-    toolBarRender: { type: Function as PropType<ToolBarProps<any>['toolBarRender']>, default: undefined },
-    actionRef: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
-  },
-  setup(props) {
+  props: ['hideToolbar', 'onFormSearchSubmit', 'searchNode', 'tableColumn', 'tooltip', 'selectedRows', 'selectedRowKeys', 'headerTitle', 'toolbar', 'options', 'optionsRender', 'toolBarRender', 'actionRef'],
+  setup(rawProps) {
+    const props = rawProps
     const onSearch = (keyword: string) => {
       const { options, onFormSearchSubmit, actionRef } = props
       if (!options || !options.search)

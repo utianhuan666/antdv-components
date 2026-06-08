@@ -1,5 +1,5 @@
 import type { TablePaginationConfig } from 'antdv-next'
-import type { PropType, Ref } from 'vue'
+import type { Ref } from 'vue'
 import type { ActionType, ProTableProps } from '../../typing'
 import { omit } from '@v-c/util'
 import { computed, defineComponent } from 'vue'
@@ -7,7 +7,7 @@ import { omitUndefined, useRefFunction } from '../../../utils'
 import { isBordered } from '../../utils/index'
 import FormRender from './FormRender'
 
-export type BaseFormProps<T, U> = {
+export interface BaseFormProps<T, U> {
   pagination?: TablePaginationConfig | false
   beforeSearchSubmit?: (params: Partial<U>) => any
   action: Ref<ActionType | undefined>
@@ -26,28 +26,31 @@ export type BaseFormProps<T, U> = {
   ghost?: boolean
 }
 
+interface FormSearchProps {
+  pagination?: TablePaginationConfig | false
+  beforeSearchSubmit?: (params: any) => any
+  action: Ref<ActionType | undefined>
+  onSubmit?: (params: any) => void
+  onReset?: () => void
+  loading?: boolean
+  onFormSearchSubmit: (params: any) => void
+  columns?: ProTableProps<any, any, any>['columns']
+  dateFormatter?: ProTableProps<any, any, any>['dateFormatter']
+  formRef?: ProTableProps<any, any, any>['formRef']
+  type?: ProTableProps<any, any, any>['type']
+  cardBordered?: ProTableProps<any, any, any>['cardBordered']
+  form?: ProTableProps<any, any, any>['form']
+  search?: ProTableProps<any, any, any>['search']
+  manualRequest?: boolean
+  ghost?: boolean
+}
+
 /** 查询表单相关的配置 */
-const FormSearch = defineComponent({
+const FormSearch = defineComponent<FormSearchProps>({
   name: 'TableFormSearch',
-  props: {
-    pagination: { type: [Object, Boolean] as PropType<TablePaginationConfig | false>, default: undefined },
-    beforeSearchSubmit: { type: Function as PropType<(params: any) => any>, default: undefined },
-    action: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
-    onSubmit: { type: Function as PropType<(params: any) => void>, default: undefined },
-    onReset: { type: Function as PropType<() => void>, default: undefined },
-    loading: { type: Boolean, default: false },
-    onFormSearchSubmit: { type: Function as PropType<(params: any) => void>, required: true },
-    columns: { type: Array as PropType<ProTableProps<any, any, any>['columns']>, default: () => [] },
-    dateFormatter: { type: [String, Function, Boolean] as PropType<ProTableProps<any, any, any>['dateFormatter']>, default: undefined },
-    formRef: { type: Object as PropType<ProTableProps<any, any, any>['formRef']>, default: undefined },
-    type: { type: String as PropType<ProTableProps<any, any, any>['type']>, default: undefined },
-    cardBordered: { type: [Boolean, Object] as PropType<ProTableProps<any, any, any>['cardBordered']>, default: undefined },
-    form: { type: Object as PropType<ProTableProps<any, any, any>['form']>, default: undefined },
-    search: { type: [Object, Boolean] as PropType<ProTableProps<any, any, any>['search']>, default: undefined },
-    manualRequest: { type: Boolean, default: undefined },
-    ghost: { type: Boolean, default: undefined },
-  },
-  setup(props) {
+  props: ['pagination', 'beforeSearchSubmit', 'action', 'onSubmit', 'onReset', 'loading', 'onFormSearchSubmit', 'columns', 'dateFormatter', 'formRef', 'type', 'cardBordered', 'form', 'search', 'manualRequest', 'ghost'],
+  setup(rawProps) {
+    const props = rawProps
     // 只传入 pagination 中的 current 和 pageSize 参数
     const pageInfo = computed(() =>
       props.pagination

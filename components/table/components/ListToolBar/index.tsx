@@ -1,5 +1,5 @@
 import type { TabPaneProps } from 'antdv-next'
-import type { CSSProperties, PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import type { LabelTooltipType } from '../../../utils'
 import type { ListToolBarHeaderMenuProps } from './HeaderMenu'
 import { clsx } from '@v-c/util'
@@ -113,16 +113,23 @@ function getSettingItem(setting: SettingPropType): VNodeChild {
   return null
 }
 
-const ListToolBarTabBar = defineComponent({
+interface ListToolBarTabBarProps {
+  prefixCls: string
+  hashId?: string
+  filtersNode?: VNodeChild
+  multipleLine: boolean
+  tabs?: ListToolBarProps['tabs']
+}
+
+interface ListToolBarResizeWrapProps {
+  onResize?: (width: number) => void
+}
+
+const ListToolBarTabBar = defineComponent<ListToolBarTabBarProps>({
   name: 'ListToolBarTabBar',
-  props: {
-    prefixCls: { type: String, required: true },
-    hashId: { type: String, default: undefined },
-    filtersNode: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    multipleLine: { type: Boolean, required: true },
-    tabs: { type: Object as PropType<ListToolBarProps['tabs']>, default: undefined },
-  },
-  setup(props) {
+  props: ['prefixCls', 'hashId', 'filtersNode', 'multipleLine', 'tabs'],
+  setup(rawProps) {
+    const props = rawProps
     return () => {
       const { prefixCls, hashId, tabs, multipleLine, filtersNode } = props
       if (!multipleLine)
@@ -157,12 +164,11 @@ const ListToolBarTabBar = defineComponent({
  * React 端用 `@rc-component/resize-observer` 监听容器宽度变化以切换移动端布局。
  * Vue 端用原生 ResizeObserver 在挂载后监听根节点，行为等价。
  */
-const ListToolBarResizeWrap = defineComponent({
+const ListToolBarResizeWrap = defineComponent<ListToolBarResizeWrapProps>({
   name: 'ListToolBarResizeWrap',
-  props: {
-    onResize: { type: Function as PropType<(width: number) => void>, default: undefined },
-  },
-  setup(props, { slots, attrs }) {
+  props: ['onResize'],
+  setup(rawProps, { slots, attrs }) {
+    const props = rawProps
     const rootRef = ref<HTMLDivElement | null>(null)
     let resizeObserver: ResizeObserver | undefined
 
@@ -186,25 +192,11 @@ const ListToolBarResizeWrap = defineComponent({
   },
 })
 
-const ListToolBar = defineComponent({
+const ListToolBar = defineComponent<ListToolBarProps>({
   name: 'ListToolBar',
-  props: {
-    prefixCls: { type: String, default: undefined },
-    title: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    subTitle: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Object] as PropType<string | LabelTooltipType>, default: undefined },
-    className: { type: String, default: undefined },
-    style: { type: Object as PropType<CSSProperties>, default: undefined },
-    search: { type: [Object, String, Number, Boolean, Array, Function] as PropType<SearchPropType>, default: undefined },
-    onSearch: { type: Function as PropType<(keyWords: string) => void>, default: undefined },
-    multipleLine: { type: Boolean, default: false },
-    filter: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    actions: { type: Array as PropType<VNodeChild[]>, default: () => [] },
-    settings: { type: Array as PropType<SettingPropType[]>, default: () => [] },
-    tabs: { type: Object as PropType<ListToolBarTabs>, default: undefined },
-    menu: { type: Object as PropType<ListToolBarMenu>, default: undefined },
-  },
-  setup(props) {
+  props: ['prefixCls', 'title', 'subTitle', 'tooltip', 'className', 'style', 'search', 'onSearch', 'multipleLine', 'filter', 'actions', 'settings', 'tabs', 'menu'],
+  setup(rawProps) {
+    const props = rawProps
     const prefixCls = useProPrefixCls('pro-table-list-toolbar', computed(() => props.prefixCls))
     const themeToken = proTheme.useToken()
     const { wrapSSR, hashId } = useStyle(prefixCls.value)

@@ -1,11 +1,11 @@
 import type { FormItemProps } from 'antdv-next'
-import type { PropType, Ref, VNodeChild } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
 import type { ProFormInstance, ProFormProps } from '../../../form'
 import type { BaseQueryFilterProps } from '../../../form/layouts/QueryFilter'
 import type { ProSchemaComponentTypes } from '../../../utils'
 import type { ActionType, ProColumns, ProTableProps } from '../../typing'
-import { omit } from '@v-c/util'
-import { clsx } from '@v-c/util'
+import { clsx, omit } from '@v-c/util'
+
 import { EXPAND_COLUMN, SELECTION_COLUMN } from 'antdv-next'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { computed, defineComponent } from 'vue'
@@ -95,27 +95,30 @@ export type TableFormItem<T, U = any> = {
   ghost?: boolean
 } & Omit<FormItemProps, 'children' | 'onReset'>
 
+interface FormRenderProps {
+  onSubmit?: (value: any, firstLoad: boolean) => void
+  onReset?: (value: any) => void
+  formRef?: Ref<ProFormInstance | undefined>
+  dateFormatter?: TableFormItem<any>['dateFormatter']
+  type?: ProSchemaComponentTypes
+  columns?: ProColumns<any, any>[]
+  action: Ref<ActionType | undefined>
+  ghost?: boolean
+  manualRequest?: boolean
+  submitButtonLoading?: boolean
+  search?: false | SearchConfig
+  form?: Omit<ProFormProps, 'form'>
+  bordered?: boolean
+}
+
 /**
  * 这里会把 列配置转化为 form 表单
  */
-const FormRender = defineComponent({
+const FormRender = defineComponent<FormRenderProps>({
   name: 'TableFormRender',
-  props: {
-    onSubmit: { type: Function as PropType<(value: any, firstLoad: boolean) => void>, default: undefined },
-    onReset: { type: Function as PropType<(value: any) => void>, default: undefined },
-    formRef: { type: Object as PropType<Ref<ProFormInstance | undefined>>, default: undefined },
-    dateFormatter: { type: [String, Function, Boolean] as PropType<TableFormItem<any>['dateFormatter']>, default: 'string' },
-    type: { type: String as PropType<ProSchemaComponentTypes>, default: undefined },
-    columns: { type: Array as PropType<ProColumns<any, any>[]>, default: () => [] },
-    action: { type: Object as PropType<Ref<ActionType | undefined>>, required: true },
-    ghost: { type: Boolean, default: undefined },
-    manualRequest: { type: Boolean, default: undefined },
-    submitButtonLoading: { type: Boolean, default: undefined },
-    search: { type: [Object, Boolean] as PropType<false | SearchConfig>, default: undefined },
-    form: { type: Object as PropType<Omit<ProFormProps, 'form'>>, default: undefined },
-    bordered: { type: Boolean, default: undefined },
-  },
-  setup(props) {
+  props: ['onSubmit', 'onReset', 'formRef', 'dateFormatter', 'type', 'columns', 'action', 'ghost', 'manualRequest', 'submitButtonLoading', 'search', 'form', 'bordered'],
+  setup(rawProps) {
+    const props = rawProps
     const { hashId } = useProProviderContext()
     const config = useConfig()
 

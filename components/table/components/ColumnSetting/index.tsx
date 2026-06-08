@@ -1,6 +1,6 @@
 import type { TableColumnType } from 'antdv-next'
 import type { DataNode } from 'antdv-next/dist/tree'
-import type { PropType, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import type { ColumnsState } from '../../Store/Provide'
 import type { ProColumns } from '../../typing'
 import type { SettingOptionType } from '../ToolBar'
@@ -10,12 +10,12 @@ import {
   VerticalAlignMiddleOutlined,
   VerticalAlignTopOutlined,
 } from '@antdv-next/icons'
-import { omit } from '@v-c/util'
-import { clsx } from '@v-c/util'
+import { clsx, omit } from '@v-c/util'
+
 import { Checkbox, Popover, Space, Tooltip, Tree, Typography } from 'antdv-next'
 import { computed, defineComponent } from 'vue'
-import { useProProviderContext } from '../../../provider'
-import { useIntl } from '../../../provider'
+import { useIntl, useProProviderContext } from '../../../provider'
+
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 import { runFunction, useRefFunction } from '../../../utils'
 import { useTableContext } from '../../Store/Provide'
@@ -28,15 +28,47 @@ export type ColumnSettingProps<T = any> = SettingOptionType & {
   columns: (TableColumnType<T> & { index?: number })[]
 }
 
-const ToolTipIcon = defineComponent({
+interface ToolTipIconProps {
+  title: string
+  columnKey: string | number
+  show: boolean
+  fixed?: 'left' | 'right'
+}
+
+interface CheckboxListItemProps {
+  columnKey: string | number
+  className?: string
+  title?: VNodeChild
+  fixed?: boolean | 'left' | 'right'
+  showListItemOption?: boolean
+  isLeaf?: boolean
+}
+
+interface CheckboxListProps {
+  list: (ProColumns<any> & { index?: number })[]
+  className?: string
+  title: string
+  draggable: boolean
+  checkable: boolean
+  showListItemOption: boolean
+  showTitle?: boolean
+  listHeight?: number
+}
+
+interface GroupCheckboxListProps {
+  localColumns: (ProColumns<any> & { index?: number })[]
+  className?: string
+  draggable: boolean
+  checkable: boolean
+  showListItemOption: boolean
+  listsHeight?: number
+}
+
+const ToolTipIcon = defineComponent<ToolTipIconProps>({
   name: 'ColumnSettingToolTipIcon',
-  props: {
-    title: { type: String, required: true },
-    columnKey: { type: [String, Number] as PropType<string | number>, required: true },
-    show: { type: Boolean, required: true },
-    fixed: { type: String as PropType<'left' | 'right' | undefined>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: ['title', 'columnKey', 'show', 'fixed'],
+  setup(rawProps, { slots }) {
+    const props = rawProps
     const { columnsMap, setColumnsMap } = useTableContext()
     return () => {
       if (!props.show)
@@ -63,17 +95,11 @@ const ToolTipIcon = defineComponent({
   },
 })
 
-const CheckboxListItem = defineComponent({
+const CheckboxListItem = defineComponent<CheckboxListItemProps>({
   name: 'ColumnSettingCheckboxListItem',
-  props: {
-    columnKey: { type: [String, Number] as PropType<string | number>, required: true },
-    className: { type: String, default: undefined },
-    title: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    fixed: { type: [Boolean, String] as PropType<boolean | 'left' | 'right'>, default: undefined },
-    showListItemOption: { type: Boolean, default: undefined },
-    isLeaf: { type: Boolean, default: undefined },
-  },
-  setup(props) {
+  props: ['columnKey', 'className', 'title', 'fixed', 'showListItemOption', 'isLeaf'],
+  setup(rawProps) {
+    const props = rawProps
     const intl = useIntl()
     const { hashId } = useProProviderContext()
 
@@ -119,19 +145,11 @@ const CheckboxListItem = defineComponent({
   },
 })
 
-const CheckboxList = defineComponent({
+const CheckboxList = defineComponent<CheckboxListProps>({
   name: 'ColumnSettingCheckboxList',
-  props: {
-    list: { type: Array as PropType<(ProColumns<any> & { index?: number })[]>, required: true },
-    className: { type: String, default: undefined },
-    title: { type: String, required: true },
-    draggable: { type: Boolean, required: true },
-    checkable: { type: Boolean, required: true },
-    showListItemOption: { type: Boolean, required: true },
-    showTitle: { type: Boolean, default: true },
-    listHeight: { type: Number, default: 280 },
-  },
-  setup(props) {
+  props: ['list', 'className', 'title', 'draggable', 'checkable', 'showListItemOption', 'showTitle', 'listHeight'],
+  setup(rawProps) {
+    const props = rawProps
     const { hashId } = useProProviderContext()
 
     const { columnsMap, setColumnsMap, sortKeyColumns, setSortKeyColumns } = useTableContext()
@@ -237,7 +255,8 @@ const CheckboxList = defineComponent({
         if (config.map?.get(key)?.children) {
           config.map
             .get(key)
-            ?.children?.forEach(item => loopSetShow(item.key as string))
+            ?.children
+            ?.forEach(item => loopSetShow(item.key as string))
         }
 
         // 先写入当前节点，再检查父节点 —— 顺序至关重要：
@@ -350,17 +369,11 @@ const CheckboxList = defineComponent({
   },
 })
 
-const GroupCheckboxList = defineComponent({
+const GroupCheckboxList = defineComponent<GroupCheckboxListProps>({
   name: 'ColumnSettingGroupCheckboxList',
-  props: {
-    localColumns: { type: Array as PropType<(ProColumns<any> & { index?: number })[]>, required: true },
-    className: { type: String, default: undefined },
-    draggable: { type: Boolean, required: true },
-    checkable: { type: Boolean, required: true },
-    showListItemOption: { type: Boolean, required: true },
-    listsHeight: { type: Number, default: undefined },
-  },
-  setup(props) {
+  props: ['localColumns', 'className', 'draggable', 'checkable', 'showListItemOption', 'listsHeight'],
+  setup(rawProps) {
+    const props = rawProps
     const { hashId } = useProProviderContext()
     const intl = useIntl()
 
@@ -430,19 +443,11 @@ const GroupCheckboxList = defineComponent({
   },
 })
 
-const ColumnSetting = defineComponent({
+const ColumnSetting = defineComponent<ColumnSettingProps<any>>({
   name: 'ColumnSetting',
-  props: {
-    columns: { type: Array as PropType<(TableColumnType<any> & { index?: number })[]>, default: () => [] },
-    draggable: { type: Boolean, default: undefined },
-    checkable: { type: Boolean, default: undefined },
-    showListItemOption: { type: Boolean, default: undefined },
-    checkedReset: { type: Boolean, default: true },
-    listsHeight: { type: Number, default: undefined },
-    extra: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-    settingIcon: { type: [Object, String, Number, Boolean, Array] as PropType<VNodeChild>, default: undefined },
-  },
-  setup(props, { slots }) {
+  props: ['columns', 'draggable', 'checkable', 'showListItemOption', 'checkedReset', 'listsHeight', 'extra', 'settingIcon'],
+  setup(rawProps, { slots }) {
+    const props = rawProps
     // 获得当前上下文
     const counter = useTableContext()
 

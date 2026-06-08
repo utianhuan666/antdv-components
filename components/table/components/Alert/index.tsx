@@ -2,7 +2,6 @@ import type { VNodeChild } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { Key } from '../../typing'
 import { clsx } from '@v-c/util'
-import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
@@ -26,42 +25,11 @@ export interface TableAlertProps<T> {
   alertOptionRender?: AlertRenderType<T>
 }
 
-function defaultAlertOptionRender(props: {
-  intl: IntlType
-  onCleanSelected: () => void
-}) {
-  const { intl, onCleanSelected } = props
-  return [
-    <a onClick={onCleanSelected} key="0">
-      {intl.getMessage('alert.clear', '清空')}
-    </a>,
-  ]
-}
-
-/** 提到模块顶层，避免每次渲染重建函数 */
-const defaultAlertInfoRender: AlertRenderType<any> = ({
-  intl,
-  selectedRowKeys,
-}) => (
-  <Space>
-    {intl.getMessage('alert.selected', '已选择')}
-    {selectedRowKeys.length}
-    {intl.getMessage('alert.item', '项')}
-    &nbsp;&nbsp;
-  </Space>
-)
-
-const TableAlert = defineComponent({
+const TableAlert = defineComponent<TableAlertProps<any>>({
   name: 'TableAlert',
-  props: {
-    selectedRowKeys: { type: Array as () => (number | string | Key)[], default: () => [] },
-    selectedRows: { type: Array as () => any[], default: () => [] },
-    alwaysShowAlert: { type: Boolean, default: undefined },
-    alertInfoRender: { type: [Function, Boolean] as any, default: () => defaultAlertInfoRender },
-    onCleanSelected: { type: Function as () => () => void, default: undefined },
-    alertOptionRender: { type: [Function, Boolean] as any, default: () => defaultAlertOptionRender },
-  },
-  setup(props) {
+  props: ['selectedRowKeys', 'selectedRows', 'alwaysShowAlert', 'alertInfoRender', 'onCleanSelected', 'alertOptionRender'],
+  setup(rawProps) {
+    const props = rawProps
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-table-alert')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)

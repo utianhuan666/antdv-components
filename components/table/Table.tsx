@@ -2,12 +2,11 @@ import type { TablePaginationConfig } from 'antdv-next'
 import type {
   FilterValue as AntFilterValue,
   GetRowKey,
-  SortOrder,
   SorterResult,
+  SortOrder,
   TableCurrentDataSource,
 } from 'antdv-next/dist/table/interface'
 import type { CSSProperties, PropType, Ref, VNodeChild } from 'vue'
-import type { ParamsType } from '../provider'
 import type { UseEditableUtilType } from '../utils'
 import type {
   ActionType,
@@ -18,7 +17,6 @@ import type {
   ProTableProps,
   RequestData,
   TableRowSelection,
-  UseFetchDataAction,
 } from './typing'
 import type { TableColumnContext } from './utils/genProColumnToColumn'
 import { clsx } from '@v-c/util'
@@ -375,10 +373,10 @@ const ProTable = defineComponent({
         debounceTime: componentProps.proTableProps.debounceTime,
         onPageInfoChange: (pageInfo: PageInfo) => {
           const propsPagination = componentProps.proTableProps.pagination
-          if (!propsPagination || !fetchData.value)
+          if (!propsPagination || !fetchData.value) {
             return
-          // 总是触发一下 onChange 和 onShowSizeChange
-          ;(propsPagination as TablePaginationConfig)?.onChange?.(pageInfo.current, pageInfo.pageSize)
+            // 总是触发一下 onChange 和 onShowSizeChange
+          }(propsPagination as TablePaginationConfig)?.onChange?.(pageInfo.current, pageInfo.pageSize)
           ;(propsPagination as TablePaginationConfig)?.onShowSizeChange?.(pageInfo.current, pageInfo.pageSize)
         },
       } as any,
@@ -447,10 +445,6 @@ const ProTable = defineComponent({
             current: type === 'list' ? current : 1,
           })
         },
-      }
-      if (request && newPropsPagination) {
-        delete (newPropsPagination as TablePaginationConfig).onChange
-        delete (newPropsPagination as TablePaginationConfig).onShowSizeChange
       }
       return mergePagination<any>(
         newPropsPagination as TablePaginationConfig | false | undefined,
@@ -589,7 +583,7 @@ const ProTable = defineComponent({
             ?? {}
         const nextSearch = beforeSearchSubmit
           ? beforeSearchSubmit(resetValues)
-          : resetValues
+          : resetValues
         setFormSearchWithRef((nextSearch ?? {}) as any)
       },
       editableUtils,
