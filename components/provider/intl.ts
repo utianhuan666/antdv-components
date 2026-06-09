@@ -1,3 +1,4 @@
+import { get } from 'es-toolkit/compat'
 import arEG from './locale/ar_EG'
 import caES from './locale/ca_ES'
 import csCZ from './locale/cs_CZ'
@@ -40,16 +41,7 @@ export interface IntlType {
 const zhCNMessages: Record<string, any> = zhCN
 
 function getMessageByPath(messages: Record<string, any>, id: string): string {
-  const path = id.replace(/\[(\d+)\]/g, '.$1').split('.')
-  let current: any = messages
-
-  for (const key of path) {
-    if (current == null)
-      return ''
-    current = current[key]
-  }
-
-  return typeof current === 'string' ? current : ''
+  return (get(messages, id.replace(/\[(\d+)\]/g, '.$1').split('.')) || '') as string
 }
 
 export function createIntl(locale: string, localeMap: Record<string, any>): IntlType {
@@ -124,7 +116,7 @@ const intlMap = Object.fromEntries(
 const intlMapKeys = Object.keys(intlMap) as LocaleDashKey[]
 
 export function findIntlKeyByAntdLocaleKey<T extends string>(localeKey?: T): T {
-  const input = (localeKey || 'zh-CN').replace('_', '-').toLowerCase()
+  const input = (localeKey || 'zh-CN').toLowerCase()
   const exact = intlMapKeys.find(key => key.toLowerCase() === input)
   if (exact)
     return exact as unknown as T

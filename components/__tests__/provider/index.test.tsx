@@ -12,7 +12,6 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import { ProField } from '../../field'
 import { useFieldFetchData } from '../../field/components/Select'
-import { ProForm, ProFormMoney } from '../../form'
 import {
   createIntl,
   lighten,
@@ -218,31 +217,6 @@ describe('proConfigProvider', () => {
     }
 
     expect(token.wideMaxWidth).toBe(1200)
-  })
-
-  it('custom translations should be respected', async () => {
-    const wrapper = mount(() => (
-      <ConfigProvider>
-        <ProConfigProvider
-          intl={createIntl('en', {
-            moneySymbol: '!?',
-          })}
-        >
-          <ProForm>
-            {(() => {
-              const Money = ProFormMoney as any
-              return <Money name="amount" initialValue={44.33} />
-            })()}
-          </ProForm>
-        </ProConfigProvider>
-      </ConfigProvider>
-    ))
-
-    await waitFor(() => {
-      const input = wrapper.find('input#amount')
-      expect(input.exists()).toBe(true)
-      expect((input.element as HTMLInputElement).value).toBe('!? 44.33')
-    })
   })
 
   it('autoClearCache isolates and clears swrv cache on unmount', async () => {

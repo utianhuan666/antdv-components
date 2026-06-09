@@ -1,15 +1,17 @@
+import type { Theme } from '@antdv-next/cssinjs'
 import type { ConfigProviderProps, ThemeConfig } from 'antdv-next'
-import type { DefineComponent, InjectionKey, PropType, VNodeChild } from 'vue'
+import type { InjectionKey, VNodeChild } from 'vue'
 import type { IntlType } from './intl'
 import type { DeepPartial, ProTokenType } from './typing/layoutToken'
 import type { ProAliasToken } from './useStyle'
+import { useCacheToken } from '@antdv-next/cssinjs'
 import { theme as antdTheme, ConfigProvider } from 'antdv-next'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
 import zhCNLocale from 'antdv-next/locale/zh_CN'
 import { ThemeProvider } from 'antdv-style'
 import dayjs from 'dayjs'
 import { SWRVCache } from 'swrv'
-import { computed, defineComponent, inject, onUnmounted, provide, reactive, watchEffect } from 'vue'
+import { computed, defineComponent, getCurrentInstance, inject, onUnmounted, provide, reactive, watchEffect } from 'vue'
 import { findIntlKeyByAntdLocaleKey, intlMap, zhCNIntl } from './intl'
 import { getLayoutDesignToken } from './typing/layoutToken'
 import { shallowMergeOneLevel } from './utils/merge'
@@ -188,17 +190,19 @@ export const ConfigConsumer = defineComponent({
   },
 })
 
-const ConfigProviderContainer = defineComponent({
+interface ConfigProviderContainerProps {
+  autoClearCache?: boolean
+  valueTypeMap?: Record<string, ProRenderFieldPropsType>
+  token?: DeepPartial<ProAliasToken>
+  hashed?: boolean
+  dark?: boolean
+  prefixCls?: string
+  intl?: IntlType
+}
+
+const ConfigProviderContainer = defineComponent<ConfigProviderContainerProps>({
   name: 'ProConfigProviderContainer',
-  props: {
-    autoClearCache: { type: Boolean, default: false },
-    valueTypeMap: { type: Object as PropType<Record<string, ProRenderFieldPropsType>>, default: undefined },
-    token: { type: Object as PropType<DeepPartial<ProAliasToken>>, default: undefined },
-    hashed: { type: Boolean, default: undefined },
-    dark: { type: Boolean, default: undefined },
-    prefixCls: { type: String, default: undefined },
-    intl: { type: Object as PropType<IntlType>, default: undefined },
-  },
+  props: ['autoClearCache', 'valueTypeMap', 'token', 'hashed', 'dark', 'prefixCls', 'intl'],
   setup(props, { slots }) {
     const config = useConfig()
     const tokenContext = antdTheme.useToken()
@@ -214,15 +218,20 @@ const ConfigProviderContainer = defineComponent({
     const proComponentsCls = computed(() =>
       props.prefixCls
         ? `.${props.prefixCls}`
-        : `.${config.value.getPrefixCls('pro')}`,
+        : `.${config.value.getPrefixCls()}-pro`,
     )
     const antCls = computed(() => `.${config.value.getPrefixCls()}`)
 
-    const layoutToken = computed(() =>
+    const salt = computed(() => `${proComponentsCls.value}`)
+
+    /**
+     * 合并一下token，不然导致嵌套 token 失效
+     */
+    const proLayoutTokenMerge = computed(() =>
       getLayoutDesignToken(props.token || {}, tokenContext.token.value),
     )
 
-    const baseProvideValue = computed(() => {
+    const proProvideValue = computed(() => {
       return {
         ...parentProvide,
         dark: props.dark ?? parentProvide.dark,
@@ -233,12 +242,30 @@ const ConfigProviderContainer = defineComponent({
             proComponentsCls: proComponentsCls.value,
             antCls: antCls.value,
             themeId: (tokenContext.theme.value as any).id ?? 0,
-            layout: layoutToken.value,
+            layout: proLayoutTokenMerge.value,
           },
         ),
         intl: resolveIntl(props.intl, parentProvide.intl, config.value.locale?.locale),
       }
     })
+
+    const finalToken = computed(() => ({
+      ...(proProvideValue.value.token || {}),
+      proComponentsCls: proComponentsCls.value,
+    }) as ProAliasToken)
+
+    const cacheTokenResult = useCacheToken<ProAliasToken>(
+      computed(() => tokenContext.theme.value as unknown as Theme<any, any>),
+      computed(() => [tokenContext.token.value, finalToken.value ?? {}]),
+      computed(() => ({
+        salt: salt.value,
+        override: finalToken.value,
+        cssVar: {
+          key: 'pro',
+        },
+      })),
+    )
+    const nativeHashId = computed(() => cacheTokenResult.value[1])
 
     const hashed = computed(() => {
       if (props.hashed === false)
@@ -251,27 +278,26 @@ const ConfigProviderContainer = defineComponent({
     const hashId = computed(() => {
       if (!hashed.value)
         return ''
+      // Fix issue with hashId code
       if (isNeedOpenHash() === false)
         return ''
-      return tokenContext.hashId.value
+      // 生产环境或其他环境优先用 antd hashId，缺失时回退到 useCacheToken 的 nativeHashId
+      return tokenContext.hashId.value || nativeHashId.value
     })
 
     watchEffect(() => {
       dayjs.locale(config.value.locale?.locale || 'zh-cn')
     })
 
-    const contextValue = reactive({
+    const proConfigContextValue = reactive({
       get intl() {
-        return baseProvideValue.value.intl
+        return proProvideValue.value.intl
       },
       get valueTypeMap() {
-        return props.valueTypeMap || baseProvideValue.value.valueTypeMap
+        return props.valueTypeMap || proProvideValue.value.valueTypeMap
       },
       get token() {
-        return {
-          ...(baseProvideValue.value.token || {}),
-          proComponentsCls: proComponentsCls.value,
-        } as ProAliasToken
+        return finalToken.value
       },
       get hashed() {
         return hashed.value
@@ -280,15 +306,15 @@ const ConfigProviderContainer = defineComponent({
         return hashId.value
       },
       get dark() {
-        return baseProvideValue.value.dark
+        return proProvideValue.value.dark
       },
       get prefixCls() {
         return props.prefixCls
       },
     }) as ConfigContextPropsType
 
-    provide(ProProviderKey, contextValue)
-    provide(ProConfigKey, contextValue as any)
+    provide(ProProviderKey, proConfigContextValue)
+    provide(ProConfigKey, proConfigContextValue as any)
     provide(ProProviderSWRVContextKey, scopedSWRVContext)
 
     onUnmounted(() => {
@@ -305,7 +331,7 @@ const ConfigProviderContainer = defineComponent({
     return () => (
       <ConfigProvider theme={themeConfig.value}>
         <ThemeProvider
-          customToken={contextValue.token as unknown as Record<string, unknown>}
+          customToken={proConfigContextValue.token as unknown as Record<string, unknown>}
           prefixCls={config.value.getPrefixCls()}
         >
           {slots.default?.()}
@@ -327,54 +353,52 @@ export interface ProConfigProviderProps {
   intl?: IntlType
 }
 
-export const ProConfigProvider = defineComponent({
+export const ProConfigProvider = defineComponent<ProConfigProviderProps>({
   name: 'ProConfigProvider',
-  props: {
-    autoClearCache: { type: Boolean, default: false },
-    needDeps: { type: Boolean, default: false },
-    valueTypeMap: { type: Object as PropType<Record<string, ProRenderFieldPropsType>>, default: undefined },
-    token: { type: Object as PropType<DeepPartial<ProAliasToken>>, default: undefined },
-    dark: { type: Boolean, default: undefined },
-    hashed: { type: Boolean, default: undefined },
-    prefixCls: { type: String, default: undefined },
-    intl: { type: Object as PropType<IntlType>, default: undefined },
-  },
+  props: ['autoClearCache', 'needDeps', 'valueTypeMap', 'token', 'dark', 'hashed', 'prefixCls', 'intl'],
   setup(props, { slots }) {
     const parentProvide = useProProviderContext()
     const config = useConfig()
+    const instance = getCurrentInstance()
 
-    const isNullProvide = computed(() =>
-      props.needDeps
-      && parentProvide.hashId !== undefined
-      && props.valueTypeMap === undefined
-      && props.token === undefined
-      && props.dark === undefined
-      && props.hashed === undefined
-      && props.prefixCls === undefined
-      && props.intl === undefined,
-    )
+    // 当开启 needDeps 且外层已存在有效的 ProProvider 时，当前层不必再套一次 Provider。
+    // 只有在"仅传了 needDeps（其他所有可配置项都没传）"时才允许透传，
+    // 防止外层错过 token/intl/dark/prefixCls 等显式配置。
+    // 注意：Vue 中 children 走 slots、不在 vnode.props 里，故 ALLOWED 不含 'children'。
+    const PASSTHROUGH_ALLOWED_KEYS: readonly string[] = ['needDeps']
 
-    const mergedTheme = computed(() => {
+    const mergeAlgorithm = () => {
       const isDark = props.dark ?? parentProvide.dark
-      const currentTheme = config.value.theme || {}
-      const algorithm = isDark
-        ? ([currentTheme.algorithm, antdTheme.darkAlgorithm].flat(1).filter(Boolean) as NonNullable<ThemeConfig['algorithm']>[])
-        : currentTheme.algorithm
 
-      return omitUndefined({
-        ...currentTheme,
-        algorithm,
-      }) as ThemeConfig | undefined
-    })
+      if (isDark) {
+        return [config.value.theme?.algorithm, antdTheme.darkAlgorithm]
+          .flat(1)
+          .filter(Boolean) as NonNullable<ThemeConfig['algorithm']>[]
+      }
+      return config.value.theme?.algorithm
+    }
 
     return () => {
-      if (isNullProvide.value)
+      // vnode.props 反映父级实际传入的 prop（未填默认值），等价于 React 的 Object.keys(props)
+      const passedKeys = Object.keys(instance?.vnode.props || {})
+      const isNullProvide
+        = props.needDeps
+          && parentProvide.hashId !== undefined
+          && passedKeys.every(k => PASSTHROUGH_ALLOWED_KEYS.includes(k))
+
+      if (isNullProvide)
         return slots.default?.()
+
+      // 自动注入 antd 的配置
+      const mergedTheme = omitUndefined({
+        ...(config.value.theme || {}),
+        algorithm: mergeAlgorithm(),
+      }) as ThemeConfig | undefined
 
       return (
         <ConfigProvider
           locale={(config.value.locale || zhCNLocale) as ConfigProviderProps['locale']}
-          theme={mergedTheme.value as ConfigProviderProps['theme']}
+          theme={mergedTheme as ConfigProviderProps['theme']}
         >
           <ConfigProviderContainer
             autoClearCache={props.autoClearCache}
@@ -391,13 +415,15 @@ export const ProConfigProvider = defineComponent({
       )
     }
   },
-}) as DefineComponent<ProConfigProviderProps>
+})
 
-const ProProviderProvider = defineComponent({
+interface ProProviderProviderProps {
+  value: ConfigContextPropsType
+}
+
+const ProProviderProvider = defineComponent<ProProviderProviderProps>({
   name: 'ProProvider',
-  props: {
-    value: { type: Object as PropType<ConfigContextPropsType>, required: true },
-  },
+  props: ['value'],
   setup(props, { slots }) {
     provide(ProProviderKey, props.value)
     provide(ProConfigKey, props.value as any)

@@ -132,7 +132,7 @@ export function useStyle(
       theme: theme.value as any,
       token: mergedToken.value,
       path: [componentName, styleKey.value, styleVersion.value].filter(Boolean).map(String),
-      nonce: config.value.csp?.nonce ? () => config.value.csp!.nonce! : undefined,
+      nonce: config.value.csp?.nonce,
       layer: {
         name: 'antd-pro',
       },

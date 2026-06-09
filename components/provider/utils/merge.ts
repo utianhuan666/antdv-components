@@ -5,7 +5,9 @@ export function shallowMergeOneLevel<T extends Record<string, any>>(...sources: 
     if (!source)
       continue
 
-    for (const key of Object.keys(source)) {
+    for (const key in source) {
+      if (!Object.prototype.hasOwnProperty.call(source, key))
+        continue
       const prev = result[key]
       const next = source[key]
       const canMerge
