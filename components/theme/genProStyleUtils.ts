@@ -1,4 +1,3 @@
-import type { CSSInterpolation } from '@antdv-next/cssinjs'
 import type { GetCompUnitless } from '@antdv-next/cssinjs/cssinjs-utils'
 import type { AliasToken } from 'antdv-next/dist/theme/interface/alias'
 import type { ComponentTokenMap } from 'antdv-next/dist/theme/interface/components'
@@ -6,12 +5,14 @@ import type { SeedToken } from 'antdv-next/dist/theme/interface/seeds'
 import { genStyleUtils } from '@antdv-next/cssinjs/cssinjs-utils'
 import { defaultIconPrefixCls, useConfig } from 'antdv-next/dist/config-provider/context'
 import { genCommonStyle, genIconStyle, genLinkStyle } from 'antdv-next/dist/style/index'
-import useToken, { unitless } from 'antdv-next/dist/theme/useToken'
+import useLocalToken, { unitless } from 'antdv-next/dist/theme/useToken'
 import { computed } from 'vue'
 import './augmentComponentTokenMap'
 
-const getProCompUnitless = (() => unitless) as GetCompUnitless<ComponentTokenMap, AliasToken>
-
+/**
+ * Same pipeline as `antdv-next/theme/util/genStyleUtils` (`genStyleHooks` + component tokens),
+ * with styles registered under the `antd-pro` layer.
+ */
 export const {
   genStyleHooks: genProStyleHooks,
   genComponentStyleHook: genProComponentStyleHook,
@@ -28,7 +29,7 @@ export const {
     })
   },
   useToken: () => {
-    const [theme, realToken, hashId, token, cssVar, zeroRuntime] = useToken()
+    const [theme, realToken, hashId, token, cssVar, zeroRuntime] = useLocalToken()
     return {
       theme,
       realToken,
@@ -42,16 +43,16 @@ export const {
     const config = useConfig()
     return computed(() => config.value?.csp ?? {})
   },
-  getResetStyles: (token, config): CSSInterpolation => {
+  getResetStyles: (token, config) => {
     const linkStyle = genLinkStyle(token)
     return [
       linkStyle,
       { '&': linkStyle },
       genIconStyle(config?.prefix.value?.iconPrefixCls ?? defaultIconPrefixCls),
-    ] as CSSInterpolation
+    ]
   },
   getCommonStyle: genCommonStyle,
-  getCompUnitless: getProCompUnitless,
+  getCompUnitless: (() => unitless) as GetCompUnitless<ComponentTokenMap, AliasToken>,
   layer: {
     name: 'antd-pro',
   },
