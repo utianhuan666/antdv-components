@@ -11,7 +11,7 @@ const ResultPageSkeleton = defineComponent<ResultPageSkeletonProps>({
   name: 'ResultPageSkeleton',
   props: ['active', 'pageHeader'],
   setup(rawProps) {
-    const props = rawProps as ResultPageSkeletonProps
+    const props = rawProps
 
     return () => (
       <div
