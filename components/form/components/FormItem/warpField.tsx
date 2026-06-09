@@ -3,7 +3,7 @@ import type { ProFieldValueTypeInput } from '../../../utils/typing'
 import type { ProFormFieldItemProps } from '../../typing'
 import { computed, defineComponent, h } from 'vue'
 import { useFieldContext } from '../../FieldContext'
-import { renderFormItem, renderProField, useRegisterFormItem } from '../_util'
+import { renderFieldFormItem, renderProField, useRegisterFormItem } from '../_util'
 
 export function createField<P extends Record<string, any>>(
   Field: Component,
@@ -29,7 +29,12 @@ export function defineProFormField(
     setup(props: ProFormFieldItemProps, { attrs, slots }) {
       const fieldContext = useFieldContext()
       const mergedProps = computed(() => ({ ...attrs, ...props }) as ProFormFieldItemProps)
-      useRegisterFormItem(() => mergedProps.value)
+      // 注册到 form 的应是「解析后的」valueType（如 dateTime/digit），而非用户透传的 valueType
+      // （通常 undefined）。否则 conversionMomentValue/transform 收到错误的 valueType（'text'）。
+      const resolvedValueType = computed(() =>
+        typeof valueType === 'function' ? valueType(mergedProps.value) : valueType,
+      )
+      useRegisterFormItem(() => ({ ...mergedProps.value, valueType: resolvedValueType.value }))
       return () => {
         const current = mergedProps.value
         const child = slots.default?.()
@@ -37,7 +42,7 @@ export function defineProFormField(
         const dom = child?.length
           ? child
           : renderProField(current, resolvedValueType, extraFieldProps?.(current), fieldContext)
-        return renderFormItem(current, dom)
+        return renderFieldFormItem(current, dom, resolvedValueType, fieldContext)
       }
     },
   }) as any

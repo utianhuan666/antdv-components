@@ -8,8 +8,9 @@ import { get } from '@v-c/util'
 import { FormItem, Space, SpaceCompact } from 'antdv-next'
 import { isVNode, watchEffect } from 'vue'
 import { ProField } from '../../field'
-import { runFunction } from '../../utils'
+import { isDropdownValueType, runFunction } from '../../utils'
 import { useFieldContext } from '../FieldContext'
+import { LightWrapper } from '../layouts/LightFilter/LightWrapper'
 
 export function omitKeys<T extends Record<string, any>>(target: T | undefined, keys: string[]) {
   const next: Record<string, any> = {}
@@ -132,6 +133,48 @@ export function renderFormItem(
       {inner}
     </AnyFormItem>
   )
+}
+
+/**
+ * 在 renderFormItem 基础上处理 light 模式：当 proFieldProps.light === true 且非下拉类
+ * valueType 时，由 Form.Item 注入 value/onChange，LightWrapper 作为直接 children 承接，
+ * 再把 Field 渲染在 Popover 内部（mirror React warpField 的 isLightMode 分支）。
+ */
+export function renderFieldFormItem(
+  props: ProFormFieldItemProps,
+  child: VNodeChild,
+  valueType: ProFieldValueTypeInput,
+  fieldContext: Record<string, any> = {},
+) {
+  const isLightMode = (props.proFieldProps as any)?.light === true && !(props as any).customLightMode
+  const valueTypeStr = typeof valueType === 'string' ? valueType : 'text'
+  if (isLightMode && !isDropdownValueType(valueTypeStr)) {
+    const valuePropName = props.valuePropName || 'value'
+    const lightFieldProps = mergeFieldProps(props, {}, fieldContext)
+    const lightValue = getFieldValue(props, lightFieldProps, fieldContext)
+    const lightWrapped = (
+      <LightWrapper
+        label={props.label}
+        valuePropName={valuePropName}
+        variant={props.variant ?? props.fieldProps?.variant}
+        value={lightValue}
+        valueType={valueTypeStr}
+        placement={props.placement}
+        labelFormatter={props.lightFilterLabelFormatter}
+        allowClear={props.allowClear}
+        footerRender={props.footerRender}
+        onChange={(nextValue: any) => {
+          if (props.name !== undefined)
+            fieldContext.setFieldValue?.(props.name, nextValue)
+        }}
+      >
+        {child}
+      </LightWrapper>
+    )
+    // light 模式下 Form.Item 不展示 label/tooltip，由 FieldLabel 承担
+    return renderFormItem({ ...props, label: undefined, tooltip: false } as ProFormFieldItemProps, lightWrapped)
+  }
+  return renderFormItem(props, child)
 }
 
 export function useRegisterFormItem(getProps: () => ProFormFieldItemProps) {

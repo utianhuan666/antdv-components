@@ -37,7 +37,7 @@ export type ProListMeta<T> = Pick<
   | 'formItemProps'
   | 'formItemRender'
 > & {
-  key?: PropertyKey
+  key?: string | number
 }
 
 type ProListMetaAction<T> = ProListMeta<T>
@@ -90,7 +90,7 @@ export type ProListProps<
     itemRender?: ProListItemRender<RecordType>
   }
 
-export type Key = PropertyKey
+export type Key = string | number
 
 export type TriggerEventHandler<RecordType> = (record: RecordType) => void
 
@@ -254,7 +254,7 @@ const InternalProList = defineComponent<ProListProps>({
           rowSelection={rowSelection}
           search={search}
           options={options}
-          class={clsx(tableAttrs.class, props.className, listClassName.value)}
+          className={clsx(tableAttrs.class, props.className, listClassName.value)}
           columns={proTableColumns.value}
           rowKey={props.rowKey as any}
           tableViewRender={renderListTableView}

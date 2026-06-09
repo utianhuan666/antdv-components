@@ -2,7 +2,7 @@ import type { ProFieldValueTypeInput } from '../../../utils/typing'
 import type { ProFormFieldItemProps } from '../../typing'
 import { cloneVNode, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
-import { mergeFieldProps, renderFormItem, renderProField, useRegisterFormItem } from '../_util'
+import { mergeFieldProps, renderFieldFormItem, renderProField, useRegisterFormItem } from '../_util'
 
 export type ProFormFieldProps<
   T = any,
@@ -40,7 +40,7 @@ const ProFormField = defineComponent({
         }
       }
 
-      return renderFormItem(current, dom)
+      return renderFieldFormItem(current, dom, current.valueType || 'text', fieldContext)
     }
   },
 }) as any

@@ -382,7 +382,7 @@ describe('list', () => {
       { timeout: 5000 },
     )
     await clearAndType(overlayInput, 'test')
-    await userEvent.click(document.querySelector('.ant-pro-core-field-dropdown-footer .ant-btn-primary')!)
+    await userEvent.click(document.querySelector('.ant-popover-content button[data-type="confirm"]')!)
     await waitFor(() => {
       expect(document.querySelector('[title="test"]')).toBeTruthy()
     })
@@ -878,7 +878,7 @@ describe('list', () => {
       { timeout: 5000 },
     )
     await clearAndType(overlayInput, 'test')
-    await userEvent.click(document.querySelector('.ant-pro-core-field-dropdown-footer .ant-btn-primary')!)
+    await userEvent.click(document.querySelector('.ant-popover-content button[data-type="confirm"]')!)
     await waitFor(() => {
       expect(document.querySelector('[title="test"]')).toBeTruthy()
     })
