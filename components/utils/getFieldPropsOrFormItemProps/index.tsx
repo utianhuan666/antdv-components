@@ -1,7 +1,22 @@
+import type { FormInstance } from 'antdv-next'
 import { runFunction } from '../runFunction'
 
-export function getFieldPropsOrFormItemProps(fieldProps: any, form?: any, extraProps?: any): Record<string, any> & { onChange: any, colSize: number } {
-  if (form === undefined)
+/**
+ * 因为 fieldProps 支持了 function 所以新增了这个方法
+ *
+ * @param fieldProps
+ * @param form
+ */
+export function getFieldPropsOrFormItemProps(
+  fieldProps: any,
+  form?: FormInstance | null,
+  extraProps?: any,
+): Record<string, any> & {
+  onChange: any
+  colSize: number
+} {
+  if (form === undefined) {
     return fieldProps as any
+  }
   return runFunction(fieldProps, form, extraProps)
 }

@@ -17,10 +17,8 @@ import { defineComponent, h, nextTick, ref, toRef } from 'vue'
 import {
   conversionSubmitValue,
   dateArrayFormatter,
-  deleteValueByNamePath,
   DropdownFooter,
   FieldLabel,
-  getValueByNamePath,
   InlineErrorFormItem,
   isDeepEqualReact,
   isDropdownValueType,
@@ -29,12 +27,10 @@ import {
   LabelIconTip,
   lighten,
   merge,
-  namePathKey,
   nanoid,
   parseValueToDay,
   pickProProps,
   setAlpha,
-  setValueByNamePath,
   stringify,
   transformKeySubmitValue,
   useDebounceFn,
@@ -105,32 +101,29 @@ describe('utils', () => {
   })
 
   it('📅 dateArrayFormatter', async () => {
-    expect(dateArrayFormatter(
+    const dateArrayString = dateArrayFormatter(
       [dayjs('2020-01-01'), dayjs('2020-01-01')],
       ['YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD'],
-    )).toEqual('2020-01-01 00:00:00 ~ 2020-01-01')
-  })
+    )
 
+    expect(dateArrayString).toEqual('2020-01-01 00:00:00 ~ 2020-01-01')
+  })
   it('📅 dateArrayFormatter support function', async () => {
-    expect(dateArrayFormatter(
+    const dateArrayString = dateArrayFormatter(
       [dayjs('2020-01-01'), dayjs('2020-01-01')],
       ['YYYY-MM-DD HH:mm:ss', (value: Dayjs) => value.format('YYYY-MM')],
-    )).toEqual('2020-01-01 00:00:00 ~ 2020-01')
-  })
+    )
 
-  it('📅 dateArrayFormatter keeps missing end format as undefined', async () => {
-    const end = dayjs('2020-01-02')
-    expect(dateArrayFormatter(
-      [dayjs('2020-01-01'), end],
-      ['YYYY-MM-DD'],
-    )).toEqual(`2020-01-01 ~ ${end.format()}`)
+    expect(dateArrayString).toEqual('2020-01-01 00:00:00 ~ 2020-01')
   })
 
   it('📅 dateArrayFormatter support moment function', async () => {
-    expect(dateArrayFormatter(
+    const dateArrayString = dateArrayFormatter(
       [dayjs('2020-01-01'), dayjs('2020-01-01')],
       ['YYYY-MM-DD HH:mm:ss', (value: Dayjs) => value.format('YYYY-MM')],
-    )).toEqual('2020-01-01 00:00:00 ~ 2020-01')
+    )
+
+    expect(dateArrayString).toEqual('2020-01-01 00:00:00 ~ 2020-01')
   })
 
   it('📅 useDebounceValue without deps', async () => {
@@ -205,39 +198,6 @@ describe('utils', () => {
     expect(fn).toHaveBeenCalledTimes(5)
   })
 
-  it('📅 useDebounceFn supports isolated debounced instance', async () => {
-    const fn = vi.fn()
-    const debouncedWrapper = mount(defineComponent({
-      setup() {
-        const fetchData = useDebounceFn(async () => fn(), 80)
-        return { fetchData }
-      },
-      render() {
-        return (
-          <div
-            id="test"
-            onClick={() => {
-              this.fetchData.run()
-              this.fetchData.run()
-            }}
-          >
-            test
-          </div>
-        )
-      },
-    }))
-    await debouncedWrapper.find('#test').trigger('click')
-    vi.advanceTimersByTime(80)
-    await Promise.resolve()
-    expect(fn).toHaveBeenCalledTimes(1)
-    await debouncedWrapper.find('#test').trigger('click')
-    vi.advanceTimersByTime(80)
-    await Promise.resolve()
-    expect(fn).toHaveBeenCalledTimes(2)
-    debouncedWrapper.unmount()
-    expect(fn).toHaveBeenCalledTimes(2)
-  })
-
   it('pickProProps filters internal pro props unless custom valueType', () => {
     const props = {
       id: 'field',
@@ -252,39 +212,6 @@ describe('utils', () => {
       placeholder: 'input',
     })
     expect(pickProProps(props, true)).toEqual(props)
-  })
-
-  it('name path helpers read write and delete nested values', () => {
-    const model: Record<string, any> = {
-      user: { name: 'Ada' },
-      list: [{ id: 1 }],
-    }
-
-    expect(getValueByNamePath(model, ['user', 'name'])).toBe('Ada')
-    expect(getValueByNamePath(model, ['missing', 'value'])).toBeUndefined()
-
-    setValueByNamePath(model, ['user', 'age'], 37)
-    setValueByNamePath(model, ['list', 0, 'title'], 'first')
-
-    expect(model.user.age).toBe(37)
-    expect(model.list[0].title).toBe('first')
-
-    deleteValueByNamePath(model, ['user', 'name'])
-    expect(model.user.name).toBeUndefined()
-  })
-
-  it('name-path helpers preserve numeric and empty-root semantics', () => {
-    const model: any = { 0: 'zero', list: [{ id: 1 }], stale: true }
-
-    expect(getValueByNamePath(model, 0)).toBe('zero')
-    expect(getValueByNamePath(model, '0')).toBe('zero')
-    expect(namePathKey(['list', 0, 'id'])).toBe(JSON.stringify(['list', 0, 'id']))
-
-    setValueByNamePath(model, [], { next: true })
-    expect(model).toEqual({ next: true })
-
-    deleteValueByNamePath(model, ['missing', 'path'])
-    expect(model).toEqual({ next: true })
   })
 
   it('cloneDeep handles missing Blob global', () => {

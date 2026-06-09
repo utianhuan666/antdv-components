@@ -9,11 +9,11 @@ import type { CheckCardProps } from '../card'
 import type { ActionType } from '../table'
 import type { ItemProps } from './Item'
 import type { ListProps } from './ProListBase'
-import { clsx } from '@v-c/util'
+import { clsx, get } from '@v-c/util'
 import { computed, defineComponent, isVNode, ref } from 'vue'
 import { useProProviderContext } from '../provider'
 import { useProPrefixCls } from '../provider/useProPrefixCls'
-import { getValueByNamePath, useRefFunction } from '../utils'
+import { useRefFunction } from '../utils'
 import useLazyKVMap from '../utils/useLazyKVMap'
 import usePagination from '../utils/usePagination'
 import useSelection from '../utils/useSelection'
@@ -281,7 +281,7 @@ const ListViewImpl = defineComponent<ListViewProps<Record<string, any>>>({
       listSlotColumns.value.forEach((column) => {
         const dataIndex = (column.dataIndex || column.listSlot || column.key) as any
         const rawData = Array.isArray(dataIndex)
-          ? getValueByNamePath(item, dataIndex)
+          ? get(item, dataIndex)
           : item[dataIndex]
 
         const customRender = (column as any).customRender

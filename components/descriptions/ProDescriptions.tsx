@@ -1,13 +1,14 @@
 import type { DescriptionsItemType } from 'antdv-next'
 import type { ProDescriptionsActionType, ProDescriptionsProps } from './typing'
 import type { ProDescriptionsRequestResult } from './useFetchData'
+import { get } from '@v-c/util'
 import { Descriptions, Space } from 'antdv-next'
 import { computed, defineComponent, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import { ProForm } from '../form'
 import { ProConfigProvider } from '../provider'
 import { useProPrefixCls } from '../provider/useProPrefixCls'
 import ProSkeleton from '../skeleton'
-import { ErrorBoundary, getValueByNamePath, LabelIconTip, stableStringify, useEditableMap } from '../utils'
+import { ErrorBoundary, LabelIconTip, stableStringify, useEditableMap } from '../utils'
 import { schemaToDescriptionsItem } from './schemaToDescriptionsItem'
 import useFetchData, { setActionRef } from './useFetchData'
 
@@ -138,7 +139,7 @@ const ProDescriptionsImpl = defineComponent({
         ? column.formItemProps(undefined as any, { rowKey: recordKey })
         : column?.formItemProps
       const rules = formItemProps?.rules || []
-      const value = getValueByNamePath(editableDataSource.value, recordKey)
+      const value = get(editableDataSource.value, Array.isArray(recordKey) ? recordKey : [recordKey])
       const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
       const invalid = rules.some((rule: any) => rule?.required && empty)
       if (invalid)

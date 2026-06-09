@@ -1,17 +1,9 @@
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
-import quarterOfYear from 'dayjs/plugin/quarterOfYear'
-import weekOfYear from 'dayjs/plugin/weekOfYear'
-import weekYear from 'dayjs/plugin/weekYear'
 import { isNil } from '../isNil'
 
 dayjs.extend(customParseFormat)
-dayjs.extend(advancedFormat)
-dayjs.extend(weekOfYear)
-dayjs.extend(weekYear)
-dayjs.extend(quarterOfYear)
 
 type DateValue = Dayjs | Dayjs[] | string | string[] | number | number[] | Date
 
@@ -78,6 +70,15 @@ export function parseValueToDay(value: DateValue, formatter?: string): Dayjs | D
       return normalized.isValid() ? normalized : parsed
     }
     return parsed.isValid() ? parsed : null
+  }
+
+  if (value && typeof value === 'object') {
+    const ms = typeof (value as any).valueOf === 'function' ? Number((value as any).valueOf()) : Number.NaN
+    if (Number.isFinite(ms) && ((value as any).$isDayjsObject === true || hasOwn(value as object, '$d'))) {
+      const fromMs = dayjs(ms)
+      if (fromMs.isValid())
+        return fromMs
+    }
   }
 
   const fallback = formatter ? dayjs(value as any, formatter) : dayjs(value as any)

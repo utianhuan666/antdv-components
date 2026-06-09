@@ -1,5 +1,11 @@
+import type { ComputedRef } from 'vue'
 import { computed, onMounted, onScopeDispose, ref, watchEffect } from 'vue'
 
+/**
+ * 与 `@umijs/use-params@1.0.9` 的 `useUrlSearchParams` 行为一致（内联实现，便于去掉该依赖）。
+ *
+ * @see https://github.com/chenshuai2144/use-params
+ */
 function setQueryToCurrentUrl(params: Record<string, unknown>): URL {
   const href = typeof window !== 'undefined' && window.location ? window.location.href : 'http://localhost/'
   const url = new URL(href)
@@ -31,7 +37,10 @@ function setQueryToCurrentUrl(params: Record<string, unknown>): URL {
 export function useUrlSearchParams(
   initial: Record<string, string | number> = {},
   config: { disabled?: boolean } = { disabled: false },
-) {
+): [
+  ComputedRef<Record<string, string | number | boolean | string[]>>,
+  (newParams: Record<string, unknown>) => void,
+] {
   const version = ref(0)
   const params = computed(() => {
     void version.value
@@ -87,5 +96,5 @@ export function useUrlSearchParams(
     removePopStateListener()
   })
 
-  return [params, redirectToNewSearchParams] as const
+  return [params, redirectToNewSearchParams]
 }

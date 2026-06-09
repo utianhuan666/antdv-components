@@ -21,7 +21,7 @@ function readDependencies(dependencies: any[] | undefined): any[] {
   return (dependencies || []).map(readDependency)
 }
 
-function cloneComparable<T>(value: T, seen = new WeakMap<object, any>()): T {
+export function cloneComparable<T>(value: T, seen = new WeakMap<object, any>()): T {
   const rawValue = isRef(value) ? value.value : toRaw(value as any)
   if (rawValue === null || typeof rawValue !== 'object')
     return rawValue

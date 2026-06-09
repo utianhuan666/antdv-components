@@ -51,13 +51,6 @@ export { isImg } from './isImg'
 export { isNil } from './isNil'
 export { isUrl } from './isUrl'
 export { merge } from './merge'
-export {
-  deleteValueByNamePath,
-  getValueByNamePath,
-  namePathKey,
-  normalizeNamePath,
-  setValueByNamePath,
-} from './namePath'
 export { nanoid } from './nanoid'
 export { omitBoolean } from './omitBoolean'
 export { omitUndefined } from './omitUndefined'

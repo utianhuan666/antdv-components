@@ -1,10 +1,11 @@
 import type { ProCoreActionType, UseEditableMapUtilType } from '../utils'
 import type { ProDescriptionsColumn, ProFieldValueTypeInput } from './typing'
 import { CheckOutlined, CloseOutlined } from '@antdv-next/icons'
+import { get } from '@v-c/util'
 import { defineComponent } from 'vue'
 import { ProField } from '../field'
 import { ProFormField } from '../form'
-import { genCopyable, getFieldPropsOrFormItemProps, getValueByNamePath, InlineErrorFormItem } from '../utils'
+import { genCopyable, getFieldPropsOrFormItemProps, InlineErrorFormItem } from '../utils'
 
 const AnyInlineErrorFormItem = InlineErrorFormItem as any
 const AnyProField = ProField as any
@@ -56,7 +57,7 @@ export const FieldRender = defineComponent({
     }
 
     function renderReadField() {
-      const rawText = getValueByNamePath(props.entity, props.dataIndex as any)
+      const rawText = get(props.entity, (Array.isArray(props.dataIndex) ? props.dataIndex : [props.dataIndex]) as any)
       const fieldProps = getFieldPropsOrFormItemProps(
         props.fieldProps,
         undefined,
@@ -146,7 +147,7 @@ export const FieldRender = defineComponent({
                     recordKey,
                     record: props.form?.getFieldValue
                       ? props.form.getFieldValue([props.dataIndex as any].flat(1))
-                      : getValueByNamePath(props.entity, props.dataIndex as any),
+                      : get(props.entity, (Array.isArray(props.dataIndex) ? props.dataIndex : [props.dataIndex]) as any),
                     defaultRender,
                     type: 'descriptions',
                   },

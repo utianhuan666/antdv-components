@@ -1,6 +1,7 @@
 import type { CSSProperties, SetupContext, Slots, VNodeChild } from 'vue'
 import type { ProFieldValueEnumType, ProSchemaValueEnumMap } from '../typing'
 import { Badge, Space } from 'antdv-next'
+import { Fragment } from 'vue'
 
 function getType(obj: any) {
   const type = Object.prototype.toString.call(obj).match(/^\[object (.*)\]$/)?.[1]?.toLowerCase()
@@ -78,7 +79,7 @@ export function proFieldParsingText(text: string | number | (string | number)[],
     color?: string
   }
   if (!domText)
-    return (text as any)?.label || text
+    return <Fragment key={key}>{(text as any)?.label || text}</Fragment>
 
   const { status, color } = domText
   const Status = TableStatus[status || 'Init']
@@ -86,5 +87,5 @@ export function proFieldParsingText(text: string | number | (string | number)[],
     return <Status key={key}>{domText.text}</Status>
   if (color)
     return <ProFieldBadgeColor key={key} color={color}>{domText.text}</ProFieldBadgeColor>
-  return <>{domText.text || (domText as any as VNodeChild)}</>
+  return <Fragment key={key}>{domText.text || (domText as any as VNodeChild)}</Fragment>
 }

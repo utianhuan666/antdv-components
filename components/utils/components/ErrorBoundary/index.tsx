@@ -5,14 +5,16 @@ import { defineComponent, onErrorCaptured, ref } from 'vue'
 export const ErrorBoundary = defineComponent({
   name: 'ProErrorBoundary',
   setup(_, { slots }) {
+    const hasError = ref(false)
     const errorInfo = ref('')
     onErrorCaptured((error) => {
       console.warn('ErrorBoundary caught an error', error)
+      hasError.value = true
       errorInfo.value = error instanceof Error ? error.message : String(error)
       return false
     })
     return (): VNodeChild => {
-      if (errorInfo.value) {
+      if (hasError.value) {
         return (
           <Result
             status="error"

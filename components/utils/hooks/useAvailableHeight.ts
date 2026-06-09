@@ -16,12 +16,29 @@ function getNearestBottomInset(node: HTMLElement): number {
 }
 
 export interface UseAvailableHeightOptions {
+  /**
+   * 命中此媒体查询时停用测量、把高度置为 `null`，让外部 CSS 接管。
+   * 典型场景：响应式断点下从「左右双栏定高」切换到「上下堆叠 height:auto」。
+   */
   disableQuery?: string
 }
 
+/**
+ * 计算元素顶部到视口底部的可用高度。
+ *
+ * 用于 PageContainer 内的「左预览右配置 / 左树右表 / 单卡片填满」类布局：
+ * 改成实测 `getBoundingClientRect().top` 一次解决各级偏移。
+ *
+ * 监听 `window resize`、`ResizeObserver(parent)`、`MediaQueryList change`。
+ *
+ * @example
+ * const [wrapperRef, height] = useAvailableHeight({ disableQuery: '(max-width: 1400px)' })
+ * // template: <div ref="wrapperRef" :style="height ? { height: `${height}px` } : undefined">...</div>
+ */
 export function useAvailableHeight<T extends HTMLElement = HTMLDivElement>(
   options: UseAvailableHeightOptions = {},
 ): [Ref<T | null>, Ref<number | null>] {
+  const { disableQuery } = options
   const nodeRef = ref(null) as Ref<T | null>
   const height = ref<number | null>(null)
   let cleanup: (() => void) | undefined
@@ -30,7 +47,7 @@ export function useAvailableHeight<T extends HTMLElement = HTMLDivElement>(
     const node = nodeRef.value
     if (!node)
       return
-    const mql = options.disableQuery ? window.matchMedia(options.disableQuery) : null
+    const mql = disableQuery ? window.matchMedia(disableQuery) : null
     const measure = () => {
       if (mql?.matches) {
         height.value = null
@@ -38,7 +55,8 @@ export function useAvailableHeight<T extends HTMLElement = HTMLDivElement>(
       }
       const top = node.getBoundingClientRect().top
       const viewportHeight = document.documentElement.clientHeight || window.innerHeight
-      height.value = Math.max(0, Math.floor(viewportHeight - top - getNearestBottomInset(node)))
+      const bottomInset = getNearestBottomInset(node)
+      height.value = Math.max(0, Math.floor(viewportHeight - top - bottomInset))
     }
     measure()
     window.addEventListener('resize', measure)

@@ -1,4 +1,5 @@
 import type { VNodeChild } from 'vue'
+import type { LightFilterFooterRender } from '../../../form/typing'
 import { clsx } from '@v-c/util'
 import { Button } from 'antdv-next'
 import { defineComponent } from 'vue'
@@ -12,7 +13,7 @@ export interface DropdownFooterProps {
   onClear?: OnClick
   onConfirm?: OnClick
   disabled?: boolean
-  footerRender?: ((onConfirm?: OnClick, onClear?: OnClick) => VNodeChild | false) | false
+  footerRender?: LightFilterFooterRender
   children?: VNodeChild
 }
 

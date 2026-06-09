@@ -1,4 +1,4 @@
-const formItemPropsList = [
+const antdFormItemPropsList = [
   'colon',
   'dependencies',
   'extra',
@@ -33,7 +33,7 @@ const formItemPropsList = [
 
 export function pickProFormItemProps(props: Record<string, any>) {
   const attrs = {} as Record<string, any>
-  formItemPropsList.forEach((key) => {
+  antdFormItemPropsList.forEach((key) => {
     if (props?.[key] !== undefined)
       attrs[key] = props[key]
   })

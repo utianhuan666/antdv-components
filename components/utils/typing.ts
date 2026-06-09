@@ -1,5 +1,6 @@
 import type { AvatarProps, CascaderProps, CheckboxProps, ColorPickerProps, DatePickerProps, DividerProps, FormInstance, FormItemProps, ImageProps, InputNumberProps, InputPasswordProps, InputProps, PopoverProps, ProgressProps, RadioProps, RangePickerProps, RateProps, SegmentedProps, SelectProps, SliderProps, SpaceProps, SwitchProps, TextAreaProps, TimeRangePickerProps, TreeSelectProps } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
+import type { ProSchemaValueEnumType } from '../provider'
 import type { UseEditableUtilType } from './useEditableArray'
 
 export type ProFieldTextType
@@ -10,54 +11,7 @@ export type ProFieldTextType
     | Record<string, any>
     | VNodeChild
 
-export type ProFieldValueType
-  = | 'text'
-    | 'password'
-    | 'money'
-    | 'index'
-    | 'indexBorder'
-    | 'option'
-    | 'textarea'
-    | 'date'
-    | 'dateWeek'
-    | 'dateMonth'
-    | 'dateQuarter'
-    | 'dateYear'
-    | 'dateTime'
-    | 'fromNow'
-    | 'dateRange'
-    | 'dateTimeRange'
-    | 'dateWeekRange'
-    | 'dateMonthRange'
-    | 'dateQuarterRange'
-    | 'dateYearRange'
-    | 'time'
-    | 'timeRange'
-    | 'select'
-    | 'checkbox'
-    | 'rate'
-    | 'slider'
-    | 'radio'
-    | 'radioButton'
-    | 'progress'
-    | 'percent'
-    | 'digit'
-    | 'digitRange'
-    | 'second'
-    | 'code'
-    | 'jsonCode'
-    | 'avatar'
-    | 'switch'
-    | 'image'
-    | 'cascader'
-    | 'treeSelect'
-    | 'color'
-    | 'segmented'
-    | 'group'
-    | 'formList'
-    | 'formSet'
-    | 'divider'
-    | 'dependency'
+export type ProFieldValueType = keyof ProFieldValueTypeWithFieldProps
 
 export const PRO_FIELD_SCHEMA_LAYOUT_VALUE_TYPES = [
   'group',
@@ -84,13 +38,6 @@ export interface ProFieldValueObjectType {
 }
 
 export type ProFieldValueTypeInput = ProFieldValueType | ProFieldValueObjectType
-
-export interface ProSchemaValueEnumType {
-  text: VNodeChild
-  status?: string
-  color?: string
-  disabled?: boolean
-}
 
 export type ProSchemaValueEnumMap = Map<
   string | number | boolean,

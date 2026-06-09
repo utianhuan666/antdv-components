@@ -1,6 +1,8 @@
 import type { SearchTransformKeyFn } from '../typing'
 import { get } from '@v-c/util'
 import { cloneDeep } from 'es-toolkit'
+import { set } from 'es-toolkit/compat'
+import { isVNode } from 'vue'
 import { isNil } from '../isNil'
 
 export interface DataFormatMapType {
@@ -12,6 +14,8 @@ export function isPlainObj(itemValue: any): boolean {
     return false
   if (itemValue === null)
     return true
+  if (isVNode(itemValue))
+    return false
   if (itemValue.constructor === RegExp)
     return false
   if (itemValue instanceof Map)
@@ -31,22 +35,6 @@ export function isPlainObj(itemValue: any): boolean {
 
 function parseDotPath(dotPath: string): (string | number)[] {
   return dotPath.split('.').map(segment => (/^\d+$/.test(segment) ? Number.parseInt(segment, 10) : segment))
-}
-
-function setPathValue(source: any, path: (string | number)[], value: any) {
-  if (!path.length)
-    return value
-  let cursor = source
-  path.slice(0, -1).forEach((key, index) => {
-    const nextKey = path[index + 1]
-    if (cursor[key] == null || typeof cursor[key] !== 'object')
-      cursor[key] = typeof nextKey === 'number' ? [] : {}
-    cursor = cursor[key]
-  })
-  const lastKey = path[path.length - 1]
-  if (lastKey !== undefined)
-    cursor[lastKey] = value
-  return source
 }
 
 function filterNilTransforms(
@@ -104,7 +92,7 @@ function processDotPathTransforms(result: any, dotPathTransforms: Record<string,
       }
     }
     else {
-      setPathValue(result, pathArray, transformed)
+      set(result, pathArray, transformed)
     }
   })
 }

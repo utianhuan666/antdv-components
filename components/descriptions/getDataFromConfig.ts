@@ -1,5 +1,5 @@
 import type { ProDescriptionsColumn } from './typing'
-import { getValueByNamePath } from '../utils'
+import { get } from '@v-c/util'
 
 export function getDataFromConfig(
   item: ProDescriptionsColumn,
@@ -7,5 +7,5 @@ export function getDataFromConfig(
 ) {
   if (item.dataIndex === undefined)
     return undefined
-  return getValueByNamePath(entity || {}, item.dataIndex as any)
+  return get(entity || {}, (Array.isArray(item.dataIndex) ? item.dataIndex : [item.dataIndex]) as any)
 }

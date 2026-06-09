@@ -1,10 +1,11 @@
+import type { GetRowKey, TableRowSelection } from 'antdv-next/dist/table/interface'
 import { Checkbox, Radio } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 
 type Key = string | number
 
 interface UseSelectionConfig<RecordType> {
-  getRowKey: (record: RecordType, index?: number) => Key
+  getRowKey: GetRowKey<RecordType>
   getRecordByKey: (key: Key) => RecordType | undefined
   prefixCls?: string
   data: RecordType[]
@@ -16,12 +17,7 @@ interface UseSelectionConfig<RecordType> {
 
 function useSelection<RecordType>(
   config: UseSelectionConfig<RecordType>,
-  rowSelection?: {
-    type?: 'checkbox' | 'radio'
-    selectedRowKeys?: Key[]
-    onChange?: (keys: Key[], rows: RecordType[], info: any) => void
-    onSelect?: (record: RecordType, selected: boolean, rows: RecordType[], nativeEvent: any) => void
-  },
+  rowSelection?: TableRowSelection<RecordType>,
 ) {
   const controlledKeys = () => rowSelection?.selectedRowKeys
   const innerKeys = ref<Key[]>(controlledKeys() || [])
@@ -40,8 +36,8 @@ function useSelection<RecordType>(
     if (rowSelection?.type === 'radio') {
       const nextKeys = [key]
       const selectedRows = [record]
-      rowSelection?.onChange?.(nextKeys, selectedRows, { type: 'single', selectedRows, selectedRowKeys: nextKeys })
-      rowSelection?.onSelect?.(record, checked, selectedRows, {})
+      rowSelection?.onChange?.(nextKeys, selectedRows, { type: 'single', selectedRows, selectedRowKeys: nextKeys } as any)
+      rowSelection?.onSelect?.(record, checked, selectedRows, {} as any)
       if (!controlledKeys())
         innerKeys.value = nextKeys
       return
@@ -53,8 +49,8 @@ function useSelection<RecordType>(
       next.delete(key)
     const nextKeys = Array.from(next)
     const selectedRows = config.data.filter((item, idx) => next.has(config.getRowKey(item, idx)))
-    rowSelection?.onChange?.(nextKeys, selectedRows, { type: 'multiple', selectedRows, selectedRowKeys: nextKeys })
-    rowSelection?.onSelect?.(record, checked, selectedRows, {})
+    rowSelection?.onChange?.(nextKeys, selectedRows, { type: 'multiple', selectedRows, selectedRowKeys: nextKeys } as any)
+    rowSelection?.onSelect?.(record, checked, config.data.filter((item, idx) => next.has(config.getRowKey(item, idx))), {} as any)
     if (!controlledKeys())
       innerKeys.value = nextKeys
   }

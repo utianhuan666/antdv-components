@@ -4,6 +4,7 @@ import { clsx, get } from '@v-c/util'
 import { FormItem, Popover } from 'antdv-next'
 import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { cloneVNode, defineComponent, isVNode, ref, watch } from 'vue'
+import { proTheme } from '../../../provider'
 import { useStyle } from './style'
 
 const AnyFormItem = FormItem as any
@@ -40,6 +41,7 @@ const InlineErrorFormItemPopover = defineComponent<InlineErrorFormItemPopoverPro
     const formItemCls = config.value.getPrefixCls('form-item')
     const formItemWithHelpCls = `${formItemCls}-with-help`
     const { wrapSSR, hashId } = useStyle(formItemWithHelpCls)
+    const { hashId: tokenHashId } = proTheme.useToken()
 
     watch(
       () => [props.inputProps.errors, props.inputProps.warnings, props.inputProps.validateStatus],
@@ -57,14 +59,14 @@ const InlineErrorFormItemPopover = defineComponent<InlineErrorFormItemPopoverPro
       const loading = props.inputProps.validateStatus === 'validating'
       const hasMessages = (messages.value.errors?.length ?? 0) + (messages.value.warnings?.length ?? 0) >= 1
       const content = (
-        <div class={clsx(formItemCls, hashId)} style={{ margin: 0, padding: 0 }}>
-          <div class={clsx(formItemWithHelpCls, hashId)}>
+        <div class={clsx(formItemCls, hashId, tokenHashId.value)} style={{ margin: 0, padding: 0 }}>
+          <div class={clsx(formItemWithHelpCls, hashId, tokenHashId.value)}>
             {loading ? <LoadingOutlined /> : null}
             {hasMessages
               ? (
                   <>
-                    {messages.value.errors?.map((error, index) => <div key={`error-${index}`} class="ant-form-item-explain-error">{error}</div>)}
-                    {messages.value.warnings?.map((warning, index) => <div key={`warning-${index}`} class="ant-form-item-explain-warning">{warning}</div>)}
+                    {messages.value.errors?.map((error, index) => <div key={`error-${index}`} class={clsx(`${formItemCls}-explain-error`, hashId)}>{error}</div>)}
+                    {messages.value.warnings?.map((warning, index) => <div key={`warning-${index}`} class={clsx(`${formItemCls}-explain-warning`, hashId)}>{warning}</div>)}
                   </>
                 )
               : props.errorList}
@@ -180,6 +182,7 @@ export const InlineErrorFormItem = defineComponent<InlineErrorFormItemProps>({
     return () => (
       <AnyFormItem
         {...attrs}
+        hasFeedback={false}
         shouldUpdate={shouldUpdate as any}
         style={{ ...FIX_INLINE_STYLE, ...((attrs as any).style || {}) }}
       >

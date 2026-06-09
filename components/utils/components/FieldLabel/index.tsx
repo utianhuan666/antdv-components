@@ -2,6 +2,7 @@ import type { SizeType } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
 import { CloseCircleFilled, DownOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
+import { useConfig } from 'antdv-next'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
@@ -54,6 +55,7 @@ export const FieldLabel = defineComponent<FieldLabelProps>({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps
+    const { componentSize } = useConfig()
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-core-field-label')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
@@ -88,7 +90,7 @@ export const FieldLabel = defineComponent<FieldLabelProps>({
       if (hasValue(value)) {
         const prefix = label
           ? (
-              <span onClick={() => props.onLabelClick?.()} class={`${prefixCls.value}-text`}>
+              <span onClick={() => props.onLabelClick?.()} class={clsx(`${prefixCls.value}-text`, hashId)}>
                 {label}
                 {': '}
               </span>
@@ -131,7 +133,7 @@ export const FieldLabel = defineComponent<FieldLabelProps>({
           class={clsx(
             prefixCls.value,
             hashId,
-            `${prefixCls.value}-${props.size ?? 'middle'}`,
+            `${prefixCls.value}-${props.size ?? componentSize.value ?? 'middle'}`,
             {
               [`${prefixCls.value}-${props.variant || 'borderless'}-active`]: active,
               [`${prefixCls.value}-active`]: active,
@@ -146,12 +148,12 @@ export const FieldLabel = defineComponent<FieldLabelProps>({
           onClick={() => props.onClick?.()}
         >
           {getTextByValue(props.label, props.value)}
-          {active && allowClear
+          {(props.value || props.value === 0) && allowClear
             ? (
                 <span
                   role="button"
                   title={intl.getMessage('form.lightFilter.clear', '清除')}
-                  class={`${prefixCls.value}-icon ${prefixCls.value}-close`}
+                  class={clsx(`${prefixCls.value}-icon`, hashId, `${prefixCls.value}-close`)}
                   onClick={(event: MouseEvent) => {
                     if (!disabled)
                       props.onClear?.()
@@ -164,7 +166,7 @@ export const FieldLabel = defineComponent<FieldLabelProps>({
               )
             : null}
           {props.downIcon !== false
-            ? (props.downIcon ?? <DownOutlined class={`${prefixCls.value}-icon ${prefixCls.value}-arrow`} />)
+            ? (props.downIcon ?? <DownOutlined class={clsx(`${prefixCls.value}-icon`, hashId, `${prefixCls.value}-arrow`)} />)
             : null}
         </span>,
       )

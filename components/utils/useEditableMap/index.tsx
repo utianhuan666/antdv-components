@@ -7,11 +7,20 @@ import type {
   RecordKey,
   RowEditableConfig,
 } from '../useEditableArray'
+import { get } from '@v-c/util'
+import { message } from 'antdv-next'
 import { computed, ref, watch } from 'vue'
 import { useIntl } from '../../provider'
 import { defaultActionRender, recordKeyToString } from '../useEditableArray'
 
 export type { AddLineOptions, RecordKey } from '../useEditableArray'
+
+/**
+ * 显示警告信息
+ */
+function warning(messageStr: VNodeChild) {
+  return message.warning(messageStr as any)
+}
 
 export interface UseEditableMapType<RecordType> {
   dataSource: RecordType
@@ -35,8 +44,7 @@ export interface UseEditableMapType<RecordType> {
 export type UseEditableMapUtilType<RecordType extends Record<string, any> = any> = ReturnType<typeof useEditableMap<RecordType>>
 
 function readValue(source: any, key: RecordKey) {
-  const path = Array.isArray(key) ? key : [key]
-  return path.reduce<any>((current, item) => current?.[item], source)
+  return get(source, Array.isArray(key) ? key : [key])
 }
 
 function setValue(source: any, key: RecordKey, value: any) {
@@ -84,8 +92,13 @@ export function useEditableMap<RecordType extends Record<string, any>>(props: Us
   const startEditable = (recordKey: RecordKey, recordValue?: any) => {
     if (isEditable(recordKey))
       return true
-    if ((props.type || 'single') === 'single' && editableKeys.value.length > 0)
+    if ((props.type || 'single') === 'single' && editableKeys.value.length > 0) {
+      warning(
+        props.onlyOneLineEditorAlertMessage
+        || intl.getMessage('editableTable.onlyOneLineEditor', '只能同时编辑一行'),
+      )
       return false
+    }
     preEditRowMap.set(recordKeyToString(recordKey), recordValue ?? readValue(props.dataSource, recordKey) ?? null)
     setEditableRowKeys([...(props.type === 'multiple' ? editableKeys.value : []), recordKey])
     if (recordValue !== undefined)

@@ -1,16 +1,9 @@
+import type { TablePaginationConfig } from 'antdv-next'
 import { computed, reactive } from 'vue'
 
-export const DEFAULT_PAGE_SIZE = 10
+export type { TablePaginationConfig }
 
-export interface TablePaginationConfig {
-  current?: number
-  pageSize?: number
-  defaultCurrent?: number
-  defaultPageSize?: number
-  total?: number
-  onChange?: (current: number, pageSize: number) => void
-  [key: string]: any
-}
+export const DEFAULT_PAGE_SIZE = 10
 
 function extendsObject<T extends object>(base: Partial<T>, override: Partial<T>, extra: Partial<T> = {}): T {
   return { ...(base as object), ...(override as object), ...(extra as object) } as T
@@ -26,7 +19,7 @@ export function getPaginationParam(
   }
   const paginationObj = pagination && typeof pagination === 'object' ? pagination : {}
   Object.keys(paginationObj).forEach((pageProp) => {
-    const value = mergedPagination[pageProp]
+    const value = (mergedPagination as any)[pageProp]
     if (typeof value !== 'function')
       param[pageProp] = value
   })

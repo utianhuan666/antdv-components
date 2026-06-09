@@ -1,9 +1,16 @@
 import type { Ref } from 'vue'
 import { isRef, onScopeDispose, ref, watch } from 'vue'
 
+/**
+ * 一个去抖的setState 减少更新的频率
+ * @param  {T | Ref<T>} value
+ * @param  {number} [delay]
+ * @param  {any[]} [deps]
+ * @returns Ref<T>
+ */
 export function useDebounceValue<T>(
   value: T | Ref<T>,
-  delay = 100,
+  delay: number = 100,
   deps?: any[],
 ) {
   const readValue = () => {
