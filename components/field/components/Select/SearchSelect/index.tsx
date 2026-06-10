@@ -1,10 +1,11 @@
 import type { SelectProps } from 'antdv-next'
-import type { VNodeChild } from 'vue'
+import type { CSSProperties, Ref, VNodeChild } from 'vue'
 import type { RequestOptionsType } from '../types'
 import { clsx } from '@v-c/util'
 import { Select } from 'antdv-next'
 import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
+import { nanoid } from '../../../../utils'
 
 export interface LabeledValue {
   key?: string
@@ -13,24 +14,45 @@ export interface LabeledValue {
 }
 
 export type DefaultOptionType = NonNullable<SelectProps['options']>[number]
+type SelectInstance = InstanceType<typeof Select>
+export type SearchSelectExpose = {
+  selectRef: Ref<SelectInstance | null>
+}
+type SelectOnChange = NonNullable<SelectProps['onChange']>
+type SelectOnChangeValue = Parameters<SelectOnChange>[0]
+type SelectOnChangeOption = Parameters<SelectOnChange>[1]
+type SelectFilterOption = Exclude<SelectProps['filterOption'], boolean | undefined>
+type SelectFilterOptionOption = Parameters<SelectFilterOption>[1]
+type KeyValue = string | number | boolean
+type ValueLike = KeyValue | KeyLabel | undefined
+
+type SearchOption = RequestOptionsType & {
+  data_title?: VNodeChild
+  title?: VNodeChild
+  children?: SearchOption[]
+  options?: SearchOption[]
+  'data-item'?: RequestOptionsType
+  className?: string
+  key?: string | number | boolean
+}
 
 export type KeyLabel = Partial<{
   key: string
-  label: any
-  value: string | number
+  label: VNodeChild
+  value: KeyValue
 }> & RequestOptionsType
 
 export type DataValueType<T> = KeyLabel & T
 
 export type DataValuesType<T> = DataValueType<T> | DataValueType<T>[]
 
-export interface SearchSelectProps<T = Record<string, any>> extends Omit<SelectProps, 'options'> {
+export interface SearchSelectProps<T = Record<string, unknown>> extends Omit<SelectProps, 'options'> {
   debounceTime?: number
   request?: (params: { query: string }) => Promise<DataValueType<T>[]>
   value?: KeyLabel | KeyLabel[]
   defaultValue?: KeyLabel | KeyLabel[]
   options?: RequestOptionsType[]
-  style?: Record<string, any>
+  style?: CSSProperties
   className?: string
   label?: VNodeChild
   placeholder?: SelectProps['placeholder']
@@ -44,7 +66,11 @@ export interface SearchSelectProps<T = Record<string, any>> extends Omit<SelectP
   defaultSearchValue?: string
 }
 
-function getOriginalLabel(item: any, fallbackValue: any): any {
+type SearchSelectAttrs = Partial<SelectProps> & {
+  autoFocus?: boolean | ''
+}
+
+function getOriginalLabel(item?: Partial<RequestOptionsType>, fallbackValue?: Partial<KeyLabel>): VNodeChild {
   if (typeof item?.label === 'string')
     return item.label
   if (typeof item?.text === 'string')
@@ -56,13 +82,19 @@ function getOriginalLabel(item: any, fallbackValue: any): any {
   return fallbackValue?.label ?? ''
 }
 
-function findDataItem(options: RequestOptionsType[], value: any, valueName: string, optionsName: string): any {
-  const optionValue = value?.[valueName] ?? value?.value ?? value
+function isKeyLabel(value: ValueLike): value is KeyLabel {
+  return !!value && typeof value === 'object'
+}
+
+function findDataItem(options: RequestOptionsType[], value: ValueLike, valueName: string, optionsName: string): RequestOptionsType | undefined {
+  const optionValue = isKeyLabel(value)
+    ? (value[valueName] ?? value.value)
+    : value
   for (const opt of options) {
     const optValue = opt[valueName] ?? opt.value
     if (optValue === optionValue)
       return opt
-    const children = opt[optionsName] || opt.options || opt.children
+    const children = (opt[optionsName] as RequestOptionsType[] | undefined) || opt.options || opt.children
     if (children) {
       const found = findDataItem(children, value, valueName, optionsName)
       if (found)
@@ -117,23 +149,24 @@ const SearchSelect = defineComponent<SearchSelectProps>({
   props: searchSelectPropNames,
   setup(rawProps, { attrs, expose }) {
     const props = rawProps
-    const selectRef = ref<any>(null)
-    const innerSearchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
+    const selectAttrs = attrs as SearchSelectAttrs
+    const selectRef = ref<SelectInstance | null>(null)
+    const searchValue = ref(props.searchValue ?? props.defaultSearchValue ?? '')
     const prefixCls = useProPrefixCls('pro-filed-search-select', computed(() => props.prefixCls))
 
-    expose({ selectRef })
+    expose({ selectRef } satisfies SearchSelectExpose)
 
     watch(
       () => props.searchValue,
       (value) => {
         if (value !== undefined)
-          innerSearchValue.value = value
+          searchValue.value = value
       },
     )
 
     onMounted(() => {
-      if (normalizeBoolean((attrs as Record<string, unknown>).autoFocus, false))
-        selectRef.value?.focus?.()
+      if (normalizeBoolean(selectAttrs.autoFocus, false))
+        (selectRef.value as { focus?: () => void } | null)?.focus?.()
     })
 
     const fieldNames = computed(() => ({
@@ -142,47 +175,9 @@ const SearchSelect = defineComponent<SearchSelectProps>({
       options: props.fieldNames?.options || 'options',
     }))
 
-    const genOptions = (mapOptions: RequestOptionsType[]): any[] => {
-      return (mapOptions || []).map((item, index) => {
-        const { className: itemClassName, optionType, ...restItem } = item
-        const label = item[fieldNames.value.label] ?? item.text
-        const value = item[fieldNames.value.value]
-        const itemOptions = item[fieldNames.value.options] ?? item.options ?? item.children ?? []
-        const key = value ?? `${label?.toString()}-${index}`
-
-        if (optionType === 'optGroup' || item.options || item.children) {
-          return {
-            label,
-            ...restItem,
-            data_title: label,
-            title: label,
-            key,
-            options: genOptions(itemOptions),
-            children: genOptions(itemOptions),
-          }
-        }
-
-        return {
-          'title': label,
-          ...restItem,
-          'data_title': label,
-          'value': value ?? index,
-          key,
-          'data-item': item,
-          'className': clsx(`${prefixCls.value}-option`, itemClassName),
-          label,
-        }
-      })
-    }
-
     const sourceOptions = computed(() => props.options ?? [])
-    const mergedOptions = computed(() => genOptions(sourceOptions.value))
 
-    const setSearchValue = (value: string) => {
-      innerSearchValue.value = value
-    }
-
-    const getMergeValue = (value: KeyLabel | KeyLabel[], option: any) => {
+    const getMergeValue = (value: KeyLabel | KeyLabel[], option: SelectOnChangeOption) => {
       if (Array.isArray(value) && Array.isArray(option) && value.length > 0) {
         return value.map((item, index) => {
           const optionItem = option[index]
@@ -198,8 +193,40 @@ const SearchSelect = defineComponent<SearchSelectProps>({
       return []
     }
 
+    const genOptions = (mapOptions: RequestOptionsType[]): SearchOption[] => {
+      return mapOptions.map((item, index) => {
+        const { className: itemClassName, optionType, ...restItem } = item
+        const label = item[fieldNames.value.label] ?? item.text
+        const value = item[fieldNames.value.value]
+        const itemOptions = (item[fieldNames.value.options] as RequestOptionsType[] | undefined) ?? item.options ?? []
+
+        if (optionType === 'optGroup' || item.options) {
+          return {
+            label,
+            ...restItem,
+            data_title: label,
+            title: label,
+            key: value ?? `${label?.toString()}-${index}-${nanoid()}`,
+            children: genOptions(itemOptions),
+          } as SearchOption
+        }
+
+        return {
+          title: label,
+          ...restItem,
+          data_title: label,
+          value: value ?? index,
+          key: value ?? `${label?.toString()}-${index}-${nanoid()}`,
+          'data-item': item,
+          className: clsx(`${prefixCls.value}-option`, itemClassName),
+          label,
+        } as SearchOption
+      })
+    }
+
+    const mergedOptions = computed(() => genOptions(sourceOptions.value))
+
     return () => {
-      const restAttrs = attrs as Partial<SelectProps> & Record<string, unknown>
       const allowClear = normalizeBoolean(props.allowClear, true)
       const autoClearSearchValue = normalizeBoolean(props.autoClearSearchValue, true)
       const disabled = normalizeBoolean(props.disabled, false)
@@ -211,17 +238,16 @@ const SearchSelect = defineComponent<SearchSelectProps>({
       const resetAfterSelect = normalizeBoolean(props.resetAfterSelect, false)
       const searchOnFocus = normalizeBoolean(props.searchOnFocus, false)
       const showSearch = normalizeBoolean(props.showSearch, false)
-      const onChange = props.onChange as
-        | ((value: any, option: any, ...args: any[]) => void)
-        | undefined
+      const onChange = props.onChange as ((value: SelectOnChangeValue, option: SelectOnChangeOption, ...args: unknown[]) => void) | undefined
+      const classString = clsx(prefixCls.value, props.className, {
+        [`${prefixCls.value}-disabled`]: disabled,
+      })
 
       return (
         <Select
           ref={selectRef}
           id={props.id}
-          class={clsx(prefixCls.value, props.className, {
-            [`${prefixCls.value}-disabled`]: disabled,
-          })}
+          class={classString}
           style={props.style}
           placeholder={props.placeholder}
           notFoundContent={props.notFoundContent}
@@ -231,26 +257,27 @@ const SearchSelect = defineComponent<SearchSelectProps>({
           loading={loading}
           mode={props.mode}
           showSearch={showSearch}
-          searchValue={innerSearchValue.value}
+          searchValue={searchValue.value}
           optionFilterProp={optionFilterProp}
           optionLabelProp={optionLabelProp}
-          {...restAttrs}
+          {...selectAttrs}
           filterOption={
             props.filterOption === false
               ? false
-              : (inputValue: string, option: any) => {
-                  const effectiveSearchValue = innerSearchValue.value === '' ? '' : inputValue || innerSearchValue.value
+              : (inputValue: string, option: SelectFilterOptionOption) => {
+                  const searchOption = option as SearchOption | undefined
+                  const effectiveSearchValue = searchValue.value === '' ? '' : inputValue || searchValue.value
                   if (!effectiveSearchValue)
                     return true
                   if (typeof props.filterOption === 'function') {
                     return props.filterOption(effectiveSearchValue, {
-                      ...option,
-                      label: option?.data_title,
+                      ...searchOption,
+                      label: searchOption?.data_title,
                     })
                   }
                   return !!(
-                    option?.data_title?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
-                    || option?.[optionFilterProp]?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
+                    searchOption?.data_title?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
+                    || searchOption?.[optionFilterProp]?.toString().toLowerCase().includes(effectiveSearchValue.toLowerCase())
                   )
                 }
           }
@@ -259,7 +286,7 @@ const SearchSelect = defineComponent<SearchSelectProps>({
             props.fetchData?.(undefined)
             if (showSearch) {
               props.onSearch?.('')
-              setSearchValue('')
+              searchValue.value = ''
             }
           }}
           onSearch={showSearch
@@ -267,14 +294,14 @@ const SearchSelect = defineComponent<SearchSelectProps>({
                 if (fetchDataOnSearch)
                   props.fetchData?.(value)
                 props.onSearch?.(value)
-                setSearchValue(value)
+                searchValue.value = value
               }
             : undefined}
-          onChange={(value: any, optionList: any, ...rest: any[]) => {
+          onChange={(value: SelectOnChangeValue, optionList: SelectOnChangeOption, ...rest: unknown[]) => {
             if (showSearch && autoClearSearchValue) {
               props.fetchData?.(undefined)
               props.onSearch?.('')
-              setSearchValue('')
+              searchValue.value = ''
             }
 
             if (!labelInValue) {
@@ -283,25 +310,37 @@ const SearchSelect = defineComponent<SearchSelectProps>({
             }
 
             if (props.mode !== 'multiple' && !Array.isArray(optionList)) {
-              const dataItem = optionList?.['data-item']
-              const foundDataItem = dataItem || findDataItem(sourceOptions.value, value, fieldNames.value.value, fieldNames.value.options)
-              if (!value || !foundDataItem) {
-                onChange?.(value ? { ...value, label: getOriginalLabel(foundDataItem, value) } : value, optionList, ...rest)
-                return
+              let dataItem = optionList?.['data-item']
+              let foundDataItem = dataItem
+
+              if (!foundDataItem && value) {
+                foundDataItem = findDataItem(sourceOptions.value, value, fieldNames.value.value, fieldNames.value.options)
               }
-              onChange?.(
-                {
-                  ...value,
-                  ...foundDataItem,
-                  label: getOriginalLabel(foundDataItem, value),
-                },
-                optionList,
-                ...rest,
-              )
+
+              if (!value || !foundDataItem || !isKeyLabel(value)) {
+                const changedValue = value && isKeyLabel(value)
+                  ? {
+                      ...value,
+                      label: getOriginalLabel(foundDataItem, value),
+                    }
+                  : value
+                onChange?.(changedValue, optionList, ...rest)
+              }
+              else {
+                onChange?.(
+                  {
+                    ...value,
+                    ...foundDataItem,
+                    label: getOriginalLabel(foundDataItem, value),
+                  },
+                  optionList,
+                  ...rest,
+                )
+              }
               return
             }
 
-            onChange?.(getMergeValue(value, optionList), optionList, ...rest)
+            onChange?.(getMergeValue(value as KeyLabel | KeyLabel[], optionList), optionList, ...rest)
             if (resetAfterSelect)
               props.resetData?.()
           }}
@@ -310,12 +349,12 @@ const SearchSelect = defineComponent<SearchSelectProps>({
               props.fetchData?.(undefined)
               if (showSearch) {
                 props.onSearch?.('')
-                setSearchValue('')
+                searchValue.value = ''
               }
             }
             props.onFocus?.(event)
           }}
-          options={mergedOptions.value}
+          options={mergedOptions.value as DefaultOptionType[]}
         />
       )
     }

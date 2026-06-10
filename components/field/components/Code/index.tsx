@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
 import { proTheme } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldCodeEdit from './FieldCodeEdit'
@@ -10,41 +11,70 @@ type FieldCodeProps = NonNullable<ProFieldFC<{
   language?: 'json' | 'text'
 }>['__props']>
 
-const FieldCode: ProFieldFC<{
-  text: string
-  language?: 'json' | 'text'
-}> = (props) => {
-  const typedProps = props as FieldCodeProps
-  const text = typedProps.text ?? ''
-  const mode = typedProps.mode ?? 'read'
-  const language = typedProps.language ?? 'text'
-  const code = languageFormat(text, language)
-  const { token } = proTheme.useToken()
+type FieldCodeEditInstance = InstanceType<typeof import('antdv-next')['TextArea']>
+type FieldCodeInnerRef = FieldCodeEditInstance | HTMLPreElement
+export type FieldCodeExpose = Partial<FieldCodeEditInstance> & Partial<HTMLPreElement>
 
-  if (isProFieldReadMode(mode)) {
-    return FieldCodeRead({
-      text,
-      code,
-      mode,
-      language,
-      render: typedProps.render,
-      fieldProps: typedProps.fieldProps,
-      token: token.value,
-    })
-  }
+/**
+ * 代码片段组件 这个组件为了显示简单的配置，复杂的请使用更加重型的组件
+ */
+const FieldCode = defineComponent<FieldCodeProps>({
+  name: 'FieldCode',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'language',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps as FieldCodeProps
+    const { token } = proTheme.useToken()
+    const innerRef = ref<FieldCodeInnerRef | null>(null)
 
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldCodeEdit({
-      text,
-      code,
-      mode,
-      language,
-      formItemRender: typedProps.formItemRender,
-      fieldProps: typedProps.fieldProps,
-    })
-  }
+    expose(
+      new Proxy({} as FieldCodeExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key as keyof FieldCodeInnerRef]
+        },
+        has(_target, key: string) {
+          return innerRef.value ? key in innerRef.value : false
+        },
+      }),
+    )
 
-  return null
-}
+    return () => {
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const language = props.language ?? 'text'
+      const code = languageFormat(text, language)
+
+      if (isProFieldReadMode(mode)) {
+        return FieldCodeRead({
+          ...props,
+          text,
+          mode,
+          language,
+          code,
+          token: token.value,
+        }, innerRef)
+      }
+
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldCodeEdit({
+          ...props,
+          text,
+          mode,
+          language,
+          code,
+        }, innerRef)
+      }
+
+      return null
+    }
+  },
+})
 
 export default FieldCode

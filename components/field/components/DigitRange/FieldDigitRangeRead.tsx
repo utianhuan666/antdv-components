@@ -1,8 +1,10 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitRangeProps, Value } from './types'
 
 export function FieldDigitRangeRead(
   props: NonNullable<ProFieldFC<FieldDigitRangeProps>['__props']>,
+  ref?: Ref,
 ) {
   const { text, mode: type, render, fieldProps, separator = '~' } = props
 
@@ -16,7 +18,7 @@ export function FieldDigitRangeRead(
   }
 
   const dom = (
-    <span>
+    <span ref={ref}>
       {getContent(text[0])}
       {' '}
       {separator}

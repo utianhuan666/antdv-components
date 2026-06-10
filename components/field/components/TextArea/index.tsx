@@ -1,4 +1,5 @@
 import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTextAreaEdit from './FieldTextAreaEdit'
@@ -8,35 +9,54 @@ type FieldTextAreaProps = NonNullable<ProFieldFC<{
   text: string | number
 }>['__props']>
 
-const FieldTextArea: ProFieldFC<{
-  text: string | number
-}> = (props) => {
-  const typedProps = props as FieldTextAreaProps
-  const text = typedProps.text ?? ''
-  const mode = typedProps.mode ?? 'read'
-  const intl = useIntl()
-
-  if (isProFieldReadMode(mode)) {
-    return FieldTextAreaRead({
-      text,
-      mode,
-      render: typedProps.render,
-      fieldProps: typedProps.fieldProps,
-      emptyText: typedProps.emptyText ?? '-',
-    })
-  }
-
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldTextAreaEdit({
-      text,
-      mode,
-      formItemRender: typedProps.formItemRender,
-      fieldProps: typedProps.fieldProps,
-      intl,
-    })
-  }
-
-  return null
+type FieldTextAreaEditInstance = InstanceType<typeof import('antdv-next')['TextArea']>
+type FieldTextAreaReadExpose = {
+  $el?: HTMLElement | null
 }
+type FieldTextAreaInnerRef = FieldTextAreaEditInstance | FieldTextAreaReadExpose
+export type FieldTextAreaExpose = Partial<FieldTextAreaEditInstance> & FieldTextAreaReadExpose
+
+const FieldTextArea = defineComponent<FieldTextAreaProps>({
+  name: 'FieldTextArea',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const inputRef = ref<FieldTextAreaInnerRef | null>(null)
+
+    expose(
+      new Proxy({} as FieldTextAreaExpose, {
+        get(_target, key: string) {
+          return inputRef.value?.[key as keyof FieldTextAreaInnerRef]
+        },
+        has(_target, key: string) {
+          return !!inputRef.value && key in inputRef.value
+        },
+      }),
+    )
+
+    return () => {
+      const props = rawProps as FieldTextAreaProps
+      const { mode } = props
+
+      if (isProFieldReadMode(mode))
+        return FieldTextAreaRead(props, inputRef)
+
+      if (isProFieldEditOrUpdateMode(mode))
+        return FieldTextAreaEdit({ ...props, intl }, inputRef)
+
+      return null
+    }
+  },
+}) as unknown as ProFieldFC<{
+  text: string | number
+}>
 
 export default FieldTextArea

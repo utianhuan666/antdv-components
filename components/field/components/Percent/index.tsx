@@ -1,5 +1,6 @@
 import type { ProFieldFC } from '../../types'
 import type { PercentPropInt } from './types'
+import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldPercentEdit from './FieldPercentEdit'
@@ -7,69 +8,108 @@ import FieldPercentRead from './FieldPercentRead'
 import { toNumber } from './util'
 
 export type { PercentPropInt }
+type FieldPercentInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type FieldPercentInnerRef = FieldPercentInstance | HTMLSpanElement
+export type FieldPercentExpose = Partial<FieldPercentInstance> & Partial<HTMLSpanElement>
 type FieldPercentProps = NonNullable<ProFieldFC<PercentPropInt>['__props']>
 
-const FieldPercent: ProFieldFC<PercentPropInt> = (props) => {
-  const {
-    text = '',
-    mode = 'read',
-    render,
-    formItemRender,
-    fieldProps = {},
-    placeholder,
-    prefix,
-    suffix = '%',
-    precision,
-    showColor = false,
-    showSymbol: propsShowSymbol,
-  } = props as FieldPercentProps
-  const intl = useIntl()
+/**
+ * 百分比组件
+ */
+const FieldPercent = defineComponent<FieldPercentProps>({
+  name: 'FieldPercent',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'placeholder',
+    'prefix',
+    'suffix',
+    'precision',
+    'showColor',
+    'showSymbol',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldPercentInnerRef | null>(null)
 
-  const realValue = typeof text === 'string' && text.includes('%')
-    ? toNumber(text.replace('%', ''))
-    : toNumber(text)
+    expose(
+      new Proxy({} as FieldPercentExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key as keyof FieldPercentInnerRef]
+        },
+        has(_target, key: string) {
+          return !!innerRef.value && key in innerRef.value
+        },
+      }),
+    )
 
-  const showSymbol = typeof propsShowSymbol === 'function'
-    ? propsShowSymbol(text)
-    : propsShowSymbol
+    return () => {
+      const props = rawProps as FieldPercentProps
+      const {
+        text = '',
+        mode = 'read',
+        render,
+        formItemRender,
+        fieldProps = {},
+        placeholder,
+        prefix,
+        suffix = '%',
+        precision,
+        showColor = false,
+        showSymbol: propsShowSymbol,
+      } = props
 
-  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+      const realValue = typeof text === 'string' && text.includes('%')
+        ? toNumber(text.replace('%', ''))
+        : toNumber(text)
 
-  if (isProFieldReadMode(mode)) {
-    return FieldPercentRead({
-      text,
-      mode,
-      render,
-      formItemRender,
-      fieldProps,
-      placeholder,
-      prefix,
-      suffix,
-      precision,
-      showColor,
-      showSymbol,
-      realValue,
-    })
-  }
+      const showSymbol = typeof propsShowSymbol === 'function'
+        ? propsShowSymbol(text)
+        : propsShowSymbol
 
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldPercentEdit({
-      text,
-      mode,
-      render,
-      formItemRender,
-      fieldProps,
-      placeholder,
-      prefix,
-      suffix,
-      precision,
-      showColor,
-      showSymbol: propsShowSymbol,
-      placeholderValue,
-    })
-  }
+      const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
 
-  return null
-}
+      if (isProFieldReadMode(mode)) {
+        return FieldPercentRead({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+          placeholder,
+          prefix,
+          suffix,
+          precision,
+          showColor,
+          showSymbol,
+          realValue,
+        }, innerRef)
+      }
+
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldPercentEdit({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+          placeholder,
+          prefix,
+          suffix,
+          precision,
+          showColor,
+          showSymbol: propsShowSymbol,
+          placeholderValue,
+        }, innerRef)
+      }
+
+      return null
+    }
+  },
+})
 
 export default FieldPercent

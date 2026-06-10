@@ -1,5 +1,7 @@
-import type { CSSProperties } from 'vue'
+import type { CSSProperties, Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
+
+type TextAreaInstance = InstanceType<typeof import('antdv-next')['TextArea']>
 
 type FieldCodeReadProps = NonNullable<ProFieldFC<{
   text: string
@@ -12,10 +14,11 @@ type FieldCodeReadProps = NonNullable<ProFieldFC<{
   }
 }
 
-export function FieldCodeRead(props: FieldCodeReadProps) {
+export function FieldCodeRead(props: FieldCodeReadProps, ref?: Ref<TextAreaInstance | HTMLPreElement | null>) {
   const { code, mode, render, fieldProps, token } = props
   const dom = (
     <pre
+      ref={ref}
       {...fieldProps}
       style={{
         padding: 16,
@@ -35,7 +38,7 @@ export function FieldCodeRead(props: FieldCodeReadProps) {
   )
 
   if (render)
-    return render(code, { mode, ...fieldProps }, dom)
+    return render(code, { mode, ...fieldProps, ref }, dom)
 
   return dom
 }

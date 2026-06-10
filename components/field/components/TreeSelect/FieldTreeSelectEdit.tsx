@@ -1,6 +1,6 @@
 import type { TreeSelectProps } from 'antdv-next'
-import type { VNodeChild } from 'vue'
-import type { IntlType } from '../../../provider'
+import type { Ref, VNodeChild } from 'vue'
+import type { IntlType, ProFieldFCRenderProps } from '../../../provider'
 import type { TreeSelectFieldProps } from './types'
 import { clsx } from '@v-c/util'
 import { Spin, TreeSelect } from 'antdv-next'
@@ -10,6 +10,12 @@ type TreeSelectShowSearchObject = Exclude<
   TreeSelectProps['showSearch'],
   boolean | undefined
 >
+type TreeSelectInstance = InstanceType<typeof import('antdv-next')['TreeSelect']>
+
+type TreeSelectFormItemRenderProps = ProFieldFCRenderProps & {
+  options: NonNullable<TreeSelectProps['treeData']>
+  loading: boolean
+}
 
 const TreeSelectInputIdBridge = defineComponent({
   name: 'TreeSelectInputIdBridge',
@@ -37,16 +43,15 @@ export interface FieldTreeSelectEditProps {
   text: string
   mode: 'edit'
   formItemRender?: (
-    text: any,
-    props: Record<string, any>,
+    text: string,
+    props: TreeSelectFormItemRenderProps,
     dom: VNodeChild,
   ) => VNodeChild
-  label?: any
+  label?: VNodeChild
   variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
   fieldProps: TreeSelectFieldProps
   open: boolean
   setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
-  treeSelectRef: any
   intl: IntlType
   loading: boolean
   options: NonNullable<TreeSelectProps['treeData']>
@@ -64,7 +69,7 @@ export interface FieldTreeSelectEditProps {
   ) => void
   autoClearSearchValue: boolean | undefined
   onClear?: () => void
-  treeSelectOnChange: TreeSelectProps<any>['onChange']
+  treeSelectOnChange: TreeSelectProps['onChange']
   onBlur?: TreeSelectProps['onBlur']
   layoutClassName: string
 }
@@ -76,7 +81,6 @@ export function FieldTreeSelectEdit({
   fieldProps,
   open,
   setOpen,
-  treeSelectRef,
   intl,
   loading,
   options,
@@ -92,11 +96,11 @@ export function FieldTreeSelectEdit({
   treeSelectOnChange,
   onBlur,
   layoutClassName,
-}: FieldTreeSelectEditProps) {
-  let dom: any = (
+}: FieldTreeSelectEditProps, ref?: Ref<TreeSelectInstance | null>) {
+  let dom: VNodeChild = (
     <Spin spinning={loading}>
       <TreeSelect
-        ref={treeSelectRef}
+        ref={ref}
         open={open}
         popupMatchSelectWidth
         placeholder={intl.getMessage('tableForm.selectPlaceholder', '请选择')}
@@ -140,7 +144,7 @@ export function FieldTreeSelectEdit({
   if (fieldProps?.id !== undefined) {
     dom = (
       <TreeSelectInputIdBridge id={fieldProps.id}>
-        {dom}
+      {dom}
       </TreeSelectInputIdBridge>
     )
   }
@@ -148,7 +152,7 @@ export function FieldTreeSelectEdit({
   if (formItemRender) {
     dom = formItemRender(
       text,
-      { mode, ...fieldProps, options, loading } as any,
+      { mode, ...fieldProps, options, loading } as TreeSelectFormItemRenderProps,
       dom,
     ) ?? null
   }

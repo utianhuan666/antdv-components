@@ -1,8 +1,12 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitProps } from './types'
 
+type InputNumberInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+
 export function FieldDigitRead(
   props: NonNullable<ProFieldFC<FieldDigitProps>['__props']>,
+  ref?: Ref<InputNumberInstance | HTMLSpanElement | null>,
 ) {
   const { text, mode: type, render, fieldProps } = props
   let fractionDigits: Intl.NumberFormatOptions = {}
@@ -20,7 +24,7 @@ export function FieldDigitRead(
 
   const dom = !fieldProps?.stringMode
     ? (
-        <span>
+        <span ref={ref}>
           {fieldProps?.formatter?.(digit) || digit}
         </span>
       )

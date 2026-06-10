@@ -1,5 +1,6 @@
 import type { PropType, VNodeChild } from 'vue'
 import type {
+  ProFieldFCMode,
   ProFieldFCRenderProps,
   ProRenderFieldPropsType,
 } from '../provider'
@@ -8,13 +9,14 @@ import type {
   ProFieldTextType,
   ProFieldValueTypeInput,
 } from '../utils/typing'
-import type { ProFieldFCMode } from './internal/fieldMode'
+
 import type {
   ProFieldRenderProps,
 } from './types'
 import { cloneVNode, computed, defineComponent, isVNode, ref } from 'vue'
 import { useProProviderContext } from '../provider'
 import { omitUndefined, pickProProps } from '../utils'
+import './initDayjs'
 
 // ---------------------------------------------------------------------------
 // Render function signatures
@@ -55,6 +57,16 @@ export interface CreateProFieldOptions {
    * `pickProProps` so that custom-valueType props are not filtered away.
    */
   pickProPropsWithValueTypeMap: boolean
+}
+
+interface FieldInstance {
+  fetchData?: (keyWord?: string) => unknown
+}
+
+interface MergedFieldProps extends Record<string, unknown> {
+  value?: unknown
+  onChange?: (...args: unknown[]) => void
+  placeholder?: string | string[]
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +131,7 @@ export function createProField(
     },
     setup(props, { attrs, expose }) {
       const context = useProProviderContext()
-      const fieldRef = ref<any>()
+      const fieldRef = ref<FieldInstance>()
 
       expose({
         field: fieldRef,
@@ -128,24 +140,21 @@ export function createProField(
 
       // -- merged fieldProps (value + onChange + user fieldProps) -----------
 
-      const fieldProps = computed(() => {
-        const userFieldProps = omitUndefined(props.fieldProps ?? {}) || {}
+      const fieldProps = computed<MergedFieldProps | undefined>(() => {
+        const restFieldProps = omitUndefined(props.fieldProps ?? {}) as MergedFieldProps | undefined
+        if (props.value === undefined && !restFieldProps && !props.onChange)
+          return undefined
 
-        const merged: Record<string, any> = {
-          ...userFieldProps,
-        }
+        const originalOnChange = restFieldProps?.onChange
 
-        if (props.value !== undefined) {
-          merged.value = props.value
+        return {
+          value: props.value,
+          ...(restFieldProps ?? {}),
+          onChange: (...args: unknown[]) => {
+            originalOnChange?.(...args)
+            ;(props.onChange as ((...args: unknown[]) => void) | undefined)?.(...args)
+          },
         }
-        // Wrap so both fieldProps.onChange and props.onChange fire
-        const originalOnChange = userFieldProps.onChange
-        merged.onChange = (...args: any[]) => {
-          originalOnChange?.(...args)
-          props.onChange?.(...args)
-        }
-
-        return merged
       })
 
       // -- effective mode ---------------------------------------------------
@@ -159,9 +168,7 @@ export function createProField(
       const customValueType = computed(() => {
         if (!options.pickProPropsWithValueTypeMap)
           return false
-        return Object.keys(context.valueTypeMap || {}).includes(
-          String(typeof props.valueType === 'object' ? (props.valueType as any).type : props.valueType),
-        )
+        return Object.keys(context.valueTypeMap || {}).includes(String(props.valueType))
       })
 
       // -- dataValue: which source to read from depending on *original* mode -
@@ -191,9 +198,9 @@ export function createProField(
           ...attrs,
           mode: effectiveMode.value,
           formItemRender: props.formItemRender
-            ? (curText: any, innerProps: ProFieldFCRenderProps, dom: JSX.Element) => {
+            ? (curText: unknown, innerProps: ProFieldFCRenderProps, dom: VNodeChild) => {
                 const { placeholder: _ph, ...restInner } = innerProps
-                const newDom = props.formItemRender!(curText, restInner as any, dom)
+                const newDom = props.formItemRender?.(curText, restInner, dom)
                 if (isVNode(newDom)) {
                   return cloneVNode(newDom, {
                     ...fieldProps.value,
@@ -203,12 +210,7 @@ export function createProField(
                 return newDom
               }
             : undefined,
-          render: props.render
-            ? (curText: any, innerProps: ProFieldFCRenderProps, dom: JSX.Element) => {
-                const { placeholder: _ph, ...restInner } = innerProps
-                return props.render!(curText, restInner as any, dom)
-              }
-            : undefined,
+          render: props.render,
           placeholder: props.formItemRender ? undefined : placeholderValue,
           fieldProps: pickProProps(
             omitUndefined({

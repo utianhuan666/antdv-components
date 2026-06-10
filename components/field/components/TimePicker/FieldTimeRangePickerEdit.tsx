@@ -1,6 +1,9 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { TimeRangePicker } from 'antdv-next'
 import { parseValueToDay } from '../../../utils'
+
+type TimeRangePickerInstance = InstanceType<typeof import('antdv-next')['TimeRangePicker']>
 
 type Props = NonNullable<
   ProFieldFC<{
@@ -13,7 +16,7 @@ type Props = NonNullable<
   format: string
 }
 
-export function FieldTimeRangePickerEdit(props: Props) {
+export function FieldTimeRangePickerEdit(props: Props, ref?: Ref<TimeRangePickerInstance | null>) {
   const {
     text,
     mode,
@@ -25,10 +28,11 @@ export function FieldTimeRangePickerEdit(props: Props) {
   const fieldProps = props.fieldProps || {}
   const parsedValue = parseValueToDay(fieldProps.value, finalFormat)
   const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
-    ? [parsedValue[0], parsedValue[1]] as [any, any]
+    ? [parsedValue[0], parsedValue[1]] as [typeof parsedValue[0], typeof parsedValue[1]]
     : undefined
   const dom = (
     <TimeRangePicker
+      ref={ref}
       format={format}
       {...fieldProps}
       variant={variant ?? fieldProps?.variant}

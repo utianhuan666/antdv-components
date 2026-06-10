@@ -1,13 +1,16 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { FieldMoneyProps } from './types'
 import { getTextByLocale } from './moneyFormat'
+
+type InputNumberInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
 
 type Props = Omit<NonNullable<ProFieldFC<FieldMoneyProps>['__props']>, 'moneySymbol'> & {
   precision: number
   moneySymbol: string | undefined
 }
 
-export function FieldMoneyRead(props: Props) {
+export function FieldMoneyRead(props: Props, ref?: Ref<InputNumberInstance | HTMLSpanElement | null>) {
   const {
     text,
     mode: type,
@@ -20,7 +23,7 @@ export function FieldMoneyRead(props: Props) {
   } = props
 
   const dom = (
-    <span>
+    <span ref={ref}>
       {getTextByLocale(
         locale || false,
         text,

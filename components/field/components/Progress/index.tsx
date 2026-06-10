@@ -1,62 +1,65 @@
 import type { ProFieldFC } from '../../types'
+import { computed, defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { toNumber } from '../Percent/util'
-import FieldProgressEdit from './FieldProgressEdit'
-import FieldProgressRead from './FieldProgressRead'
+import { FieldProgressEdit } from './FieldProgressEdit'
+import { FieldProgressRead } from './FieldProgressRead'
 import { getProgressStatus } from './utils'
 
 export { getProgressStatus }
+
+type FieldProgressEditInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type FieldProgressReadInstance = InstanceType<typeof import('antdv-next')['Progress']>
+type FieldProgressInnerRef = FieldProgressEditInstance | FieldProgressReadInstance
+export type FieldProgressExpose = Partial<FieldProgressEditInstance> & Partial<FieldProgressReadInstance>
+
 type FieldProgressProps = NonNullable<ProFieldFC<{
   text: number | string
   placeholder?: string
 }>['__props']>
 
-const FieldProgress: ProFieldFC<{
-  text: number | string
-  placeholder?: string
-}> = (props) => {
-  const {
-    text = 0,
-    mode = 'read',
-    render,
-    formItemRender,
-    fieldProps = {},
-    placeholder,
-  } = props as FieldProgressProps
-  const intl = useIntl()
+/**
+ * 进度条组件
+ */
+const FieldProgress = defineComponent<FieldProgressProps>({
+  name: 'FieldProgress',
+  inheritAttrs: false,
+  props: ['text', 'mode', 'render', 'formItemRender', 'fieldProps', 'placeholder'],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldProgressInnerRef | null>(null)
 
-  const realValue = typeof text === 'string' && text.includes('%')
-    ? toNumber(text.replace('%', ''))
-    : toNumber(text)
+    expose(
+      new Proxy({} as FieldProgressExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key as keyof FieldProgressInnerRef]
+        },
+        has(_target, key: string) {
+          return !!innerRef.value && key in innerRef.value
+        },
+      }),
+    )
 
-  const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+    return () => {
+      const props = rawProps as FieldProgressProps
+      const { text, mode, placeholder } = props
+      const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+      const realValue = computed(() =>
+        typeof text === 'string' && (text as string).includes('%')
+          ? toNumber((text as string).replace('%', ''))
+          : toNumber(text),
+      )
+      if (isProFieldReadMode(mode)) {
+        return FieldProgressRead({ ...props, realValue: realValue.value }, innerRef)
+      }
 
-  if (isProFieldReadMode(mode)) {
-    return FieldProgressRead({
-      text,
-      mode,
-      render,
-      formItemRender,
-      fieldProps,
-      placeholder,
-      realValue,
-    })
-  }
-
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldProgressEdit({
-      text,
-      mode,
-      render,
-      formItemRender,
-      fieldProps,
-      placeholder,
-      placeholderValue,
-    })
-  }
-
-  return null
-}
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldProgressEdit({ ...props, placeholderValue }, innerRef)
+      }
+      return null
+    }
+  },
+})
 
 export default FieldProgress

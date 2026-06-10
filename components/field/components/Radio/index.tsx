@@ -12,20 +12,16 @@ import FieldRadioRead from './FieldRadioRead'
 
 export type { GroupProps } from './types'
 
-type RadioFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
-
-function buildOptionsValueEnum(options: any[] | undefined) {
-  if (!options?.length)
-    return undefined
-
-  return options.reduce<Record<string, any>>((pre, cur) => {
-    pre[cur?.value ?? ''] = cur?.label
-    return pre
-  }, {})
+type FieldRadioInstance = InstanceType<typeof import('antdv-next')['RadioGroup']>
+export type FieldRadioExpose = Partial<FieldRadioInstance> & {
+  fetchData: (keyWord?: string) => void
 }
+
+type RadioFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
 
 const FieldRadio = defineComponent<RadioFieldProps>({
   name: 'FieldRadio',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
@@ -46,32 +42,34 @@ const FieldRadio = defineComponent<RadioFieldProps>({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps
-    const prefixCls = useProPrefixCls('pro-field-radio')
-    const radioRef = ref<unknown>(null)
-    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
-    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
-    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+    const layoutClassName = useProPrefixCls('pro-field-radio')
+    const radioRef = ref<FieldRadioInstance | null>(null)
+    const [loading, options, fetchData] = useFieldFetchData(props as any)
+    const optionsValueEnum = computed(() => options.value?.length
+      ? options.value.reduce((pre: any, cur: any) => {
+          return { ...pre, [(cur?.value as any) ?? '']: cur?.label }
+        }, {})
+      : undefined)
     const mergedProps = computed<RadioFieldProps>(() => ({
       ...props,
       text: props.text ?? '',
       mode: props.mode ?? 'read',
       fieldProps: props.fieldProps ?? {},
       emptyText: props.emptyText ?? '-',
-      layout: props.layout ?? 'horizontal',
     }))
-    const statusContext = useFormItemInputContext()
+    const status = useFormItemInputContext()
     const { wrapSSR, hashId } = useStyle('FieldRadioRadio', token => ({
-      [`.${prefixCls.value}-error`]: {
+      [`.${layoutClassName.value}-error`]: {
         span: {
           color: token.colorError,
         },
       },
-      [`.${prefixCls.value}-warning`]: {
+      [`.${layoutClassName.value}-warning`]: {
         span: {
           color: token.colorWarning,
         },
       },
-      [`.${prefixCls.value}-vertical`]: {
+      [`.${layoutClassName.value}-vertical`]: {
         [`${token.antCls}-radio-wrapper`]: {
           display: 'flex',
           marginInlineEnd: 0,
@@ -79,7 +77,18 @@ const FieldRadio = defineComponent<RadioFieldProps>({
       },
     }))
 
-    expose({ fetchData, radioRef })
+    expose(
+      new Proxy({ fetchData } as FieldRadioExpose, {
+        get(target, key: string) {
+          if (key in target)
+            return target[key as keyof FieldRadioExpose]
+          return radioRef.value?.[key as keyof FieldRadioInstance]
+        },
+        has(target, key: string) {
+          return key in target || (!!radioRef.value && key in radioRef.value)
+        },
+      }),
+    )
 
     return () => {
       if (loading.value)
@@ -100,16 +109,16 @@ const FieldRadio = defineComponent<RadioFieldProps>({
           options: options.value,
           loading: loading.value,
           radioRef,
-          layoutClassName: prefixCls.value,
+          layoutClassName: layoutClassName.value,
           wrapSSR,
           hashId,
-          status: statusContext.value,
+          status: status.value,
         })
       }
 
       return null
     }
   },
-}) as unknown as ProFieldFC<GroupProps>
+})
 
-export default FieldRadio as any
+export default FieldRadio

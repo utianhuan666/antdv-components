@@ -4,6 +4,10 @@ import type { ProFieldRenderProps } from './types'
 import FieldText from './components/Text'
 import { createProField } from './ProFieldCore'
 
+type CustomRenderProps = Omit<ProFieldRenderProps, 'ref'> & {
+  text: ProFieldRenderProps['text']
+}
+
 export type {
   ProFieldEmptyText,
   ProFieldFC,
@@ -41,27 +45,43 @@ export const pureRenderRead: ProFieldRenderText = (
     }
   }
 
-  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
+  const propsWithoutEmptyText = { ...props }
+  delete propsWithoutEmptyText.emptyText
 
   if (typeof valueType === 'object') {
     return pureRenderRead(
       dataValue,
       valueType.type,
-      { ...valueType, ...propsWithoutEmptyText } as ProFieldRenderProps,
+      {
+        ...valueType,
+        ...propsWithoutEmptyText,
+      } as ProFieldRenderProps,
       valueTypeMap,
     )
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
+    const customProps = { ...propsWithoutEmptyText }
+    delete customProps.ref
     const readDom = customValueTypeConfig.render?.(
       dataValue,
-      { text: dataValue, ...customProps, mode: mode || 'read' } as any,
+      {
+        text: dataValue,
+        ...customProps,
+        mode: mode || 'read',
+      } as CustomRenderProps,
       <>{dataValue}</>,
     )
     if (props?.render) {
-      return props.render(dataValue, { text: dataValue, ...customProps } as any, readDom as any)
+      return props.render(
+        dataValue,
+        {
+          text: dataValue,
+          ...customProps,
+        } as CustomRenderProps,
+        readDom,
+      )
     }
     return readDom
   }
@@ -76,27 +96,42 @@ export const pureRenderEdit: ProFieldRenderText = (
   props,
   valueTypeMap,
 ) => {
-  const { emptyText: _emptyText, ...propsWithoutEmptyText } = props
+  const propsWithoutEmptyText = { ...props }
+  delete propsWithoutEmptyText.emptyText
 
   if (typeof valueType === 'object') {
     return pureRenderEdit(
       dataValue,
       valueType.type,
-      { ...valueType, ...propsWithoutEmptyText } as ProFieldRenderProps,
+      {
+        ...valueType,
+        ...propsWithoutEmptyText,
+      } as ProFieldRenderProps,
       valueTypeMap,
     )
   }
 
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    const { ref: _ref, ...customProps } = propsWithoutEmptyText as any
+    const customProps = { ...propsWithoutEmptyText }
+    delete customProps.ref
     const dom = customValueTypeConfig.formItemRender?.(
       dataValue,
-      { text: dataValue, ...customProps } as any,
+      {
+        text: dataValue,
+        ...customProps,
+      } as CustomRenderProps,
       <>{dataValue}</>,
     )
     if (props?.formItemRender) {
-      return props.formItemRender(dataValue, { text: dataValue, ...customProps } as any, dom as any)
+      return props.formItemRender(
+        dataValue,
+        {
+          text: dataValue,
+          ...customProps,
+        } as CustomRenderProps,
+        dom,
+      )
     }
     return dom
   }

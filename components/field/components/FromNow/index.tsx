@@ -1,18 +1,14 @@
 import type { ProFieldFC } from '../../types'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldFromNowEdit from './FieldFromNowEdit'
 import FieldFromNowRead from './FieldFromNowRead'
+import '../../initDayjs'
 
 dayjs.extend(relativeTime)
-
-type FieldFromNowProps = NonNullable<ProFieldFC<{
-  text: string
-  format?: string
-  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
-}>['__props']>
 
 interface FieldFromNowOwnProps {
   text: string
@@ -20,34 +16,57 @@ interface FieldFromNowOwnProps {
   variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
 }
 
-const FieldFromNow: ProFieldFC<FieldFromNowOwnProps> = (props) => {
-  const typedProps = props as FieldFromNowProps
-  const text = typedProps.text ?? ''
-  const mode = typedProps.mode ?? 'read'
-  const intl = useIntl()
+type FieldFromNowInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
+export type FieldFromNowExpose = Partial<FieldFromNowInstance>
 
-  if (isProFieldReadMode(mode)) {
-    return FieldFromNowRead({
-      text,
-      mode,
-      render: typedProps.render,
-      fieldProps: typedProps.fieldProps,
-      format: typedProps.format,
-    })
-  }
+type FieldFromNowProps = NonNullable<ProFieldFC<FieldFromNowOwnProps>['__props']>
 
-  if (isProFieldEditOrUpdateMode(mode)) {
-    return FieldFromNowEdit({
-      text,
-      mode,
-      variant: typedProps.variant,
-      formItemRender: typedProps.formItemRender,
-      fieldProps: typedProps.fieldProps,
-      intl,
-    })
-  }
+/**
+ * 与当前的时间进行比较 http://momentjs.cn/docs/displaying/fromnow.html
+ */
+const FieldFromNow = defineComponent<FieldFromNowProps>({
+  name: 'FieldFromNow',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'format',
+    'variant',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldFromNowInstance | null>(null)
 
-  return null
-}
+    expose(
+      new Proxy({} as FieldFromNowExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key as keyof FieldFromNowInstance]
+        },
+        has(_target, key: string) {
+          return innerRef.value ? key in innerRef.value : false
+        },
+      }),
+    )
+
+    return () => {
+      const props = rawProps as FieldFromNowProps
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldFromNowRead({ ...props, text, mode })
+      }
+
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldFromNowEdit({ ...props, text, mode, intl }, innerRef)
+      }
+
+      return null
+    }
+  },
+})
 
 export default FieldFromNow

@@ -1,7 +1,9 @@
-import type { VNodeChild } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { EyeInvisibleOutlined, EyeOutlined } from '@antdv-next/icons'
 import { Space } from 'antdv-next'
+
+type InputPasswordInstance = InstanceType<typeof import('antdv-next')['InputPassword']>
 
 type Props = NonNullable<ProFieldFC<{
   text: string | number
@@ -12,13 +14,13 @@ type Props = NonNullable<ProFieldFC<{
   setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
 }
 
-export function FieldPasswordRead(props: Props) {
+export function FieldPasswordRead(props: Props, ref?: Ref<InputPasswordInstance | HTMLSpanElement | null>) {
   const { text, mode, render, fieldProps, open, setOpen } = props
   let dom: VNodeChild = <>-</>
   if (text) {
     dom = (
       <Space>
-        <span>{open ? text : '********'}</span>
+        <span ref={ref}>{open ? text : '********'}</span>
         <a onClick={() => setOpen(!open)}>
           {open ? <EyeOutlined /> : <EyeInvisibleOutlined />}
         </a>

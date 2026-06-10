@@ -1,10 +1,12 @@
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from '../Select'
+import type { RequestOptionsType } from '../Select/types'
 import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type Props = NonNullable<ProFieldFC<{} & FieldSelectProps>['__props']> & {
-  optionsValueEnum: Map<any, any> | undefined
-  options: any[]
+  optionsValueEnum: ProSchemaValueEnumMap | undefined
+  options: RequestOptionsType[]
 }
 
 export function FieldTreeSelectRead(props: Props) {
@@ -12,7 +14,7 @@ export function FieldTreeSelectRead(props: Props) {
   const dom = (
     <>
       {proFieldParsingText(
-        rest.text,
+        (rest.text ?? '') as string | number | Array<string | number>,
         objectToMap(rest.valueEnum || optionsValueEnum),
       )}
     </>

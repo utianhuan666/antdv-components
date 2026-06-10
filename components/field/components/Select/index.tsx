@@ -1,6 +1,9 @@
-import type { SelectProps } from 'antdv-next'
-import type { Ref, VNodeChild } from 'vue'
+import type { Select, SelectProps } from 'antdv-next'
+import type { CSSProperties, Ref, VNodeChild } from 'vue'
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
 import type { ProFieldFC } from '../../types'
+import type { LightSelectExpose } from './LightSelect'
+import type { SearchSelectExpose } from './SearchSelect'
 import type { FieldSelectProps, ProFieldValueEnumType, RequestOptionsType } from './types'
 import { useConfig } from 'antdv-next'
 import { debounce } from 'es-toolkit'
@@ -13,7 +16,12 @@ import FieldSelectLightEdit from './FieldSelectLightEdit'
 import FieldSelectRead from './FieldSelectRead'
 import FieldSelectSearchEdit from './FieldSelectSearchEdit'
 
-export type { FieldSelectProps, ProFieldRequestData, ProFieldValueEnumType, RequestOptionsType } from './types'
+export type { FieldSelectProps } from './types'
+
+type FieldSelectInstance = InstanceType<typeof Select>
+export type FieldSelectExpose = Partial<FieldSelectInstance> & {
+  fetchData: (keyWord?: string) => void
+}
 
 interface FieldFetchFieldProps {
   options?: RequestOptionsType[]
@@ -30,10 +38,14 @@ interface FieldFetchFieldProps {
 
 type FieldSelectFieldProps = SelectProps & FieldFetchFieldProps
 
+type FieldSelectBaseProps = FieldSelectProps<FieldSelectFieldProps> & {
+  fieldNames?: SelectProps['fieldNames']
+  style?: CSSProperties
+  className?: string
+}
+
 type FieldSelectComponentProps = NonNullable<
-  ProFieldFC<Omit<FieldSelectProps<FieldSelectFieldProps>, 'className' | 'fieldNames' | 'style'> & {
-    className?: string
-    fieldNames?: SelectProps['fieldNames']
+  ProFieldFC<FieldSelectBaseProps & {
     cacheForSwr?: boolean
     light?: boolean
   }>['__props']
@@ -78,9 +90,7 @@ function filterByItem(item: RequestOptionsType, keyWords?: string): boolean {
   const keyword = keyWords.toLowerCase()
   if (
     item?.label?.toString().toLowerCase().includes(keyword)
-    || item?.text?.toString().toLowerCase().includes(keyword)
     || item?.value?.toString().toLowerCase().includes(keyword)
-    || item?.data_title?.toString().toLowerCase().includes(keyword)
   ) {
     return true
   }
@@ -103,29 +113,6 @@ function getOptionsFromValueEnum(coverValueEnum: ProFieldValueEnumType): Request
       label: text,
     }),
   )
-}
-
-function normalizeFieldNamesOptions(options: RequestOptionsType[] | undefined, fieldNames?: FieldFetchFieldProps['fieldNames']): RequestOptionsType[] | undefined {
-  if (!options)
-    return undefined
-
-  const { children, label, value, options: optionsName } = fieldNames || {}
-  return options.map((item: any) => {
-    if (typeof item !== 'object' || item === null)
-      return item
-
-    const normalized = { ...item }
-    const childrenKey = children || optionsName
-    if (label && normalized[label] !== undefined)
-      normalized.label = normalized[label]
-    if (value && normalized[value] !== undefined)
-      normalized.value = normalized[value]
-    if (childrenKey && normalized[childrenKey])
-      normalized.children = normalizeFieldNamesOptions(normalized[childrenKey], fieldNames)
-    if (optionsName && normalized[optionsName])
-      normalized.options = normalizeFieldNamesOptions(normalized[optionsName], fieldNames)
-    return normalized
-  })
 }
 
 let fieldFetchCacheSeed = 0
@@ -177,8 +164,48 @@ export function useFieldFetchData(
 
   const getDefaultOptions = () => {
     const fieldProps = props.fieldProps
-    const data = props.options || fieldProps?.options || fieldProps?.treeData
-    return normalizeFieldNamesOptions(data, fieldProps?.fieldNames)
+    const data = fieldProps?.options || fieldProps?.treeData || props.options
+    if (!data || !fieldProps?.fieldNames)
+      return data
+
+    const { children, label, value } = fieldProps.fieldNames
+    const traverseFieldKey = (_options: RequestOptionsType[] | undefined, type: 'children' | 'label' | 'value') => {
+      if (!_options?.length)
+        return
+
+      const length = _options.length
+      let i = 0
+      while (i < length) {
+        const cur = _options[i++]!
+        const fromKey = type === 'children' ? children : type === 'label' ? label : value
+        const mappedChildren = children ? cur[children] as RequestOptionsType[] | undefined : undefined
+        const mappedLabel = label ? cur[label] : undefined
+        const mappedValue = value ? cur[value] : undefined
+        if (!fromKey)
+          continue
+        if (mappedChildren || mappedLabel || mappedValue) {
+          if (type === 'children') {
+            cur.children = cur[fromKey] as RequestOptionsType[] | undefined
+          }
+          else if (type === 'label') {
+            cur.label = cur[fromKey] as VNodeChild
+          }
+          else {
+            cur.value = cur[fromKey] as string | number | boolean | undefined
+          }
+          traverseFieldKey(mappedChildren, type)
+        }
+      }
+    }
+
+    if (children)
+      traverseFieldKey(data, 'children')
+    if (label)
+      traverseFieldKey(data, 'label')
+    if (value)
+      traverseFieldKey(data, 'value')
+
+    return data
   }
 
   const localOptions = computed(() => {
@@ -274,34 +301,6 @@ export function useFieldFetchData(
   return [loading, localOptions, fetchData, resetData]
 }
 
-function buildOptionsValueEnum(
-  options: RequestOptionsType[],
-  fieldNames?: FieldFetchFieldProps['fieldNames'],
-): Map<any, any> | undefined {
-  if (!options?.length)
-    return undefined
-
-  const {
-    value: valuePropsName = 'value',
-    label: labelPropsName = 'label',
-    options: optionsPropsName = 'options',
-  } = fieldNames || {}
-
-  const valuesMap = new Map()
-
-  const traverseOptions = (_options: any[]) => {
-    if (!_options?.length)
-      return valuesMap
-    for (const cur of _options) {
-      valuesMap.set(cur[valuePropsName], cur[labelPropsName])
-      traverseOptions(cur[optionsPropsName] || cur.children)
-    }
-    return valuesMap
-  }
-
-  return traverseOptions(options)
-}
-
 const fieldSelectPropNames = [
   'text',
   'mode',
@@ -311,9 +310,6 @@ const fieldSelectPropNames = [
   'options',
   'params',
   'fieldProps',
-  'render',
-  'formItemRender',
-  'emptyText',
   'proFieldKey',
   'defaultKeyWords',
   'cacheForSwr',
@@ -321,78 +317,104 @@ const fieldSelectPropNames = [
   'label',
   'variant',
   'id',
-  'style',
-  'className',
   'lightLabel',
   'labelTrigger',
 ]
 
-function withFieldSelectDefaults(props: FieldSelectComponentProps): FieldSelectComponentProps {
-  return new Proxy(props, {
-    get(target, key: string) {
-      const value = (target as Record<string, unknown>)[key]
-      if (value !== undefined) {
-        if ((key === 'light' || key === 'labelTrigger') && value === '')
-          return true
-        return value
-      }
-      if (key === 'text')
-        return ''
-      if (key === 'mode')
-        return 'read'
-      if (key === 'fieldProps')
-        return {}
-      if (key === 'emptyText')
-        return '-'
-      if (key === 'light' || key === 'labelTrigger')
-        return false
-      return undefined
-    },
-  }) as FieldSelectComponentProps
+function normalizeBoolean(value: unknown): boolean {
+  return value === '' || value === true
 }
 
 const FieldSelect = defineComponent({
   name: 'FieldSelect',
+  inheritAttrs: false,
   props: fieldSelectPropNames,
-  setup(rawProps, { expose }) {
-    const props = withFieldSelectDefaults(rawProps as unknown as FieldSelectComponentProps)
-    const selectRef = ref<any>(null)
+  setup(rawProps, { attrs, expose }) {
+    const props = rawProps as FieldSelectComponentProps
+    const inheritedProps = attrs as Partial<FieldSelectComponentProps>
+    const selectRef = ref<SearchSelectExpose | LightSelectExpose | null>(null)
     const [loading, options, fetchData, resetData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
     const { componentSize } = useConfig()
     const intl = useIntl()
+    const getInnerSelectInstance = (): FieldSelectInstance | null => {
+      const exposed = selectRef.value
+      return exposed?.selectRef?.value ?? null
+    }
 
-    expose({
-      fetchData,
-      selectRef,
-      focus: () => selectRef.value?.focus?.(),
-      blur: () => selectRef.value?.blur?.(),
-    })
+    expose(
+      new Proxy({ fetchData } as FieldSelectExpose, {
+        get(target, key: string) {
+          if (key in target)
+            return target[key as keyof FieldSelectExpose]
+          return getInnerSelectInstance()?.[key as keyof FieldSelectInstance]
+        },
+        has(target, key: string) {
+          return key in target || (!!getInnerSelectInstance() && key in getInnerSelectInstance()!)
+        },
+      }),
+    )
 
     const optionsValueEnum = computed(() => {
-      if (!isProFieldReadMode(props.mode))
+      const mode = props.mode ?? 'read'
+      const fieldProps = props.fieldProps ?? {}
+
+      if (!isProFieldReadMode(mode))
         return undefined
-      return buildOptionsValueEnum(options.value, props.fieldProps?.fieldNames)
+
+      const {
+        label: labelPropsName = 'label',
+        value: valuePropsName = 'value',
+        options: optionsPropsName = 'options',
+      } = fieldProps.fieldNames || {}
+
+      const valuesMap: ProSchemaValueEnumMap = new Map()
+
+      const traverseOptions = (_options?: RequestOptionsType[]): ProSchemaValueEnumMap => {
+        if (!_options?.length) {
+          return valuesMap
+        }
+        const length = _options.length
+        let i = 0
+        while (i < length) {
+          const cur = _options[i++]!
+          valuesMap.set(
+            cur[valuePropsName] as string | number | boolean,
+            cur[labelPropsName] as VNodeChild,
+          )
+          traverseOptions(cur[optionsPropsName] as RequestOptionsType[] | undefined)
+        }
+        return valuesMap
+      }
+
+      return traverseOptions(options.value)
     })
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
+      const mode = props.mode ?? 'read'
+      const fieldProps = props.fieldProps ?? {}
+      const light = normalizeBoolean(props.light)
+      const labelTrigger = normalizeBoolean(props.labelTrigger)
+      const text = props.text ?? ''
+      const emptyText = inheritedProps.emptyText ?? '-'
+
+      if (isProFieldReadMode(mode)) {
         return FieldSelectRead({
-          text: props.text,
-          mode: props.mode,
+          text,
+          mode,
           valueEnum: props.valueEnum,
           optionsValueEnum: optionsValueEnum.value,
-          render: props.render,
-          fieldProps: props.fieldProps,
-          emptyText: props.emptyText,
+          render: inheritedProps.render,
+          fieldProps,
+          emptyText,
         })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
+      if (isProFieldEditOrUpdateMode(mode)) {
         const sharedEditProps = {
-          text: props.text,
-          mode: props.mode,
-          formItemRender: props.formItemRender,
-          fieldProps: props.fieldProps,
+          text,
+          mode,
+          formItemRender: inheritedProps.formItemRender,
+          fieldProps,
           loading: loading.value,
           options: options.value,
           fetchData,
@@ -401,18 +423,19 @@ const FieldSelect = defineComponent({
           label: props.label,
           variant: props.variant,
           intl,
-          style: props.style,
-          className: props.className,
+          style: inheritedProps.style,
+          className: inheritedProps.className,
           defaultKeyWords: props.defaultKeyWords,
-          inputRef: selectRef,
+          inputRef: selectRef as Ref<SearchSelectExpose | null>,
         }
 
-        if (props.light) {
+        if (light) {
           return FieldSelectLightEdit({
             ...sharedEditProps,
             lightLabel: props.lightLabel,
-            labelTrigger: props.labelTrigger,
+            labelTrigger,
             componentSize: componentSize.value ?? 'middle',
+            inputRef: selectRef as Ref<LightSelectExpose | null>,
           })
         }
 
@@ -424,4 +447,7 @@ const FieldSelect = defineComponent({
   },
 })
 
-export default FieldSelect as any
+export default FieldSelect as unknown as ProFieldFC<FieldSelectBaseProps & {
+  cacheForSwr?: boolean
+  light?: boolean
+}>

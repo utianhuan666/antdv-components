@@ -1,7 +1,10 @@
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { DatePicker } from 'antdv-next'
-import dayjs from 'dayjs'
+import { parseValueToDay } from '../../../utils'
+
+type DatePickerInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
 
 type Props = NonNullable<ProFieldFC<{
   text: string
@@ -11,12 +14,12 @@ type Props = NonNullable<ProFieldFC<{
   intl: IntlType
 }
 
-export function FieldFromNowEdit(props: Props) {
+export function FieldFromNowEdit(props: Props, ref?: Ref<DatePickerInstance | null>) {
   const { text, mode, variant, formItemRender, fieldProps, intl } = props
-  const fieldValue = fieldProps?.value
-  const momentValue = fieldValue ? (dayjs.isDayjs(fieldValue) ? fieldValue : dayjs(fieldValue)) : undefined
+  const momentValue = parseValueToDay(fieldProps?.value) as any
   const dom = (
     <DatePicker
+      ref={ref}
       placeholder={intl.getMessage('tableForm.selectPlaceholder', '请选择')}
       showTime
       variant={variant ?? fieldProps?.variant ?? 'outlined'}

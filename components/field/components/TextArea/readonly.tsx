@@ -1,31 +1,59 @@
 import type { CSSProperties } from 'vue'
 import type { ProFieldFC } from '../../types'
-import { omit } from '@v-c/util'
+import { clsx, omit } from '@v-c/util'
+import { defineComponent } from 'vue'
+import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 type FieldTextAreaReadonlyProps = NonNullable<ProFieldFC<{
   text: string | number
 }>['__props']>
 
-export function FieldTextAreaReadonly(props: FieldTextAreaReadonlyProps) {
-  const { text, fieldProps, emptyText = '-' } = props
-  const prefixCls = useProPrefixCls('pro-field-readonly')
-  const restFieldProps = omit(fieldProps || {}, ['autoSize', 'classNames', 'styles'])
-  return (
-    <span
-      {...restFieldProps}
-      class={[prefixCls.value, `${prefixCls.value}-textarea`, restFieldProps.class]}
-      style={{
+const FieldTextAreaReadonly = defineComponent<FieldTextAreaReadonlyProps>({
+  name: 'FieldTextAreaReadonly',
+  props: [
+    'text',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(props, { expose }) {
+    const readonlyClassName = useProPrefixCls('pro-field-readonly')
+    const compClassName = `${readonlyClassName.value}-textarea`
+    const { wrapSSR, hashId } = useStyle('TextArea', () => ({
+      [`.${compClassName}`]: {
         display: 'inline-block',
         lineHeight: '1.5715',
         maxWidth: '100%',
         whiteSpace: 'pre-wrap',
-        ...(restFieldProps.style as CSSProperties),
-      }}
-    >
-      {text ?? emptyText}
-    </span>
-  )
-}
+      },
+    }))
 
+    let readonlyRef: HTMLElement | null = null
+    expose({
+      get $el() {
+        return readonlyRef
+      },
+    })
+
+    return () => {
+      const { text, fieldProps, emptyText = '-' } = props
+      const restFieldProps = omit(fieldProps || {}, ['autoSize', 'classNames', 'styles'])
+
+      return wrapSSR(
+        <span
+          ref={(instance) => {
+            readonlyRef = instance as HTMLElement | null
+          }}
+          class={clsx(hashId, readonlyClassName.value, compClassName, restFieldProps.class)}
+          {...restFieldProps}
+          style={restFieldProps.style as CSSProperties | undefined}
+        >
+          {text ?? emptyText}
+        </span>,
+      )
+    }
+  },
+})
+
+export { FieldTextAreaReadonly }
 export default FieldTextAreaReadonly

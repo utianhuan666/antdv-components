@@ -1,12 +1,13 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from './types'
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
 import { objectToMap, proFieldParsingText } from '../../../utils'
 
 type Props = NonNullable<
   ProFieldFC<FieldSelectProps>['__props']
 > & {
   valueEnum: FieldSelectProps['valueEnum']
-  optionsValueEnum: Map<any, any> | undefined
+  optionsValueEnum: ProSchemaValueEnumMap | undefined
 }
 
 export function FieldSelectRead(props: Props) {
@@ -14,7 +15,7 @@ export function FieldSelectRead(props: Props) {
   const dom = (
     <>
       {proFieldParsingText(
-        rest.text,
+        (rest.text ?? '') as string | number | Array<string | number>,
         objectToMap(valueEnum || optionsValueEnum),
       )}
     </>

@@ -1,6 +1,7 @@
 import type { VNodeChild } from 'vue'
 import type { ProRenderFieldPropsType } from '../provider'
 import type { ProFieldBuiltinValueType } from '../utils/typing'
+import type { ProFieldRenderProps } from './types'
 import { Avatar } from 'antdv-next'
 import { pickProProps } from '../utils'
 import FieldCascader from './components/Cascader'
@@ -33,8 +34,10 @@ import FieldTreeSelect from './components/TreeSelect'
 import { wrapProFieldLight } from './internal/ProFieldLightWrapper'
 import './initDayjs'
 
+type RenderText = Parameters<NonNullable<ProRenderFieldPropsType['render']>>[0]
+
 function sameRenderPair(
-  fn: (text: any, props: any) => VNodeChild,
+  fn: (text: RenderText, props: ProFieldRenderProps) => VNodeChild,
 ): ProRenderFieldPropsType {
   return {
     render: fn as ProRenderFieldPropsType['render'],
@@ -46,17 +49,17 @@ const ValueTypeToComponentMap: Record<ProFieldBuiltinValueType, ProRenderFieldPr
   progress: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldProgress {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldProgress mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   money: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldMoney {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldMoney mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   percent: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldPercent {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldPercent mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   image: sameRenderPair((text, props) => <FieldImage {...props} text={text} />),
   date: sameRenderPair((text, props) =>
@@ -138,10 +141,8 @@ const ValueTypeToComponentMap: Record<ProFieldBuiltinValueType, ProRenderFieldPr
   fromNow: sameRenderPair((text, props) => <FieldFromNow {...props} text={text} />),
   index: sameRenderPair(text => <FieldIndexColumn>{(text as number) + 1}</FieldIndexColumn>),
   indexBorder: sameRenderPair(text => <FieldIndexColumn border>{(text as number) + 1}</FieldIndexColumn>),
-  avatar: sameRenderPair((text, props) =>
-    props.mode === 'read' && typeof text === 'string'
-      ? <Avatar src={text} size={22} shape="circle" />
-      : <FieldText {...props} text={text as string} />,
+  avatar: sameRenderPair(text =>
+    <Avatar src={text as string} size={22} shape="circle" />,
   ),
   code: sameRenderPair((text, props) => <FieldCode {...props} text={text} />),
   jsonCode: sameRenderPair((text, props) => <FieldCode language="json" {...props} text={text} />),
@@ -154,13 +155,13 @@ const ValueTypeToComponentMap: Record<ProFieldBuiltinValueType, ProRenderFieldPr
         ? props.placeholder
         : undefined
     const textValue = typeof text === 'number' ? text : Number(text) || 0
-    return <FieldDigit {...props} text={textValue} placeholder={placeholder} mode={props.mode} fieldProps={fieldProps} />
+    return <FieldDigit text={textValue} placeholder={placeholder} mode={props.mode} fieldProps={fieldProps} />
   }),
   digitRange: sameRenderPair((text, props) => <FieldDigitRange {...props} text={text} />),
   second: sameRenderPair((text, props) => <FieldSecond {...props} text={text} placeholder={props.placeholder as string} />),
   select: sameRenderPair((text, props) => wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)),
   text: sameRenderPair((text, props) =>
-    props.valueEnum || props.request
+    'valueEnum' in props
       ? wrapProFieldLight(props.light, <FieldSelect {...props} text={text} />)
       : <FieldText {...props} text={text as string} />,
   ),
@@ -175,7 +176,7 @@ const ValueTypeToComponentMap: Record<ProFieldBuiltinValueType, ProRenderFieldPr
   cascader: sameRenderPair((text, props) => {
     const fieldProps = pickProProps(props.fieldProps)
     const placeholder = typeof props.placeholder === 'string' ? props.placeholder : undefined
-    return <FieldCascader {...props} mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
+    return <FieldCascader mode={props.mode} text={text} placeholder={placeholder} fieldProps={fieldProps} />
   }),
   treeSelect: sameRenderPair((text, props) => <FieldTreeSelect {...props} text={text} />),
   color: sameRenderPair((text, props) => <FieldColorPicker {...props} text={text} />),

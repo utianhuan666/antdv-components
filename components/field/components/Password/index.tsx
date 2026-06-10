@@ -11,8 +11,13 @@ type FieldPasswordProps = NonNullable<ProFieldFC<{
   onOpenChange?: (open: boolean) => void
 }>['__props']>
 
+type FieldPasswordEditInstance = InstanceType<typeof import('antdv-next')['InputPassword']>
+type FieldPasswordInnerRef = FieldPasswordEditInstance | HTMLSpanElement
+export type FieldPasswordExpose = Partial<FieldPasswordEditInstance> & Partial<HTMLSpanElement>
+
 const FieldPassword = defineComponent<FieldPasswordProps>({
   name: 'FieldPassword',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
@@ -22,11 +27,23 @@ const FieldPassword = defineComponent<FieldPasswordProps>({
     'open',
     'onOpenChange',
   ],
-  setup(rawProps) {
+  setup(rawProps, { expose }) {
     const props = rawProps
     const intl = useIntl()
     const openRef = ref(false)
+    const innerRef = ref<FieldPasswordInnerRef | null>(null)
     const getOpen = () => props.open ?? openRef.value
+
+    expose(
+      new Proxy({} as FieldPasswordExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key as keyof FieldPasswordInnerRef]
+        },
+        has(_target, key: string) {
+          return innerRef.value ? key in innerRef.value : false
+        },
+      }),
+    )
 
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
       const next = typeof updater === 'function' ? updater(getOpen()) : updater
@@ -47,7 +64,7 @@ const FieldPassword = defineComponent<FieldPasswordProps>({
           fieldProps: props.fieldProps,
           open: getOpen(),
           setOpen,
-        })
+        }, innerRef)
       }
 
       if (isProFieldEditOrUpdateMode(mode)) {
@@ -57,7 +74,7 @@ const FieldPassword = defineComponent<FieldPasswordProps>({
           formItemRender: props.formItemRender,
           fieldProps: props.fieldProps,
           intl,
-        })
+        }, innerRef)
       }
 
       return null

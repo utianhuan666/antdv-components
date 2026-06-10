@@ -8,24 +8,20 @@ import { useFieldFetchData } from '../Select'
 import FieldSegmentedEdit from './FieldSegmentedEdit'
 import FieldSegmentedRead from './FieldSegmentedRead'
 
+type FieldSegmentedInstance = InstanceType<typeof import('antdv-next')['Segmented']>
+export type FieldSegmentedExpose = Partial<FieldSegmentedInstance> & {
+  fetchData: (keyWord?: string) => void
+}
+
 type FieldSegmentedProps = NonNullable<ProFieldFC<{
   text: string
   emptyText?: VNodeChild
   options?: RequestOptionsType[]
 } & FieldSelectProps>['__props']>
 
-function buildOptionsValueEnum(options: any[] | undefined) {
-  if (!options?.length)
-    return undefined
-
-  return options.reduce<Record<string, any>>((pre, cur) => {
-    pre[cur?.value ?? ''] = cur?.label
-    return pre
-  }, {})
-}
-
 const FieldSegmented = defineComponent<FieldSegmentedProps>({
   name: 'FieldSegmented',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
@@ -44,10 +40,16 @@ const FieldSegmented = defineComponent<FieldSegmentedProps>({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps
-    const inputRef = ref<HTMLInputElement | null>(null)
-    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
-    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
-    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+    const inputRef = ref<FieldSegmentedInstance | null>(null)
+    const [loading, options, fetchData] = useFieldFetchData(
+      props as Parameters<typeof useFieldFetchData>[0],
+    )
+    const optionsValueEnum = computed<Record<string, RequestOptionsType['label']> | undefined>(() => options.value?.length
+      ? options.value.reduce<Record<string, RequestOptionsType['label']>>((pre, cur) => {
+          pre[String(cur?.value ?? '')] = cur?.label
+          return pre
+        }, {})
+      : undefined)
     const mergedProps = computed<FieldSegmentedProps>(() => ({
       ...props,
       text: props.text ?? '',
@@ -56,7 +58,18 @@ const FieldSegmented = defineComponent<FieldSegmentedProps>({
       emptyText: props.emptyText ?? '-',
     }))
 
-    expose({ fetchData })
+    expose(
+      new Proxy({ fetchData } as FieldSegmentedExpose, {
+        get(target, key: string) {
+          if (key in target)
+            return target[key as keyof FieldSegmentedExpose]
+          return inputRef.value?.[key as keyof FieldSegmentedInstance]
+        },
+        has(target, key: string) {
+          return key in target || (!!inputRef.value && key in inputRef.value)
+        },
+      }),
+    )
 
     return () => {
       if (loading.value)
@@ -77,17 +90,12 @@ const FieldSegmented = defineComponent<FieldSegmentedProps>({
           ...fieldProps,
           options: options.value,
           loading: loading.value,
-          inputRef,
-        })
+        }, inputRef)
       }
 
       return null
     }
   },
-}) as unknown as ProFieldFC<{
-  text: string
-  emptyText?: VNodeChild
-  options?: RequestOptionsType[]
-} & FieldSelectProps>
+})
 
-export default FieldSegmented as any
+export default FieldSegmented

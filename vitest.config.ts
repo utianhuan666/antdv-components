@@ -8,6 +8,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     resolve: {
+      dedupe: ['dayjs'],
       alias: {
         'dayjs/plugin/advancedFormat': dayjsPlugin('advancedFormat'),
         'dayjs/plugin/customParseFormat': dayjsPlugin('customParseFormat'),

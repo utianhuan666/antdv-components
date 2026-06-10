@@ -1,13 +1,17 @@
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
+import type { DatePickerProps } from 'antdv-next'
 import { DatePicker } from 'antdv-next'
 import { parseValueToDay } from '../../../utils'
+
+type DatePickerInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
 
 type Props = NonNullable<
   ProFieldFC<{
     text: string | number
     format?: string
-    showTime?: boolean | Record<string, any>
+    showTime?: DatePickerProps['showTime']
     variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
     picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
   }>['__props']
@@ -16,7 +20,7 @@ type Props = NonNullable<
   intl: IntlType
 }
 
-export function FieldDatePickerEdit(props: Props) {
+export function FieldDatePickerEdit(props: Props, ref?: Ref<DatePickerInstance | null>) {
   const {
     text,
     mode,
@@ -41,6 +45,7 @@ export function FieldDatePickerEdit(props: Props) {
       showTime={showTime}
       format={format}
       placeholder={placeholder}
+      ref={ref}
       {...fieldProps}
       variant={variant ?? fieldProps?.variant}
       value={dayValue}

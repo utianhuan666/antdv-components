@@ -1,16 +1,24 @@
+import type { ComponentPublicInstance, Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
+import type { DatePickerProps } from 'antdv-next'
 import { DatePicker } from 'antdv-next'
 import { FieldLabel, parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
+type DatePickerInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
+
+type FieldLabelExposed = {
+  labelRef?: Ref<HTMLElement | null>
+  clearRef?: Ref<HTMLElement | null>
+}
 
 type Props = NonNullable<
   ProFieldFC<
     {
       text: string | number
       format?: string
-      showTime?: boolean | Record<string, any>
+      showTime?: DatePickerProps['showTime']
       variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
       picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
     } & ProFieldLightProps
@@ -22,7 +30,7 @@ type Props = NonNullable<
   intl: IntlType
 }
 
-export function FieldDatePickerLightEdit(props: Props) {
+export function FieldDatePickerLightEdit(props: Props, ref?: Ref<DatePickerInstance | null>) {
   const {
     text,
     mode,
@@ -34,7 +42,7 @@ export function FieldDatePickerLightEdit(props: Props) {
     variant,
     open,
     setOpen,
-    intl,
+    lightLabel,
   } = props
   const fieldProps = props.fieldProps || {}
   const { disabled, value } = fieldProps
@@ -50,6 +58,14 @@ export function FieldDatePickerLightEdit(props: Props) {
     fieldProps?.onOpenChange?.(false)
     fieldProps?.onBlur?.(...args)
   }
+  const syncLightLabelRef = (instance: Element | ComponentPublicInstance | null) => {
+    if (!lightLabel || !instance || typeof instance !== 'object')
+      return
+
+    const exposed = instance as ComponentPublicInstance & FieldLabelExposed
+    lightLabel.labelRef.value = exposed.labelRef?.value ?? null
+    lightLabel.clearRef.value = exposed.clearRef?.value ?? null
+  }
 
   const pickerDom = dayValue || open
     ? (
@@ -57,9 +73,9 @@ export function FieldDatePickerLightEdit(props: Props) {
           picker={picker}
           showTime={showTime}
           format={format}
+          ref={ref}
           {...fieldProps}
           variant={variant ?? fieldProps?.variant}
-          placeholder={fieldProps?.placeholder ?? intl.getMessage('tableForm.selectPlaceholder', '请选择')}
           value={dayValue}
           onOpenChange={(nextOpen: boolean) => {
             setOpen(nextOpen)
@@ -81,6 +97,7 @@ export function FieldDatePickerLightEdit(props: Props) {
       variant={variant}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
       onClick={handleLabelClick}
+      ref={syncLightLabelRef}
     />
   )
 

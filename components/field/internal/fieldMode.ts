@@ -1,8 +1,8 @@
+import type { ProFieldFCMode } from '../../provider'
+
 /**
  * Shared mode checks for Field* components (read vs edit branches).
  */
-export type ProFieldFCMode = 'read' | 'edit' | 'update'
-
 export function isProFieldReadMode(mode: ProFieldFCMode | undefined): boolean {
   return mode === 'read'
 }

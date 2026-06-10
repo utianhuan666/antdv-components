@@ -1,30 +1,46 @@
 import type { ProFieldFC } from '../../types'
 import type { FieldDigitRangeProps, Value, ValuePair } from './types'
 import { defineComponent, ref, watch } from 'vue'
-import { useIntl } from '../../../provider'
+import { proTheme, useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDigitRangeEdit from './FieldDigitRangeEdit'
 import FieldDigitRangeRead from './FieldDigitRangeRead'
 
 export type { FieldDigitRangeProps, Value, ValuePair }
+export type FieldDigitRangeExpose = Partial<HTMLSpanElement>
 type FieldDigitRangeFieldProps = NonNullable<ProFieldFC<FieldDigitRangeProps>['__props']>
 
 const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
   name: 'FieldDigitRange',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
     'render',
     'formItemRender',
     'fieldProps',
-    'emptyText',
     'placeholder',
     'separator',
     'separatorWidth',
   ],
-  setup(rawProps) {
+  setup(rawProps, { expose }) {
     const props = rawProps
     const intl = useIntl()
+    const { token } = proTheme.useToken()
+    const innerRef = ref<HTMLSpanElement | null>(null)
+
+    // 镜像 React forwardRef：把内层只读 span 实例方法透传给父级 ref
+    expose(
+      new Proxy({} as FieldDigitRangeExpose, {
+        get(_target, key: string) {
+          return innerRef.value?.[key]
+        },
+        has(_target, key: string) {
+          return innerRef.value ? key in innerRef.value : false
+        },
+      }),
+    )
+
     const fieldProps = () => props.fieldProps ?? {}
     const valuePair = ref<ValuePair | undefined>(fieldProps().value ?? fieldProps().defaultValue)
     const valuePairRef = ref<ValuePair | undefined>(valuePair.value)
@@ -67,7 +83,7 @@ const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
           placeholder,
           separator,
           separatorWidth,
-        })
+        }, innerRef)
       }
 
       if (isProFieldEditOrUpdateMode(mode)) {
@@ -83,7 +99,7 @@ const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
           valuePair: valuePair.value,
           valuePairRef,
           setValuePair,
-          token: {},
+          token: token.value,
           placeholderValue: currentFieldProps?.placeholder || placeholder || [
             intl.getMessage('tableForm.inputPlaceholder', '请输入'),
             intl.getMessage('tableForm.inputPlaceholder', '请输入'),

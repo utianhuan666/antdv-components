@@ -11,20 +11,14 @@ import FieldCheckboxEdit from './FieldCheckboxEdit'
 import FieldCheckboxRead from './FieldCheckboxRead'
 
 export type { FieldCheckboxProps, GroupProps } from './types'
-type CheckboxFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
-
-function buildOptionsValueEnum(options: any[] | undefined) {
-  if (!options?.length)
-    return undefined
-
-  return options.reduce<Record<string, any>>((pre, cur) => {
-    pre[cur?.value ?? ''] = cur?.label
-    return pre
-  }, {})
+export interface FieldCheckboxExpose {
+  fetchData: (keyWord?: string) => void
 }
+type CheckboxFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
 
 const FieldCheckbox = defineComponent<CheckboxFieldProps>({
   name: 'FieldCheckbox',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
@@ -45,9 +39,12 @@ const FieldCheckbox = defineComponent<CheckboxFieldProps>({
   setup(rawProps, { expose }) {
     const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-checkbox')
-    const [loading, fetchedOptions, fetchData] = useFieldFetchData(props as any)
-    const options = computed(() => props.request ? fetchedOptions.value : (props.options ?? fetchedOptions.value))
-    const optionsValueEnum = computed(() => buildOptionsValueEnum(options.value))
+    const [loading, options, fetchData] = useFieldFetchData(props as any)
+    const optionsValueEnum = computed(() => options.value?.length
+      ? options.value.reduce((pre: any, cur: any) => {
+          return { ...pre, [cur.value ?? '']: cur.label }
+        }, {})
+      : undefined)
     const mergedProps = computed<CheckboxFieldProps>(() => ({
       ...props,
       text: props.text ?? '',
@@ -84,7 +81,7 @@ const FieldCheckbox = defineComponent<CheckboxFieldProps>({
       },
     }))
 
-    expose({ fetchData })
+    expose({ fetchData } satisfies FieldCheckboxExpose)
 
     return () => {
       if (loading.value)
@@ -115,6 +112,6 @@ const FieldCheckbox = defineComponent<CheckboxFieldProps>({
       return null
     }
   },
-}) as unknown as ProFieldFC<GroupProps>
+})
 
-export default FieldCheckbox as any
+export default FieldCheckbox

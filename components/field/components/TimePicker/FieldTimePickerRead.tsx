@@ -1,5 +1,6 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
-import { parseValueToDay } from '../../../utils'
+import dayjs from 'dayjs'
 
 type Props = NonNullable<
   ProFieldFC<
@@ -13,14 +14,17 @@ type Props = NonNullable<
   finalFormat: string
 }
 
-export function FieldTimePickerRead(props: Props) {
+export function FieldTimePickerRead(props: Props, ref?: Ref) {
   const { text, mode, render, finalFormat } = props
   const fieldProps = props.fieldProps || {}
-  const dayValue = parseValueToDay(text, finalFormat)
-  const formatted = dayValue && !Array.isArray(dayValue)
-    ? dayValue.format(finalFormat)
-    : '-'
-  const dom = <span>{formatted}</span>
+  const isNumberOrMoment = dayjs.isDayjs(text) || typeof text === 'number'
+  const dom = (
+    <span ref={ref}>
+      {text
+        ? dayjs(text, isNumberOrMoment ? undefined : finalFormat).format(finalFormat)
+        : '-'}
+    </span>
+  )
   if (render)
     return render(text, { mode, ...fieldProps }, <span>{dom}</span>)
   return dom

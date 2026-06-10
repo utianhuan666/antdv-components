@@ -1,10 +1,16 @@
+import type { ComponentPublicInstance, Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
-import { CloseCircleFilled } from '@antdv-next/icons'
 import { TimePicker } from 'antdv-next'
 import { FieldLabel, parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
+type TimePickerInstance = InstanceType<typeof import('antdv-next')['TimePicker']>
+
+interface FieldLabelExposed {
+  labelRef?: Ref<HTMLElement | null>
+  clearRef?: Ref<HTMLElement | null>
+}
 
 type Props = NonNullable<
   ProFieldFC<
@@ -22,13 +28,14 @@ type Props = NonNullable<
   intl: IntlType
 }
 
-export function FieldTimePickerLightEdit(props: Props) {
+export function FieldTimePickerLightEdit(props: Props, ref?: Ref<TimePickerInstance | null> | null) {
   const {
     text,
     mode,
     label,
     format,
     formItemRender,
+    lightLabel,
     variant,
     finalFormat,
     open,
@@ -44,42 +51,31 @@ export function FieldTimePickerLightEdit(props: Props) {
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
-  const handleBlur = (...args: any[]) => {
-    setOpen(false)
-    fieldProps?.onOpenChange?.(false)
-    fieldProps?.onBlur?.(...args)
+
+  const syncLightLabelRef = (instance: Element | ComponentPublicInstance | null) => {
+    if (!lightLabel || !instance || typeof instance !== 'object')
+      return
+
+    const exposed = instance as ComponentPublicInstance & FieldLabelExposed
+    lightLabel.labelRef.value = exposed.labelRef?.value ?? null
+    lightLabel.clearRef.value = exposed.clearRef?.value ?? null
   }
-  const handleClear = (event: MouseEvent) => {
-    event.stopPropagation()
-    fieldProps?.onChange?.(undefined)
-    setOpen(false)
-  }
+
   const pickerDom = dayValue || open
     ? (
-        <span style={{ position: 'relative', display: 'inline-flex' }}>
-          <TimePicker
-            format={format}
-            {...fieldProps}
-            allowClear={false}
-            variant={variant ?? fieldProps?.variant}
-            placeholder={fieldProps?.placeholder ?? intl.getMessage('tableForm.selectPlaceholder', '请选择')}
-            value={dayValue}
-            onOpenChange={(nextOpen: boolean) => {
-              setOpen(nextOpen)
-              fieldProps?.onOpenChange?.(nextOpen)
-            }}
-            onBlur={handleBlur}
-            open={open}
-          />
-          {dayValue
-            ? (
-                <CloseCircleFilled
-                  class="ant-picker-clear"
-                  onClick={handleClear}
-                />
-              )
-            : null}
-        </span>
+        <TimePicker
+          format={format}
+          ref={ref}
+          {...fieldProps}
+          variant={variant ?? fieldProps?.variant}
+          placeholder={fieldProps?.placeholder ?? intl.getMessage('tableForm.selectPlaceholder', '请选择')}
+          value={dayValue}
+          onOpenChange={(nextOpen: boolean) => {
+            setOpen(nextOpen)
+            fieldProps?.onOpenChange?.(nextOpen)
+          }}
+          open={open}
+        />
       )
     : undefined
 
@@ -93,6 +89,7 @@ export function FieldTimePickerLightEdit(props: Props) {
       variant={variant ?? fieldProps?.variant}
       style={dayValue ? { paddingInlineEnd: 0 } : undefined}
       onClick={handleLabelClick}
+      ref={syncLightLabelRef}
     />
   )
 

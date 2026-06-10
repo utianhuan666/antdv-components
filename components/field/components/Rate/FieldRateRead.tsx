@@ -2,17 +2,20 @@ import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { Rate } from 'antdv-next'
 
-type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
+type RateInstance = InstanceType<typeof import('antdv-next')['Rate']>
 
-export function FieldRateRead(props: Props, rateRef?: Ref<unknown> | null) {
+interface FieldRateProps { text: string }
+type Props = NonNullable<ProFieldFC<FieldRateProps>['__props']>
+
+export function FieldRateRead(props: Props, ref?: Ref<RateInstance | null>) {
   const { text, mode, render, fieldProps } = props
   const dom = (
     <Rate
       allowHalf
       disabled
-      ref={rateRef as any}
+      ref={ref}
       {...fieldProps}
-      value={text as any}
+      value={text}
     />
   )
 

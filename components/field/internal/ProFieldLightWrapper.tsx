@@ -11,14 +11,20 @@ export interface ProFieldLightInjectedProps {
 
 const ProFieldLightWrapper = defineComponent({
   name: 'ProFieldLightWrapper',
-  props: {
-    isLight: { type: Boolean, default: false },
-  },
-  setup(props, { slots }) {
+  props: ['isLight'],
+  setup(rawProps, { slots }) {
+    const props = rawProps as { isLight?: boolean }
     const labelTrigger = ref(false)
-    const lightLabel = {
+    const lightLabel: ProFieldLightInjectedProps['lightLabel'] = {
       labelRef: ref<HTMLElement | null>(null),
       clearRef: ref<HTMLElement | null>(null),
+    }
+
+    const isTriggeredByLabel = (event: MouseEvent) => {
+      const target = event.target as Node
+      const isLabelMouseDown = lightLabel?.labelRef.value?.contains(target)
+      const isClearMouseDown = lightLabel?.clearRef.value?.contains(target)
+      return isLabelMouseDown && !isClearMouseDown
     }
 
     return () => {
@@ -29,10 +35,8 @@ const ProFieldLightWrapper = defineComponent({
       return (
         <div
           onMousedown={(event: MouseEvent) => {
-            const target = event.target as Node
-            const isLabelMouseDown = lightLabel.labelRef.value?.contains(target) ?? false
-            const isClearMouseDown = lightLabel.clearRef.value?.contains(target) ?? false
-            labelTrigger.value = isLabelMouseDown && !isClearMouseDown
+            if (isTriggeredByLabel(event))
+              labelTrigger.value = true
           }}
           onMouseup={() => {
             labelTrigger.value = false

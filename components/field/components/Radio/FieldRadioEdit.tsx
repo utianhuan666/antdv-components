@@ -1,13 +1,15 @@
-import type { VNodeChild } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { clsx } from '@v-c/util'
 import { RadioGroup } from 'antdv-next'
 
+type RadioGroupInstance = InstanceType<typeof import('antdv-next')['RadioGroup']>
+
 type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   options: any[]
   loading: boolean
-  radioRef: any
+  radioRef: Ref<RadioGroupInstance | null>
   layoutClassName: string
   wrapSSR: (node: VNodeChild) => VNodeChild
   hashId: string
@@ -36,7 +38,6 @@ export function FieldRadioEdit(props: Props) {
       {...rest.fieldProps}
       class={clsx(
         rest.fieldProps?.class,
-        rest.fieldProps?.className,
         {
           [`${layoutClassName}-error`]: status?.status === 'error',
           [`${layoutClassName}-warning`]: status?.status === 'warning',

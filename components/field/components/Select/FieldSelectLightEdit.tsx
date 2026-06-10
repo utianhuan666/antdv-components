@@ -1,5 +1,8 @@
+import type { SelectProps } from 'antdv-next'
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
+import type { LightSelectExpose } from './LightSelect'
 import type { FieldSelectFullProps } from './FieldSelectSearchEdit'
 import type { RequestOptionsType } from './types'
 import LightSelect from './LightSelect'
@@ -10,8 +13,8 @@ export type FieldSelectLightEditProps = NonNullable<ProFieldFC<FieldSelectFullPr
   options: RequestOptionsType[]
   fetchData: (keyWord?: string) => void
   resetData: () => void
-  inputRef: any
-  componentSize: string
+  inputRef: Ref<LightSelectExpose | null>
+  componentSize: SelectProps['size']
 }
 
 export function FieldSelectLightEdit(props: FieldSelectLightEditProps) {
@@ -39,7 +42,7 @@ export function FieldSelectLightEdit(props: FieldSelectLightEditProps) {
       ref={inputRef}
       loading={loading}
       allowClear
-      size={componentSize as any}
+      size={componentSize}
       options={options}
       label={label}
       labelVariant={variant}
@@ -47,8 +50,6 @@ export function FieldSelectLightEdit(props: FieldSelectLightEditProps) {
       lightLabel={lightLabel}
       labelTrigger={labelTrigger}
       fetchData={fetchData}
-      className={rest.className}
-      style={rest.style}
       {...fieldProps}
     />
   )

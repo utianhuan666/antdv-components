@@ -1,28 +1,30 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { InputNumber } from 'antdv-next'
 
-type Props = NonNullable<ProFieldFC<{
-  text: number | string
-  placeholder?: string
-}>['__props']> & {
+type InputNumberInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type ProgressInstance = InstanceType<typeof import('antdv-next')['Progress']>
+
+type Props = Parameters<
+  ProFieldFC<{
+    text: number | string
+    placeholder?: string
+  }>
+>[0] & {
   placeholderValue: string
 }
 
-export function FieldProgressEdit(props: Props) {
+export function FieldProgressEdit(props: Props, ref?: Ref<InputNumberInstance | ProgressInstance | null>) {
   const { text, mode, formItemRender, fieldProps, placeholderValue } = props
   const dom = (
     <InputNumber
-      {...({
-        placeholder: placeholderValue,
-        ...fieldProps,
-      } as any)}
+      ref={ref}
+      placeholder={placeholderValue}
+      {...fieldProps}
     />
   )
-
-  if (formItemRender)
+  if (formItemRender) {
     return formItemRender(text, { mode, ...fieldProps }, dom)
-
+  }
   return dom
 }
-
-export default FieldProgressEdit

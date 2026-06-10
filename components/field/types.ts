@@ -1,4 +1,4 @@
-import type { VNodeChild } from 'vue'
+import type { Ref, VNodeChild } from 'vue'
 import type {
   BaseProFieldFC,
   ProFieldFCRenderProps,
@@ -12,8 +12,8 @@ import type {
 
 export type ProFieldEmptyText = string | false
 
-type ProFieldFCProps<T = {}>
-  = Omit<BaseProFieldFC, 'text'> & { text?: BaseProFieldFC['text'] }
+export type ProFieldFCProps<T = {}>
+  = BaseProFieldFC
     & ProRenderFieldPropsType
     & T
     & Record<string, any>
@@ -23,11 +23,13 @@ export interface ProFieldFC<T = {}> {
   __props?: ProFieldFCProps<T>
 }
 
+export interface ProFieldLightLabel {
+  labelRef: Ref<HTMLElement | null>
+  clearRef: Ref<HTMLElement | null>
+}
+
 export interface ProFieldLightProps {
-  lightLabel?: {
-    labelRef: { value: HTMLElement | null }
-    clearRef: { value: HTMLElement | null }
-  }
+  lightLabel?: ProFieldLightLabel
   labelTrigger?: boolean
 }
 

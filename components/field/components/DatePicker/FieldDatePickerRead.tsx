@@ -1,3 +1,4 @@
+import type { DatePickerProps } from 'antdv-next'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { formatDate } from './datePickerUtils'
 
@@ -6,7 +7,7 @@ type Props = NonNullable<
     {
       text: string | number
       format?: string
-      showTime?: boolean | Record<string, any>
+      showTime?: DatePickerProps['showTime']
       variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
       picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
     } & ProFieldLightProps

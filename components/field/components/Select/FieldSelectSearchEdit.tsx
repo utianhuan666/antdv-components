@@ -1,12 +1,17 @@
+import type { SelectProps } from 'antdv-next'
+import type { CSSProperties, Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
+import type { SearchSelectExpose } from './SearchSelect'
 import type { FieldSelectProps, RequestOptionsType } from './types'
 import { Spin } from 'antdv-next'
 import SearchSelect from './SearchSelect'
 
-const SearchSelectComponent = SearchSelect as any
-
-export type FieldSelectFullProps = FieldSelectProps
+export type FieldSelectFullProps = FieldSelectProps & {
+  fieldNames?: SelectProps['fieldNames']
+  style?: CSSProperties
+  className?: string
+}
 
 export type FieldSelectSearchEditProps = NonNullable<ProFieldFC<FieldSelectFullProps>['__props']> & {
   intl: IntlType
@@ -14,7 +19,7 @@ export type FieldSelectSearchEditProps = NonNullable<ProFieldFC<FieldSelectFullP
   options: RequestOptionsType[]
   fetchData: (keyWord?: string) => void
   resetData: () => void
-  inputRef: any
+  inputRef: Ref<SearchSelectExpose | null>
 }
 
 export function FieldSelectSearchEdit(props: FieldSelectSearchEditProps) {
@@ -34,7 +39,7 @@ export function FieldSelectSearchEdit(props: FieldSelectSearchEditProps) {
   } = props
 
   const dom = (
-    <SearchSelectComponent
+    <SearchSelect
       key="SearchSelect"
       ref={inputRef}
       id={id}

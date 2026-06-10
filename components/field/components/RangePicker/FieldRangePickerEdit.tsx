@@ -1,22 +1,18 @@
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
+import type { FieldRangePickerProps } from './types'
 import { DateRangePicker } from 'antdv-next'
 import { parseValueToDay } from '../../../utils'
 
-type Props = NonNullable<
-  ProFieldFC<{
-    text: string[]
-    format?: string
-    variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
-    showTime?: boolean | Record<string, any>
-    picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
-  }>['__props']
-> & {
+type DateRangePickerInstance = InstanceType<typeof import('antdv-next')['DateRangePicker']>
+
+type Props = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']> & {
   format: string
   intl: IntlType
 }
 
-export function FieldRangePickerEdit(props: Props) {
+export function FieldRangePickerEdit(props: Props, ref?: Ref<DateRangePickerInstance | null>) {
   const {
     text,
     mode,
@@ -28,29 +24,18 @@ export function FieldRangePickerEdit(props: Props) {
     variant: propsVariant,
   } = props
   const fieldProps = props.fieldProps || {}
-  const {
-    placeholder: fieldPlaceholder,
-    ...restFieldProps
-  } = fieldProps
-  const placeholder = Array.isArray(fieldPlaceholder)
-    ? fieldPlaceholder
-    : fieldPlaceholder
-      ? [fieldPlaceholder, fieldPlaceholder]
-      : [
-          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-          intl.getMessage('tableForm.selectPlaceholder', '请选择'),
-        ]
-  const parsedValue = parseValueToDay(fieldProps.value)
-  const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
-    ? [parsedValue[0], parsedValue[1]] as [any, any]
-    : undefined
+  const dayValue = parseValueToDay(fieldProps.value)
   const dom = (
     <DateRangePicker
+      ref={ref}
       picker={picker}
-      showTime={showTime}
       format={format}
-      {...restFieldProps}
-      placeholder={placeholder}
+      showTime={showTime}
+      placeholder={[
+        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+        intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+      ]}
+      {...fieldProps}
       variant={propsVariant ?? fieldProps?.variant}
       value={dayValue}
     />

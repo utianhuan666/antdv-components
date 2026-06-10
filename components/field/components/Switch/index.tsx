@@ -1,5 +1,6 @@
 import type { SwitchProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSwitchEdit from './FieldSwitchEdit'
@@ -13,46 +14,90 @@ interface FieldSwitchFCProps {
   }
   variant?: 'outlined' | 'borderless' | 'filled'
 }
+type FieldSwitchInstance = InstanceType<typeof import('antdv-next')['Switch']>
+export type FieldSwitchExpose = Partial<FieldSwitchInstance>
 type FieldSwitchProps = NonNullable<ProFieldFC<FieldSwitchFCProps>['__props']>
 
-const FieldSwitch: ProFieldFC<FieldSwitchFCProps> = (props) => {
-  const fieldProps = props as FieldSwitchProps
-  const text = fieldProps.text
-  const mode = props.mode ?? 'read'
-  const switchProps = fieldProps.fieldProps ?? {}
-  const variant = props.variant ?? switchProps.variant
-  const intl = useIntl()
-  const readLabel = text === undefined || text === null || `${text}`.length < 1
-    ? '-'
-    : text
-      ? (switchProps.checkedChildren ?? intl.getMessage('switch.open', '打开'))
-      : (switchProps.unCheckedChildren ?? intl.getMessage('switch.close', '关闭'))
-  const mergedProps = {
-    ...fieldProps,
-    mode,
-    fieldProps: switchProps,
-  }
+const FieldSwitch = defineComponent<FieldSwitchProps>({
+  name: 'FieldSwitch',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'light',
+    'label',
+    'formItemRender',
+    'fieldProps',
+    'variant',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const switchRef = ref<FieldSwitchInstance | null>(null)
 
-  if (isProFieldReadMode(mode)) {
-    return FieldSwitchRead({
-      ...mergedProps,
-      readLabel,
-    })
-  }
+    expose(
+      new Proxy({} as FieldSwitchExpose, {
+        get(_target, key: string) {
+          return switchRef.value?.[key as keyof FieldSwitchInstance]
+        },
+        has(_target, key: string) {
+          return !!switchRef.value && key in switchRef.value
+        },
+      }),
+    )
 
-  if (isProFieldEditOrUpdateMode(mode)) {
-    const editProps = {
-      ...mergedProps,
-      variant,
+    return () => {
+      const props = rawProps as FieldSwitchProps
+      const {
+        text,
+        mode,
+        render,
+        light,
+        label,
+        formItemRender,
+        fieldProps,
+        variant: propsVariant,
+      } = props
+      const variant = propsVariant ?? fieldProps?.variant
+      const readLabel = text === undefined || text === null || `${text}`.length < 1
+        ? '-'
+        : text
+          ? (fieldProps?.checkedChildren ?? intl.getMessage('switch.open', '打开'))
+          : (fieldProps?.unCheckedChildren ?? intl.getMessage('switch.close', '关闭'))
+
+      if (isProFieldReadMode(mode)) {
+        return FieldSwitchRead({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+          light,
+          label,
+          readLabel,
+        })
+      }
+
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const editProps = {
+          text,
+          mode,
+          render,
+          label,
+          formItemRender,
+          fieldProps,
+          variant,
+        }
+
+        if (light)
+          return FieldSwitchLightEdit(editProps, switchRef)
+
+        return FieldSwitchEdit(editProps, switchRef)
+      }
+
+      return null
     }
+  },
+})
 
-    if (props.light)
-      return FieldSwitchLightEdit(editProps, null)
-
-    return FieldSwitchEdit(editProps, null)
-  }
-
-  return null
-}
-
-export default FieldSwitch
+export default FieldSwitch as unknown as ProFieldFC<FieldSwitchFCProps>

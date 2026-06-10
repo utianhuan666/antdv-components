@@ -1,4 +1,5 @@
 import type { CascaderProps } from 'antdv-next'
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
@@ -6,13 +7,15 @@ import { LoadingOutlined } from '@antdv-next/icons'
 import { clsx } from '@v-c/util'
 import { Cascader } from 'antdv-next'
 
+type CascaderInstance = InstanceType<typeof import('antdv-next')['Cascader']>
+
 type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   options: NonNullable<CascaderProps['options']>
   loading: boolean
   layoutClassName: string
   open: boolean
   setOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
-  cascaderRef: any
+  cascaderRef: Ref<CascaderInstance | null>
   intl: IntlType
 }
 

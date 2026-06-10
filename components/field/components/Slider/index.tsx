@@ -1,5 +1,6 @@
 import type { SliderProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSliderEdit from './FieldSliderEdit'
 import FieldSliderRead from './FieldSliderRead'
@@ -8,24 +9,67 @@ interface FieldSliderFCProps {
   text: string
   fieldProps?: SliderProps
 }
+type FieldSliderInstance = InstanceType<typeof import('antdv-next')['Slider']>
+export type FieldSliderExpose = Partial<FieldSliderInstance>
 type FieldSliderProps = NonNullable<ProFieldFC<FieldSliderFCProps>['__props']>
 
-const FieldSlider: ProFieldFC<FieldSliderFCProps> = (props) => {
-  const fieldProps = props as FieldSliderProps
-  const mergedProps = {
-    ...fieldProps,
-    text: fieldProps.text ?? '',
-    mode: fieldProps.mode ?? 'read',
-    fieldProps: fieldProps.fieldProps ?? {},
-  }
+const FieldSlider = defineComponent<FieldSliderProps>({
+  name: 'FieldSlider',
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const sliderRef = ref<FieldSliderInstance | null>(null)
 
-  if (isProFieldReadMode(mergedProps.mode))
-    return FieldSliderRead(mergedProps)
+    expose(
+      new Proxy({} as FieldSliderExpose, {
+        get(_target, key: string) {
+          return sliderRef.value?.[key as keyof FieldSliderInstance]
+        },
+        has(_target, key: string) {
+          return !!sliderRef.value && key in sliderRef.value
+        },
+      }),
+    )
 
-  if (isProFieldEditOrUpdateMode(mergedProps.mode))
-    return FieldSliderEdit(mergedProps, null)
+    return () => {
+      const props = rawProps as FieldSliderProps
+      const {
+        text = '',
+        mode = 'read',
+        render,
+        formItemRender,
+        fieldProps = {},
+      } = props
 
-  return null
-}
+      if (isProFieldReadMode(mode)) {
+        return FieldSliderRead({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+        })
+      }
 
-export default FieldSlider
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldSliderEdit({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+        }, sliderRef)
+      }
+
+      return null
+    }
+  },
+})
+
+export default FieldSlider as unknown as ProFieldFC<FieldSliderFCProps>

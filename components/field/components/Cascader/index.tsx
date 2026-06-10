@@ -13,33 +13,14 @@ import FieldCascaderRead from './FieldCascaderRead'
 
 export type { FieldCascaderProps, GroupProps } from './types'
 
+type FieldCascaderInstance = InstanceType<typeof import('antdv-next')['Cascader']>
+export type FieldCascaderExpose = Partial<FieldCascaderInstance> & {
+  fetchData: (keyWord?: string) => void
+}
+
 type FieldCascaderComponentProps = NonNullable<
   ProFieldFC<Omit<GroupProps, 'fieldProps'> & FieldSelectProps<CascaderProps> & { cacheForSwr?: boolean }>['__props']
 >
-
-function buildCascaderOptionsValueEnum(
-  options: RequestOptionsType[],
-  fieldNames?: CascaderProps['fieldNames'],
-): Map<any, any> | undefined {
-  if (!options?.length)
-    return undefined
-
-  const {
-    value: valueName = 'value',
-    label: labelName = 'label',
-    children: childrenName = 'children',
-  } = fieldNames || {}
-  const valuesMap = new Map()
-  const traverse = (opts: RequestOptionsType[]) => {
-    for (const cur of opts) {
-      valuesMap.set(cur[valueName], cur[labelName])
-      if (cur[childrenName])
-        traverse(cur[childrenName])
-    }
-  }
-  traverse(options)
-  return valuesMap
-}
 
 const fieldCascaderPropNames = [
   'text',
@@ -64,11 +45,12 @@ const fieldCascaderPropNames = [
 
 const FieldCascader = defineComponent<FieldCascaderComponentProps>({
   name: 'FieldCascader',
+  inheritAttrs: false,
   props: fieldCascaderPropNames,
   setup(rawProps, { expose }) {
     const props = rawProps
     const prefixCls = useProPrefixCls('pro-field-cascader')
-    const cascaderRef = ref<any>(null)
+    const cascaderRef = ref<FieldCascaderInstance | null>(null)
     const open = ref(false)
     const intl = useIntl()
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
@@ -76,17 +58,47 @@ const FieldCascader = defineComponent<FieldCascaderComponentProps>({
     }
     const [loading, options, fetchData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
 
-    expose({
-      fetchData,
-      cascaderRef,
-      focus: () => cascaderRef.value?.focus?.(),
-      blur: () => cascaderRef.value?.blur?.(),
-    })
+    expose(
+      new Proxy({ fetchData } as FieldCascaderExpose, {
+        get(target, key: string) {
+          if (key in target)
+            return target[key as keyof FieldCascaderExpose]
+          return cascaderRef.value?.[key as keyof FieldCascaderInstance]
+        },
+        has(target, key: string) {
+          return key in target || (!!cascaderRef.value && key in cascaderRef.value)
+        },
+      }),
+    )
 
     const optionsValueEnum = computed(() => {
       if (!isProFieldReadMode(props.mode))
         return undefined
-      return buildCascaderOptionsValueEnum(options.value, props.fieldProps?.fieldNames)
+
+      const {
+        value: valuePropsName = 'value',
+        label: labelPropsName = 'label',
+        children: childrenPropsName = 'children',
+      } = props.fieldProps?.fieldNames || {}
+
+      const valuesMap = new Map()
+
+      const traverseOptions = (_options?: RequestOptionsType[]): Map<any, any> => {
+        if (!_options?.length) {
+          return valuesMap
+        }
+
+        const length = _options.length
+        let i = 0
+        while (i < length) {
+          const cur = _options[i++]!
+          valuesMap.set(cur[valuePropsName], cur[labelPropsName])
+          traverseOptions(cur[childrenPropsName])
+        }
+        return valuesMap
+      }
+
+      return traverseOptions(options.value)
     })
 
     return () => {
@@ -144,4 +156,4 @@ const FieldCascader = defineComponent<FieldCascaderComponentProps>({
   },
 })
 
-export default FieldCascader as any
+export default FieldCascader

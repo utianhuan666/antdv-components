@@ -1,8 +1,10 @@
-import type { CSSProperties } from 'vue'
+import type { CSSProperties, Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { clsx } from '@v-c/util'
 import { ColorPicker } from 'antdv-next'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+
+type ColorPickerInstance = InstanceType<typeof import('antdv-next')['ColorPicker']>
 
 const DEFAULT_PRESETS = {
   label: 'Recommended',
@@ -32,12 +34,13 @@ const DEFAULT_PRESETS = {
 
 type Props = NonNullable<ProFieldFC<{ text: string }>['__props']>
 
-export function FieldColorPickerEdit(props: Props) {
+export function FieldColorPickerEdit(props: Props, ref?: Ref<ColorPickerInstance | null>) {
   const { text, mode, formItemRender, fieldProps } = props
   const prefixCls = useProPrefixCls('pro-field-color-picker')
   const style = { display: 'table-cell', ...(fieldProps?.style as CSSProperties) }
   const dom = (
     <ColorPicker
+      ref={ref}
       presets={[DEFAULT_PRESETS]}
       {...fieldProps}
       style={style}

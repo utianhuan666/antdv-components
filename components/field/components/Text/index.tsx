@@ -1,5 +1,6 @@
 import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
+import { Input } from 'antdv-next'
 import { defineComponent, onMounted, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
@@ -10,6 +11,9 @@ type FieldTextProps = NonNullable<ProFieldFC<{
   text: string | number | boolean | unknown[]
   emptyText?: VNodeChild
 }>['__props']>
+
+type FieldTextInstance = InstanceType<typeof import('antdv-next')['Input']>
+export type FieldTextExpose = Partial<FieldTextInstance>
 
 const FieldText = defineComponent<FieldTextProps>({
   name: 'FieldText',
@@ -24,7 +28,7 @@ const FieldText = defineComponent<FieldTextProps>({
   setup(rawProps, { expose }) {
     const props = rawProps
     const intl = useIntl()
-    const inputRef = ref<any>(null)
+    const inputRef = ref<FieldTextInstance | null>(null)
 
     onMounted(() => {
       if (props.fieldProps?.autoFocus) {
@@ -34,11 +38,16 @@ const FieldText = defineComponent<FieldTextProps>({
       }
     })
 
-    expose({
-      inputRef,
-      focus: () => inputRef.value?.focus?.(),
-      blur: () => inputRef.value?.blur?.(),
-    })
+    expose(
+      new Proxy({} as FieldTextExpose, {
+        get(_target, key: string) {
+          return inputRef.value?.[key as keyof FieldTextInstance]
+        },
+        has(_target, key: string) {
+          return !!inputRef.value && key in inputRef.value
+        },
+      }),
+    )
 
     return () => {
       const text = props.text ?? ''
@@ -56,16 +65,18 @@ const FieldText = defineComponent<FieldTextProps>({
       }
 
       if (isProFieldEditOrUpdateMode(mode)) {
-        return FieldTextEdit({
-          text,
-          mode,
-          render: props.render,
-          formItemRender: props.formItemRender,
-          fieldProps: props.fieldProps,
-          emptyText,
+        return FieldTextEdit(
+          {
+            text,
+            mode,
+            render: props.render,
+            formItemRender: props.formItemRender,
+            fieldProps: props.fieldProps,
+            emptyText,
+            intl,
+          },
           inputRef,
-          intl,
-        })
+        )
       }
 
       return null

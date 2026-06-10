@@ -1,9 +1,12 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import type { InputNumberPopoverProps } from './InputNumberPopover'
 import type { FieldMoneyProps } from './types'
 import { omit } from '@v-c/util'
 import InputNumberPopover from './InputNumberPopover'
 import { getTextByLocale } from './moneyFormat'
+
+type InputNumberInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
 
 type Props = Omit<NonNullable<ProFieldFC<FieldMoneyProps>['__props']>, 'moneySymbol'> & {
   precision: number
@@ -14,7 +17,7 @@ type Props = Omit<NonNullable<ProFieldFC<FieldMoneyProps>['__props']>, 'moneySym
   getFormateValue: (value?: string | number) => string
 }
 
-export function FieldMoneyEdit(props: Props) {
+export function FieldMoneyEdit(props: Props, ref?: Ref<InputNumberInstance | HTMLSpanElement | null>) {
   const {
     text,
     mode: type,
@@ -98,6 +101,7 @@ export function FieldMoneyEdit(props: Props) {
 
   const dom = (
     <InputNumberPopover
+      ref={ref}
       {...inputNumberPopoverProps}
     />
   )

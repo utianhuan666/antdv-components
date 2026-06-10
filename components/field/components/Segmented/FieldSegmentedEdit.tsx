@@ -1,8 +1,10 @@
 import type { Ref, VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
-import type { FieldSelectProps } from '../Select'
+import type { FieldSelectProps } from '../Select/types'
 import { omit } from '@v-c/util'
 import { Segmented } from 'antdv-next'
+
+type SegmentedInstance = InstanceType<typeof import('antdv-next')['Segmented']>
 
 type FieldSegmentedProps = NonNullable<ProFieldFC<{
   text: string
@@ -12,15 +14,14 @@ type FieldSegmentedProps = NonNullable<ProFieldFC<{
 type Props = FieldSegmentedProps & {
   options: any[]
   loading: boolean
-  inputRef: Ref<HTMLInputElement | null>
 }
 
-export function FieldSegmentedEdit(props: Props) {
-  const { text, mode, formItemRender, fieldProps, options, loading, inputRef } = props
+export function FieldSegmentedEdit(props: Props, ref?: Ref<SegmentedInstance | null>) {
+  const { text, mode, formItemRender, fieldProps, options, loading } = props
   const dom = (
     <Segmented
-      ref={inputRef as any}
-      {...(omit(fieldProps || {}, ['allowClear']) as object)}
+      ref={ref}
+      {...omit(fieldProps || {}, ['allowClear'])}
       options={options}
     />
   )

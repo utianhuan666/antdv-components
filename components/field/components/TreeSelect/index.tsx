@@ -1,4 +1,5 @@
 import type { TreeSelectProps } from 'antdv-next'
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import type { TreeSelectFieldProps } from './types'
@@ -13,6 +14,11 @@ import FieldTreeSelectLightEdit from './FieldTreeSelectLightEdit'
 import FieldTreeSelectRead from './FieldTreeSelectRead'
 
 export type { FieldTreeSelectProps, TreeSelectFieldProps } from './types'
+
+type FieldTreeSelectInstance = InstanceType<typeof import('antdv-next')['TreeSelect']>
+export type FieldTreeSelectExpose = Partial<FieldTreeSelectInstance> & {
+  fetchData: (keyWord?: string) => void
+}
 
 type FieldTreeSelectComponentProps = NonNullable<
   ProFieldFC<FieldSelectProps<TreeSelectFieldProps> & { cacheForSwr?: boolean }>['__props']
@@ -55,7 +61,7 @@ function omitTreeData(fieldProps: TreeSelectFieldProps | undefined) {
 function buildTreeOptionsValueEnum(
   options: RequestOptionsType[],
   fieldNames?: TreeSelectFieldProps['fieldNames'],
-): Map<any, any> | undefined {
+): ProSchemaValueEnumMap | undefined {
   if (!options?.length)
     return undefined
 
@@ -64,12 +70,13 @@ function buildTreeOptionsValueEnum(
     label: labelName = 'label',
     children: childrenName = 'children',
   } = fieldNames || {}
-  const valuesMap = new Map()
+  const valuesMap: ProSchemaValueEnumMap = new Map()
   const traverse = (opts: RequestOptionsType[]) => {
     for (const cur of opts) {
       valuesMap.set(cur[valueName], cur[labelName])
-      if (cur[childrenName])
-        traverse(cur[childrenName])
+      const children = cur[childrenName] as RequestOptionsType[] | undefined
+      if (children)
+        traverse(children)
     }
   }
   traverse(options)
@@ -96,44 +103,22 @@ const fieldTreeSelectPropNames = [
   'cacheForSwr',
 ]
 
-function withFieldTreeSelectDefaults(props: FieldTreeSelectComponentProps): FieldTreeSelectComponentProps {
-  return new Proxy(props, {
-    get(target, key: string) {
-      const value = (target as unknown as Record<string, unknown>)[key]
-      if (value !== undefined) {
-        if (key === 'light' && value === '')
-          return true
-        return value
-      }
-      if (key === 'text')
-        return ''
-      if (key === 'mode')
-        return 'read'
-      if (key === 'fieldProps')
-        return {}
-      if (key === 'emptyText')
-        return '-'
-      if (key === 'light')
-        return false
-      return undefined
-    },
-  }) as FieldTreeSelectComponentProps
-}
-
 const FieldTreeSelect = defineComponent({
   name: 'FieldTreeSelect',
   props: fieldTreeSelectPropNames,
   setup(rawProps, { expose }) {
-    const props = withFieldTreeSelectDefaults(rawProps as unknown as FieldTreeSelectComponentProps)
+    const props = rawProps as FieldTreeSelectComponentProps
     const prefixCls = useProPrefixCls('pro-field-tree-select')
-    const treeSelectRef = ref<any>(null)
-    const fetchProps = new Proxy(props, {
+    const treeSelectRef = ref<FieldTreeSelectInstance | null>(null)
+    const fetchProps = new Proxy(props as Parameters<typeof useFieldFetchData>[0], {
       get(target, key: string) {
-        if (key === 'defaultKeyWords')
-          return target.fieldProps?.searchValue ?? target.defaultKeyWords
-        return (target as unknown as Record<string, unknown>)[key]
+        if (key === 'defaultKeyWords') {
+          const fieldProps = target.fieldProps as TreeSelectFieldProps | undefined
+          return fieldProps?.searchValue ?? target.defaultKeyWords
+        }
+        return Reflect.get(target, key)
       },
-    }) as Parameters<typeof useFieldFetchData>[0]
+    })
     const [loading, options, fetchData] = useFieldFetchData(fetchProps)
     const open = ref(false)
     const searchValue = ref<string | undefined>(props.fieldProps?.searchValue)
@@ -142,20 +127,31 @@ const FieldTreeSelect = defineComponent({
       open.value = typeof updater === 'function' ? updater(open.value) : updater
     }
 
-    expose({
-      fetchData,
-      treeSelectRef,
-      focus: () => treeSelectRef.value?.focus?.(),
-      blur: () => treeSelectRef.value?.blur?.(),
-    })
+    expose(
+      new Proxy({ fetchData } as FieldTreeSelectExpose, {
+        get(target, key: string) {
+          if (key in target)
+            return target[key as keyof FieldTreeSelectExpose]
+          return treeSelectRef.value?.[key as keyof FieldTreeSelectInstance]
+        },
+        has(target, key: string) {
+          return key in target || (!!treeSelectRef.value && key in treeSelectRef.value)
+        },
+      }),
+    )
 
     const optionsValueEnum = computed(() => {
-      if (!isProFieldReadMode(props.mode))
+      const mode = props.mode ?? 'read'
+      if (!isProFieldReadMode(mode))
         return undefined
       return buildTreeOptionsValueEnum(options.value, props.fieldProps?.fieldNames)
     })
 
     return () => {
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const emptyText = props.emptyText ?? '-'
+      const light = props.light === true
       const {
         fieldProps,
         onClear,
@@ -173,20 +169,20 @@ const FieldTreeSelect = defineComponent({
       const mergedAutoClearSearchValue = showSearchConfig?.autoClearSearchValue ?? autoClearSearchValue
       const mergedSearchValue = showSearchConfig?.searchValue ?? propsSearchValue ?? searchValue.value
 
-      if (isProFieldReadMode(props.mode)) {
+      if (isProFieldReadMode(mode)) {
         return FieldTreeSelectRead({
-          text: props.text,
-          mode: props.mode,
+          text,
+          mode,
           valueEnum: props.valueEnum,
           optionsValueEnum: optionsValueEnum.value,
           options: options.value,
           render: props.render,
           fieldProps: props.fieldProps,
-          emptyText: props.emptyText,
+          emptyText,
         })
       }
 
-      if (isProFieldEditOnlyMode(props.mode)) {
+      if (isProFieldEditOnlyMode(mode)) {
         const setSearchValue = (
           updater:
             | string
@@ -200,7 +196,7 @@ const FieldTreeSelect = defineComponent({
           ;(mergedOnSearch as ((value?: string) => void) | undefined)?.(nextValue)
         }
 
-        const treeSelectOnChange = (value: any, optionList: any, extra: any) => {
+        const treeSelectOnChange: TreeSelectProps['onChange'] = (value, optionList, extra) => {
           if (showSearch && mergedAutoClearSearchValue) {
             fetchData(undefined)
             setSearchValue(undefined)
@@ -209,15 +205,14 @@ const FieldTreeSelect = defineComponent({
         }
 
         const editProps = {
-          text: props.text,
-          mode: props.mode as 'edit',
+          text: String(text),
+          mode: mode as 'edit',
           formItemRender: props.formItemRender,
           label: props.label,
           variant: props.variant ?? fieldProps?.variant,
           fieldProps,
           open: open.value,
           setOpen,
-          treeSelectRef,
           intl,
           loading: loading.value,
           options: options.value as NonNullable<TreeSelectProps['treeData']>,
@@ -235,10 +230,10 @@ const FieldTreeSelect = defineComponent({
           layoutClassName: prefixCls.value,
         }
 
-        if (props.light)
-          return FieldTreeSelectLightEdit(editProps)
+        if (light)
+          return FieldTreeSelectLightEdit(editProps, treeSelectRef)
 
-        return FieldTreeSelectEdit(editProps)
+        return FieldTreeSelectEdit(editProps, treeSelectRef)
       }
 
       return null
@@ -246,4 +241,6 @@ const FieldTreeSelect = defineComponent({
   },
 })
 
-export default FieldTreeSelect as any
+export default FieldTreeSelect as unknown as ProFieldFC<FieldSelectProps<TreeSelectFieldProps> & {
+  cacheForSwr?: boolean
+}>

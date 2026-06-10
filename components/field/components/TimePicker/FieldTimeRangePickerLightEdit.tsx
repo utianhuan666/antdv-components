@@ -1,9 +1,11 @@
+import type { Ref } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import { TimeRangePicker } from 'antdv-next'
 import { FieldLabel, parseValueToDay } from '../../../utils'
 
 type SetOpen = (open: boolean | ((open: boolean) => boolean)) => void
+type TimeRangePickerInstance = InstanceType<typeof import('antdv-next')['TimeRangePicker']>
 
 type Props = NonNullable<
   ProFieldFC<
@@ -21,7 +23,7 @@ type Props = NonNullable<
   intl: IntlType
 }
 
-export function FieldTimeRangePickerLightEdit(props: Props) {
+export function FieldTimeRangePickerLightEdit(props: Props, ref?: Ref<TimeRangePickerInstance | null>) {
   const {
     text,
     mode,
@@ -37,7 +39,7 @@ export function FieldTimeRangePickerLightEdit(props: Props) {
   const fieldProps = props.fieldProps || {}
   const parsedValue = parseValueToDay(fieldProps.value, finalFormat)
   const dayValue = Array.isArray(parsedValue) && parsedValue.length === 2
-    ? [parsedValue[0], parsedValue[1]] as [any, any]
+    ? [parsedValue[0], parsedValue[1]] as [typeof parsedValue[0], typeof parsedValue[1]]
     : undefined
   const {
     disabled,
@@ -52,19 +54,10 @@ export function FieldTimeRangePickerLightEdit(props: Props) {
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
-  const handleRangeChange = (nextValue: any) => {
-    fieldProps?.onChange?.(nextValue)
-    if (!nextValue)
-      setOpen(false)
-  }
-  const handleBlur = (...args: any[]) => {
-    setOpen(false)
-    fieldProps?.onOpenChange?.(false)
-    fieldProps?.onBlur?.(...args)
-  }
   const pickerDom = dayValue || open
     ? (
         <TimeRangePicker
+          ref={ref}
           format={format}
           {...fieldProps}
           variant={variant ?? fieldProps?.variant}
@@ -74,8 +67,6 @@ export function FieldTimeRangePickerLightEdit(props: Props) {
             setOpen(nextOpen)
             fieldProps?.onOpenChange?.(nextOpen)
           }}
-          onChange={handleRangeChange}
-          onBlur={handleBlur}
           open={open}
         />
       )

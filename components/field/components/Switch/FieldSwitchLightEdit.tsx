@@ -1,22 +1,25 @@
+import type { SwitchProps } from 'antdv-next'
 import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { omit } from '@v-c/util'
 import { Switch } from 'antdv-next'
 import { FieldLabel } from '../../../utils'
 
+type SwitchInstance = InstanceType<typeof import('antdv-next')['Switch']>
+
 type Props = NonNullable<ProFieldFC<{
   text: boolean
-  fieldProps?: Record<string, any>
+  fieldProps?: SwitchProps
   variant?: 'outlined' | 'borderless' | 'filled'
 }>['__props']> & {
   variant: 'outlined' | 'borderless' | 'filled' | undefined
 }
 
-export function FieldSwitchLightEdit(props: Props, switchRef?: Ref<unknown> | null) {
+export function FieldSwitchLightEdit(props: Props, ref?: Ref<SwitchInstance | null>) {
   const { text, mode, label, formItemRender, fieldProps, variant } = props
   const editDom = (
     <Switch
-      ref={switchRef as any}
+      ref={ref}
       size="small"
       {...omit(fieldProps || {}, ['value'])}
       checked={fieldProps?.checked ?? fieldProps?.value}

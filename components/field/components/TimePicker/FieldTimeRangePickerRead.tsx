@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC, ProFieldLightProps } from '../../types'
 
 type Props = NonNullable<
@@ -13,14 +14,14 @@ type Props = NonNullable<
   parsedEndText: string
 }
 
-export function FieldTimeRangePickerRead(props: Props) {
+export function FieldTimeRangePickerRead(props: Props, ref?: Ref) {
   const { text, mode, render, parsedStartText, parsedEndText } = props
   const fieldProps = props.fieldProps || {}
   const start = parsedStartText
   const end = parsedEndText
   const content = !start && !end ? '-' : `${start || '-'} ~ ${end || '-'}`
   const dom = (
-    <div>{content}</div>
+    <div ref={ref}>{content}</div>
   )
   if (render)
     return render(text, { mode, ...fieldProps }, <span>{dom}</span>)

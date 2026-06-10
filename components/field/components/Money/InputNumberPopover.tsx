@@ -16,29 +16,41 @@ export type InputNumberPopoverProps = InputNumberProps & {
   numberPopoverRender?: FieldMoneyProps['numberPopoverRender']
 }
 
+type InputNumberPopoverExpose = Partial<InstanceType<typeof InputNumber>>
 type InputNumberValue = InputNumberProps['value']
 type InputNumberChangeValue = Parameters<NonNullable<InputNumberProps['onChange']>>[0]
 
-const inputNumberPopoverPropNames = [
-  'open',
-  'onOpenChange',
-  'contentRender',
-  'numberFormatOptions',
-  'numberPopoverRender',
-  'value',
-  'defaultValue',
-  'precision',
-  'onChange',
-  'onBlur',
-]
-
 export default defineComponent({
   name: 'InputNumberPopover',
-  props: inputNumberPopoverPropNames,
-  setup(props, { attrs }) {
+  inheritAttrs: false,
+  props: [
+    'open',
+    'onOpenChange',
+    'contentRender',
+    'numberFormatOptions',
+    'numberPopoverRender',
+    'value',
+    'defaultValue',
+    'onChange',
+    'onBlur',
+  ],
+  setup(props, { attrs, expose }) {
     const typedProps = props as unknown as InputNumberPopoverProps
     const localValue = ref<InputNumberValue>(typedProps.value ?? typedProps.defaultValue)
     const localOpen = ref(typedProps.open ?? false)
+    const inputRef = ref<InstanceType<typeof InputNumber> | null>(null)
+
+    // 镜像 React forwardRef：把内层 InputNumber 实例方法透传给父级 ref
+    expose(
+      new Proxy({} as InputNumberPopoverExpose, {
+        get(_target, key: string) {
+          return inputRef.value?.[key]
+        },
+        has(_target, key: string) {
+          return inputRef.value ? key in inputRef.value : false
+        },
+      }),
+    )
     const mergedValue = computed(() => typedProps.value !== undefined ? typedProps.value : localValue.value)
 
     watch(() => typedProps.value, (val) => {
@@ -70,6 +82,7 @@ export default defineComponent({
       if (!dom) {
         return (
           <InputNumber
+            ref={inputRef}
             {...attrs}
             value={mergedValue.value}
             onChange={handleChange}
@@ -90,6 +103,7 @@ export default defineComponent({
           }}
         >
           <InputNumber
+            ref={inputRef}
             {...attrs}
             value={mergedValue.value}
             onChange={handleChange}

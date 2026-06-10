@@ -8,12 +8,15 @@ type Props = NonNullable<ProFieldFC<GroupProps>['__props']> & {
 
 export function FieldCascaderRead(props: Props) {
   const { mode, render, optionsValueEnum, ...rest } = props
+  const parsedText = rest.text
   const dom = (
     <>
-      {proFieldParsingText(
-        rest.text,
-        objectToMap(rest.valueEnum || optionsValueEnum),
-      )}
+      {parsedText == null
+        ? parsedText
+        : proFieldParsingText(
+            parsedText,
+            objectToMap(rest.valueEnum || optionsValueEnum),
+          )}
     </>
   )
 

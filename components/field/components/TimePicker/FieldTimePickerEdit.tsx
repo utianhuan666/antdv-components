@@ -1,6 +1,9 @@
+import type { Ref } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { TimePicker } from 'antdv-next'
 import { parseValueToDay } from '../../../utils'
+
+type TimePickerInstance = InstanceType<typeof import('antdv-next')['TimePicker']>
 
 type Props = NonNullable<
   ProFieldFC<{
@@ -13,7 +16,7 @@ type Props = NonNullable<
   format: string
 }
 
-export function FieldTimePickerEdit(props: Props) {
+export function FieldTimePickerEdit(props: Props, ref?: Ref<TimePickerInstance | null>) {
   const {
     text,
     mode,
@@ -27,6 +30,7 @@ export function FieldTimePickerEdit(props: Props) {
 
   const dom = (
     <TimePicker
+      ref={ref}
       format={format}
       {...fieldProps}
       variant={variant ?? fieldProps?.variant}
