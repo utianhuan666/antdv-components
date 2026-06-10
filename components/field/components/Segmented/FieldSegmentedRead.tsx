@@ -1,4 +1,5 @@
 import type { VNodeChild } from 'vue'
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
 import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps } from '../Select/types'
 import { objectToMap, proFieldParsingText } from '../../../utils'
@@ -9,7 +10,7 @@ type FieldSegmentedProps = NonNullable<ProFieldFC<{
 } & FieldSelectProps>['__props']>
 
 type Props = FieldSegmentedProps & {
-  optionsValueEnum: Record<string, any> | undefined
+  optionsValueEnum: ProSchemaValueEnumMap | undefined
   emptyText: VNodeChild
 }
 

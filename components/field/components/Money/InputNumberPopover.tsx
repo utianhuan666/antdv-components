@@ -43,10 +43,10 @@ export default defineComponent({
     // 镜像 React forwardRef：把内层 InputNumber 实例方法透传给父级 ref
     expose(
       new Proxy({} as InputNumberPopoverExpose, {
-        get(_target, key: string) {
-          return inputRef.value?.[key]
+        get(_target, key: PropertyKey) {
+          return inputRef.value ? Reflect.get(inputRef.value, key) : undefined
         },
-        has(_target, key: string) {
+        has(_target, key: PropertyKey) {
           return inputRef.value ? key in inputRef.value : false
         },
       }),

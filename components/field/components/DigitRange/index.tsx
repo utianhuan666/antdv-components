@@ -32,10 +32,10 @@ const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
     // 镜像 React forwardRef：把内层只读 span 实例方法透传给父级 ref
     expose(
       new Proxy({} as FieldDigitRangeExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key]
+        get(_target, key: PropertyKey) {
+          return innerRef.value ? Reflect.get(innerRef.value, key) : undefined
         },
-        has(_target, key: string) {
+        has(_target, key: PropertyKey) {
           return innerRef.value ? key in innerRef.value : false
         },
       }),
