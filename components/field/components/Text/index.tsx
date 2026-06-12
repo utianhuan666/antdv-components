@@ -1,6 +1,6 @@
+import type { InputRef } from 'antdv-next'
 import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
-import { Input } from 'antdv-next'
 import { defineComponent, onMounted, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
@@ -8,11 +8,11 @@ import FieldTextEdit from './FieldTextEdit'
 import FieldTextRead from './FieldTextRead'
 
 type FieldTextProps = NonNullable<ProFieldFC<{
-  text: string | number | boolean | unknown[]
+  text: string
   emptyText?: VNodeChild
 }>['__props']>
 
-type FieldTextInstance = InstanceType<typeof import('antdv-next')['Input']>
+type FieldTextInstance = InputRef
 export type FieldTextExpose = Partial<FieldTextInstance>
 
 const FieldText = defineComponent<FieldTextProps>({

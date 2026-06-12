@@ -1,8 +1,11 @@
+import type { FormInstance } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
+import type { SubmitterProps } from '../../BaseForm/Submitter'
 import type { ProFormProps } from '../ProForm'
 import { clsx } from '@v-c/util'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { defineComponent } from 'vue'
-import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { useIntl } from '../../../provider'
 import { LoginFormHeader } from '../_shared/LoginFormHeader'
 import ProForm from '../ProForm'
 import { useStyle } from './style'
@@ -27,13 +30,18 @@ export type LoginFormPageProps<T = Record<string, any>> = {
   otherStyle?: CSSProperties
 } & Omit<ProFormProps<T>, 'title'>
 
-export const LoginFormPage = defineComponent({
-  name: 'LoginFormPage',
-  inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
-    const baseClassName = useProPrefixCls('pro-form-login-page')
-    const { wrapSSR, hashId } = useStyle(baseClassName.value)
-    const getCls = (className: string) => `${baseClassName.value}-${className}`
+type LoginPageSubmitterRenderProps = Parameters<
+  Exclude<SubmitterProps<{ form?: FormInstance }>['render'], false | undefined>
+>[0]
+
+export const LoginFormPage = defineComponent<LoginFormPageProps>(
+  (props, { slots }) => {
+    const intl = useIntl()
+    const config = useConfig()
+    const baseClassName = config.value.getPrefixCls('pro-form-login-page')
+    const { wrapSSR, hashId } = useStyle(baseClassName)
+    const getCls = (className: string) => `${baseClassName}-${className}`
+
     return () => {
       const {
         logo,
@@ -49,25 +57,37 @@ export const LoginFormPage = defineComponent({
         otherStyle,
         mainStyle,
         ...proFormProps
-      } = attrs as Partial<LoginFormPageProps>
-      const submitter = proFormProps.submitter === false
-        ? false
-        : {
-            searchConfig: { submitText: '登录' },
-            render: (_: any, dom: VNodeChild[]) => [...dom].pop(),
-            ...proFormProps.submitter,
-            submitButtonProps: (proFormProps.submitter as any)?.submitButtonProps === false
-              ? false
-              : {
-                  size: 'large',
-                  style: { width: '100%' },
-                  ...(proFormProps.submitter as any)?.submitButtonProps,
-                },
-          }
+      } = props
+
+      const typedProFormProps = proFormProps as Omit<ProFormProps, 'title'>
+      const currentSubmitter: SubmitterProps<{ form?: FormInstance }> | false | undefined
+        = typedProFormProps.submitter
+      const genSubmitButtonProps = () => {
+        if (typedProFormProps.submitter === false)
+          return false
+        if (typedProFormProps.submitter?.submitButtonProps === false)
+          return false
+        return {
+          size: 'large',
+          style: {
+            width: '100%',
+          },
+          ...typedProFormProps.submitter?.submitButtonProps,
+        }
+      }
+
+      const submitter = {
+        searchConfig: {
+          submitText: intl.getMessage('loginForm.submitText', '登录'),
+        },
+        render: (_: LoginPageSubmitterRenderProps, dom: VNodeChild[]) => [...dom].pop(),
+        ...currentSubmitter,
+        submitButtonProps: genSubmitButtonProps(),
+      } as ProFormProps['submitter']
 
       return wrapSSR(
         <div
-          class={clsx(baseClassName.value, hashId)}
+          class={clsx(baseClassName, hashId)}
           style={{
             ...style,
             position: 'relative',
@@ -81,27 +101,27 @@ export const LoginFormPage = defineComponent({
                 </div>
               )
             : null}
-          <div class={baseClassName.value}>
-            <div class={getCls('notice')}>
+          <div class={clsx(baseClassName, hashId)}>
+            <div class={clsx(getCls('notice'), hashId)}>
               {activityConfig
                 ? (
-                    <div class={getCls('notice-activity')} style={activityConfig.style}>
-                      {activityConfig.title ? <div class={getCls('notice-activity-title')}>{activityConfig.title}</div> : null}
-                      {activityConfig.subTitle ? <div class={getCls('notice-activity-subTitle')}>{activityConfig.subTitle}</div> : null}
-                      {activityConfig.action ? <div class={getCls('notice-activity-action')}>{activityConfig.action}</div> : null}
+                    <div class={clsx(getCls('notice-activity'), hashId)} style={activityConfig.style}>
+                      {activityConfig.title ? <div class={clsx(getCls('notice-activity-title'), hashId)}>{activityConfig.title}</div> : null}
+                      {activityConfig.subTitle ? <div class={clsx(getCls('notice-activity-subTitle'), hashId)}>{activityConfig.subTitle}</div> : null}
+                      {activityConfig.action ? <div class={clsx(getCls('notice-activity-action'), hashId)}>{activityConfig.action}</div> : null}
                     </div>
                   )
                 : null}
             </div>
-            <div class={getCls('left')}>
-              <div class={getCls('container')} style={containerStyle}>
-                <LoginFormHeader logo={logo} title={title} subTitle={subTitle} prefixCls={baseClassName.value} />
-                <div class={getCls('main')} style={mainStyle}>
-                  <ProForm isKeyPressSubmit {...proFormProps as any} submitter={submitter}>
+            <div class={clsx(getCls('left'), hashId)}>
+              <div class={clsx(getCls('container'), hashId)} style={containerStyle}>
+                <LoginFormHeader logo={logo} title={title} subTitle={subTitle} prefixCls={baseClassName} hashId={hashId} />
+                <div class={clsx(getCls('main'), hashId)} style={mainStyle}>
+                  <ProForm isKeyPressSubmit {...typedProFormProps} submitter={submitter}>
                     {message}
                     {slots.default?.()}
                   </ProForm>
-                  {actions ? <div class={clsx(getCls('other'))} style={otherStyle}>{actions}</div> : null}
+                  {actions ? <div class={clsx(getCls('other'), hashId)} style={otherStyle}>{actions}</div> : null}
                 </div>
               </div>
             </div>
@@ -110,6 +130,10 @@ export const LoginFormPage = defineComponent({
       )
     }
   },
-})
+  {
+    name: 'LoginFormPage',
+    inheritAttrs: false,
+  },
+)
 
 export default LoginFormPage

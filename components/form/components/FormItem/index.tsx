@@ -1,9 +1,21 @@
-import type { ProFormFieldItemProps } from '../../typing'
+import type { FormItemProps } from 'antdv-next'
+import type { ProFieldValueType, SearchTransformKeyFn } from '../../../utils'
 import { cloneVNode, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
 import { mergeFieldProps, renderFormItem, useRegisterFormItem } from '../_util'
 
-export type ProFormItemProps = ProFormFieldItemProps
+export type ProFormItemProps = FormItemProps & {
+  ignoreFormItem?: boolean
+  valueType?: ProFieldValueType
+  transform?: SearchTransformKeyFn
+  dataFormat?: string
+  proFormFieldKey?: any
+  fieldProps?: Record<string, any>
+  addonBefore?: any
+  addonAfter?: any
+  addonWarpStyle?: Record<string, any>
+  convertValue?: any
+}
 
 const ProFormItem = defineComponent({
   name: 'ProFormItem',

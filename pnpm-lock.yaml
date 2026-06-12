@@ -38,6 +38,9 @@ importers:
       es-toolkit:
         specifier: ^1.47.0
         version: 1.47.0
+      form:
+        specifier: link:@v-c\form
+        version: link:@v-c/form
       path-to-regexp:
         specifier: ^8.4.2
         version: 8.4.2

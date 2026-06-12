@@ -1,18 +1,17 @@
+import type { InputRef } from 'antdv-next'
 import type { Ref, VNodeChild } from 'vue'
 import type { IntlType } from '../../../provider'
 import type { ProFieldFC } from '../../types'
 import { Input } from 'antdv-next'
 
-type InputInstance = InstanceType<typeof import('antdv-next')['Input']>
-
 type FieldTextEditProps = NonNullable<ProFieldFC<{
-  text: string | number | boolean | unknown[]
+  text: string
   emptyText?: VNodeChild
 }>['__props']> & {
   intl: IntlType
 }
 
-export function FieldTextEdit(props: FieldTextEditProps, ref?: Ref<InputInstance | null>) {
+export function FieldTextEdit(props: FieldTextEditProps, ref?: Ref<InputRef | null>) {
   const { text, mode, formItemRender, fieldProps, intl } = props
   const placeholder = intl.getMessage('tableForm.inputPlaceholder', '请输入')
 

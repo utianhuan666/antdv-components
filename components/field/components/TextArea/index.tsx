@@ -10,7 +10,7 @@ type FieldTextAreaProps = NonNullable<ProFieldFC<{
 }>['__props']>
 
 type FieldTextAreaEditInstance = InstanceType<typeof import('antdv-next')['TextArea']>
-type FieldTextAreaReadExpose = {
+interface FieldTextAreaReadExpose {
   $el?: HTMLElement | null
 }
 type FieldTextAreaInnerRef = FieldTextAreaEditInstance | FieldTextAreaReadExpose

@@ -2,7 +2,7 @@ import type { InjectionKey } from 'vue'
 import { inject, provide } from 'vue'
 
 export interface EditOrReadOnlyContextValue {
-  mode?: 'edit' | 'read' | 'update'
+  mode: 'edit' | 'read' | 'update'
 }
 
 export const EditOrReadOnlyContext: InjectionKey<EditOrReadOnlyContextValue> = Symbol('EditOrReadOnlyContext')
@@ -12,5 +12,7 @@ export function provideEditOrReadOnlyContext(value: EditOrReadOnlyContextValue) 
 }
 
 export function useEditOrReadOnlyContext() {
-  return inject(EditOrReadOnlyContext, {})
+  return inject(EditOrReadOnlyContext, {
+    mode: 'edit',
+  })
 }

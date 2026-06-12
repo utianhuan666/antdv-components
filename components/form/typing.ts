@@ -2,16 +2,14 @@ import type { ColProps, FormItemProps, RowProps } from 'antdv-next'
 import type { CSSProperties, Ref, VNodeChild } from 'vue'
 import type {
   ProFieldProps,
-  ProFieldRequestData,
-  ProFieldValueEnumType,
-  ProFieldValueType,
   ProFormBaseGroupProps,
   ProSchema,
   SearchConvertKeyFn,
 } from '../utils'
+import type { ProFieldValueType } from '../utils/typing'
 import type { ProFormInstance } from './BaseForm'
-import type { ProFormItemProps } from './components'
 import type { CaptFieldRef } from './components/Captcha'
+import type { ProFormItemProps } from './components/FormItem'
 
 export interface ProFormGridConfig {
   grid?: boolean
@@ -32,7 +30,9 @@ export interface ExtendsProps {
   allowClear?: boolean
   bordered?: boolean
   colSize?: number
-  params?: ((form: ProFormInstance) => Record<string, any>) | Record<string, any>
+  params?:
+    | ((form: ProFormInstance) => Record<string, any>)
+    | Record<string, any>
   ignoreFormItem?: boolean
   readonly?: boolean
   convertValue?: SearchConvertKeyFn
@@ -50,16 +50,14 @@ export interface FieldProps<K> {
 }
 
 export type LightFilterFooterRender
-  = | ((onConfirm?: (e?: MouseEvent) => void, onClear?: (e?: MouseEvent) => void) => VNodeChild | false)
-    | false
+  = | ((
+    onConfirm?: (e?: MouseEvent) => void,
+    onClear?: (e?: MouseEvent) => void,
+  ) => VNodeChild | false)
+  | false
 
 export type ProFormFieldItemProps<T = Record<string, any>, K = any> = {
   fieldProps?: Partial<FieldProps<K> & T>
-  text?: any
-  value?: any
-  defaultValue?: any
-  initialValue?: any
-  onChange?: (...args: any[]) => void
   placeholder?: string | string[]
   secondary?: boolean
   emptyText?: VNodeChild
@@ -67,20 +65,9 @@ export type ProFormFieldItemProps<T = Record<string, any>, K = any> = {
   disabled?: boolean
   width?: number | 'sm' | 'md' | 'xl' | 'xs' | 'lg'
   proFieldProps?: ProFieldProps
-  valueEnum?: ProFieldValueEnumType | ((...args: any[]) => ProFieldValueEnumType)
-  request?: ProFieldRequestData
-  params?: Record<string, any>
-  mode?: 'edit' | 'read' | 'update'
-  valuePropName?: string
   footerRender?: LightFilterFooterRender
-  addonBefore?: VNodeChild
-  addonAfter?: VNodeChild
-  addonWarpStyle?: CSSProperties
-  render?: (...args: any[]) => VNodeChild
-  formItemRender?: (...args: any[]) => VNodeChild
-  children?: any
-  [key: string]: any
-} & Omit<FormItemProps, 'valueType'>
+  children?: VNodeChild
+} & Omit<ProFormItemProps, 'valueType'>
 & Pick<ProFormGridConfig, 'colProps'>
 & ExtendsProps
 

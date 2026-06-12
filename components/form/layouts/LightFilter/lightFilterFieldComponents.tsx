@@ -1,5 +1,5 @@
-import type { DefineComponent } from 'vue'
-import { defineComponent } from 'vue'
+import type { Component } from 'vue'
+import { defineComponent, h } from 'vue'
 import ProFormCascader from '../../components/Cascader'
 import ProFormCheckbox from '../../components/Checkbox'
 import ProFormDatePicker from '../../components/DatePicker'
@@ -22,52 +22,61 @@ import ProFormText from '../../components/Text'
 import ProFormTextArea from '../../components/TextArea'
 import ProFormTreeSelect from '../../components/TreeSelect'
 
-function createLightFilterField(Field: DefineComponent<any>) {
-  return defineComponent({
-    name: 'LightFilterField',
-    inheritAttrs: false,
-    setup(_props, { attrs, slots }) {
-      return () => (
-        <Field
-          {...attrs}
-          proFieldProps={{
-            light: true,
-            ...((attrs.proFieldProps || {}) as Record<string, any>),
-          }}
-        >
-          {slots.default?.()}
-        </Field>
-      )
-    },
-  })
+type LightFilterFieldProps = Record<string, unknown> & {
+  proFieldProps?: Record<string, unknown>
 }
 
+function createLightFilterField(Field: Component) {
+  const FieldWrapper = defineComponent<LightFilterFieldProps>(
+    (props, { slots }) => {
+      return () => {
+        const { proFieldProps, ...rest } = props
+        return h(
+          Field,
+          {
+            ...rest,
+            proFieldProps: { light: true, ...proFieldProps },
+          },
+          slots,
+        )
+      }
+    },
+    {
+      name: 'LightFilterField',
+      inheritAttrs: false,
+    },
+  )
+
+  return FieldWrapper
+}
+
+/** 挂在 `LightFilter` 上的轻量字段（`LightFilter.input` 等） */
 export const lightFilterFieldComponents = {
-  input: createLightFilterField(ProFormText as any),
-  password: createLightFilterField((ProFormText as any).Password || ProFormText as any),
-  text: createLightFilterField(ProFormText as any),
-  textArea: createLightFilterField(ProFormTextArea as any),
-  select: createLightFilterField(ProFormSelect as any),
-  searchSelect: createLightFilterField((ProFormSelect as any).SearchSelect || ProFormSelect as any),
-  treeSelect: createLightFilterField(ProFormTreeSelect as any),
-  cascader: createLightFilterField(ProFormCascader as any),
-  digit: createLightFilterField(ProFormDigit as any),
-  digitRange: createLightFilterField(ProFormDigitRange as any),
-  slider: createLightFilterField(ProFormSlider as any),
-  date: createLightFilterField(ProFormDatePicker as any),
-  dateTime: createLightFilterField(ProFormDateTimePicker as any),
-  time: createLightFilterField(ProFormTimePicker as any),
-  timeRange: createLightFilterField(ProFormTimeRangePicker as any),
-  dateRange: createLightFilterField(ProFormDateRangePicker as any),
-  dateTimeRange: createLightFilterField(ProFormDateTimeRangePicker as any),
-  weekRange: createLightFilterField(ProFormDateWeekRangePicker as any),
-  monthRange: createLightFilterField(ProFormDateMonthRangePicker as any),
-  quarterRange: createLightFilterField(ProFormDateQuarterRangePicker as any),
-  yearRange: createLightFilterField(ProFormDateYearRangePicker as any),
-  timePickerRange: createLightFilterField(ProFormTimeRangePicker as any),
-  checkboxGroup: createLightFilterField((ProFormCheckbox as any).Group || ProFormCheckbox as any),
-  fieldSet: createLightFilterField(ProFormFieldSet as any),
-  switch: createLightFilterField(ProFormSwitch as any),
+  input: createLightFilterField(ProFormText),
+  password: createLightFilterField(ProFormText.Password),
+  text: createLightFilterField(ProFormText),
+  textArea: createLightFilterField(ProFormTextArea),
+  select: createLightFilterField(ProFormSelect),
+  searchSelect: createLightFilterField(ProFormSelect.SearchSelect),
+  treeSelect: createLightFilterField(ProFormTreeSelect),
+  cascader: createLightFilterField(ProFormCascader),
+  digit: createLightFilterField(ProFormDigit),
+  digitRange: createLightFilterField(ProFormDigitRange),
+  slider: createLightFilterField(ProFormSlider),
+  date: createLightFilterField(ProFormDatePicker),
+  dateTime: createLightFilterField(ProFormDateTimePicker),
+  time: createLightFilterField(ProFormTimePicker),
+  timeRange: createLightFilterField(ProFormTimeRangePicker),
+  dateRange: createLightFilterField(ProFormDateRangePicker),
+  dateTimeRange: createLightFilterField(ProFormDateTimeRangePicker),
+  weekRange: createLightFilterField(ProFormDateWeekRangePicker),
+  monthRange: createLightFilterField(ProFormDateMonthRangePicker),
+  quarterRange: createLightFilterField(ProFormDateQuarterRangePicker),
+  yearRange: createLightFilterField(ProFormDateYearRangePicker),
+  timePickerRange: createLightFilterField(ProFormTimeRangePicker),
+  checkboxGroup: createLightFilterField(ProFormCheckbox.Group),
+  fieldSet: createLightFilterField(ProFormFieldSet),
+  switch: createLightFilterField(ProFormSwitch),
 } as const
 
 export default lightFilterFieldComponents

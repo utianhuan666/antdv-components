@@ -1,13 +1,12 @@
 import type { VNodeChild } from 'vue'
 import { clsx } from '@v-c/util'
 import { computed, defineComponent } from 'vue'
-import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface LoginFormHeaderProps {
   logo?: VNodeChild | string
   title?: VNodeChild | false
   subTitle?: VNodeChild | false
-  prefixCls?: string
+  prefixCls: string
   hashId?: string
 }
 
@@ -16,8 +15,7 @@ export const LoginFormHeader = defineComponent<LoginFormHeaderProps>({
   props: ['logo', 'title', 'subTitle', 'prefixCls', 'hashId'],
   setup(rawProps) {
     const props = rawProps
-    const defaultPrefixCls = useProPrefixCls('pro-form-login')
-    const prefixCls = computed(() => props.prefixCls || defaultPrefixCls.value)
+    const prefixCls = computed(() => props.prefixCls)
     const getCls = (className: string) => `${prefixCls.value}-${className}`
     const logoDom = computed(() => {
       if (!props.logo)

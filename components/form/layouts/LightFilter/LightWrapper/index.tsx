@@ -2,9 +2,14 @@ import type { TooltipPlacement } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
 import type { LightFilterFooterRender } from '../../../typing'
 import { clsx } from '@v-c/util'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
 import { computed, defineComponent, ref, watch } from 'vue'
-import { useProPrefixCls } from '../../../../provider/useProPrefixCls'
-import { dateArrayFormatter, FieldLabel, FilterDropdown, getLightFilterRangeDisplayFormat } from '../../../../utils'
+import {
+  dateArrayFormatter,
+  FieldLabel,
+  FilterDropdown,
+  getLightFilterRangeDisplayFormat,
+} from '../../../../utils'
 import { cloneElement, flattenChildren, getVNodeProps } from '../../_shared/vueHelpers'
 import { useStyle } from './style'
 
@@ -33,74 +38,138 @@ export interface LightWrapperProps {
   placement?: TooltipPlacement
 }
 
-export const LightWrapper = defineComponent<LightWrapperProps>({
+const LightWrapper = defineComponent<LightWrapperProps>({
   name: 'LightWrapper',
   inheritAttrs: false,
-  props: ['label', 'disabled', 'placeholder', 'size', 'value', 'onChange', 'onBlur', 'style', 'className', 'children', 'valuePropName', 'customLightMode', 'light', 'labelFormatter', 'variant', 'otherFieldProps', 'valueType', 'allowClear', 'footerRender', 'placement'],
+  props: [
+    'label',
+    'disabled',
+    'placeholder',
+    'size',
+    'value',
+    'onChange',
+    'onBlur',
+    'style',
+    'className',
+    'children',
+    'valuePropName',
+    'customLightMode',
+    'light',
+    'labelFormatter',
+    'variant',
+    'otherFieldProps',
+    'valueType',
+    'allowClear',
+    'footerRender',
+    'placement',
+  ],
   setup(rawProps, { attrs, slots }) {
     const props = rawProps
-    const prefixCls = useProPrefixCls('pro-field-light-wrapper')
-    const { wrapSSR, hashId } = useStyle(prefixCls.value)
-    const open = ref(false)
-    const valuePropName = computed(() => props.valuePropName || 'value')
-    const labelValue = computed(() => props[valuePropName.value])
-    const tempValue = ref(labelValue.value)
+    const {
+      label,
+      size,
+      disabled,
+      onChange: propsOnChange,
+      className,
+      style,
+      children,
+      valuePropName,
+      placeholder,
+      labelFormatter,
+      variant,
+      footerRender,
+      allowClear,
+      otherFieldProps,
+      valueType,
+      placement,
+      ...rest
+    } = props
 
-    watch([labelValue, open], ([value, isOpen]) => {
-      if (!isOpen)
+    const config = useConfig()
+    const prefixCls = computed(() => config.value.getPrefixCls('pro-field-light-wrapper'))
+    const { wrapSSR, hashId } = useStyle(prefixCls.value)
+    const labelValue = computed(() => {
+      const currentValuePropName = valuePropName || 'value'
+      return (props as Record<string, unknown>)[currentValuePropName]
+    })
+    const tempValue = ref<unknown>(labelValue.value)
+    const open = ref(false)
+
+    watch([labelValue, open], ([value, currentOpen]) => {
+      if (!currentOpen)
         tempValue.value = value
     })
 
-    const emitChange = (...args: any[]) => {
-      props.otherFieldProps?.onChange?.(...args)
-      props.onChange?.(...args)
+    const onChange = (...restParams: any[]) => {
+      otherFieldProps?.onChange?.(...restParams)
+      propsOnChange?.(...restParams)
     }
 
     const labelValueText = computed(() => {
-      const value = labelValue.value
-      if (!value)
-        return value
-      const lowerValueType = props.valueType?.toLowerCase?.()
-      if (lowerValueType?.endsWith('range') && lowerValueType !== 'digitrange' && !props.labelFormatter)
-        return dateArrayFormatter(value, getLightFilterRangeDisplayFormat(props.valueType))
-      if (Array.isArray(value)) {
-        return value.map((item) => {
-          if (typeof item === 'object' && item?.label && item?.value)
+      if (!labelValue.value)
+        return labelValue.value
+      const lowerValueType = valueType?.toLowerCase?.()
+      if (
+        lowerValueType?.endsWith('range')
+        && lowerValueType !== 'digitrange'
+        && !labelFormatter
+      ) {
+        if (!Array.isArray(labelValue.value))
+          return labelValue.value
+        return dateArrayFormatter(
+          labelValue.value,
+          getLightFilterRangeDisplayFormat(valueType),
+        )
+      }
+      if (Array.isArray(labelValue.value)) {
+        return labelValue.value.map((item) => {
+          if (typeof item === 'object' && item.label && item.value)
             return item.label
           return item
         })
       }
-      return value
+
+      return labelValue.value
     })
 
     return () => {
-      const child = flattenChildren(slots.default?.() || props.children)[0]
-      const childProps = getVNodeProps(child)
+      const childElement = flattenChildren(slots.default?.() || children)[0]
+      const childProps = getVNodeProps<Record<string, any>>(childElement)
+      const mergedFieldProps = {
+        ...childProps?.fieldProps,
+        variant: 'borderless' as const,
+        onChange: (...args: any[]) => {
+          const e = args[0]
+          tempValue.value = e?.target ? e.target.value : e
+          childProps?.fieldProps?.onChange?.(...args)
+        },
+      }
+
       return wrapSSR(
         <FilterDropdown
-          disabled={props.disabled}
+          disabled={disabled}
           open={open.value}
           onOpenChange={(nextOpen: boolean) => {
             open.value = nextOpen
           }}
-          placement={props.placement}
+          placement={placement}
           label={(
             <FieldLabel
               ellipsis
-              size={props.size}
+              size={size}
               onClear={() => {
-                emitChange(undefined)
+                onChange?.()
                 tempValue.value = null
               }}
-              variant={props.variant}
-              style={props.style}
-              className={clsx(`${prefixCls.value}-collapse-label`, props.className)}
-              label={props.label}
-              placeholder={props.placeholder}
+              variant={variant}
+              style={style}
+              className={className}
+              label={label}
+              placeholder={placeholder}
               value={labelValueText.value}
-              disabled={props.disabled}
-              formatter={props.labelFormatter}
-              allowClear={props.allowClear}
+              disabled={disabled}
+              formatter={labelFormatter}
+              allowClear={allowClear}
             />
           )}
           footer={{
@@ -108,31 +177,27 @@ export const LightWrapper = defineComponent<LightWrapperProps>({
               tempValue.value = null
             },
             onConfirm: () => {
-              emitChange(tempValue.value)
+              onChange?.(tempValue.value)
               open.value = false
             },
           }}
-          footerRender={props.footerRender}
+          footerRender={footerRender}
         >
-          <div class={clsx(`${prefixCls.value}-container`, hashId, props.className)} style={props.style}>
-            {cloneElement(child, {
+          <div
+            class={clsx(`${prefixCls.value}-container`, hashId, className)}
+            style={style}
+          >
+            {cloneElement(childElement, {
               ...attrs,
+              ...rest,
               ...childProps,
-              [valuePropName.value]: tempValue.value,
-              onChange: (event: any) => {
-                tempValue.value = event?.target ? event.target.value : event
-                childProps.onChange?.(event)
+              [valuePropName!]: tempValue.value,
+              onChange: (e: any) => {
+                tempValue.value = e?.target ? e.target.value : e
+                childProps?.onChange?.(e)
               },
-              variant: 'borderless',
-              fieldProps: {
-                ...childProps.fieldProps,
-                variant: 'borderless',
-                onChange: (...args: any[]) => {
-                  const event = args[0] as any
-                  tempValue.value = event?.target ? event.target.value : event
-                  childProps.fieldProps?.onChange?.(...args)
-                },
-              },
+              variant: 'borderless' as const,
+              fieldProps: mergedFieldProps,
             })}
           </div>
         </FilterDropdown>,
@@ -141,4 +206,4 @@ export const LightWrapper = defineComponent<LightWrapperProps>({
   },
 })
 
-export default LightWrapper
+export { LightWrapper }
