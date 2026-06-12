@@ -1,47 +1,45 @@
-import type { FormProps } from 'antdv-next'
-import type { CommonFormProps } from '../../BaseForm'
+import type { BaseFormProps } from '../../BaseForm'
 import type { ProFormGroupProps } from '../../typing'
 import { Form } from 'antdv-next'
 import { defineComponent } from 'vue'
-import BaseForm from '../../BaseForm'
+import { BaseForm } from '../../BaseForm'
 import { EditOrReadOnlyContext } from '../../BaseForm/EditOrReadOnlyContext'
 import ProFormItem from '../../components/FormItem'
 import Group from '../../components/FormItem/Group'
 
 export type ProFormProps<T = Record<string, any>, U = Record<string, any>>
-  = Omit<FormProps, 'onFinish'> & CommonFormProps<T, U>
+  = BaseFormProps<T, U>
 
-const ProFormComponent = defineComponent({
-  name: 'ProForm',
-  inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
-    return () => (
-      <BaseForm
-        {...attrs as ProFormProps}
-        layout={(attrs as ProFormProps).layout || 'vertical'}
-        contentRender={(items: any[], submitter: any) => (
-          <>
-            {items}
-            {submitter}
-          </>
-        )}
-      >
-        {slots.default?.()}
-      </BaseForm>
-    )
+const defaultContentRender: NonNullable<BaseFormProps<any, any>['contentRender']> = (items, submitter) => (
+  <>
+    {items}
+    {submitter}
+  </>
+)
+
+const ProForm = defineComponent<ProFormProps>(
+  (props, { slots }) => {
+    return () => {
+      const { contentRender: customContentRender, layout, ...restProps } = props
+      const contentRender = customContentRender ?? defaultContentRender
+
+      return (
+        <BaseForm
+          {...restProps}
+          layout={layout || 'vertical'}
+          contentRender={contentRender}
+        >
+          {slots.default?.()}
+        </BaseForm>
+      )
+    }
   },
-}) as any
+  {
+    name: 'ProForm',
+    inheritAttrs: false,
+  },
+)
 
-ProFormComponent.Group = Group
-ProFormComponent.useForm = (Form as any).useForm
-ProFormComponent.Item = ProFormItem
-ProFormComponent.useWatch = (Form as any).useWatch
-ProFormComponent.ErrorList = (Form as any).ErrorList
-ProFormComponent.Provider = (Form as any).Provider
-ProFormComponent.useFormInstance = (Form as any).useFormInstance
-ProFormComponent.EditOrReadOnlyContext = EditOrReadOnlyContext
-
-export const ProForm = ProFormComponent
-export const ProFormGroup = Group
 export type { ProFormGroupProps }
 export default ProForm
+export { EditOrReadOnlyContext, Form, ProFormItem as FormItem, Group }

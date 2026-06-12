@@ -1,8 +1,8 @@
-import type { ColProps, FormProps, RowProps } from 'antdv-next'
+import type { ColProps, FormItemProps, FormProps, RowProps } from 'antdv-next'
 import type { CSSProperties, VNodeChild } from 'vue'
 import type { ProFormProps } from '../ProForm'
 import { clsx } from '@v-c/util'
-import { Col, FormItem, Row } from 'antdv-next'
+import { Col, FormItem, Row, theme } from 'antdv-next'
 import { computed, defineComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
@@ -11,6 +11,58 @@ import { flattenChildren, getVNodeProps } from '../_shared/vueHelpers'
 import Actions from './Actions'
 import { calcSubmitterOffset, processQueryFilterItems } from './processQueryFilterItems'
 import { useStyle } from './style'
+
+type BreakpointsConfig = {
+  breakpoints: {
+    vertical: (string | number)[][]
+    default: (string | number)[][]
+  }
+  configSpanBreakpoints: {
+    xs: number
+    sm: number
+    md: number
+    lg: number
+    xl: number
+    xxl: number
+  }
+}
+
+function getBreakpointsConfig(token: {
+  screenSMMin?: number
+  screenMDMin?: number
+  screenLGMin?: number
+  screenXLMin?: number
+  screenXXLMin?: number
+}): BreakpointsConfig {
+  const defaultToken = theme.getDesignToken()
+  const t = { ...defaultToken, ...token }
+  const bp = {
+    xs: t.screenSMMin ?? 576,
+    sm: t.screenMDMin ?? 768,
+    md: t.screenLGMin ?? 992,
+    lg: t.screenXLMin ?? 1200,
+    xl: t.screenXXLMin ?? 1600,
+    xxl: Infinity,
+  } as const
+
+  return {
+    configSpanBreakpoints: bp,
+    breakpoints: {
+      vertical: [
+        [bp.xs, 1, 'vertical'],
+        [bp.md, 2, 'vertical'],
+        [bp.xl, 3, 'vertical'],
+        [Infinity, 4, 'vertical'],
+      ],
+      default: [
+        [bp.xs, 1, 'vertical'],
+        [bp.sm, 2, 'vertical'],
+        [bp.xl, 3, 'horizontal'],
+        [Infinity, 4, 'horizontal'],
+      ],
+    },
+  }
+}
 
 export type SpanConfig = number | {
   xs: number
@@ -48,38 +100,49 @@ export type QueryFilterProps<T = Record<string, any>, U = Record<string, any>> =
   onReset?: (values: T) => void
 }
 
-function getSpanConfig(layout: FormProps['layout'], width: number, span?: SpanConfig) {
+function getSpanConfig(
+  layout: FormProps['layout'],
+  width: number,
+  span: SpanConfig | undefined,
+  breakpointsConfig: BreakpointsConfig,
+) {
   if (typeof span === 'number')
     return { span, layout }
+  const { breakpoints, configSpanBreakpoints } = breakpointsConfig
   if (span) {
-    const config = [
-      [576, span.xs],
-      [768, span.sm],
-      [992, span.md],
-      [1200, span.lg],
-      [1600, span.xl],
-      [Infinity, span.xxl],
-    ] as const
-    const found = config.find(([point]) => width < point + 16)
-    return { span: 24 / (found?.[1] || 3), layout: 'horizontal' as FormProps['layout'] }
+    const config = (['xs', 'sm', 'md', 'lg', 'xl', 'xxl'] as const).map(key => [
+      configSpanBreakpoints[key],
+      24 / span[key],
+      'horizontal',
+    ])
+    const found = config.find(([point]) => width < (point as number) + 16)
+    return { span: (found?.[1] || 8) as number, layout: 'horizontal' as FormProps['layout'] }
   }
-  if (layout === 'vertical')
-    return { span: width < 992 ? 12 : width < 1600 ? 8 : 6, layout: 'vertical' as FormProps['layout'] }
-  if (width < 768)
-    return { span: 12, layout: 'vertical' as FormProps['layout'] }
-  return { span: width < 1600 ? 8 : 6, layout: 'horizontal' as FormProps['layout'] }
+  const spanConfig = breakpoints[(layout as 'default') || 'default']
+  const breakPoint = (spanConfig || breakpoints.default).find(item => width < (item[0] as number) + 16)
+
+  if (!breakPoint)
+    return { span: 8, layout: 'horizontal' as FormProps['layout'] }
+
+  return {
+    span: 24 / (breakPoint[1] as number),
+    layout: breakPoint[2] as FormProps['layout'],
+  }
 }
 
-export const QueryFilter = defineComponent({
+const defaultWidth = typeof document !== 'undefined' ? document?.body?.clientWidth : 1024
+
+export const QueryFilter = defineComponent<QueryFilterProps>({
   name: 'QueryFilter',
   inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
+  setup(props, { slots }) {
     const containerRef = ref<HTMLElement | null>(null)
-    const width = ref(1024)
-    const innerCollapsed = ref((attrs.defaultCollapsed as boolean | undefined) ?? true)
+    const width = ref(typeof props.style?.width === 'number' ? props.style.width : defaultWidth)
+    const innerCollapsed = ref((props.defaultCollapsed ?? true) && props.submitter !== false)
     const intl = useIntl()
     const prefixCls = useProPrefixCls('pro-query-filter')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
+    const { token } = theme.useToken()
     let resizeObserver: ResizeObserver | undefined
 
     onMounted(() => {
@@ -93,14 +156,33 @@ export const QueryFilter = defineComponent({
     })
     onBeforeUnmount(() => resizeObserver?.disconnect())
 
-    const spanSize = computed(() => getSpanConfig(attrs.layout as FormProps['layout'], width.value + 16, attrs.span as SpanConfig | undefined))
+    const breakpointsConfig = computed(() => getBreakpointsConfig(token.value))
+    const spanSize = computed(() => getSpanConfig(props.layout, width.value + 16, props.span, breakpointsConfig.value))
+    const formItemFixStyle = computed<FormItemProps | undefined>(() => {
+      const labelWidth = props.labelWidth ?? '80'
+      if (labelWidth && spanSize.value.layout !== 'vertical' && labelWidth !== 'auto') {
+        return {
+          labelCol: {
+            flex: `0 0 ${labelWidth}px`,
+          },
+          wrapperCol: {
+            style: {
+              maxWidth: `calc(100% - ${labelWidth}px)`,
+            },
+          },
+          style: {
+            flexWrap: 'nowrap',
+          },
+        }
+      }
+      return undefined
+    })
 
     return () => {
-      const props = attrs as QueryFilterProps
       const preserve = props.preserve ?? true
       const resetText = props.resetText || intl.getMessage('tableForm.reset', '重置')
       const searchText = props.searchText || intl.getMessage('tableForm.search', '搜索')
-      const baseSubmitter = (props as any).submitter
+      const baseSubmitter = props.submitter
       const mergedSubmitter = baseSubmitter === false
         ? false
         : {
@@ -110,11 +192,26 @@ export const QueryFilter = defineComponent({
               submitText: searchText,
               ...(typeof baseSubmitter === 'object' ? baseSubmitter?.searchConfig : undefined),
             },
+            render: props.optionRender
+              ? (_: unknown, dom: VNodeChild[]) =>
+                  props.optionRender?.(
+                    {
+                      ...props,
+                      resetText,
+                      searchText,
+                    },
+                    props,
+                    dom,
+                  )
+              : typeof baseSubmitter === 'object'
+                ? baseSubmitter.render
+                : undefined,
           }
       const collapsed = props.collapsed ?? innerCollapsed.value
       const setCollapsed = (nextCollapsed: boolean) => {
-        innerCollapsed.value = nextCollapsed
-        props.onCollapse?.(nextCollapsed)
+        if (props.collapsed === undefined)
+          innerCollapsed.value = nextCollapsed
+        queueMicrotask(() => props.onCollapse?.(nextCollapsed))
       }
       const showLength = (() => {
         if (props.defaultFormItemsNumber !== undefined)
@@ -129,7 +226,7 @@ export const QueryFilter = defineComponent({
       return wrapSSR(
         <div ref={containerRef} class={`${prefixCls.value}-container`} style={props.containerStyle}>
           <BaseForm
-            {...props as any}
+            {...props}
             submitter={mergedSubmitter}
             isKeyPressSubmit
             preserve={preserve}
@@ -137,6 +234,13 @@ export const QueryFilter = defineComponent({
             layout={spanSize.value.layout}
             formComponentType="QueryFilter"
             fieldProps={{ style: { width: '100%' } }}
+            formItemProps={formItemFixStyle.value}
+            groupProps={{
+              titleStyle: {
+                display: 'inline-block',
+                marginInlineEnd: 16,
+              },
+            }}
             contentRender={(items: VNodeChild[], renderSubmitter: VNodeChild) => {
               const { processedList, totalSpan, totalSize, lastRowUsedSpan } = processQueryFilterItems({
                 items: flattenChildren(items),
@@ -156,8 +260,17 @@ export const QueryFilter = defineComponent({
                 if (24 - (renderSpan % 24) < colSpan)
                   renderSpan += 24 - (renderSpan % 24)
                 renderSpan += colSpan
+                const isSplitLine = props.split && renderSpan % 24 === 0 && index < processedList.length - 1
                 return (
-                  <Col key={(itemDom as any)?.key || itemProps.name || index} span={colSpan} class={clsx(`${prefixCls.value}-row-split`)}>
+                  <Col
+                    key={itemDom.key || itemProps.name || index}
+                    span={colSpan}
+                    class={clsx(
+                      `${prefixCls.value}-row-split`,
+                      isSplitLine && `${prefixCls.value}-row-split-line`,
+                      hashId,
+                    )}
+                  >
                     {itemDom}
                   </Col>
                 )
@@ -169,12 +282,12 @@ export const QueryFilter = defineComponent({
               const submitter = props.optionRender === false ? null : renderSubmitter
 
               return (
-                <Row gutter={props.searchGutter ?? 24} justify="start" class={`${prefixCls.value}-row`}>
+                <Row gutter={props.searchGutter ?? 24} justify="start" class={clsx(`${prefixCls.value}-row`, hashId)}>
                   {doms}
                   {submitter
                     ? (
-                        <Col span={spanSize.value.span} offset={offset} {...props.submitterColSpanProps as any} style={{ textAlign: 'end', ...(props.submitterColSpanProps as any)?.style }}>
-                          <FormItem label=" " colon={false} class={`${prefixCls.value}-actions`}>
+                        <Col span={spanSize.value.span} offset={offset} {...props.submitterColSpanProps} style={{ textAlign: 'end', ...props.submitterColSpanProps?.style }}>
+                          <FormItem label=" " colon={false} shouldUpdate={false} class={clsx(`${prefixCls.value}-actions`, hashId)}>
                             <Actions
                               hiddenNum={hiddenNum}
                               collapsed={collapsed}
