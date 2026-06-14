@@ -1,7 +1,10 @@
-import type { FormProps, StepsProps } from 'antdv-next'
+import type { FormInstance, FormProps, StepsProps } from 'antdv-next'
 import type { ProFormProps } from '../ProForm'
+import type { StepsFormProps } from './index'
+import { omit } from '@v-c/util'
 import { defineComponent, inject, onMounted, onUnmounted, ref } from 'vue'
 import BaseForm from '../../BaseForm'
+import { setRefValue } from '../_shared/vueHelpers'
 import { StepFormContextKey, StepsFormContextKey } from './context'
 
 export type StepFormProps<T = Record<string, any>, U = Record<string, any>> = {
@@ -10,38 +13,38 @@ export type StepFormProps<T = Record<string, any>, U = Record<string, any>> = {
   index?: number
 } & Omit<FormProps, 'onFinish' | 'form'> & Omit<ProFormProps<T, U>, 'submitter' | 'form'>
 
-const StepForm = defineComponent({
-  name: 'StepForm',
-  inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
-    const formRef = ref<any>()
+const StepForm = defineComponent<StepFormProps>(
+  (stepNativeProps, { slots }) => {
+    const formRef = ref<FormInstance>()
     const stepsContext = inject(StepsFormContextKey, undefined)
     const stepContext = inject(StepFormContextKey, null)
+    const getMergedProps = () => ({ ...stepNativeProps, ...(stepContext || {}) }) as StepFormProps & StepsFormProps<any>
 
     onMounted(() => {
-      const props = { ...(attrs as StepFormProps), ...(stepContext || {}) } as any
+      const props = getMergedProps()
       if (props.name || props.step !== undefined)
         stepsContext?.regForm(String(props.name ?? props.step), props)
     })
 
     onUnmounted(() => {
-      const props = { ...(attrs as StepFormProps), ...(stepContext || {}) } as any
+      const props = getMergedProps()
       if (props.name || props.step !== undefined)
         stepsContext?.unRegForm(String(props.name ?? props.step))
     })
 
     return () => {
-      const props = { ...(attrs as StepFormProps), ...(stepContext || {}) } as any
-      const { onFinish, step, title, stepProps, ...restProps } = props
+      const props = getMergedProps()
+      const { onFinish, step, formRef: propFormRef, stepProps, ...restProps } = props
       if (stepsContext?.formArrayRef)
         stepsContext.formArrayRef.value[step || 0] = formRef
+      const baseFormProps = omit(restProps, ['layoutType', 'columns'] as any[])
 
       return (
         <BaseForm
-          {...restProps}
+          {...baseFormProps}
           formRef={formRef}
           layout="vertical"
-          onFinish={async (values: Record<string, any>) => {
+          onFinish={async (values) => {
             if (restProps.name)
               stepsContext?.onFormFinish(String(restProps.name), values)
             if (onFinish) {
@@ -59,12 +62,23 @@ const StepForm = defineComponent({
             if (!stepsContext?.lastStep.value)
               stepsContext?.next()
           }}
+          onInit={(values, form) => {
+            formRef.value = form
+            setRefValue(propFormRef, form)
+            if (stepsContext?.formArrayRef)
+              stepsContext.formArrayRef.value[step || 0] = formRef
+            restProps?.onInit?.(values, form)
+          }}
         >
           {slots.default?.()}
         </BaseForm>
       )
     }
   },
-})
+  {
+    name: 'StepForm',
+    inheritAttrs: false,
+  },
+)
 
 export default StepForm

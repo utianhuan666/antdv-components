@@ -11,7 +11,7 @@ export type ProFormSelectProps
     onChange?: (...args: any[]) => void
   }
 
-const ProFormSelect = defineProFormField(
+const ProFormSelect = defineProFormField<ProFormSelectProps>(
   'ProFormSelect',
   'select',
   props => ({
@@ -21,7 +21,7 @@ const ProFormSelect = defineProFormField(
   }),
 ) as any
 
-const SearchSelect = defineProFormField(
+const SearchSelect = defineProFormField<ProFormSelectProps>(
   'ProFormSearchSelect',
   'select',
   (props) => {

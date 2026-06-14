@@ -42,8 +42,6 @@ export function flatMapQueryFilterItems(items: VNodeChild[], ignoreRules?: boole
   })
 }
 
-export const flatMapItems = flatMapQueryFilterItems
-
 export function processQueryFilterItems(options: ProcessQueryFilterItemsOptions): ProcessQueryFilterItemsResult {
   const { spanSize, collapsed, showLength, preserve, ignoreRules } = options
   const flatItems = flatMapQueryFilterItems(options.items, ignoreRules)

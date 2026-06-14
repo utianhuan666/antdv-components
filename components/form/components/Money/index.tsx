@@ -13,7 +13,7 @@ export type ProFormMoneyProps = ProFormFieldItemProps<
   placeholder?: string
 }
 
-const ProFormMoney = defineProFormField(
+const ProFormMoney = defineProFormField<ProFormMoneyProps>(
   'ProFormMoney',
   props => ({ type: 'money', locale: props.locale }),
   props => ({

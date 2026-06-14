@@ -1,11 +1,15 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   pickControlProps,
   pickControlPropsWithId,
   useControlModel,
 } from '../../form'
 
-describe('proForm.FormItemRender target branch test', () => {
+afterEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('ProForm.FormItemRender target branch test', () => {
   it('should return correct object when model is a single object', () => {
     const onChange = vi.fn()
     const value = 'test value'
@@ -117,9 +121,9 @@ describe('proForm.FormItemRender target branch test', () => {
 
   it('pickControlPropsWithId extracts value, onChange, id and aria attributes', () => {
     const props: any = {
-      'value': 'test value',
-      'onChange': vi.fn(),
-      'id': 'field-id',
+      value: 'test value',
+      onChange: vi.fn(),
+      id: 'field-id',
       'aria-describedby': 'error-message-id',
       'aria-invalid': true,
       'aria-required': true,
@@ -128,8 +132,8 @@ describe('proForm.FormItemRender target branch test', () => {
     const controlProps = pickControlPropsWithId(props)
 
     expect(controlProps).toMatchObject({
-      'value': 'test value',
-      'id': 'field-id',
+      value: 'test value',
+      id: 'field-id',
       'aria-describedby': 'error-message-id',
       'aria-invalid': true,
       'aria-required': true,

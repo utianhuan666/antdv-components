@@ -10,6 +10,9 @@ export type ProFormItemProps = FormItemProps & {
   transform?: SearchTransformKeyFn
   dataFormat?: string
   proFormFieldKey?: any
+  valuePropName?: string
+  getValueProps?: (value: any) => Record<string, any>
+  getValueFromEvent?: (...args: any[]) => any
   fieldProps?: Record<string, any>
   addonBefore?: any
   addonAfter?: any

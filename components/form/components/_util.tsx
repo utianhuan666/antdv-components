@@ -1,9 +1,10 @@
 import type { SpaceProps } from 'antdv-next'
-import type { VNodeChild } from 'vue'
+import type { ComponentPublicInstance, Ref, VNodeChild } from 'vue'
 import type {
   ProFieldValueTypeInput,
 } from '../../utils/typing'
-import type { ProFormFieldItemProps } from '../typing'
+import type { FiledContextProps } from '../FieldContext'
+import type { ProFormFieldRuntimeProps } from '../typing'
 import { get } from '@v-c/util'
 import { FormItem, Space, SpaceCompact } from 'antdv-next'
 import { isVNode, watchEffect } from 'vue'
@@ -35,9 +36,9 @@ function toNamePath(name: any): (string | number)[] | undefined {
 }
 
 export function getFieldValue(
-  props: ProFormFieldItemProps,
+  props: ProFormFieldRuntimeProps,
   fieldProps: Record<string, any>,
-  fieldContext: Record<string, any> = {},
+  fieldContext: FiledContextProps = {},
 ) {
   const valuePropName = props.valuePropName || 'value'
   if (props.value !== undefined)
@@ -56,9 +57,9 @@ export function getFieldValue(
 }
 
 export function mergeFieldProps(
-  props: ProFormFieldItemProps,
+  props: ProFormFieldRuntimeProps,
   extra: Record<string, any> = {},
-  fieldContext: Record<string, any> = {},
+  fieldContext: FiledContextProps = {},
 ): Record<string, any> {
   const userFieldProps = props.fieldProps || {}
   const valuePropName = props.valuePropName || 'value'
@@ -74,13 +75,14 @@ export function mergeFieldProps(
   return {
     ...extra,
     ...userFieldProps,
+    ...(props.name !== undefined && userFieldProps.id === undefined ? { id: String(props.name) } : {}),
     ...(value !== undefined ? { [valuePropName]: value } : {}),
     onChange,
   }
 }
 
 export function renderFormItem(
-  props: ProFormFieldItemProps,
+  props: ProFormFieldRuntimeProps,
   child: VNodeChild,
   options: { valuePropName?: string, getValueFromEvent?: (...args: any[]) => any } = {},
 ) {
@@ -141,10 +143,10 @@ export function renderFormItem(
  * 再把 Field 渲染在 Popover 内部（mirror React warpField 的 isLightMode 分支）。
  */
 export function renderFieldFormItem(
-  props: ProFormFieldItemProps,
+  props: ProFormFieldRuntimeProps,
   child: VNodeChild,
   valueType: ProFieldValueTypeInput,
-  fieldContext: Record<string, any> = {},
+  fieldContext: FiledContextProps = {},
 ) {
   const isLightMode = (props.proFieldProps as any)?.light === true && !(props as any).customLightMode
   const valueTypeStr = typeof valueType === 'string' ? valueType : 'text'
@@ -152,9 +154,9 @@ export function renderFieldFormItem(
     const valuePropName = props.valuePropName || 'value'
     const lightFieldProps = mergeFieldProps(props, {}, fieldContext)
     const lightValue = getFieldValue(props, lightFieldProps, fieldContext)
-    const lightWrapped = (
+    const lightWrapped: VNodeChild = (
       <LightWrapper
-        label={props.label}
+        label={props.label as VNodeChild}
         valuePropName={valuePropName}
         variant={props.variant ?? props.fieldProps?.variant}
         value={lightValue}
@@ -172,12 +174,12 @@ export function renderFieldFormItem(
       </LightWrapper>
     )
     // light 模式下 Form.Item 不展示 label/tooltip，由 FieldLabel 承担
-    return renderFormItem({ ...props, label: undefined, tooltip: false } as ProFormFieldItemProps, lightWrapped)
+    return renderFormItem({ ...props, label: undefined, tooltip: false }, lightWrapped)
   }
   return renderFormItem(props, child)
 }
 
-export function useRegisterFormItem(getProps: () => ProFormFieldItemProps) {
+export function useRegisterFormItem(getProps: () => ProFormFieldRuntimeProps) {
   const fieldContext = useFieldContext()
   // initialValue 只在字段首次注册时写入一次（对齐 React/antd：initialValue 仅做初始填充）。
   // 不能每次 watchEffect 都无条件写回，否则会覆盖用户 setFieldsValue 设置的值
@@ -204,10 +206,11 @@ export function useRegisterFormItem(getProps: () => ProFormFieldItemProps) {
 }
 
 export function renderProField(
-  props: ProFormFieldItemProps,
+  props: ProFormFieldRuntimeProps,
   valueType: ProFieldValueTypeInput,
   extraFieldProps: Record<string, any> = {},
-  fieldContext: Record<string, any> = {},
+  fieldContext: FiledContextProps = {},
+  ref?: Ref<ComponentPublicInstance | null>,
 ) {
   const fieldProps = mergeFieldProps(props, extraFieldProps, fieldContext)
   const mode = props.readonly
@@ -222,6 +225,7 @@ export function renderProField(
 
   return (
     <ProField
+      ref={ref}
       {...props.proFieldProps}
       text={fieldValue}
       value={fieldValue}

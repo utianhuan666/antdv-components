@@ -11,7 +11,7 @@ export type ProFormRadioGroupProps = ProFormFieldItemProps<RadioGroupProps> & {
   options?: RadioGroupProps['options']
 }
 
-const RadioGroup = defineProFormField(
+const RadioGroup = defineProFormField<ProFormRadioGroupProps>(
   'ProFormRadioGroup',
   props => props.radioType === 'button' ? 'radioButton' : 'radio',
   props => ({

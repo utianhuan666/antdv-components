@@ -11,6 +11,8 @@ export type FiledContextProps = {
   proFieldProps?: ProFieldProps
   formItemProps?: FormItemProps
   groupProps?: ProFormGroupProps
+  model?: Record<string, any>
+  setFieldValue?: (name: NamePath, value: any) => void
   setFieldValueType?: (
     name: NamePath,
     obj: {
@@ -19,6 +21,7 @@ export type FiledContextProps = {
       transform?: SearchTransformKeyFn
     },
   ) => void
+  setFieldInitialValue?: (name: NamePath, value: any) => void
   formComponentType?:
     | 'DrawerForm'
     | 'ModalForm'

@@ -11,8 +11,8 @@ export function provideEditOrReadOnlyContext(value: EditOrReadOnlyContextValue) 
   provide(EditOrReadOnlyContext, value)
 }
 
-export function useEditOrReadOnlyContext() {
+export function useEditOrReadOnlyContext(): EditOrReadOnlyContextValue {
   return inject(EditOrReadOnlyContext, {
     mode: 'edit',
-  })
+  } satisfies EditOrReadOnlyContextValue)
 }

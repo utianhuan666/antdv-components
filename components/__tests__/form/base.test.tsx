@@ -116,6 +116,32 @@ describe('proForm', () => {
     })
   })
 
+  it('📦 ProFormCheckbox.Group should support vertical layout with request', async () => {
+    const request = vi.fn(async () => [
+      { label: 'Open', value: 'open' },
+      { label: 'Closed', value: 'closed' },
+    ])
+
+    const wrapper = render(
+      <ProForm>
+        <ProFormCheckbox.Group
+          name="status"
+          layout="vertical"
+          request={request}
+        />
+      </ProForm>,
+    )
+
+    await waitFor(() => {
+      expect(request).toHaveBeenCalledTimes(1)
+    })
+
+    const group = wrapper.container.querySelector('.ant-checkbox-group')
+    expect(group?.className).toContain('ant-pro-field-checkbox-vertical')
+    expect(wrapper.getByText('Open')).toBeTruthy()
+    expect(wrapper.getByText('Closed')).toBeTruthy()
+  })
+
   // need jsdom support
   it('📦 ProForm support sync form url', async () => {
     const fn = vi.fn()
@@ -3228,10 +3254,19 @@ describe('proForm', () => {
       </ProForm>,
     )
 
+    const trigger = wrapper.baseElement.querySelector<HTMLElement>(
+      '.ant-pro-field-color-picker, .ant-color-picker-trigger',
+    )
+    expect(trigger).toBeTruthy()
+
     act(() => {
-      wrapper.baseElement
-        .querySelectorAll<HTMLElement>('.ant-pro-field-color-picker')[0]
-        .click()
+      trigger?.click()
+    })
+
+    await waitFor(() => {
+      expect(
+        wrapper.baseElement.querySelectorAll('.ant-color-picker-presets-color').length,
+      ).toBeGreaterThan(0)
     })
 
     // 选中第一个
@@ -3240,7 +3275,99 @@ describe('proForm', () => {
         .querySelectorAll<HTMLElement>('.ant-color-picker-presets-color')[0]
         .click()
     })
-    expect(onFinish).toHaveBeenCalledWith('#f5222d')
+    await waitFor(() => {
+      expect(onFinish).toHaveBeenCalledWith('#f5222d')
+    })
+  })
+
+  it('📦 ColorPicker support colors passthrough', async () => {
+    const onFinish = vi.fn()
+    const wrapper = render(
+      <ProForm
+        onValuesChange={async (values: any) => {
+          onFinish(values?.color?.toHexString?.())
+        }}
+      >
+        <ProFormColorPicker
+          name="color"
+          colors={['#111111', '#222222']}
+          label="颜色选择"
+        />
+      </ProForm>,
+    )
+
+    const trigger = wrapper.baseElement.querySelector<HTMLElement>(
+      '.ant-pro-field-color-picker, .ant-color-picker-trigger',
+    )
+    expect(trigger).toBeTruthy()
+
+    act(() => {
+      trigger?.click()
+    })
+
+    await waitFor(() => {
+      expect(
+        wrapper.baseElement.querySelectorAll('.ant-color-picker-presets-color').length,
+      ).toBe(2)
+    })
+
+    act(() => {
+      wrapper.baseElement
+        .querySelectorAll<HTMLElement>('.ant-color-picker-presets-color')[1]
+        .click()
+    })
+    await waitFor(() => {
+      expect(onFinish).toHaveBeenCalledWith('#222222')
+    })
+  })
+
+  it('📦 ColorPicker fieldProps.presets should override colors', async () => {
+    const onFinish = vi.fn()
+    const wrapper = render(
+      <ProForm
+        onValuesChange={async (values: any) => {
+          onFinish(values?.color?.toHexString?.())
+        }}
+      >
+        <ProFormColorPicker
+          name="color"
+          colors={['#111111', '#222222']}
+          fieldProps={{
+            presets: [
+              {
+                label: 'Custom',
+                colors: ['#333333'],
+              },
+            ],
+          }}
+          label="颜色选择"
+        />
+      </ProForm>,
+    )
+
+    const trigger = wrapper.baseElement.querySelector<HTMLElement>(
+      '.ant-pro-field-color-picker, .ant-color-picker-trigger',
+    )
+    expect(trigger).toBeTruthy()
+
+    act(() => {
+      trigger?.click()
+    })
+
+    await waitFor(() => {
+      expect(
+        wrapper.baseElement.querySelectorAll('.ant-color-picker-presets-color').length,
+      ).toBe(1)
+    })
+
+    act(() => {
+      wrapper.baseElement
+        .querySelectorAll<HTMLElement>('.ant-color-picker-presets-color')[0]
+        .click()
+    })
+    await waitFor(() => {
+      expect(onFinish).toHaveBeenCalledWith('#333333')
+    })
   })
 
   it('📦 validateFieldsReturnFormatValue', async () => {

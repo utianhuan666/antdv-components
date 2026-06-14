@@ -364,6 +364,24 @@ describe('field', () => {
     expect(wrapper.text()).toBe('关闭')
   })
 
+  it('🐴 checkbox read mode keeps boolean false for valueEnum lookup', () => {
+    const wrapper = mount({
+      render: () => (
+        <CompatProField
+          text={false as any}
+          valueType="checkbox"
+          mode="read"
+          valueEnum={{
+            false: { text: '关闭' },
+            true: { text: '开启' },
+          }}
+        />
+      ),
+    })
+
+    expect(wrapper.text()).toContain('关闭')
+  })
+
   ;(['select', 'checkbox', 'radio', 'radioButton', 'cascader', 'treeSelect', 'segmented'] as const).forEach((valueType) => {
     it(`🐴 ${valueType} read mode support render valueEnum`, () => {
       const wrapper = mount({

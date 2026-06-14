@@ -1,50 +1,148 @@
-import type { ProFieldValueTypeInput } from '../../../utils/typing'
-import type { ProFormFieldItemProps } from '../../typing'
-import { cloneVNode, defineComponent } from 'vue'
-import { useFieldContext } from '../../FieldContext'
-import { mergeFieldProps, renderFieldFormItem, renderProField, useRegisterFormItem } from '../_util'
+import type { ComponentPublicInstance } from 'vue'
+import type { ProFieldValueTypeInput, ProSchema } from '../../../utils/typing'
+import type { ProFormFieldItemProps, ProFormFieldRuntimeProps } from '../../typing'
+import { cloneVNode, defineComponent, ref } from 'vue'
+import { PureProField } from '../../../field'
+import { runFunction } from '../../../utils'
+import { createRefProxy } from '../../../utils/createRefProxy'
+import { useEditOrReadOnlyContext } from '../../BaseForm/EditOrReadOnlyContext'
+import { proFormFieldPropNames, warpField } from '../FormItem/warpField'
 
 export type ProFormFieldProps<
   T = any,
-  FieldProps = Record<string, any>,
-> = ProFormFieldItemProps<FieldProps> & {
-  mode?: 'edit' | 'read' | 'update'
-  isDefaultDom?: boolean
-  text?: any
+  FiledProps = Record<string, any>,
+> = ProSchema<
+  T,
+  ProFormFieldRuntimeProps<FiledProps> & {
+    mode?: 'edit' | 'read' | 'update'
+    isDefaultDom?: boolean
+    text?: any
+    getFieldProps?: () => Record<string, any>
+    getFormItemProps?: () => Record<string, any>
+    dependenciesValues?: Record<string, any>
+    originDependencies?: Record<string, any>
+  },
+  any,
+  any
+>
+
+type BaseProFormFieldRuntimeProps<FiledProps = Record<string, any>> = ProFormFieldRuntimeProps<FiledProps> & {
+  autoFocus?: boolean
+  debounceTime?: number
+  dependenciesValues?: Record<string, any>
   getFieldProps?: () => Record<string, any>
   getFormItemProps?: () => Record<string, any>
-  dependenciesValues?: Record<string, any>
+  isDefaultDom?: boolean
+  light?: boolean
   originDependencies?: Record<string, any>
-  valueType?: ProFieldValueTypeInput
-  data?: T
 }
 
-const ProFormField = defineComponent({
-  name: 'ProFormField',
+const BaseProFormField = defineComponent<ProFormFieldProps>({
+  name: 'BaseProFormField',
   inheritAttrs: false,
-  setup(props: ProFormFieldProps, { attrs, slots }) {
-    const fieldContext = useFieldContext()
-    useRegisterFormItem(() => ({ ...attrs, ...props } as ProFormFieldProps))
-    return () => {
-      const current = { ...attrs, ...props } as ProFormFieldProps
-      const children = slots.default?.()
-      let dom = children?.length
-        ? children
-        : renderProField(current, current.valueType || 'text', {}, fieldContext)
+  props: proFormFieldPropNames,
+  setup(rawProps, { slots, expose }) {
+    const modeContext = useEditOrReadOnlyContext()
+    const innerRef = ref<ComponentPublicInstance | null>(null)
 
-      if (children?.length && current.name) {
-        const fieldProps = mergeFieldProps(current, {}, fieldContext)
-        const firstChild = children[0]
-        if (firstChild && typeof firstChild === 'object') {
-          dom = [cloneVNode(firstChild, fieldProps), ...children.slice(1)]
-        }
+    expose(createRefProxy<ComponentPublicInstance>(innerRef))
+
+    return () => {
+      const props = rawProps as BaseProFormFieldRuntimeProps & {
+        onChange?: (...args: any[]) => any
+      }
+      const {
+        fieldProps,
+        autoFocus,
+        render,
+        proFieldProps,
+        formItemRender,
+        valueType,
+        onChange,
+        valueEnum,
+        params,
+        dependenciesValues,
+        cacheForSwr = false,
+        valuePropName = 'value',
+        emptyText,
+        placeholder,
+        label,
+        light,
+        variant,
+        request,
+        debounceTime,
+        readonly,
+        open,
+        onOpenChange,
+        children: _children,
+        ...restProps
+      } = props
+
+      const propsParams = dependenciesValues && (restProps as Record<string, any>).request
+        ? {
+            ...params,
+            ...(dependenciesValues || {}),
+          }
+        : params
+
+      const memoFieldProps = {
+        autoFocus,
+        ...(restProps.name !== undefined && fieldProps?.id === undefined ? { id: String(restProps.name) } : {}),
+        ...fieldProps,
+        onChange: (...restParams: any[]) => {
+          fieldProps?.onChange?.(...restParams)
+        },
       }
 
-      return renderFieldFormItem(current, dom, current.valueType || 'text', fieldContext)
+      const children = slots.default?.()
+      if (children?.length) {
+        const firstChild = children[0]
+        if (firstChild && typeof firstChild === 'object') {
+          return cloneVNode(firstChild, {
+            ref: innerRef,
+            ...restProps,
+            onChange: (...restParams: any[]) => {
+              if (fieldProps?.onChange) {
+                fieldProps.onChange(...restParams)
+                return
+              }
+              onChange?.(...restParams)
+            },
+            ...((firstChild.props as any) || {}),
+          })
+        }
+        return children
+      }
+
+      return (
+        <PureProField
+          ref={innerRef}
+          text={(fieldProps as Record<string, any> | undefined)?.[valuePropName]}
+          render={render as any}
+          formItemRender={formItemRender as any}
+          valueType={(valueType ?? 'text') as ProFieldValueTypeInput}
+          cacheForSwr={cacheForSwr}
+          fieldProps={memoFieldProps}
+          valueEnum={runFunction(valueEnum)}
+          emptyText={emptyText}
+          placeholder={placeholder}
+          label={label}
+          light={light}
+          variant={variant}
+          request={request}
+          debounceTime={debounceTime}
+          readonly={readonly}
+          open={open}
+          onOpenChange={onOpenChange}
+          {...proFieldProps}
+          mode={proFieldProps?.mode || modeContext.mode || 'edit'}
+          params={propsParams}
+        />
+      )
     }
   },
-}) as any
+})
 
-ProFormField.displayName = 'ProFormComponent'
+const ProFormField = warpField(BaseProFormField)
 
 export default ProFormField

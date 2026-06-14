@@ -7,7 +7,7 @@ export type ProFormDigitProps = ProFormFieldItemProps<InputNumberProps> & {
   max?: InputNumberProps['max']
 }
 
-const ProFormDigit = defineProFormField(
+const ProFormDigit = defineProFormField<ProFormDigitProps>(
   'ProFormDigit',
   'digit',
   props => ({

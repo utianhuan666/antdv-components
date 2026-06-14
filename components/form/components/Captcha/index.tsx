@@ -2,8 +2,10 @@ import type { ButtonProps, InputProps } from 'antdv-next'
 import type { NamePath } from '../../../utils/typing'
 import type { ProFormFieldItemProps } from '../../typing'
 import { Button, Input } from 'antdv-next'
-import { defineComponent, onBeforeUnmount, ref, watch } from 'vue'
-import { mergeFieldProps, renderFormItem } from '../_util'
+import { computed, defineComponent, ref, watch } from 'vue'
+import { useProFormContext } from '../../../utils'
+import { mergeFieldProps } from '../_util'
+import { proFormFieldPropNames, warpField } from '../FormItem/warpField'
 
 export type ProFormCaptchaProps = ProFormFieldItemProps<InputProps> & {
   countDown?: number
@@ -23,44 +25,88 @@ export interface CaptFieldRef {
   endTiming: () => void
 }
 
-const ProFormCaptcha = defineComponent({
-  name: 'ProFormCaptcha',
+const captchaPropNames = [
+  'countDown',
+  'phoneName',
+  'onGetCaptcha',
+  'onTiming',
+  'captchaTextRender',
+  'captchaProps',
+  'value',
+  'onChange',
+  'fieldProps',
+]
+
+const BaseProFormCaptcha = defineComponent<ProFormCaptchaProps>({
+  name: 'BaseProFormCaptcha',
   inheritAttrs: false,
-  setup(props: ProFormCaptchaProps, { attrs, expose }) {
+  props: captchaPropNames,
+  setup(rawProps, { expose }) {
+    const props = rawProps
+    const proFormContext = useProFormContext()
+    const form = computed(() => proFormContext.formRef?.value)
     const containerRef = ref<HTMLDivElement | null>(null)
     const inputRef = ref<any>()
     const count = ref(props.countDown || 60)
     const timing = ref(false)
-    const loading = ref(false)
-    let timer: ReturnType<typeof setInterval> | undefined
-
-    const stopTimer = () => {
-      if (timer)
-        clearInterval(timer)
-      timer = undefined
-    }
+    const loading = ref<boolean>()
 
     const startTiming = () => {
-      stopTimer()
       timing.value = true
-      timer = setInterval(() => {
-        count.value -= 1
-        if (count.value <= 0) {
-          stopTimer()
-          timing.value = false
-          count.value = props.countDown || 60
-        }
-      }, 1000)
     }
 
     const endTiming = () => {
-      stopTimer()
       timing.value = false
-      count.value = props.countDown || 60
     }
 
-    watch(count, value => props.onTiming?.(value))
-    onBeforeUnmount(stopTimer)
+    const onGetCaptcha = async (mobile: string) => {
+      try {
+        loading.value = true
+        await props.onGetCaptcha(mobile)
+        loading.value = false
+        timing.value = true
+      }
+      catch (error) {
+        timing.value = false
+        loading.value = false
+        // eslint-disable-next-line no-console
+        console.log(error)
+      }
+    }
+
+    watch(
+      timing,
+      (isTiming, _preTiming, onCleanup) => {
+        let interval: ReturnType<typeof setInterval> | undefined
+        const { countDown } = props
+
+        if (isTiming) {
+          interval = setInterval(() => {
+            if (count.value <= 1) {
+              timing.value = false
+              if (interval)
+                clearInterval(interval)
+              count.value = countDown || 60
+              return
+            }
+            count.value -= 1
+          }, 1000)
+        }
+
+        onCleanup(() => {
+          if (interval)
+            clearInterval(interval)
+        })
+      },
+    )
+
+    watch(
+      [count, () => props.onTiming],
+      ([value]) => {
+        props.onTiming?.(value as number)
+      },
+      { immediate: true },
+    )
 
     expose({
       nativeElement: containerRef,
@@ -70,12 +116,15 @@ const ProFormCaptcha = defineComponent({
     })
 
     return () => {
-      const current = { ...attrs, ...props } as ProFormCaptchaProps
-      const { style, ...fieldProps } = mergeFieldProps(current)
-      const captchaTextRender = current.captchaTextRender || ((isTiming: boolean, currentCount: number) =>
-        isTiming ? `${currentCount} 秒后重新获取` : '获取验证码')
+      const { style, ...fieldProps } = mergeFieldProps(props)
+      const {
+        captchaProps,
+        captchaTextRender = (paramsTiming: boolean, paramsCount: number) => {
+          return paramsTiming ? `${paramsCount} 秒后重新获取` : '获取验证码'
+        },
+      } = props
 
-      const dom = (
+      return (
         <div
           ref={containerRef}
           style={{ ...style, display: 'flex', alignItems: 'center' }}
@@ -89,15 +138,22 @@ const ProFormCaptcha = defineComponent({
             style={{ display: 'block' }}
             disabled={timing.value}
             loading={loading.value}
-            {...current.captchaProps}
+            {...captchaProps}
             onClick={async () => {
               try {
-                loading.value = true
-                await current.onGetCaptcha?.('')
-                startTiming()
+                if (props.phoneName) {
+                  const namePath = [props.phoneName].flat(1) as string[]
+                  await form.value?.validateFields?.(namePath)
+                  const mobile = form.value?.getFieldValue?.(namePath)
+                  await onGetCaptcha(mobile)
+                }
+                else {
+                  await onGetCaptcha('')
+                }
               }
-              finally {
-                loading.value = false
+              catch (error) {
+                // eslint-disable-next-line no-console
+                console.log(error)
               }
             }}
           >
@@ -105,12 +161,16 @@ const ProFormCaptcha = defineComponent({
           </Button>
         </div>
       )
-
-      return renderFormItem(current, dom)
     }
   },
-}) as any
+})
 
-ProFormCaptcha.displayName = 'ProFormComponent'
+const proFormCaptchaPropNames = [...proFormFieldPropNames, ...captchaPropNames]
+
+const ProFormCaptcha = warpField(
+  BaseProFormCaptcha,
+  [],
+  proFormCaptchaPropNames,
+) as typeof BaseProFormCaptcha
 
 export default ProFormCaptcha

@@ -59,5 +59,3 @@ export function useStyle(prefixCls: string) {
     return [genProStyle(proToken)]
   })
 }
-
-export default useStyle

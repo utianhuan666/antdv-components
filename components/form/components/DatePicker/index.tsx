@@ -15,6 +15,5 @@ ExportComponent.Week = ProFormDatePickerWeek
 ExportComponent.Month = ProFormDatePickerMonth
 ExportComponent.Quarter = ProFormDatePickerQuarter
 ExportComponent.Year = ProFormDatePickerYear
-ExportComponent.displayName = 'ProFormComponent'
 
 export default ExportComponent

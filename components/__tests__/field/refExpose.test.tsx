@@ -10,7 +10,7 @@ async function settle() {
   await nextTick()
 }
 
-describe('ProField ref expose', () => {
+describe('proField ref expose', () => {
   it('proxies inner input methods from FieldText ref', async () => {
     const fieldRef = shallowRef<any>()
     const wrapper = mount({

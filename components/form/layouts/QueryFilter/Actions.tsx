@@ -4,6 +4,7 @@ import { clsx } from '@v-c/util'
 import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
 import { useIntl, useProProviderContext } from '../../../provider'
+import { omitBoolean } from '../../../utils'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
 export interface ActionsProps {
@@ -55,7 +56,7 @@ const Actions = defineComponent<ActionsProps>({
     const prefixCls = useProPrefixCls('pro-query-filter-collapse-button')
 
     return () => {
-      const collapseRender = props.collapseRender || defaultCollapseRender
+      const collapseRender = omitBoolean(props.collapseRender) || defaultCollapseRender
 
       return (
         <Space style={props.style} size={16}>

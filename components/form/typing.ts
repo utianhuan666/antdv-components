@@ -1,4 +1,4 @@
-import type { ColProps, FormItemProps, RowProps } from 'antdv-next'
+import type { ColProps, FormItemProps, RowProps, TooltipPlacement } from 'antdv-next'
 import type { CSSProperties, Ref, VNodeChild } from 'vue'
 import type {
   ProFieldProps,
@@ -8,8 +8,8 @@ import type {
 } from '../utils'
 import type { ProFieldValueType } from '../utils/typing'
 import type { ProFormInstance } from './BaseForm'
-import type { CaptFieldRef } from './components/Captcha'
 import type { ProFormItemProps } from './components/FormItem'
+import type { FieldCascaderExpose, FieldSelectExpose } from '../field'
 
 export interface ProFormGridConfig {
   grid?: boolean
@@ -38,7 +38,7 @@ export interface ExtendsProps {
   convertValue?: SearchConvertKeyFn
   formItemProps?: FormItemProps
   fieldConfig?: ProFormItemCreateConfig
-  fieldRef?: Ref<CaptFieldRef | null | undefined>
+  fieldRef?: Ref<FieldSelectExpose | FieldCascaderExpose | null | undefined>
 }
 
 export type ProFormGroupProps = ProFormBaseGroupProps & ProFormGridConfig
@@ -70,6 +70,27 @@ export type ProFormFieldItemProps<T = Record<string, any>, K = any> = {
 } & Omit<ProFormItemProps, 'valueType'>
 & Pick<ProFormGridConfig, 'colProps'>
 & ExtendsProps
+
+export type ProFormFieldVariant = 'outlined' | 'borderless' | 'filled' | 'underlined'
+
+export type ProFormFieldRuntimeProps<T = Record<string, any>, K = any> = ProFormFieldItemProps<T, K> & {
+  value?: any
+  text?: any
+  initialValue?: any
+  defaultValue?: any
+  onChange?: (...args: any[]) => void
+  render?: (...args: any[]) => VNodeChild
+  formItemRender?: (...args: any[]) => VNodeChild
+  request?: ProSchema['request']
+  valueEnum?: ProSchema['valueEnum']
+  mode?: 'edit' | 'read' | 'update'
+  valueType?: ProFieldValueType
+  variant?: ProFormFieldVariant
+  placement?: TooltipPlacement
+  lightFilterLabelFormatter?: (value: any) => string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
 
 export type ProFormFieldRemoteProps = Pick<
   ProSchema,

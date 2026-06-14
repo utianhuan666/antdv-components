@@ -6,12 +6,31 @@ import type { ProFormProps } from '../ProForm'
 import { clsx } from '@v-c/util'
 import { Button, Col, Row, Space, Steps } from 'antdv-next'
 import { computed, defineComponent, inject, provide, ref, watchEffect } from 'vue'
+import { ProConfigProvider, useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
-import { merge } from '../../../utils'
+import { merge, useRefFunction } from '../../../utils'
 import { cloneElement, flattenChildren, getVNodeProps, setRefValue } from '../_shared/vueHelpers'
 import { StepFormContextKey, StepsFormContextKey } from './context'
 import StepForm from './StepForm'
 import { useStyle } from './style'
+
+const stepsFormPropNames = [
+  'onFinish',
+  'current',
+  'stepsProps',
+  'formProps',
+  'onCurrentChange',
+  'stepsRender',
+  'formRef',
+  'stepsFormRef',
+  'formMapRef',
+  'allowStepSelect',
+  'stepFormRender',
+  'stepsFormRender',
+  'submitter',
+  'containerStyle',
+  'layoutRender',
+]
 
 export interface StepsFormRef {
   getAllFieldsValue: () => Record<string, any>
@@ -58,10 +77,26 @@ const StepFormProvider = defineComponent({
 
 function renderDefaultLayout(orientation: StepsProps['orientation'], dom: { stepsDom: VNodeChild, formDom: VNodeChild }) {
   if (orientation === 'vertical') {
+    const stepsDom = cloneElement(dom.stepsDom, {
+      style: {
+        height: '100%',
+      },
+    })
     return (
       <Row align="stretch" wrap gutter={{ xs: 8, sm: 16, md: 24 }}>
-        <Col xxl={4} xl={6} lg={7} md={8} sm={10} xs={12}>{dom.stepsDom}</Col>
-        <Col>{dom.formDom}</Col>
+        <Col xxl={4} xl={6} lg={7} md={8} sm={10} xs={12}>{stepsDom}</Col>
+        <Col>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              height: '100%',
+            }}
+          >
+            {dom.formDom}
+          </div>
+        </Col>
       </Row>
     )
   }
@@ -73,42 +108,51 @@ function renderDefaultLayout(orientation: StepsProps['orientation'], dom: { step
   )
 }
 
-const StepsFormInner = defineComponent({
+const StepsFormInner = defineComponent<StepsFormProps>({
   name: 'StepsForm',
   inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
+  props: stepsFormPropNames,
+  setup(rawProps, { slots }) {
+    const props = rawProps
     const formDataRef = ref(new Map<string, Record<string, any>>())
     const formMapRef = ref(new Map<string, any>())
     const formArrayRef = ref<Ref<FormInstance | undefined>[]>([])
     const formArray = ref<string[]>([])
     const loading = ref(false)
-    const step = ref((attrs.current as number | undefined) ?? 0)
+    const step = ref(props.current ?? 0)
     const prefixCls = useProPrefixCls('pro-steps-form')
     const { wrapSSR, hashId } = useStyle(prefixCls.value)
     const lastStep = computed(() => step.value === formArray.value.length - 1)
     const stepCount = computed(() => formArray.value.length)
+    const intl = useIntl()
+
+    const onCurrentChangeCallback = useRefFunction((current: number) => {
+      props.onCurrentChange?.(current)
+    })
 
     const setStep = (nextStep: number) => {
       step.value = nextStep
-      ;(attrs as StepsFormProps).onCurrentChange?.(nextStep)
+      queueMicrotask(() => {
+        onCurrentChangeCallback(nextStep)
+      })
     }
-    const setCurrentStepSafe = (index: number) => {
+    const setCurrentStepSafe = useRefFunction((index: number) => {
       if (index < 0 || index >= formArrayRef.value.length)
         return
       setStep(index)
-    }
-    const nextPage = () => {
+    })
+    const nextPage = useRefFunction(() => {
       if (formArray.value.length === 0 || step.value > formArray.value.length - 2)
         return
       setStep(step.value + 1)
-    }
-    const prePage = () => {
+    })
+    const prePage = useRefFunction(() => {
       if (step.value > 0)
         setStep(step.value - 1)
-    }
-    const onSubmit = () => {
+    })
+    const onSubmit = useRefFunction(() => {
       formArrayRef.value[step.value]?.value?.submit?.()
-    }
+    })
 
     provide(StepsFormContextKey, {
       regForm: (name: string, props: any) => {
@@ -122,7 +166,6 @@ const StepsFormInner = defineComponent({
         formDataRef.value.delete(name)
       },
       onFormFinish: async (name: string, formData: any) => {
-        const props = attrs as StepsFormProps
         formDataRef.value.set(name, formData)
         if (!lastStep.value || !props.onFinish)
           return
@@ -134,6 +177,9 @@ const StepsFormInner = defineComponent({
             setStep(0)
             formArrayRef.value.forEach(form => form.value?.resetFields?.())
           }
+        }
+        catch (error) {
+          console.error('[StepsForm] onFinish error:', error)
         }
         finally {
           loading.value = false
@@ -154,7 +200,6 @@ const StepsFormInner = defineComponent({
     })
 
     watchEffect(() => {
-      const props = attrs as StepsFormProps
       if (props.current !== undefined && props.current !== step.value)
         step.value = props.current
       setRefValue(props.formMapRef as any, formArrayRef.value)
@@ -174,7 +219,6 @@ const StepsFormInner = defineComponent({
     })
 
     return () => {
-      const props = attrs as StepsFormProps
       const children = flattenChildren(slots.default?.())
       const stepsDom = (
         <div class={`${prefixCls.value}-steps-container`} style={{ maxWidth: Math.min(formArray.value.length * 320, 1160) }}>
@@ -182,7 +226,16 @@ const StepsFormInner = defineComponent({
             {...props.stepsProps as any}
             items={formArray.value.map((item) => {
               const itemProps = formMapRef.value.get(item)
-              return { key: item, title: itemProps?.title, ...(itemProps?.stepProps || {}) }
+              const stepItemProps: Record<string, any> = {
+                key: item,
+                title: itemProps?.title,
+                ...(itemProps?.stepProps || {}),
+              }
+              if (stepItemProps.description) {
+                stepItemProps.content = stepItemProps.description
+                delete stepItemProps.description
+              }
+              return stepItemProps
             })}
             current={step.value}
             onChange={(nextStep: number) => {
@@ -199,6 +252,7 @@ const StepsFormInner = defineComponent({
           return null
         const nextButton = (
           <Button
+            key="next"
             type="primary"
             loading={loading.value}
             {...submitter?.submitButtonProps as any}
@@ -207,22 +261,24 @@ const StepsFormInner = defineComponent({
               onSubmit()
             }}
           >
-            下一步
+            {intl.getMessage('stepsForm.next', '下一步')}
           </Button>
         )
         const preButton = (
           <Button
+            key="pre"
             {...submitter?.resetButtonProps as any}
             onClick={() => {
               prePage()
               submitter?.onReset?.()
             }}
           >
-            上一步
+            {intl.getMessage('stepsForm.prev', '上一步')}
           </Button>
         )
         const submitButton = (
           <Button
+            key="submit"
             type="primary"
             loading={loading.value}
             {...submitter?.submitButtonProps as any}
@@ -231,7 +287,7 @@ const StepsFormInner = defineComponent({
               onSubmit()
             }}
           >
-            提交
+            {intl.getMessage('stepsForm.submit', '提交')}
           </Button>
         )
         const buttons = step.value < 1 ? (formArray.value.length === 1 ? [submitButton] : [nextButton]) : step.value + 1 === formArray.value.length ? [preButton, submitButton] : [preButton, nextButton]
@@ -246,8 +302,27 @@ const StepsFormInner = defineComponent({
         const name = itemProps.name || `${index}`
         const isShow = step.value === index
         return (
-          <div class={`${prefixCls.value}-step`} key={name} style={{ display: isShow ? undefined : 'none' }}>
-            <StepFormProvider value={{ ...(props.formProps || {}), ...itemProps, name, step: index, submitter: false, contentRender: props.stepFormRender }} child={cloneElement(item)} />
+          <div
+            class={clsx(`${prefixCls.value}-step`, hashId, {
+              [`${prefixCls.value}-step-active`]: isShow,
+            })}
+            key={name}
+          >
+            <StepFormProvider
+              value={{
+                ...(isShow
+                  ? {
+                      contentRender: props.stepFormRender,
+                      submitter: false,
+                    }
+                  : {}),
+                ...(props.formProps || {}),
+                ...itemProps,
+                name,
+                step: index,
+              }}
+              child={cloneElement(item)}
+            />
           </div>
         )
       })
@@ -265,7 +340,23 @@ const StepsFormInner = defineComponent({
   },
 })
 
-export const StepsForm = StepsFormInner as any
+const StepsFormWithProvider = defineComponent({
+  name: 'StepsForm',
+  inheritAttrs: false,
+  props: stepsFormPropNames as any,
+  setup(rawProps, { slots }) {
+    const props = rawProps as StepsFormProps
+    return () => (
+      <ProConfigProvider needDeps>
+        <StepsFormInner {...props as any}>
+          {slots.default?.()}
+        </StepsFormInner>
+      </ProConfigProvider>
+    )
+  },
+})
+
+export const StepsForm = StepsFormWithProvider as any
 StepsForm.StepForm = StepForm
 StepsForm.useStepsFormContext = useStepsFormContext
 
