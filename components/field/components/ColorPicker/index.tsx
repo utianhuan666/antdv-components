@@ -1,11 +1,12 @@
 import type { ColorPickerProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldColorPickerEdit from './FieldColorPickerEdit'
 import FieldColorPickerRead from './FieldColorPickerRead'
 
-type FieldColorPickerOwnProps = {
+export type FieldColorPickerOwnProps = {
   text: string
   mode?: 'read' | 'edit' | 'update'
 } & Partial<Omit<ColorPickerProps, 'value' | 'mode'>>
@@ -13,7 +14,7 @@ type FieldColorPickerOwnProps = {
 type FieldColorPickerInstance = InstanceType<typeof import('antdv-next')['ColorPicker']>
 export type FieldColorPickerExpose = Partial<FieldColorPickerInstance>
 
-type FieldColorPickerProps = NonNullable<ProFieldFC<FieldColorPickerOwnProps>['__props']>
+export type FieldColorPickerProps = NonNullable<ProFieldFC<FieldColorPickerOwnProps>['__props']>
 
 /**
  * 颜色组件
@@ -33,16 +34,7 @@ const FieldColorPicker = defineComponent<FieldColorPickerProps>({
     const props = rawProps as FieldColorPickerProps
     const innerRef = ref<FieldColorPickerInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldColorPickerExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldColorPickerInstance]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldColorPickerInstance>(innerRef))
 
     return () => {
       const text = props.text ?? ''

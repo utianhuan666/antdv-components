@@ -5,6 +5,7 @@ import { useFormItemInputContext } from 'antdv-next/dist/form/context'
 import { computed, defineComponent, ref } from 'vue'
 import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldRadioEdit from './FieldRadioEdit'
@@ -77,18 +78,7 @@ const FieldRadio = defineComponent<RadioFieldProps>({
       },
     }))
 
-    expose(
-      new Proxy({ fetchData } as FieldRadioExpose, {
-        get(target, key: string) {
-          if (key in target)
-            return target[key as keyof FieldRadioExpose]
-          return radioRef.value?.[key as keyof FieldRadioInstance]
-        },
-        has(target, key: string) {
-          return key in target || (!!radioRef.value && key in radioRef.value)
-        },
-      }),
-    )
+    expose(createRefProxy<FieldRadioInstance, Pick<FieldRadioExpose, 'fetchData'>>(radioRef, { fetchData }))
 
     return () => {
       if (loading.value)

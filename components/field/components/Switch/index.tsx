@@ -2,6 +2,7 @@ import type { SwitchProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSwitchEdit from './FieldSwitchEdit'
 import FieldSwitchLightEdit from './FieldSwitchLightEdit'
@@ -35,16 +36,7 @@ const FieldSwitch = defineComponent<FieldSwitchProps>({
     const intl = useIntl()
     const switchRef = ref<FieldSwitchInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldSwitchExpose, {
-        get(_target, key: string) {
-          return switchRef.value?.[key as keyof FieldSwitchInstance]
-        },
-        has(_target, key: string) {
-          return !!switchRef.value && key in switchRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldSwitchInstance>(switchRef))
 
     return () => {
       const props = rawProps as FieldSwitchProps

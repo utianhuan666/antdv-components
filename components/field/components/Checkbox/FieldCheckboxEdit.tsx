@@ -1,4 +1,5 @@
 import type { VNodeChild } from 'vue'
+import type { RequestOptionsType } from '../Select/types'
 import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { clsx, omit } from '@v-c/util'
@@ -6,7 +7,7 @@ import { CheckboxGroup } from 'antdv-next'
 
 type Props = Omit<NonNullable<ProFieldFC<GroupProps>['__props']>, 'options'> & {
   layout: 'horizontal' | 'vertical'
-  options: any[]
+  options: Array<RequestOptionsType | string | number>
   loading: boolean
   layoutClassName: string
   wrapSSR: (node: VNodeChild) => VNodeChild
@@ -28,10 +29,12 @@ export function FieldCheckboxEdit(props: Props) {
     ...rest
   } = props
 
-  const { fieldNames: _fieldNames, variant: _variant, ...restFieldProps } = omit(rest.fieldProps || {}, ['fieldNames'])
+  const { fieldNames: _fieldNames, variant, ...restFieldProps } = omit(rest.fieldProps || {}, ['fieldNames'])
+  const AnyCheckboxGroup = CheckboxGroup as any
   const dom = wrapSSR(
-    <CheckboxGroup
-      {...(restFieldProps as any)}
+    <AnyCheckboxGroup
+      {...restFieldProps}
+      variant={variant}
       class={clsx(
         rest.fieldProps?.class,
         rest.fieldProps?.className,
@@ -42,7 +45,7 @@ export function FieldCheckboxEdit(props: Props) {
           [`${layoutClassName}-warning`]: status?.status === 'warning',
         },
       )}
-      options={options}
+      options={options as NonNullable<GroupProps['options']>}
     />,
   )
 

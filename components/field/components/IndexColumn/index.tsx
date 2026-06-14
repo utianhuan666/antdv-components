@@ -2,6 +2,7 @@ import type { SetupContext, VNodeChild } from 'vue'
 import { defineComponent, isVNode, ref } from 'vue'
 import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 
 export type FieldIndexColumnExpose = Partial<HTMLDivElement>
 
@@ -26,16 +27,7 @@ function setupIndexColumn(props: IndexColumnProps, { slots, expose }: SetupConte
   const prefixCls = useProPrefixCls('pro-field-index-column')
   const rootRef = ref<HTMLDivElement | null>(null)
 
-  expose(
-    new Proxy({} as FieldIndexColumnExpose, {
-      get(_target, key: string) {
-        return rootRef.value?.[key as keyof HTMLDivElement]
-      },
-      has(_target, key: string) {
-        return rootRef.value ? key in rootRef.value : false
-      },
-    }),
-  )
+  expose(createRefProxy<HTMLDivElement>(rootRef))
 
   const { hashId } = useStyle('IndexColumn', (token) => {
     const size = token.controlHeightXS + 2

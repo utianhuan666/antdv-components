@@ -1,6 +1,7 @@
 import type { RateProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldRateEdit from './FieldRateEdit'
 import FieldRateRead from './FieldRateRead'
@@ -26,16 +27,7 @@ const FieldRate = defineComponent<FieldRateProps>({
   setup(rawProps, { expose }) {
     const rateRef = ref<FieldRateInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldRateExpose, {
-        get(_target, key: string) {
-          return rateRef.value?.[key as keyof FieldRateInstance]
-        },
-        has(_target, key: string) {
-          return !!rateRef.value && key in rateRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldRateInstance>(rateRef))
 
     return () => {
       const props = rawProps as FieldRateProps

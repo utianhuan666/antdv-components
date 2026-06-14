@@ -7,6 +7,7 @@ import { omit } from '@v-c/util'
 import { computed, defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldTreeSelectEdit from './FieldTreeSelectEdit'
@@ -127,18 +128,7 @@ const FieldTreeSelect = defineComponent({
       open.value = typeof updater === 'function' ? updater(open.value) : updater
     }
 
-    expose(
-      new Proxy({ fetchData } as FieldTreeSelectExpose, {
-        get(target, key: string) {
-          if (key in target)
-            return target[key as keyof FieldTreeSelectExpose]
-          return treeSelectRef.value?.[key as keyof FieldTreeSelectInstance]
-        },
-        has(target, key: string) {
-          return key in target || (!!treeSelectRef.value && key in treeSelectRef.value)
-        },
-      }),
-    )
+    expose(createRefProxy<FieldTreeSelectInstance, Pick<FieldTreeSelectExpose, 'fetchData'>>(treeSelectRef, { fetchData }))
 
     const optionsValueEnum = computed(() => {
       const mode = props.mode ?? 'read'

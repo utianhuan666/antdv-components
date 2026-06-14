@@ -3,6 +3,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
 import { Spin } from 'antdv-next'
 import { computed, defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldSegmentedEdit from './FieldSegmentedEdit'
@@ -58,18 +59,7 @@ const FieldSegmented = defineComponent<FieldSegmentedProps>({
       emptyText: props.emptyText ?? '-',
     }))
 
-    expose(
-      new Proxy({ fetchData } as FieldSegmentedExpose, {
-        get(target, key: string) {
-          if (key in target)
-            return target[key as keyof FieldSegmentedExpose]
-          return inputRef.value?.[key as keyof FieldSegmentedInstance]
-        },
-        has(target, key: string) {
-          return key in target || (!!inputRef.value && key in inputRef.value)
-        },
-      }),
-    )
+    expose(createRefProxy<FieldSegmentedInstance, Pick<FieldSegmentedExpose, 'fetchData'>>(inputRef, { fetchData }))
 
     return () => {
       if (loading.value)

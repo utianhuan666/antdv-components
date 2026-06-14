@@ -406,7 +406,6 @@ export const defaultRenderRead: ProFieldRenderText = (
   const customValueTypeConfig
     = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    delete props.ref
     return customValueTypeConfig.render?.(
       dataValue,
       {
@@ -439,7 +438,6 @@ export const defaultRenderEdit: ProFieldRenderText = (
   const customValueTypeConfig
     = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
-    delete props.ref
     return customValueTypeConfig.formItemRender?.(
       dataValue,
       {

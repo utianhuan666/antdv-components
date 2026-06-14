@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldSecondProps } from './types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSecondEdit from './FieldSecondEdit'
 import FieldSecondRead from './FieldSecondRead'
@@ -29,16 +30,7 @@ const FieldSecond = defineComponent<FieldSecondFieldProps>({
     const intl = useIntl()
     const secondRef = ref<FieldSecondInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldSecondExpose, {
-        get(_target, key: string) {
-          return secondRef.value?.[key as keyof FieldSecondInnerRef]
-        },
-        has(_target, key: string) {
-          return !!secondRef.value && key in secondRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldSecondInnerRef>(secondRef))
 
     return () => {
       const props = rawProps as FieldSecondFieldProps

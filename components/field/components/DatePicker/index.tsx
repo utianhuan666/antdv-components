@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDatePickerEdit from './FieldDatePickerEdit'
 import FieldDatePickerLightEdit from './FieldDatePickerLightEdit'
@@ -57,16 +58,7 @@ const FieldDatePicker = defineComponent<FieldDatePickerFieldProps>({
       open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
     }
 
-    expose(
-      new Proxy({} as FieldDatePickerExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldDatePickerInstance]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldDatePickerInstance>(innerRef))
 
     return () => {
       const props = rawProps as FieldDatePickerFieldProps

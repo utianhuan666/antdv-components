@@ -11,6 +11,7 @@ import useSWRV from 'swrv'
 import { computed, defineComponent, onUnmounted, ref, watch } from 'vue'
 import { useIntl, useProProviderSWRVContext } from '../../../provider'
 import { objectToMap } from '../../../utils'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSelectLightEdit from './FieldSelectLightEdit'
 import FieldSelectRead from './FieldSelectRead'
@@ -336,23 +337,9 @@ const FieldSelect = defineComponent({
     const [loading, options, fetchData, resetData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
     const { componentSize } = useConfig()
     const intl = useIntl()
-    const getInnerSelectInstance = (): FieldSelectInstance | null => {
-      const exposed = selectRef.value
-      return exposed?.selectRef?.value ?? null
-    }
+    const innerSelectRef = computed<FieldSelectInstance | null>(() => selectRef.value?.selectRef?.value ?? null)
 
-    expose(
-      new Proxy({ fetchData } as FieldSelectExpose, {
-        get(target, key: string) {
-          if (key in target)
-            return target[key as keyof FieldSelectExpose]
-          return getInnerSelectInstance()?.[key as keyof FieldSelectInstance]
-        },
-        has(target, key: string) {
-          return key in target || (!!getInnerSelectInstance() && key in getInnerSelectInstance()!)
-        },
-      }),
-    )
+    expose(createRefProxy<FieldSelectInstance, Pick<FieldSelectExpose, 'fetchData'>>(innerSelectRef, { fetchData }))
 
     const optionsValueEnum = computed(() => {
       const mode = props.mode ?? 'read'

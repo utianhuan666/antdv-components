@@ -5,6 +5,7 @@ import type { GroupProps } from './types'
 import { computed, defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldCascaderEdit from './FieldCascaderEdit'
@@ -58,18 +59,7 @@ const FieldCascader = defineComponent<FieldCascaderComponentProps>({
     }
     const [loading, options, fetchData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
 
-    expose(
-      new Proxy({ fetchData } as FieldCascaderExpose, {
-        get(target, key: string) {
-          if (key in target)
-            return target[key as keyof FieldCascaderExpose]
-          return cascaderRef.value?.[key as keyof FieldCascaderInstance]
-        },
-        has(target, key: string) {
-          return key in target || (!!cascaderRef.value && key in cascaderRef.value)
-        },
-      }),
-    )
+    expose(createRefProxy<FieldCascaderInstance, Pick<FieldCascaderExpose, 'fetchData'>>(cascaderRef, { fetchData }))
 
     const optionsValueEnum = computed(() => {
       if (!isProFieldReadMode(props.mode))

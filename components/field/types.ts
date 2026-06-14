@@ -38,6 +38,9 @@ export type ProFieldValueTypeFunction<T> = (item: T) => ProFieldValueTypeInput
 export type ProFieldRenderProps = Omit<ProFieldFCRenderProps, 'text' | 'placeholder'>
   & ProRenderFieldPropsType & {
     request?: ProFieldRequestData
+    params?: Record<string, unknown> | ((...args: any[]) => Record<string, unknown>)
+    debounceTime?: number
+    cacheForSwr?: boolean
     emptyText?: VNodeChild
     open?: boolean
     onOpenChange?: (open: boolean) => void

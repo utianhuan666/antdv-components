@@ -3,6 +3,7 @@ import type { VNodeChild } from 'vue'
 import type { ProFieldFC } from '../../types'
 import { defineComponent, onMounted, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTextEdit from './FieldTextEdit'
 import FieldTextRead from './FieldTextRead'
@@ -17,6 +18,7 @@ export type FieldTextExpose = Partial<FieldTextInstance>
 
 const FieldText = defineComponent<FieldTextProps>({
   name: 'FieldText',
+  inheritAttrs: false,
   props: [
     'text',
     'mode',
@@ -38,16 +40,7 @@ const FieldText = defineComponent<FieldTextProps>({
       }
     })
 
-    expose(
-      new Proxy({} as FieldTextExpose, {
-        get(_target, key: string) {
-          return inputRef.value?.[key as keyof FieldTextInstance]
-        },
-        has(_target, key: string) {
-          return !!inputRef.value && key in inputRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldTextInstance>(inputRef))
 
     return () => {
       const text = props.text ?? ''

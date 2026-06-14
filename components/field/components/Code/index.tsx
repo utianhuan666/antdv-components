@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
 import { proTheme } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldCodeEdit from './FieldCodeEdit'
 import FieldCodeRead from './FieldCodeRead'
@@ -34,16 +35,7 @@ const FieldCode = defineComponent<FieldCodeProps>({
     const { token } = proTheme.useToken()
     const innerRef = ref<FieldCodeInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldCodeExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldCodeInnerRef]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldCodeInnerRef>(innerRef))
 
     return () => {
       const text = props.text ?? ''

@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldFromNowEdit from './FieldFromNowEdit'
 import FieldFromNowRead from './FieldFromNowRead'
@@ -40,16 +41,7 @@ const FieldFromNow = defineComponent<FieldFromNowProps>({
     const intl = useIntl()
     const innerRef = ref<FieldFromNowInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldFromNowExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldFromNowInstance]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldFromNowInstance>(innerRef))
 
     return () => {
       const props = rawProps as FieldFromNowProps

@@ -54,6 +54,11 @@ export function FieldTimeRangePickerLightEdit(props: Props, ref?: Ref<TimeRangeP
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
+  const handleBlur = (...args: any[]) => {
+    setOpen(false)
+    fieldProps?.onOpenChange?.(false)
+    fieldProps?.onBlur?.(...args)
+  }
   const pickerDom = dayValue || open
     ? (
         <TimeRangePicker
@@ -67,6 +72,7 @@ export function FieldTimeRangePickerLightEdit(props: Props, ref?: Ref<TimeRangeP
             setOpen(nextOpen)
             fieldProps?.onOpenChange?.(nextOpen)
           }}
+          onBlur={handleBlur}
           open={open}
         />
       )

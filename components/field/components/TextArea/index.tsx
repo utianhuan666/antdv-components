@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTextAreaEdit from './FieldTextAreaEdit'
 import FieldTextAreaRead from './FieldTextAreaRead'
@@ -31,16 +32,7 @@ const FieldTextArea = defineComponent<FieldTextAreaProps>({
     const intl = useIntl()
     const inputRef = ref<FieldTextAreaInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldTextAreaExpose, {
-        get(_target, key: string) {
-          return inputRef.value?.[key as keyof FieldTextAreaInnerRef]
-        },
-        has(_target, key: string) {
-          return !!inputRef.value && key in inputRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldTextAreaInnerRef>(inputRef))
 
     return () => {
       const props = rawProps as FieldTextAreaProps

@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import { computed, defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { toNumber } from '../Percent/util'
 import { FieldProgressEdit } from './FieldProgressEdit'
@@ -30,16 +31,7 @@ const FieldProgress = defineComponent<FieldProgressProps>({
     const intl = useIntl()
     const innerRef = ref<FieldProgressInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldProgressExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldProgressInnerRef]
-        },
-        has(_target, key: string) {
-          return !!innerRef.value && key in innerRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldProgressInnerRef>(innerRef))
 
     return () => {
       const props = rawProps as FieldProgressProps

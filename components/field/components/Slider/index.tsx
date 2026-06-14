@@ -1,6 +1,7 @@
 import type { SliderProps } from 'antdv-next'
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldSliderEdit from './FieldSliderEdit'
 import FieldSliderRead from './FieldSliderRead'
@@ -26,16 +27,7 @@ const FieldSlider = defineComponent<FieldSliderProps>({
   setup(rawProps, { expose }) {
     const sliderRef = ref<FieldSliderInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldSliderExpose, {
-        get(_target, key: string) {
-          return sliderRef.value?.[key as keyof FieldSliderInstance]
-        },
-        has(_target, key: string) {
-          return !!sliderRef.value && key in sliderRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldSliderInstance>(sliderRef))
 
     return () => {
       const props = rawProps as FieldSliderProps

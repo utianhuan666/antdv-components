@@ -51,6 +51,11 @@ export function FieldTimePickerLightEdit(props: Props, ref?: Ref<TimePickerInsta
     fieldProps?.onOpenChange?.(true)
     setOpen(true)
   }
+  const handleBlur = (...args: any[]) => {
+    setOpen(false)
+    fieldProps?.onOpenChange?.(false)
+    fieldProps?.onBlur?.(...args)
+  }
 
   const syncLightLabelRef = (instance: Element | ComponentPublicInstance | null) => {
     if (!lightLabel || !instance || typeof instance !== 'object')
@@ -74,6 +79,7 @@ export function FieldTimePickerLightEdit(props: Props, ref?: Ref<TimePickerInsta
             setOpen(nextOpen)
             fieldProps?.onOpenChange?.(nextOpen)
           }}
+          onBlur={handleBlur}
           open={open}
         />
       )

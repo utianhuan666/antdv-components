@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldDigitRangeProps, Value, ValuePair } from './types'
 import { defineComponent, ref, watch } from 'vue'
 import { proTheme, useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDigitRangeEdit from './FieldDigitRangeEdit'
 import FieldDigitRangeRead from './FieldDigitRangeRead'
@@ -29,17 +30,7 @@ const FieldDigitRange = defineComponent<FieldDigitRangeFieldProps>({
     const { token } = proTheme.useToken()
     const innerRef = ref<HTMLSpanElement | null>(null)
 
-    // 镜像 React forwardRef：把内层只读 span 实例方法透传给父级 ref
-    expose(
-      new Proxy({} as FieldDigitRangeExpose, {
-        get(_target, key: PropertyKey) {
-          return innerRef.value ? Reflect.get(innerRef.value, key) : undefined
-        },
-        has(_target, key: PropertyKey) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<HTMLSpanElement>(innerRef))
 
     const fieldProps = () => props.fieldProps ?? {}
     const valuePair = ref<ValuePair | undefined>(fieldProps().value ?? fieldProps().defaultValue)

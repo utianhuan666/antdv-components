@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldDigitProps } from './types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDigitEdit from './FieldDigitEdit'
 import FieldDigitRead from './FieldDigitRead'
@@ -30,16 +31,7 @@ const FieldDigit = defineComponent<FieldDigitFieldProps>({
     const intl = useIntl()
     const innerRef = ref<FieldDigitInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldDigitExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldDigitInnerRef]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldDigitInnerRef>(innerRef))
 
     return () => {
       const {

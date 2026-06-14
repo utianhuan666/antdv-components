@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldRangePickerProps } from './types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldRangePickerEdit from './FieldRangePickerEdit'
@@ -38,16 +39,7 @@ const FieldRangePicker = defineComponent<FieldRangePickerFieldProps>({
       open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
     }
 
-    expose(
-      new Proxy({} as FieldRangePickerExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldRangePickerInstance]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldRangePickerInstance>(innerRef))
 
     return () => {
       const props = rawProps as FieldRangePickerFieldProps

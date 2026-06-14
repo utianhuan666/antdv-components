@@ -1,6 +1,7 @@
 import type { ProFieldFC } from '../../types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldPasswordEdit from './FieldPasswordEdit'
 import FieldPasswordRead from './FieldPasswordRead'
@@ -34,16 +35,7 @@ const FieldPassword = defineComponent<FieldPasswordProps>({
     const innerRef = ref<FieldPasswordInnerRef | null>(null)
     const getOpen = () => props.open ?? openRef.value
 
-    expose(
-      new Proxy({} as FieldPasswordExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldPasswordInnerRef]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldPasswordInnerRef>(innerRef))
 
     const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
       const next = typeof updater === 'function' ? updater(getOpen()) : updater

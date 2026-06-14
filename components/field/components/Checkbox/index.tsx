@@ -2,9 +2,10 @@ import type { ProFieldFC } from '../../types'
 import type { GroupProps } from './types'
 import { Spin } from 'antdv-next'
 import { useFormItemInputContext } from 'antdv-next/dist/form/context'
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 import { useStyle } from '../../../provider'
 import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
 import { useFieldFetchData } from '../Select'
 import FieldCheckboxEdit from './FieldCheckboxEdit'
@@ -14,7 +15,7 @@ export type { FieldCheckboxProps, GroupProps } from './types'
 export interface FieldCheckboxExpose {
   fetchData: (keyWord?: string) => void
 }
-type CheckboxFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
+export type CheckboxFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
 
 const FieldCheckbox = defineComponent<CheckboxFieldProps>({
   name: 'FieldCheckbox',
@@ -38,8 +39,9 @@ const FieldCheckbox = defineComponent<CheckboxFieldProps>({
   ],
   setup(rawProps, { expose }) {
     const props = rawProps
+    const exposeTarget = ref<Record<string, never> | null>(null)
     const prefixCls = useProPrefixCls('pro-field-checkbox')
-    const [loading, options, fetchData] = useFieldFetchData(props as any)
+    const [loading, options, fetchData] = useFieldFetchData(props as Parameters<typeof useFieldFetchData>[0])
     const optionsValueEnum = computed(() => options.value?.length
       ? options.value.reduce((pre: any, cur: any) => {
           return { ...pre, [cur.value ?? '']: cur.label }
@@ -81,7 +83,7 @@ const FieldCheckbox = defineComponent<CheckboxFieldProps>({
       },
     }))
 
-    expose({ fetchData } satisfies FieldCheckboxExpose)
+    expose(createRefProxy<Record<string, never>, FieldCheckboxExpose>(exposeTarget, { fetchData }))
 
     return () => {
       if (loading.value)

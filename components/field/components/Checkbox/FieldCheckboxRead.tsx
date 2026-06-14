@@ -4,8 +4,6 @@ import type { GroupProps } from './types'
 import { proTheme } from '../../../provider'
 import { objectToMap, proFieldParsingText } from '../../../utils'
 
-type ParsedText = string | number | (string | number)[]
-
 type Props = NonNullable<ProFieldFC<GroupProps>['__props']> & {
   optionsValueEnum: ProSchemaValueEnumMap | undefined
 }
@@ -13,14 +11,11 @@ type Props = NonNullable<ProFieldFC<GroupProps>['__props']> & {
 export function FieldCheckboxRead(props: Props) {
   const { mode, render, optionsValueEnum, ...rest } = props
   const { token } = proTheme.useToken?.() || { token: { marginSM: 8 } }
-  const parsedText = rest.text as ParsedText | null | undefined
 
-  const dom = parsedText == null
-    ? parsedText
-    : proFieldParsingText(
-        parsedText,
-        objectToMap(rest.valueEnum || optionsValueEnum),
-      )
+  const dom = proFieldParsingText(
+    rest.text as Parameters<typeof proFieldParsingText>[0],
+    objectToMap(rest.valueEnum || optionsValueEnum),
+  )
 
   if (render)
     return render(rest.text, { mode, ...rest.fieldProps }, <>{dom}</>) ?? null

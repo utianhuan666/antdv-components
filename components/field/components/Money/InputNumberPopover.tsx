@@ -3,6 +3,7 @@ import type { VNodeChild } from 'vue'
 import type { FieldMoneyProps } from './types'
 import { InputNumber, Popover } from 'antdv-next'
 import { computed, defineComponent, ref, watch } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 
 export type InputNumberPopoverContentProps = InputNumberProps & {
   value?: InputNumberProps['value']
@@ -40,17 +41,7 @@ export default defineComponent({
     const localOpen = ref(typedProps.open ?? false)
     const inputRef = ref<InstanceType<typeof InputNumber> | null>(null)
 
-    // 镜像 React forwardRef：把内层 InputNumber 实例方法透传给父级 ref
-    expose(
-      new Proxy({} as InputNumberPopoverExpose, {
-        get(_target, key: PropertyKey) {
-          return inputRef.value ? Reflect.get(inputRef.value, key) : undefined
-        },
-        has(_target, key: PropertyKey) {
-          return inputRef.value ? key in inputRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<InstanceType<typeof InputNumber>>(inputRef))
     const mergedValue = computed(() => typedProps.value !== undefined ? typedProps.value : localValue.value)
 
     watch(() => typedProps.value, (val) => {

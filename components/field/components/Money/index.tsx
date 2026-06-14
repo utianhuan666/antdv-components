@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldMoneyProps } from './types'
 import { defineComponent, ref } from 'vue'
 import { intlMap as allIntlMap, useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldMoneyEdit from './FieldMoneyEdit'
 import FieldMoneyRead from './FieldMoneyRead'
@@ -36,16 +37,7 @@ const FieldMoney = defineComponent<FieldMoneyFieldProps>({
     const baseIntl = useIntl()
     const innerRef = ref<FieldMoneyInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldMoneyExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldMoneyInnerRef]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldMoneyInnerRef>(innerRef))
 
     return () => {
       const props = rawProps as FieldMoneyFieldProps

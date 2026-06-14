@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { FieldImageProps } from './types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldImageEdit from './FieldImageEdit'
 import FieldImageRead from './FieldImageRead'
@@ -34,16 +35,7 @@ const FieldImage = defineComponent<FieldImageFieldProps>({
     const intl = useIntl()
     const innerRef = ref<FieldImageInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldImageExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldImageInnerRef]
-        },
-        has(_target, key: string) {
-          return innerRef.value ? key in innerRef.value : false
-        },
-      }),
-    )
+    expose(createRefProxy<FieldImageInnerRef>(innerRef))
 
     return () => {
       const props = rawProps as FieldImageFieldProps

@@ -2,6 +2,7 @@ import type { ProFieldFC } from '../../types'
 import type { PercentPropInt } from './types'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldPercentEdit from './FieldPercentEdit'
 import FieldPercentRead from './FieldPercentRead'
@@ -36,16 +37,7 @@ const FieldPercent = defineComponent<FieldPercentProps>({
     const intl = useIntl()
     const innerRef = ref<FieldPercentInnerRef | null>(null)
 
-    expose(
-      new Proxy({} as FieldPercentExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldPercentInnerRef]
-        },
-        has(_target, key: string) {
-          return !!innerRef.value && key in innerRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldPercentInnerRef>(innerRef))
 
     return () => {
       const props = rawProps as FieldPercentProps

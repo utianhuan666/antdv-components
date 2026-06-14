@@ -63,7 +63,6 @@ export const pureRenderRead: ProFieldRenderText = (
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
     const customProps = { ...propsWithoutEmptyText }
-    delete customProps.ref
     const readDom = customValueTypeConfig.render?.(
       dataValue,
       {
@@ -114,7 +113,6 @@ export const pureRenderEdit: ProFieldRenderText = (
   const customValueTypeConfig = valueTypeMap && valueTypeMap[valueType as string]
   if (customValueTypeConfig) {
     const customProps = { ...propsWithoutEmptyText }
-    delete customProps.ref
     const dom = customValueTypeConfig.formItemRender?.(
       dataValue,
       {

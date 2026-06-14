@@ -3,6 +3,7 @@ import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import dayjs from 'dayjs'
 import { defineComponent, ref } from 'vue'
 import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTimePickerEdit from './FieldTimePickerEdit'
 import FieldTimePickerLightEdit from './FieldTimePickerLightEdit'
@@ -64,16 +65,7 @@ const FieldTimePicker = defineComponent<FieldTimePickerFieldProps>({
     const intl = useIntl()
     const innerRef = ref<FieldTimePickerInstance | null>(null)
 
-    expose(
-      new Proxy({} as FieldTimePickerExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldTimePickerInstance]
-        },
-        has(_target, key: string) {
-          return !!innerRef.value && key in innerRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldTimePickerInstance>(innerRef))
 
     return () => {
       const {
@@ -162,16 +154,7 @@ const FieldTimeRangePickerComponent = defineComponent<FieldTimeRangePickerFieldP
       open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
     }
 
-    expose(
-      new Proxy({} as FieldTimeRangePickerExpose, {
-        get(_target, key: string) {
-          return innerRef.value?.[key as keyof FieldTimeRangePickerInstance]
-        },
-        has(_target, key: string) {
-          return !!innerRef.value && key in innerRef.value
-        },
-      }),
-    )
+    expose(createRefProxy<FieldTimeRangePickerInstance>(innerRef))
 
     return () => {
       const {
