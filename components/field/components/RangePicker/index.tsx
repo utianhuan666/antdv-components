@@ -1,67 +1,116 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import dayjs from 'dayjs'
-import { defineComponent } from 'vue'
+import type { ProFieldFC } from '../../types'
+import type { FieldRangePickerProps } from './types'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { formatDate } from '../DatePicker/datePickerUtils'
 import FieldRangePickerEdit from './FieldRangePickerEdit'
+import FieldRangePickerLightEdit from './FieldRangePickerLightEdit'
 import FieldRangePickerRead from './FieldRangePickerRead'
 
-const FieldRangePicker = defineComponent({
+type FieldRangePickerInstance = InstanceType<typeof import('antdv-next')['DateRangePicker']>
+export type FieldRangePickerExpose = Partial<FieldRangePickerInstance>
+
+type FieldRangePickerFieldProps = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']>
+
+const FieldRangePicker = defineComponent<FieldRangePickerFieldProps>({
   name: 'FieldRangePicker',
-  props: {
-    text: { type: Array as PropType<string[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    format: { type: String, default: 'YYYY-MM-DD' },
-    showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'format',
+    'label',
+    'light',
+    'render',
+    'formItemRender',
+    'showTime',
+    'fieldProps',
+    'picker',
+    'lightLabel',
+    'variant',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const open = ref(false)
+    const innerRef = ref<FieldRangePickerInstance | null>(null)
+    const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
+      open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
+    }
+
+    expose(createRefProxy<FieldRangePickerInstance>(innerRef))
+
     return () => {
-      const [startText, endText] = Array.isArray(props.text) ? props.text : []
-
-      const genFormatText = (formatValue: dayjs.Dayjs): string => {
-        if (typeof props.fieldProps?.format === 'function') {
-          return props.fieldProps.format(formatValue)
-        }
-        return props.fieldProps?.format || props.format || 'YYYY-MM-DD'
-      }
-
+      const props = rawProps as FieldRangePickerFieldProps
+      const {
+        text: rawText = [],
+        mode = 'read',
+        light,
+        label,
+        format = 'YYYY-MM-DD',
+        render,
+        picker,
+        formItemRender,
+        showTime,
+        lightLabel,
+        variant,
+        fieldProps = {},
+      } = props
+      const text = Array.isArray(rawText) ? rawText : []
+      const [startText, endText] = text
+      const mergedPicker = fieldProps.picker ?? picker
       const parsedStartText: string = startText
-        ? dayjs(startText).format(genFormatText(dayjs(startText)))
+        ? formatDate(startText, fieldProps.format || format, mergedPicker)
         : ''
       const parsedEndText: string = endText
-        ? dayjs(endText).format(genFormatText(dayjs(endText)))
+        ? formatDate(endText, fieldProps.format || format, mergedPicker)
         : ''
 
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldRangePickerRead
-            text={props.text}
-            mode={props.mode}
-            render={props.render}
-            fieldProps={props.fieldProps}
-            parsedStartText={parsedStartText}
-            parsedEndText={parsedEndText}
-          />
-        )
+      if (isProFieldReadMode(mode)) {
+        return FieldRangePickerRead({
+          text,
+          mode,
+          light,
+          label,
+          format,
+          render,
+          picker,
+          formItemRender,
+          showTime,
+          lightLabel,
+          variant,
+          fieldProps,
+          parsedStartText,
+          parsedEndText,
+        }, innerRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldRangePickerEdit
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            showTime={props.showTime}
-            picker={props.picker}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const editProps = {
+          text,
+          mode,
+          label,
+          format,
+          render,
+          picker,
+          formItemRender,
+          showTime,
+          variant,
+          fieldProps,
+          intl,
+        }
+
+        if (light) {
+          return FieldRangePickerLightEdit({
+            ...editProps,
+            lightLabel,
+            open: open.value,
+            setOpen,
+          }, innerRef)
+        }
+
+        return FieldRangePickerEdit(editProps, innerRef)
       }
 
       return null

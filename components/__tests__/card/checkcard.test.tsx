@@ -1,0 +1,263 @@
+import { mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { nextTick, ref } from 'vue'
+import { CheckCard } from '../../card'
+import { ProConfigProvider } from '../../provider'
+import { waitFor } from '../testUtils'
+
+function withProvider(node: any) {
+  return <ProConfigProvider>{node}</ProConfigProvider>
+}
+
+describe('checkCard', () => {
+  it('renders without ProConfigProvider', () => {
+    const wrapper = mount({
+      render: () => <CheckCard title="direct" />,
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').exists()).toBe(true)
+    expect(wrapper.text()).toContain('direct')
+  })
+
+  it('should invoke onChange and onClick function when click option', async () => {
+    const onChange = vi.fn()
+    const onClick = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard
+            title="示例一"
+            onChange={onChange}
+            onClick={onClick}
+          />,
+        )
+      ),
+    })
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(true)
+      expect(onClick).toHaveBeenCalled()
+    })
+  })
+
+  it('should invoke onChange function when group click option', async () => {
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group
+            onChange={onChange}
+            options={[
+              { title: '苹果', value: 'Apple' },
+              { title: '梨', value: 'Pear' },
+              { title: '橙子', value: 'Orange' },
+            ]}
+            size="large"
+          />,
+        )
+      ),
+    })
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('Apple'))
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(undefined))
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith('Pear'))
+  })
+
+  it('should be controlled by value', async () => {
+    const value = ref<string[] | undefined>()
+    const wrapper = mount({
+      render: () => {
+        return (
+          withProvider(
+            <CheckCard.Group
+              options={[
+                { title: '苹果', value: 'Apple' },
+                { title: '梨', value: 'Pear' },
+                { title: '橙子', value: 'Orange' },
+              ]}
+              value={value.value}
+            />,
+          )
+        )
+      },
+    })
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(0)
+
+    value.value = ['Apple']
+    await nextTick()
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(0)
+  })
+
+  it('should be controlled by value in multiple mode', async () => {
+    const value = ref<string[] | undefined>(['Apple'])
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group
+            multiple
+            value={value.value}
+            onChange={onChange}
+            options={[
+              { title: '苹果', value: 'Apple' },
+              { title: '梨', value: 'Pear' },
+              { title: '橙子', value: 'Orange' },
+            ]}
+          />,
+        )
+      ),
+    })
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(1)
+    expect(wrapper.find('.ant-pro-checkcard-checked').text()).toContain('苹果')
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['Apple', 'Pear']))
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(1)
+
+    value.value = ['Apple', 'Pear']
+    await nextTick()
+
+    expect(wrapper.findAll('.ant-pro-checkcard-checked')).toHaveLength(2)
+  })
+
+  it('should invoke onChange function when group click option in multiple mode', async () => {
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group
+            onChange={onChange}
+            options={['Apple', 'Pear', 'Orange']}
+            size="large"
+            multiple
+          />,
+        )
+      ),
+    })
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['Apple']))
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['Apple', 'Pear']))
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['Apple']))
+  })
+
+  it('should support defaultValue', async () => {
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group onChange={onChange} defaultValue="A">
+            <CheckCard title="Card A" description="选项一" value="A" />
+            <CheckCard title="Card B" description="选项二" value="B" />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').classes()).toContain('ant-pro-checkcard-checked')
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(undefined))
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('A'))
+  })
+
+  it('should support defaultValue in multiple mode', async () => {
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group onChange={onChange} defaultValue={['A']} multiple>
+            <CheckCard title="Card A" description="选项一" value="A" />
+            <CheckCard title="Card B" description="选项二" value="B" />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').classes()).toContain('ant-pro-checkcard-checked')
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith([]))
+
+    await wrapper.findAll('.ant-pro-checkcard')[1]!.trigger('click')
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(['B']))
+  })
+
+  it('should disabled onChange when group disabled', async () => {
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group onChange={onChange} disabled defaultValue="A">
+            <CheckCard title="Card A" description="选项一" value="A" />
+            <CheckCard title="Card B" description="选项二" value="B" />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+
+    await waitFor(() => {
+      expect(onChange).not.toHaveBeenCalled()
+    })
+  })
+
+  it('updates group registered value when card value changes', async () => {
+    const value = ref<'A' | 'B'>('A')
+    const onChange = vi.fn()
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group onChange={onChange} multiple>
+            <CheckCard title="Dynamic" value={value.value} />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    value.value = 'B'
+    await nextTick()
+    await wrapper.find('.ant-pro-checkcard').trigger('click')
+
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(['B']))
+  })
+
+  it('inherits group bordered behavior like react', () => {
+    const wrapper = mount({
+      render: () => (
+        withProvider(
+          <CheckCard.Group bordered>
+            <CheckCard title="Card A" value="A" bordered={false} />
+          </CheckCard.Group>,
+        )
+      ),
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard').classes()).toContain('ant-pro-checkcard-bordered')
+  })
+
+  it('should display when title is number zero', () => {
+    const wrapper = mount({
+      render: () => withProvider(<CheckCard title={0} />),
+    })
+
+    expect(wrapper.find('.ant-pro-checkcard-title').element.innerHTML).toBe('0')
+  })
+})

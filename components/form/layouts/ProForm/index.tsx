@@ -1,68 +1,45 @@
-import type { PropType } from 'vue'
-import type { ProFormProps } from '../../typing'
-import { defineComponent, shallowRef } from 'vue'
+import type { BaseFormProps } from '../../BaseForm'
+import type { ProFormGroupProps } from '../../typing'
+import { Form } from 'antdv-next'
+import { defineComponent } from 'vue'
 import { BaseForm } from '../../BaseForm'
+import { EditOrReadOnlyContext } from '../../BaseForm/EditOrReadOnlyContext'
 import ProFormItem from '../../components/FormItem'
-import ProFormGroup from '../../components/FormItem/Group'
+import Group from '../../components/FormItem/Group'
 
-/**
- * 对标 React `src/form/layouts/ProForm/index.tsx`：
- * 默认使用 vertical 布局，在 BaseForm 基础上注入 contentRender 让 items + submitter 直接顺序排列。
- *
- * 使用方式：
- * ```vue
- * <ProForm @finish="handleFinish">
- *   <ProFormText name="title" label="标题" />
- * </ProForm>
- * ```
- */
-const ProForm = defineComponent({
-  name: 'ProForm',
-  inheritAttrs: false,
-  props: {
-    layout: { type: String as PropType<ProFormProps['layout']>, default: 'vertical' },
+export type ProFormProps<T = Record<string, any>, U = Record<string, any>>
+  = BaseFormProps<T, U>
+
+const defaultContentRender: NonNullable<BaseFormProps<any, any>['contentRender']> = (items, submitter) => (
+  <>
+    {items}
+    {submitter}
+  </>
+)
+
+const ProForm = defineComponent<ProFormProps>(
+  (props, { slots }) => {
+    return () => {
+      const { contentRender: customContentRender, layout, ...restProps } = props
+      const contentRender = customContentRender ?? defaultContentRender
+
+      return (
+        <BaseForm
+          {...restProps}
+          layout={layout || 'vertical'}
+          contentRender={contentRender}
+        >
+          {slots.default?.()}
+        </BaseForm>
+      )
+    }
   },
-  setup(props, { attrs, slots, expose }) {
-    const baseRef = shallowRef<any>()
-    expose({
-      get formInstance() {
-        return baseRef.value?.formInstance
-      },
-      submit: () => baseRef.value?.submit?.(),
-      reset: () => baseRef.value?.reset?.(),
-      getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
-      getFieldValue: (name: any) => baseRef.value?.getFieldValue?.(name),
-      getFieldsFormatValue: (allData?: true, omitNil?: boolean) => baseRef.value?.getFieldsFormatValue?.(allData, omitNil),
-      getFieldFormatValue: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValue?.(name, omitNil),
-      getFieldFormatValueObject: (name: any, omitNil?: boolean) => baseRef.value?.getFieldFormatValueObject?.(name, omitNil),
-      validateFieldsReturnFormatValue: (nameList?: any[], omitNil?: boolean) => baseRef.value?.validateFieldsReturnFormatValue?.(nameList, omitNil),
-      setFieldsValue: (values: Record<string, any>) => baseRef.value?.setFieldsValue?.(values),
-    })
-    return () => (
-      <BaseForm
-        ref={baseRef}
-        layout={props.layout as any}
-        contentRender={(items, submitter) => (
-          <>
-            {items}
-            {submitter}
-          </>
-        )}
-        {...attrs}
-      >
-        {{
-          default: () => slots.default?.(),
-          submitter: slots.submitter
-            ? (slotProps: Record<string, any>) => slots.submitter?.(slotProps)
-            : undefined,
-        }}
-      </BaseForm>
-    )
+  {
+    name: 'ProForm',
+    inheritAttrs: false,
   },
-})
+)
 
-;(ProForm as any).Group = ProFormGroup
-;(ProForm as any).Item = ProFormItem
-
-export default ProForm as typeof ProForm & { Group: typeof ProFormGroup, Item: typeof ProFormItem }
-export { ProForm }
+export type { ProFormGroupProps }
+export default ProForm
+export { EditOrReadOnlyContext, Form, ProFormItem as FormItem, Group }

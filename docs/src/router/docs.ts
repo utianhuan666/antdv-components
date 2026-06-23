@@ -44,12 +44,15 @@ function getRoutePath(basePath: string, locale: SupportedLocale) {
   const segments = basePath.split('/').filter(Boolean)
   const lastSegment = segments.at(-1)
 
-  if (lastSegment === INDEX_PAGE_NAME) segments.pop()
+  if (lastSegment === INDEX_PAGE_NAME)
+    segments.pop()
 
   let routePath = `/${segments.join('/')}`.replace(/\/+/g, '/')
-  if (routePath === '') routePath = '/'
+  if (routePath === '')
+    routePath = '/'
 
-  if (locale === DEFAULT_LOCALE) return routePath
+  if (locale === DEFAULT_LOCALE)
+    return routePath
 
   const suffix = LOCALE_ROUTE_SUFFIX[locale]
   return routePath === '/' ? `/${suffix.slice(1)}` : `${routePath}${suffix}`
@@ -60,13 +63,15 @@ function getRouteName(routePath: string) {
 }
 
 function normalizeRoutePath(routePath: string) {
-  if (routePath === '/') return routePath
+  if (routePath === '/')
+    return routePath
   return routePath.replace(/\/+$/, '') || '/'
 }
 
 function parsePageFile(filePath: string) {
   const localeMatch = filePath.match(localePattern)
-  if (!localeMatch) return null
+  if (!localeMatch)
+    return null
 
   const locale = localeMatch[1] as SupportedLocale
   const relativePath = filePath.slice(PAGE_FILE_PREFIX.length)
@@ -89,10 +94,12 @@ export function isSupportedLocale(locale: string): locale is SupportedLocale {
 }
 
 const docRouteInfos = Object.entries(PAGE_MODULES).reduce<DocRouteInfo[]>((routes, [filePath]) => {
-  if (!filePath.startsWith(PAGE_FILE_PREFIX) || !filePath.endsWith(PAGE_FILE_EXTENSION)) return routes
+  if (!filePath.startsWith(PAGE_FILE_PREFIX) || !filePath.endsWith(PAGE_FILE_EXTENSION))
+    return routes
 
   const pageInfo = parsePageFile(filePath)
-  if (!pageInfo) return routes
+  if (!pageInfo)
+    return routes
 
   routes.push({
     source: filePath,
@@ -105,25 +112,28 @@ const docRouteInfos = Object.entries(PAGE_MODULES).reduce<DocRouteInfo[]>((route
   return routes
 }, [])
 
-const docRouteInfoByPath = new Map(docRouteInfos.map((routeInfo) => [routeInfo.routePath, routeInfo]))
+const docRouteInfoByPath = new Map(docRouteInfos.map(routeInfo => [routeInfo.routePath, routeInfo]))
 
 const docRouteInfoByBaseAndLocale = new Map(
-  docRouteInfos.map((routeInfo) => [getDocRouteKey(routeInfo.basePath, routeInfo.locale), routeInfo]),
+  docRouteInfos.map(routeInfo => [getDocRouteKey(routeInfo.basePath, routeInfo.locale), routeInfo]),
 )
 
 export function resolveDocRoutePath(path: string, locale: string) {
-  if (!isSupportedLocale(locale)) return null
+  if (!isSupportedLocale(locale))
+    return null
 
   const currentRoute = docRouteInfoByPath.get(normalizeRoutePath(path))
-  if (!currentRoute) return null
+  if (!currentRoute)
+    return null
 
   return docRouteInfoByBaseAndLocale.get(getDocRouteKey(currentRoute.basePath, locale))?.routePath ?? null
 }
 
 export const docsRoutes: RouteRecordRaw[] = Object.entries(PAGE_MODULES)
   .reduce<RouteRecordRaw[]>((routes, [filePath, component]) => {
-    const routeInfo = docRouteInfos.find((item) => item.source === filePath)
-    if (!routeInfo) return routes
+    const routeInfo = docRouteInfos.find(item => item.source === filePath)
+    if (!routeInfo)
+      return routes
 
     routes.push({
       path: routeInfo.routePath,

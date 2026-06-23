@@ -1,47 +1,60 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { Ref } from 'vue'
+import type { IntlType } from '../../../provider'
+import type { ProFieldFC } from '../../types'
+import type { DatePickerProps } from 'antdv-next'
 import { DatePicker } from 'antdv-next'
-import dayjs from 'dayjs'
-import { defineComponent } from 'vue'
+import { parseValueToDay } from '../../../utils'
 
-export default defineComponent({
-  name: 'FieldDatePickerEdit',
-  props: {
-    text: { type: null as unknown as PropType<any>, default: undefined },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'edit' },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    format: { type: String, default: 'YYYY-MM-DD' },
-    showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
-  },
-  setup(props) {
-    return () => {
-      const { value, defaultValue, valueFormat, ...restFieldProps } = props.fieldProps || {}
-      const mergedValue = value ?? props.text
-      const mergedValueFormat = valueFormat || props.format
-      const normalizeValue = (dateValue: any) => {
-        if (!dateValue)
-          return undefined
-        return dayjs.isDayjs(dateValue) ? dateValue.format(mergedValueFormat) : dateValue
-      }
+type DatePickerInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
 
-      const dom = (
-        <DatePicker
-          picker={props.picker}
-          showTime={props.showTime}
-          format={props.format}
-          valueFormat={mergedValueFormat}
-          placeholder="请选择"
-          {...restFieldProps}
-          value={normalizeValue(mergedValue)}
-          defaultValue={normalizeValue(defaultValue)}
-        />
-      )
-      if (props.formItemRender) {
-        return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-      }
-      return dom
-    }
-  },
-})
+type Props = NonNullable<
+  ProFieldFC<{
+    text: string | number
+    format?: string
+    showTime?: DatePickerProps['showTime']
+    variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+    picker?: 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
+  }>['__props']
+> & {
+  format: string
+  intl: IntlType
+}
+
+export function FieldDatePickerEdit(props: Props, ref?: Ref<DatePickerInstance | null>) {
+  const {
+    text,
+    mode,
+    format,
+    formItemRender,
+    showTime,
+    picker,
+    variant,
+    intl,
+  } = props
+  const fieldProps = props.fieldProps || {}
+  const {
+    disabled: _disabled,
+    value,
+    placeholder = intl.getMessage('tableForm.selectPlaceholder', '请选择'),
+  } = fieldProps
+  const dayValue = parseValueToDay(value)
+
+  const dom = (
+    <DatePicker
+      picker={picker}
+      showTime={showTime}
+      format={format}
+      placeholder={placeholder}
+      ref={ref}
+      {...fieldProps}
+      variant={variant ?? fieldProps?.variant}
+      value={dayValue}
+    />
+  )
+  if (formItemRender) {
+    return formItemRender(text, { mode, ...fieldProps }, dom)
+  }
+  return dom
+}
+
+export default FieldDatePickerEdit

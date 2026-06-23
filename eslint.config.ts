@@ -1,6 +1,12 @@
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
+  ignores: [
+    '.agents/**',
+    '.codex/**',
+    'dist/**',
+    'docs/types/**',
+  ],
   regexp: false,
   e18e: false,
   node: false,

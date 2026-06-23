@@ -1,55 +1,76 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import type { FieldImageProps } from './types'
-import { Image, Input } from 'antdv-next'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldImageEdit from './FieldImageEdit'
+import FieldImageRead from './FieldImageRead'
 
 export type { FieldImageProps }
 
-export default defineComponent({
+type FieldImageReadInstance = InstanceType<typeof import('antdv-next')['Image']>
+type FieldImageEditInstance = InstanceType<typeof import('antdv-next')['Input']>
+type FieldImageInnerRef = FieldImageReadInstance | FieldImageEditInstance
+export type FieldImageExpose = Partial<FieldImageReadInstance> & Partial<FieldImageEditInstance>
+
+type FieldImageFieldProps = NonNullable<ProFieldFC<FieldImageProps>['__props']>
+
+/**
+ * 图片组件
+ */
+const FieldImage = defineComponent<FieldImageFieldProps>({
   name: 'FieldImage',
-  props: {
-    text: { type: String as PropType<string>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    placeholder: { type: [String, Array] as PropType<string | string[]>, default: undefined },
-    width: { type: Number as PropType<number>, default: undefined },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'placeholder',
+    'width',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldImageInnerRef | null>(null)
+
+    expose(createRefProxy<FieldImageInnerRef>(innerRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <Image
-            width={props.width || 32}
-            src={props.text}
-            {...props.fieldProps}
-          />
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      const props = rawProps as FieldImageFieldProps
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldImageRead({
+          text,
+          mode,
+          render: props.render,
+          formItemRender: props.formItemRender,
+          fieldProps: props.fieldProps,
+          placeholder: props.placeholder,
+          width: props.width,
+        }, innerRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const placeholderValue = (Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder) || '???'
-        const dom = (
-          <Input
-            placeholder={placeholderValue}
-            {...props.fieldProps}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const placeholderValue = (Array.isArray(props.placeholder) ? props.placeholder[0] : props.placeholder) || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+        return FieldImageEdit({
+          text,
+          mode,
+          render: props.render,
+          formItemRender: props.formItemRender,
+          fieldProps: props.fieldProps,
+          placeholder: props.placeholder,
+          width: props.width,
+          placeholderValue,
+        }, innerRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldImage

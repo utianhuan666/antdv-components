@@ -1,55 +1,76 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import type { FieldSecondProps } from './types'
-import { InputNumber } from 'antdv-next'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldSecondEdit from './FieldSecondEdit'
+import FieldSecondRead from './FieldSecondRead'
 import { formatSecond } from './utils'
 
 export { formatSecond }
-export type { FieldSecondProps }
+export type { FieldDigitProps, FieldSecondProps } from './types'
+type FieldSecondInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type FieldSecondInnerRef = FieldSecondInstance | HTMLSpanElement
+export type FieldSecondExpose = Partial<FieldSecondInstance> & Partial<HTMLSpanElement>
+type FieldSecondFieldProps = NonNullable<ProFieldFC<FieldSecondProps>['__props']>
 
-export default defineComponent({
+const FieldSecond = defineComponent<FieldSecondFieldProps>({
   name: 'FieldSecond',
-  props: {
-    text: { type: [Number, String] as PropType<number | string>, default: 0 },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    placeholder: { type: String, default: undefined },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'placeholder',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const secondRef = ref<FieldSecondInnerRef | null>(null)
+
+    expose(createRefProxy<FieldSecondInnerRef>(secondRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const secondText = formatSecond(Number(props.text))
-        const dom = <span>{secondText}</span>
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      const props = rawProps as FieldSecondFieldProps
+      const {
+        text = 0,
+        mode: type = 'read',
+        render,
+        placeholder,
+        formItemRender,
+        fieldProps = {},
+      } = props
+
+      const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+
+      if (isProFieldReadMode(type)) {
+        return FieldSecondRead({
+          text,
+          mode: type,
+          render,
+          placeholder,
+          formItemRender,
+          fieldProps,
+        }, secondRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const placeholderValue = props.placeholder || '???'
-        const dom = (
-          <InputNumber
-            {...({
-              min: 0,
-              style: { width: '100%' },
-              placeholder: placeholderValue,
-              ...props.fieldProps,
-            } as any)}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(type)) {
+        return FieldSecondEdit({
+          text,
+          mode: type,
+          render,
+          placeholder,
+          formItemRender,
+          fieldProps,
+          placeholderValue,
+        }, secondRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldSecond

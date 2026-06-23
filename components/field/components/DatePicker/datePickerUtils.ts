@@ -1,18 +1,40 @@
+import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+import { parseValueToDay } from '../../../utils'
+import '../../initDayjs'
 
-/**
- * Format a date value using dayjs.
- * If text is falsy, returns '-'.
- * Supports string format or a function formatter.
- * If format is an array (e.g. RangePicker), uses the first entry.
- */
-export function formatDate(text: any, format: any): string {
-  if (!text)
-    return '-'
-  if (typeof format === 'function') {
-    return format(dayjs(text))
+dayjs.extend(quarterOfYear)
+
+export type DatePickerReadPicker = 'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'
+
+function pickFormatTemplate(format: unknown): string {
+  if (Array.isArray(format)) {
+    const head = format[0]
+    return typeof head === 'string' && head ? head : 'YYYY-MM-DD'
   }
-  return dayjs(text).format(
-    (Array.isArray(format) ? format[0] : format) || 'YYYY-MM-DD',
-  )
+  if (typeof format === 'string' && format)
+    return format
+  return 'YYYY-MM-DD'
+}
+
+export function formatDate(
+  text: any,
+  format: any,
+  _picker?: DatePickerReadPicker,
+): string {
+  if (text === null || text === undefined || text === '')
+    return '-'
+
+  const parsed = parseValueToDay(text) as Dayjs | Dayjs[] | null | undefined
+  if (Array.isArray(parsed) || !parsed || !parsed.isValid())
+    return '-'
+
+  if (typeof parsed.format !== 'function')
+    return String(text)
+
+  if (typeof format === 'function')
+    return format(parsed)
+
+  return parsed.format(pickFormatTemplate(format))
 }

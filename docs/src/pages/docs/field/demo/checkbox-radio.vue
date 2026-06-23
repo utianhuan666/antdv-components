@@ -6,6 +6,10 @@
 Checkbox and radio types, supports valueEnum mapping.
 </docs>
 
+<script setup lang="ts">
+import { FieldCheckbox, FieldRadio, FieldRate, FieldSwitch } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -26,7 +30,3 @@ Checkbox and radio types, supports valueEnum mapping.
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldCheckbox, FieldRadio, FieldSwitch, FieldRate } from '@antdv/components'
-</script>

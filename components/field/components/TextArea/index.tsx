@@ -1,48 +1,54 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { TextArea } from 'antdv-next'
-import { defineComponent } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldTextAreaEdit from './FieldTextAreaEdit'
+import FieldTextAreaRead from './FieldTextAreaRead'
 
-export default defineComponent({
+type FieldTextAreaProps = NonNullable<ProFieldFC<{
+  text: string | number
+}>['__props']>
+
+type FieldTextAreaEditInstance = InstanceType<typeof import('antdv-next')['TextArea']>
+interface FieldTextAreaReadExpose {
+  $el?: HTMLElement | null
+}
+type FieldTextAreaInnerRef = FieldTextAreaEditInstance | FieldTextAreaReadExpose
+export type FieldTextAreaExpose = Partial<FieldTextAreaEditInstance> & FieldTextAreaReadExpose
+
+const FieldTextArea = defineComponent<FieldTextAreaProps>({
   name: 'FieldTextArea',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <span style={{ display: 'inline-block', lineHeight: '1.5715', maxWidth: '100%', whiteSpace: 'pre-wrap' }}>
-            {props.text ?? props.emptyText}
-          </span>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
-      }
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const inputRef = ref<FieldTextAreaInnerRef | null>(null)
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <TextArea
-            rows={3}
-            placeholder="???"
-            {...props.fieldProps}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
-      }
+    expose(createRefProxy<FieldTextAreaInnerRef>(inputRef))
+
+    return () => {
+      const props = rawProps as FieldTextAreaProps
+      const { mode } = props
+
+      if (isProFieldReadMode(mode))
+        return FieldTextAreaRead(props, inputRef)
+
+      if (isProFieldEditOrUpdateMode(mode))
+        return FieldTextAreaEdit({ ...props, intl }, inputRef)
 
       return null
     }
   },
-})
+}) as unknown as ProFieldFC<{
+  text: string | number
+}>
+
+export default FieldTextArea

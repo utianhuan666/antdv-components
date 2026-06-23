@@ -6,6 +6,10 @@
 Other field types: progress, image, code, relative time, status, etc.
 </docs>
 
+<script setup lang="ts">
+import { FieldCode, FieldFromNow, FieldImage, FieldIndexColumn, FieldProgress, FieldStatus } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -18,7 +22,7 @@ Other field types: progress, image, code, relative time, status, etc.
     </div>
     <div>
       <h4>代码 - 只读</h4>
-      <FieldCode text='{"name": "test", "value": 123}' mode="read" language="json" />
+      <FieldCode text="{&quot;name&quot;: &quot;test&quot;, &quot;value&quot;: 123}" mode="read" language="json" />
     </div>
     <div>
       <h4>相对时间 - 只读</h4>
@@ -34,7 +38,3 @@ Other field types: progress, image, code, relative time, status, etc.
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldProgress, FieldImage, FieldCode, FieldFromNow, FieldStatus, FieldIndexColumn } from '@antdv/components'
-</script>

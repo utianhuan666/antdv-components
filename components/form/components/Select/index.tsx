@@ -1,17 +1,45 @@
-import { defineComponent } from 'vue'
-import ProFormField from '../Field'
+import type { SelectProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
+import { defineProFormField } from '../FormItem/warpField'
 
-/** 对标 React `ProFormSelect`：valueType=select */
-const ProFormSelect = defineComponent({
-  name: 'ProFormSelect',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="select" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
+export type ProFormSelectProps
+  = Omit<ProFormFieldItemProps<SelectProps>, 'mode'> & {
+    options?: SelectProps['options'] | string[]
+    mode?: SelectProps['mode'] | 'single'
+    showSearch?: SelectProps['showSearch']
+    readonly?: boolean
+    onChange?: (...args: any[]) => void
+  }
+
+const ProFormSelect = defineProFormField<ProFormSelectProps>(
+  'ProFormSelect',
+  'select',
+  props => ({
+    options: props.options,
+    mode: (props as any).mode === 'single' ? undefined : (props as any).mode,
+    showSearch: props.showSearch,
+  }),
+) as any
+
+const SearchSelect = defineProFormField<ProFormSelectProps>(
+  'ProFormSearchSelect',
+  'select',
+  (props) => {
+    const finalMode = (props.fieldProps as any)?.mode || (props as any).mode || 'multiple'
+    return {
+      options: props.options,
+      labelInValue: true,
+      showSearch: true,
+      suffixIcon: null,
+      autoClearSearchValue: true,
+      optionLabelProp: 'label',
+      mode: finalMode === 'single' ? undefined : finalMode,
+    }
   },
-})
+)
 
-export default ProFormSelect
+ProFormSelect.SearchSelect = SearchSelect
+
+export default ProFormSelect as typeof ProFormSelect & {
+  SearchSelect: typeof SearchSelect
+}

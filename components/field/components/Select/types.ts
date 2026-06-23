@@ -1,38 +1,37 @@
-import type { VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProRenderFieldPropsType } from '../../../provider'
+import type {
+  ProFieldTextType,
+  ProFieldRequestData,
+  ProFieldValueEnumType,
+  RequestOptionsType as BaseRequestOptionsType,
+} from '../../../utils/typing'
+import type { ProFieldLightProps } from '../../types'
 
-/**
- * Value enum type: Map or plain object mapping value -> label or { text, status, color, disabled }
- */
-export type ProFieldValueEnumType = Map<any, any> | Record<string, any> | undefined
+export type {
+  ProFieldRequestData,
+  ProFieldValueEnumType,
+}
 
-/**
- * Request function type for async option loading
- */
-export type ProFieldRequestData = (
-  params: Record<string, any> & { keyWords?: string },
-  props: Record<string, any>,
-) => Promise<any[]>
+export interface RequestOptionsType extends BaseRequestOptionsType {
+  text?: BaseRequestOptionsType['label']
+  disabled?: boolean
+  className?: string
+  key?: string | number | boolean
+  title?: BaseRequestOptionsType['label']
+  data_title?: BaseRequestOptionsType['label']
+  options?: RequestOptionsType[]
+  children?: RequestOptionsType[]
+}
 
-export interface FieldSelectProps {
-  text: string | number | (string | number)[]
-  mode?: ProFieldFCMode
-  /** Value enum: Map or Object mapping value -> label */
+export interface FieldSelectProps<FieldProps = Record<string, unknown>> extends ProFieldLightProps, ProRenderFieldPropsType {
+  text: ProFieldTextType
   valueEnum?: ProFieldValueEnumType
-  /** Debounce time in ms for request */
   debounceTime?: number
-  /** Async function to fetch options */
   request?: ProFieldRequestData
-  /** Params passed to request */
-  params?: any
-  /** Component-level props passed to antdv Select */
-  fieldProps?: Record<string, any>
-  /** Read mode render callback */
-  render?: (text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined
-  /** Edit mode render callback */
-  formItemRender?: (text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element
-  /** Text to display when value is empty */
-  emptyText?: VNodeChild
-  /** Default search keywords */
+  params?: Record<string, unknown>
+  options?: RequestOptionsType[]
+  fieldProps?: FieldProps
   defaultKeyWords?: string
+  variant?: 'outlined' | 'filled' | 'borderless' | 'underlined'
+  id?: string
 }

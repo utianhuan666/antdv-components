@@ -7,7 +7,8 @@ export function stackblitzPlugin(md: MarkdownIt) {
     const token = tokens[idx]!
     const info = token.info.trim()
 
-    if (!info.startsWith('stackblitz')) return fence(...args)
+    if (!info.startsWith('stackblitz'))
+      return fence(...args)
 
     const titleMatch = info.match(/\{[^}]*title\s*=\s*"([^"]*)"[^}]*\}/)
     const title = titleMatch?.[1] || ''

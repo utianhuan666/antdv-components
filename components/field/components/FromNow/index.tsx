@@ -1,56 +1,64 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { DatePicker, Tooltip } from 'antdv-next'
+import type { ProFieldFC } from '../../types'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldFromNowEdit from './FieldFromNowEdit'
+import FieldFromNowRead from './FieldFromNowRead'
+import '../../initDayjs'
 
 dayjs.extend(relativeTime)
 
-export default defineComponent({
+interface FieldFromNowOwnProps {
+  text: string
+  format?: string
+  variant?: 'outlined' | 'borderless' | 'filled' | 'underlined'
+}
+
+type FieldFromNowInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
+export type FieldFromNowExpose = Partial<FieldFromNowInstance>
+
+type FieldFromNowProps = NonNullable<ProFieldFC<FieldFromNowOwnProps>['__props']>
+
+/**
+ * 与当前的时间进行比较 http://momentjs.cn/docs/displaying/fromnow.html
+ */
+const FieldFromNow = defineComponent<FieldFromNowProps>({
   name: 'FieldFromNow',
-  props: {
-    text: { type: String as PropType<string>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    format: { type: String as PropType<string>, default: undefined },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'format',
+    'variant',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldFromNowInstance | null>(null)
+
+    expose(createRefProxy<FieldFromNowInstance>(innerRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const formatStr = props.fieldProps?.format || props.format || 'YYYY-MM-DD HH:mm:ss'
-        const dom = (
-          <Tooltip title={dayjs(props.text).format(formatStr)}>
-            {dayjs(props.text).fromNow()}
-          </Tooltip>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      const props = rawProps as FieldFromNowProps
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldFromNowRead({ ...props, text, mode })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const momentValue = props.fieldProps?.value ? dayjs(props.fieldProps.value) : undefined
-        const dom = (
-          <DatePicker
-            placeholder="请选择"
-            showTime
-            {...props.fieldProps}
-            value={momentValue}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldFromNowEdit({ ...props, text, mode, intl }, innerRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldFromNow

@@ -1,95 +1,236 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldRequestData } from '../../types'
-import type { ProFieldValueEnumType } from '../Select/types'
-import { Spin, TreeSelect } from 'antdv-next'
-import { computed, defineComponent } from 'vue'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { useFieldFetchData } from '../Select/useFieldFetchData'
-import { objectToMap, proFieldParsingText } from '../Select/utils'
+import type { TreeSelectProps } from 'antdv-next'
+import type { ProSchemaValueEnumMap } from '../../../utils/typing'
+import type { ProFieldFC } from '../../types'
+import type { FieldSelectProps, RequestOptionsType } from '../Select/types'
+import type { TreeSelectFieldProps } from './types'
+import { omit } from '@v-c/util'
+import { computed, defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
+import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { useFieldFetchData } from '../Select'
+import FieldTreeSelectEdit from './FieldTreeSelectEdit'
+import FieldTreeSelectLightEdit from './FieldTreeSelectLightEdit'
+import FieldTreeSelectRead from './FieldTreeSelectRead'
 
-export type { FieldTreeSelectProps } from './types'
+export type { FieldTreeSelectProps, TreeSelectFieldProps } from './types'
 
-/**
- * Build a flat valueEnum Map from tree options by traversing children.
- */
+type FieldTreeSelectInstance = InstanceType<typeof import('antdv-next')['TreeSelect']>
+export type FieldTreeSelectExpose = Partial<FieldTreeSelectInstance> & {
+  fetchData: (keyWord?: string) => void
+}
+
+type FieldTreeSelectComponentProps = NonNullable<
+  ProFieldFC<FieldSelectProps<TreeSelectFieldProps> & { cacheForSwr?: boolean }>['__props']
+>
+
+function omitTreeData(fieldProps: TreeSelectFieldProps | undefined) {
+  const {
+    onClear,
+    onChange,
+    onBlur,
+    showSearch,
+    fetchDataOnSearch,
+    onSearch,
+    autoClearSearchValue,
+    searchValue,
+  } = fieldProps || {}
+  return {
+    fieldProps: omit(fieldProps || {}, [
+      'treeData',
+      'onClear',
+      'onChange',
+      'onBlur',
+      'showSearch',
+      'fetchDataOnSearch',
+      'onSearch',
+      'autoClearSearchValue',
+      'searchValue',
+    ]),
+    onClear,
+    onChange,
+    onBlur,
+    showSearch,
+    fetchDataOnSearch,
+    onSearch,
+    autoClearSearchValue,
+    searchValue,
+  }
+}
+
 function buildTreeOptionsValueEnum(
-  options: any[],
-  fieldNames?: Record<string, string>,
-): Map<any, any> | undefined {
+  options: RequestOptionsType[],
+  fieldNames?: TreeSelectFieldProps['fieldNames'],
+): ProSchemaValueEnumMap | undefined {
   if (!options?.length)
     return undefined
+
   const {
     value: valueName = 'value',
     label: labelName = 'label',
     children: childrenName = 'children',
   } = fieldNames || {}
-  const valuesMap = new Map()
-  const traverse = (opts: any[]) => {
+  const valuesMap: ProSchemaValueEnumMap = new Map()
+  const traverse = (opts: RequestOptionsType[]) => {
     for (const cur of opts) {
       valuesMap.set(cur[valueName], cur[labelName])
-      if (cur[childrenName])
-        traverse(cur[childrenName])
+      const children = cur[childrenName] as RequestOptionsType[] | undefined
+      if (children)
+        traverse(children)
     }
   }
   traverse(options)
   return valuesMap
 }
 
-export default defineComponent({
+const fieldTreeSelectPropNames = [
+  'text',
+  'mode',
+  'valueEnum',
+  'debounceTime',
+  'request',
+  'options',
+  'params',
+  'fieldProps',
+  'render',
+  'formItemRender',
+  'emptyText',
+  'light',
+  'label',
+  'variant',
+  'proFieldKey',
+  'defaultKeyWords',
+  'cacheForSwr',
+]
+
+const FieldTreeSelect = defineComponent({
   name: 'FieldTreeSelect',
-  props: {
-    text: { type: [String, Number, Array] as PropType<string | number | (string | number)[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    request: { type: Function as PropType<ProFieldRequestData | undefined>, default: undefined },
-    params: { type: Object as PropType<any>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    const [loading, options, _fetchData] = useFieldFetchData(props)
+  props: fieldTreeSelectPropNames,
+  setup(rawProps, { expose }) {
+    const props = rawProps as FieldTreeSelectComponentProps
+    const prefixCls = useProPrefixCls('pro-field-tree-select')
+    const treeSelectRef = ref<FieldTreeSelectInstance | null>(null)
+    const fetchProps = new Proxy(props as Parameters<typeof useFieldFetchData>[0], {
+      get(target, key: string) {
+        if (key === 'defaultKeyWords') {
+          const fieldProps = target.fieldProps as TreeSelectFieldProps | undefined
+          return fieldProps?.searchValue ?? target.defaultKeyWords
+        }
+        return Reflect.get(target, key)
+      },
+    })
+    const [loading, options, fetchData] = useFieldFetchData(fetchProps)
+    const open = ref(false)
+    const searchValue = ref<string | undefined>(props.fieldProps?.searchValue)
+    const intl = useIntl()
+    const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
+      open.value = typeof updater === 'function' ? updater(open.value) : updater
+    }
+
+    expose(createRefProxy<FieldTreeSelectInstance, Pick<FieldTreeSelectExpose, 'fetchData'>>(treeSelectRef, { fetchData }))
 
     const optionsValueEnum = computed(() => {
-      if (!isProFieldReadMode(props.mode))
+      const mode = props.mode ?? 'read'
+      if (!isProFieldReadMode(mode))
         return undefined
       return buildTreeOptionsValueEnum(options.value, props.fieldProps?.fieldNames)
     })
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <span>
-            {proFieldParsingText(props.text, objectToMap(props.valueEnum || optionsValueEnum.value))}
-          </span>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps, treeData: options.value }, dom) ?? props.emptyText
-        }
-        return dom
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const emptyText = props.emptyText ?? '-'
+      const light = props.light === true
+      const {
+        fieldProps,
+        onClear,
+        onChange,
+        onBlur,
+        showSearch,
+        fetchDataOnSearch,
+        onSearch,
+        autoClearSearchValue,
+        searchValue: propsSearchValue,
+      } = omitTreeData(props.fieldProps)
+
+      const showSearchConfig = typeof showSearch === 'object' ? showSearch : {}
+      const mergedOnSearch = showSearchConfig?.onSearch ?? onSearch
+      const mergedAutoClearSearchValue = showSearchConfig?.autoClearSearchValue ?? autoClearSearchValue
+      const mergedSearchValue = showSearchConfig?.searchValue ?? propsSearchValue ?? searchValue.value
+
+      if (isProFieldReadMode(mode)) {
+        return FieldTreeSelectRead({
+          text,
+          mode,
+          valueEnum: props.valueEnum,
+          optionsValueEnum: optionsValueEnum.value,
+          options: options.value,
+          render: props.render,
+          fieldProps: props.fieldProps,
+          emptyText,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <Spin spinning={loading.value}>
-            <TreeSelect
-              placeholder="请选择"
-              allowClear={props.fieldProps?.allowClear !== false}
-              treeData={options.value}
-              style={{ minWidth: 60, ...props.fieldProps?.style }}
-              {...props.fieldProps}
-            />
-          </Spin>
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, options: options.value, loading: loading.value }, dom)
+      if (isProFieldEditOnlyMode(mode)) {
+        const setSearchValue = (
+          updater:
+            | string
+            | undefined
+            | ((prev: string | undefined) => string | undefined),
+        ) => {
+          const nextValue = typeof updater === 'function'
+            ? updater(searchValue.value)
+            : updater
+          searchValue.value = nextValue
+          ;(mergedOnSearch as ((value?: string) => void) | undefined)?.(nextValue)
         }
-        return dom
+
+        const treeSelectOnChange: TreeSelectProps['onChange'] = (value, optionList, extra) => {
+          if (showSearch && mergedAutoClearSearchValue) {
+            fetchData(undefined)
+            setSearchValue(undefined)
+          }
+          onChange?.(value, optionList, extra)
+        }
+
+        const editProps = {
+          text: String(text),
+          mode: mode as 'edit',
+          formItemRender: props.formItemRender,
+          label: props.label,
+          variant: props.variant ?? fieldProps?.variant,
+          fieldProps,
+          open: open.value,
+          setOpen,
+          intl,
+          loading: loading.value,
+          options: options.value as NonNullable<TreeSelectProps['treeData']>,
+          fetchData,
+          fetchDataOnSearch,
+          hasRequest: !!props.request,
+          showSearch,
+          showSearchConfig,
+          searchValue: mergedSearchValue,
+          setSearchValue,
+          autoClearSearchValue: mergedAutoClearSearchValue,
+          onClear,
+          treeSelectOnChange,
+          onBlur,
+          layoutClassName: prefixCls.value,
+        }
+
+        if (light)
+          return FieldTreeSelectLightEdit(editProps, treeSelectRef)
+
+        return FieldTreeSelectEdit(editProps, treeSelectRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldTreeSelect as unknown as ProFieldFC<FieldSelectProps<TreeSelectFieldProps> & {
+  cacheForSwr?: boolean
+}>

@@ -1,152 +1,87 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { NamePath, ProFormFieldSetProps } from '../../typing'
-import { Space } from 'antdv-next'
-import { cloneVNode, Comment, computed, defineComponent, Fragment, isVNode, onMounted, Text, watch } from 'vue'
+import type { SpaceProps } from 'antdv-next'
+import type { VNode, VNodeChild } from 'vue'
+import type { ProFormFieldItemProps } from '../../typing'
+import { get } from '@v-c/util'
+import { cloneVNode, defineComponent } from 'vue'
 import { useFieldContext } from '../../FieldContext'
-import ProFormItem from '../FormItem'
+import {
+  getValueFromEvent,
+  isElementVNode,
+  renderChildren,
+  renderFormItem,
+  renderSpace,
+  toVNodeArray,
+} from '../_util'
 
-function defaultGetValueFromEvent(valuePropName: string, ...args: any[]) {
-  const event = args[0]
-  if (event?.target && valuePropName in event.target)
-    return event.target[valuePropName]
-  return event
-}
-
-function normalizeChildren(children?: VNodeChild): VNode[] {
-  if (!Array.isArray(children))
-    return isVNode(children) ? [children] : []
-
-  return children.flatMap((node) => {
-    if (!isVNode(node))
-      return []
-    if (node.type === Comment)
-      return []
-    if (node.type === Text && typeof node.children === 'string' && !node.children.trim())
-      return []
-    if (node.type === Fragment)
-      return normalizeChildren(node.children as VNodeChild)
-    return [node]
-  })
+export type ProFormFieldSetProps<T = any> = ProFormFieldItemProps & {
+  value?: T[]
+  onChange?: (value: T[]) => void
+  space?: SpaceProps
+  type?: 'space' | 'group'
+  children?: ((value: T[], props: ProFormFieldSetProps<T>) => VNodeChild) | VNodeChild
 }
 
 const ProFormFieldSet = defineComponent({
   name: 'ProFormFieldSet',
   inheritAttrs: false,
-  props: {
-    name: { type: [String, Number, Array] as PropType<NamePath>, default: undefined },
-    label: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    tooltip: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    rules: { type: Array as PropType<any[]>, default: undefined },
-    required: { type: Boolean, default: undefined },
-    valuePropName: { type: String, default: 'value' },
-    initialValue: { type: null as unknown as PropType<ProFormFieldSetProps['initialValue']>, default: undefined },
-    transform: { type: Function as PropType<NonNullable<ProFormFieldSetProps['transform']>>, default: undefined },
-    convertValue: { type: Function as PropType<NonNullable<ProFormFieldSetProps['convertValue']>>, default: undefined },
-    formItemProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    value: { type: Array as PropType<any[]>, default: undefined },
-    space: { type: Object as PropType<Record<string, any>>, default: undefined },
-    type: { type: String as PropType<NonNullable<ProFormFieldSetProps['type']>>, default: 'space' },
-    ignoreFormItem: { type: Boolean, default: false },
-  },
-  emits: ['change'],
-  setup(props, { emit, slots }) {
+  setup(props: ProFormFieldSetProps, { attrs, slots }) {
     const fieldContext = useFieldContext()
+    return () => {
+      const current = { ...attrs, ...props } as ProFormFieldSetProps
 
-    const values = computed<any[]>(() => {
-      if (props.value)
-        return props.value
-      if (props.name === undefined)
-        return []
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const value = path.reduce<any>((acc, key) => acc?.[key], fieldContext.model || {})
-      return Array.isArray(value) ? value : []
-    })
+      // Get value from form context if not provided via prop
+      let value = current.value
+      if (value === undefined && current.name && fieldContext.model) {
+        const namePath = Array.isArray(current.name) ? current.name : [current.name]
+        value = get(fieldContext.model, namePath)
+      }
 
-    function setCellValue(value: any[]) {
-      if (props.name === undefined)
-        return
-      const path = Array.isArray(props.name) ? props.name : [props.name]
-      const last = path[path.length - 1]
-      if (last === undefined)
-        return
-      const parent = path.slice(0, -1).reduce<Record<string, any>>((acc, key) => {
-        if (!acc[key] || typeof acc[key] !== 'object')
-          acc[key] = {}
-        return acc[key]
-      }, fieldContext.model || {})
-      parent[last] = value
-    }
+      // Apply convertValue to transform the value from form storage format (before defaulting to [])
+      if (current.convertValue && value !== undefined && value !== null) {
+        value = current.convertValue(value, current)
+      }
 
-    function applyInitialValue() {
-      if (props.name === undefined || props.initialValue === undefined || values.value.length > 0)
-        return
-      setCellValue(props.initialValue)
-    }
+      // Apply default empty array after conversion
+      value = value || []
 
-    function handleFieldSetChange(fieldValue: any, index: number) {
-      const nextValues = [...values.value]
-      nextValues[index] = defaultGetValueFromEvent(props.valuePropName || 'value', fieldValue)
-      setCellValue(nextValues)
-      emit('change', nextValues)
-      props.fieldProps?.onChange?.(nextValues)
-    }
-
-    function renderChildren() {
+      const rawChildren = slots.default?.() || renderChildren(current.children, value, current)
       let itemIndex = -1
-      return normalizeChildren(slots.default?.({ value: values.value, props })).map((node) => {
+      const children = toVNodeArray(rawChildren).map((item: any) => {
+        if (!isElementVNode(item))
+          return item
+
         itemIndex += 1
         const index = itemIndex
-        const nodeProps = (node.props || {}) as Record<string, any>
-        const fieldProps = nodeProps.fieldProps || {}
-        return cloneVNode(node, {
+        return cloneVNode(item as VNode, {
           key: index,
-          ...nodeProps,
-          ignoreFormItem: true,
-          value: values.value[index],
+          value: value[index],
           fieldProps: {
-            ...fieldProps,
+            ...((item as VNode).props as any)?.fieldProps,
+            value: value[index],
             onChange: (...args: any[]) => {
-              handleFieldSetChange(args[0], index)
-              fieldProps.onChange?.(...args)
+              const next = [...value]
+              next[index] = getValueFromEvent(current.valuePropName || 'value', ...args)
+              current.onChange?.(next)
+              current.fieldProps?.onChange?.(next)
             },
+          },
+          onChange: (...args: any[]) => {
+            const next = [...value]
+            next[index] = getValueFromEvent(current.valuePropName || 'value', ...args)
+            current.onChange?.(next)
+            current.fieldProps?.onChange?.(next)
+            ;((item as VNode).props as any)?.onChange?.(...args)
           },
         })
       })
-    }
-
-    onMounted(applyInitialValue)
-    watch(() => props.initialValue, applyInitialValue)
-
-    return () => {
-      const spaceProps = { align: 'start' as const, ...(props.space || {}) }
-      const children = renderChildren()
-      const content = <Space {...spaceProps}>{children}</Space>
-
-      if (props.ignoreFormItem)
-        return content
-
-      return (
-        <ProFormItem
-          name={props.name}
-          label={props.label}
-          tooltip={props.tooltip}
-          rules={props.rules}
-          required={props.required}
-          initialValue={props.initialValue}
-          transform={props.transform}
-          convertValue={props.convertValue}
-          formItemProps={{
-            valuePropName: props.valuePropName,
-            ...(fieldContext.formItemProps || {}),
-            ...(props.formItemProps || {}),
-          }}
-        >
-          {content}
-        </ProFormItem>
+      return renderFormItem(
+        current,
+        renderSpace(children, current.space, current.type === 'group'),
       )
     }
   },
-})
+}) as any
+
+ProFormFieldSet.displayName = 'ProFormComponent'
 
 export default ProFormFieldSet

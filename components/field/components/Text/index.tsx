@@ -1,51 +1,83 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { Input } from 'antdv-next'
-import { defineComponent } from 'vue'
+import type { InputRef } from 'antdv-next'
+import type { VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, onMounted, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldTextEdit from './FieldTextEdit'
+import FieldTextRead from './FieldTextRead'
 
-export default defineComponent({
+type FieldTextProps = NonNullable<ProFieldFC<{
+  text: string
+  emptyText?: VNodeChild
+}>['__props']>
+
+type FieldTextInstance = InputRef
+export type FieldTextExpose = Partial<FieldTextInstance>
+
+const FieldText = defineComponent<FieldTextProps>({
   name: 'FieldText',
-  props: {
-    text: { type: [String, Number, Boolean, Array] as PropType<string | number | boolean | unknown[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps
+    const intl = useIntl()
+    const inputRef = ref<FieldTextInstance | null>(null)
+
+    onMounted(() => {
+      if (props.fieldProps?.autoFocus) {
+        queueMicrotask(() => {
+          inputRef.value?.focus?.()
+        })
+      }
+    })
+
+    expose(createRefProxy<FieldTextInstance>(inputRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const { prefix = '', suffix = '' } = props.fieldProps || {}
-        const dom = (
-          <>
-            {prefix}
-            {props.text ?? props.emptyText}
-            {suffix}
-          </>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const emptyText = props.emptyText ?? '-'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldTextRead({
+          text,
+          mode,
+          render: props.render,
+          fieldProps: props.fieldProps,
+          emptyText,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <Input
-            placeholder="???"
-            allowClear
-            {...props.fieldProps}
-          />
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldTextEdit(
+          {
+            text,
+            mode,
+            render: props.render,
+            formItemRender: props.formItemRender,
+            fieldProps: props.fieldProps,
+            emptyText,
+            intl,
+          },
+          inputRef,
         )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
       }
 
       return null
     }
   },
-})
+}) as unknown as ProFieldFC<{
+  text: string | number | boolean | unknown[]
+  emptyText?: VNodeChild
+}>
+
+export default FieldText

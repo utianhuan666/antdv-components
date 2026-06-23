@@ -1,55 +1,128 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { TimePickerProps, TimeRangePickerProps } from 'antdv-next'
+import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import dayjs from 'dayjs'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldTimePickerEdit from './FieldTimePickerEdit'
+import FieldTimePickerLightEdit from './FieldTimePickerLightEdit'
 import FieldTimePickerRead from './FieldTimePickerRead'
 import FieldTimeRangePickerEdit from './FieldTimeRangePickerEdit'
+import FieldTimeRangePickerLightEdit from './FieldTimeRangePickerLightEdit'
 import FieldTimeRangePickerRead from './FieldTimeRangePickerRead'
+
+type FieldTimePickerProps = {
+  text: string | number
+  format?: string
+  variant?: TimePickerProps['variant']
+  fieldProps?: TimePickerProps & {
+    format?: string
+  }
+} & ProFieldLightProps
+
+type FieldTimePickerInstance = InstanceType<typeof import('antdv-next')['TimePicker']>
+export type FieldTimePickerExpose = Partial<FieldTimePickerInstance>
+
+type FieldTimePickerFieldProps = NonNullable<ProFieldFC<FieldTimePickerProps>['__props']>
+
+type FieldTimeRangePickerProps = {
+  text: string[] | number[]
+  format?: string
+  variant?: TimeRangePickerProps['variant']
+  fieldProps?: TimeRangePickerProps & {
+    format?: string
+  }
+} & ProFieldLightProps
+
+type FieldTimeRangePickerInstance = InstanceType<typeof import('antdv-next')['TimeRangePicker']>
+export type FieldTimeRangePickerExpose = Partial<FieldTimeRangePickerInstance>
+
+type FieldTimeRangePickerFieldProps = NonNullable<ProFieldFC<FieldTimeRangePickerProps>['__props']>
 
 /**
  * Time picker field component
  */
-const FieldTimePicker = defineComponent({
+const FieldTimePicker = defineComponent<FieldTimePickerFieldProps>({
   name: 'FieldTimePicker',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    format: { type: String, default: 'HH:mm:ss' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'light',
+    'label',
+    'format',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'lightLabel',
+    'variant',
+  ],
+  setup(rawProps, { expose }) {
+    const [open, setOpen] = [ref(false), (nextOpen: boolean | ((open: boolean) => boolean)) => {
+      open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
+    }]
+    const intl = useIntl()
+    const innerRef = ref<FieldTimePickerInstance | null>(null)
+
+    expose(createRefProxy<FieldTimePickerInstance>(innerRef))
+
     return () => {
-      const finalFormat = props.fieldProps?.format || props.format
+      const {
+        text,
+        mode,
+        light,
+        label,
+        format = 'HH:mm:ss',
+        render,
+        formItemRender,
+        fieldProps,
+        lightLabel,
+        variant,
+      } = rawProps
+      const finalFormat = fieldProps?.format || format
 
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldTimePickerRead
-            text={props.text}
-            mode={props.mode}
-            render={props.render}
-            fieldProps={props.fieldProps}
-            finalFormat={finalFormat}
-          />
-        )
+      if (isProFieldReadMode(mode)) {
+        return FieldTimePickerRead({
+          text,
+          mode,
+          light,
+          label,
+          format,
+          render,
+          formItemRender,
+          fieldProps,
+          lightLabel,
+          variant,
+          finalFormat,
+        }, innerRef)
       }
-
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldTimePickerEdit
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const editProps = {
+          text,
+          mode,
+          label,
+          format,
+          render,
+          formItemRender,
+          fieldProps,
+          variant,
+          finalFormat,
+        }
+        if (light) {
+          return FieldTimePickerLightEdit(
+            {
+              ...editProps,
+              lightLabel,
+              open: open.value,
+              setOpen,
+              intl,
+            },
+            innerRef,
+          )
+        }
+        return FieldTimePickerEdit(editProps, innerRef)
       }
-
       return null
     }
   },
@@ -58,60 +131,103 @@ const FieldTimePicker = defineComponent({
 /**
  * Time range picker field component
  */
-export const FieldTimeRangePicker = defineComponent({
+const FieldTimeRangePickerComponent = defineComponent<FieldTimeRangePickerFieldProps>({
   name: 'FieldTimeRangePicker',
-  props: {
-    text: { type: Array as PropType<(string | number)[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    format: { type: String, default: 'HH:mm:ss' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
-    return () => {
-      const finalFormat = props.fieldProps?.format || props.format
-      const [startText, endText] = Array.isArray(props.text) ? props.text : []
+  inheritAttrs: false,
+  props: [
+    'text',
+    'light',
+    'label',
+    'mode',
+    'lightLabel',
+    'format',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'variant',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const open = ref(false)
+    const innerRef = ref<FieldTimeRangePickerInstance | null>(null)
+    const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
+      open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
+    }
 
-      const startIsNumberOrDayjs = dayjs.isDayjs(startText) || typeof startText === 'number'
-      const endIsNumberOrDayjs = dayjs.isDayjs(endText) || typeof endText === 'number'
+    expose(createRefProxy<FieldTimeRangePickerInstance>(innerRef))
+
+    return () => {
+      const {
+        text,
+        light,
+        label,
+        mode,
+        lightLabel,
+        format = 'HH:mm:ss',
+        render,
+        formItemRender,
+        fieldProps,
+        variant,
+      } = rawProps as FieldTimeRangePickerFieldProps
+      const finalFormat = fieldProps?.format || format
+      const [startText, endText] = Array.isArray(text) ? text : []
+      const startTextIsNumberOrMoment = dayjs.isDayjs(startText) || typeof startText === 'number'
+      const endTextIsNumberOrMoment = dayjs.isDayjs(endText) || typeof endText === 'number'
 
       const parsedStartText: string = startText
-        ? dayjs(startText as any, startIsNumberOrDayjs ? undefined : finalFormat).format(finalFormat)
+        ? dayjs(startText, startTextIsNumberOrMoment ? undefined : finalFormat).format(finalFormat)
         : ''
       const parsedEndText: string = endText
-        ? dayjs(endText as any, endIsNumberOrDayjs ? undefined : finalFormat).format(finalFormat)
+        ? dayjs(endText, endTextIsNumberOrMoment ? undefined : finalFormat).format(finalFormat)
         : ''
 
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldTimeRangePickerRead
-            text={props.text}
-            mode={props.mode}
-            render={props.render}
-            fieldProps={props.fieldProps}
-            parsedStartText={parsedStartText}
-            parsedEndText={parsedEndText}
-          />
-        )
+      if (isProFieldReadMode(mode)) {
+        return FieldTimeRangePickerRead({
+          text,
+          light,
+          label,
+          mode,
+          lightLabel,
+          format,
+          render,
+          formItemRender,
+          fieldProps,
+          variant,
+          parsedStartText,
+          parsedEndText,
+        }, innerRef)
       }
-
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldTimeRangePickerEdit
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const editProps = {
+          text,
+          label,
+          mode,
+          format,
+          render,
+          formItemRender,
+          fieldProps,
+          variant,
+          finalFormat,
+        }
+        if (light) {
+          return FieldTimeRangePickerLightEdit(
+            {
+              ...editProps,
+              lightLabel,
+              open: open.value,
+              setOpen,
+              intl,
+            },
+            innerRef,
+          )
+        }
+        return FieldTimeRangePickerEdit(editProps, innerRef)
       }
-
       return null
     }
   },
 })
+
+export const FieldTimeRangePicker = FieldTimeRangePickerComponent
 
 export default FieldTimePicker

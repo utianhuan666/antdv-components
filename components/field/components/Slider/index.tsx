@@ -1,41 +1,62 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { Slider } from 'antdv-next'
-import { defineComponent } from 'vue'
+import type { SliderProps } from 'antdv-next'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldSliderEdit from './FieldSliderEdit'
+import FieldSliderRead from './FieldSliderRead'
 
-const FieldSlider = defineComponent({
+interface FieldSliderFCProps {
+  text: string
+  fieldProps?: SliderProps
+}
+type FieldSliderInstance = InstanceType<typeof import('antdv-next')['Slider']>
+export type FieldSliderExpose = Partial<FieldSliderInstance>
+type FieldSliderProps = NonNullable<ProFieldFC<FieldSliderFCProps>['__props']>
+
+const FieldSlider = defineComponent<FieldSliderProps>({
   name: 'FieldSlider',
-  props: {
-    text: { type: [String, Number, Array] as PropType<string | number | number[]>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const sliderRef = ref<FieldSliderInstance | null>(null)
+
+    expose(createRefProxy<FieldSliderInstance>(sliderRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const displayText = props.text ?? props.emptyText
-        const dom = <>{displayText}</>
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+      const props = rawProps as FieldSliderProps
+      const {
+        text = '',
+        mode = 'read',
+        render,
+        formItemRender,
+        fieldProps = {},
+      } = props
+
+      if (isProFieldReadMode(mode)) {
+        return FieldSliderRead({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <Slider
-            {...props.fieldProps}
-            style={{ minWidth: 120, ...props.fieldProps?.style }}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldSliderEdit({
+          text,
+          mode,
+          render,
+          formItemRender,
+          fieldProps,
+        }, sliderRef)
       }
 
       return null
@@ -43,4 +64,4 @@ const FieldSlider = defineComponent({
   },
 })
 
-export default FieldSlider
+export default FieldSlider as unknown as ProFieldFC<FieldSliderFCProps>

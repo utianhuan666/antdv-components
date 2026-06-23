@@ -1,17 +1,19 @@
-import { defineComponent } from 'vue'
-import ProFormField from '../Field'
+import type { InputNumberProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
+import { defineProFormField } from '../FormItem/warpField'
 
-/** 对标 React `ProFormDigit`：valueType=digit */
-const ProFormDigit = defineComponent({
-  name: 'ProFormDigit',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="digit" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormDigitProps = ProFormFieldItemProps<InputNumberProps> & {
+  min?: InputNumberProps['min']
+  max?: InputNumberProps['max']
+}
+
+const ProFormDigit = defineProFormField<ProFormDigitProps>(
+  'ProFormDigit',
+  'digit',
+  props => ({
+    min: props.min,
+    max: props.max,
+  }),
+)
 
 export default ProFormDigit

@@ -1,16 +1,18 @@
-import { defineComponent } from 'vue'
+import type { SegmentedProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
+import type { ComponentPublicInstance } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import ProFormField from '../Field'
 
-const ProFormSegmented = defineComponent({
+export type ProFormSegmentedProps = ProFormFieldItemProps<SegmentedProps>
+export const ProFormSegmented = defineComponent({
   name: 'ProFormSegmented',
   inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="segmented" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
+  setup(_p, { attrs, expose }) {
+    const innerRef = ref<ComponentPublicInstance | null>(null)
+    expose(createRefProxy<ComponentPublicInstance>(innerRef))
+    return () => <ProFormField ref={innerRef} {...attrs as any} valueType="segmented" />
   },
 })
-
 export default ProFormSegmented

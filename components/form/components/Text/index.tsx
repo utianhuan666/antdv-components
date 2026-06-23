@@ -1,33 +1,15 @@
-import { defineComponent } from 'vue'
-import ProFormField from '../Field'
+import type { InputPasswordProps, InputProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
+import { defineProFormField } from '../FormItem/warpField'
 
-/** 对标 React `ProFormText`：valueType=text */
-const ProFormText = defineComponent({
-  name: 'ProFormText',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="text" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+export type ProFormTextProps = ProFormFieldItemProps<InputProps>
+export type ProFormTextPasswordProps = ProFormFieldItemProps<InputPasswordProps>
 
-/** ProFormText.Password */
-const ProFormTextPassword = defineComponent({
-  name: 'ProFormTextPassword',
-  inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="password" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
-  },
-})
+const ProFormText = defineProFormField('ProFormText', 'text') as any
+const Password = defineProFormField('ProFormTextPassword', 'password')
 
-;(ProFormText as any).Password = ProFormTextPassword
+ProFormText.Password = Password
 
-export default ProFormText as typeof ProFormText & { Password: typeof ProFormTextPassword }
-export { ProFormTextPassword }
+export default ProFormText as typeof ProFormText & {
+  Password: typeof Password
+}

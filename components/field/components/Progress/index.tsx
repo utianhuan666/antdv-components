@@ -1,61 +1,57 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { InputNumber, Progress } from 'antdv-next'
-import { computed, defineComponent } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { computed, defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { getProgressStatus, toNumber } from './utils'
+import { toNumber } from '../Percent/util'
+import { FieldProgressEdit } from './FieldProgressEdit'
+import { FieldProgressRead } from './FieldProgressRead'
+import { getProgressStatus } from './utils'
 
 export { getProgressStatus }
 
-export default defineComponent({
+type FieldProgressEditInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type FieldProgressReadInstance = InstanceType<typeof import('antdv-next')['Progress']>
+type FieldProgressInnerRef = FieldProgressEditInstance | FieldProgressReadInstance
+export type FieldProgressExpose = Partial<FieldProgressEditInstance> & Partial<FieldProgressReadInstance>
+
+type FieldProgressProps = NonNullable<ProFieldFC<{
+  text: number | string
+  placeholder?: string
+}>['__props']>
+
+/**
+ * 进度条组件
+ */
+const FieldProgress = defineComponent<FieldProgressProps>({
   name: 'FieldProgress',
-  props: {
-    text: { type: [Number, String] as PropType<number | string>, default: 0 },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    placeholder: { type: String, default: undefined },
-  },
-  setup(props) {
-    const realValue = computed(() => toNumber(props.text))
+  inheritAttrs: false,
+  props: ['text', 'mode', 'render', 'formItemRender', 'fieldProps', 'placeholder'],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const innerRef = ref<FieldProgressInnerRef | null>(null)
+
+    expose(createRefProxy<FieldProgressInnerRef>(innerRef))
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <Progress
-            size="small"
-            style={{ minWidth: 100, maxWidth: 320 }}
-            percent={realValue.value as number}
-            steps={props.fieldProps?.steps}
-            status={getProgressStatus(realValue.value as number)}
-            {...props.fieldProps}
-          />
-        )
-        if (props.render) {
-          return props.render(realValue.value, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      const props = rawProps as FieldProgressProps
+      const { text, mode, placeholder } = props
+      const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+      const realValue = computed(() =>
+        typeof text === 'string' && (text as string).includes('%')
+          ? toNumber((text as string).replace('%', ''))
+          : toNumber(text),
+      )
+      if (isProFieldReadMode(mode)) {
+        return FieldProgressRead({ ...props, realValue: realValue.value }, innerRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const placeholderValue = props.placeholder || '???'
-        const dom = (
-          <InputNumber
-            {...({
-              placeholder: placeholderValue,
-              ...props.fieldProps,
-            } as any)}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldProgressEdit({ ...props, placeholderValue }, innerRef)
       }
-
       return null
     }
   },
 })
+
+export default FieldProgress

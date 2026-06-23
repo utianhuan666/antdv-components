@@ -1,66 +1,73 @@
-import type { PropType, VNodeChild } from 'vue'
+import type { CSSProperties, VNodeChild } from 'vue'
 import { DownOutlined } from '@antdv-next/icons'
+import { clsx } from '@v-c/util'
 import { Space } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { useIntl, useProProviderContext } from '../../../provider'
+import { omitBoolean } from '../../../utils'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
-export interface ActionsCollapseProps {
-  collapsed: boolean
-  hiddenNum?: number | false
-}
-
-export type CollapseRender
-  = | ((collapsed: boolean, props: ActionsCollapseProps, hiddenNum?: number | false) => VNodeChild)
+export interface ActionsProps {
+  submitter: VNodeChild
+  collapsed?: boolean
+  onCollapse?: (collapsed: boolean) => void
+  setCollapsed: (collapse: boolean) => void
+  isForm?: boolean
+  style?: CSSProperties
+  collapseRender?:
+    | ((
+      collapsed: boolean,
+      props: ActionsProps,
+      intl: ReturnType<typeof useIntl>,
+      hiddenNum?: false | number,
+    ) => VNodeChild)
     | false
-
-const defaultCollapseRender: Exclude<CollapseRender, false> = (collapsed, _, hiddenNum) => {
-  return (
-    <>
-      {collapsed ? '展开' : '收起'}
-      {collapsed && hiddenNum ? `(${hiddenNum})` : null}
-      <DownOutlined
-        style={{
-          marginInlineStart: '0.5em',
-          transition: '0.3s all',
-          transform: `rotate(${collapsed ? 0 : 0.5}turn)`,
-        }}
-      />
-    </>
-  )
+  hiddenNum?: false | number
 }
 
-/**
- * QueryFilter 底部操作区，对标 React `src/form/layouts/QueryFilter/Actions.tsx`。
- * 1. 渲染 submitter 中默认按钮组
- * 2. 当需要时附加展开/收起按钮，可由 `collapseRender` 自定义
- */
-const Actions = defineComponent({
-  name: 'ProQueryFilterActions',
-  props: {
-    submitter: { type: null as unknown as PropType<VNodeChild>, default: undefined },
-    collapsed: { type: Boolean, default: false },
-    setCollapsed: { type: Function as PropType<(collapsed: boolean) => void>, required: true },
-    collapseRender: {
-      type: [Function, Boolean] as PropType<CollapseRender>,
-      default: undefined,
-    },
-    hiddenNum: { type: [Number, Boolean] as PropType<number | false>, default: false },
-    style: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props) {
+const defaultCollapseRender: NonNullable<ActionsProps['collapseRender']> = (
+  collapsed,
+  _,
+  intl,
+  hiddenNum,
+) => (
+  <>
+    {collapsed
+      ? intl.getMessage('tableForm.collapsed', '展开')
+      : intl.getMessage('tableForm.expand', '收起')}
+    {collapsed && hiddenNum ? `(${hiddenNum})` : null}
+    <DownOutlined
+      style={{
+        marginInlineStart: '0.5em',
+        transition: '0.3s all',
+        transform: `rotate(${collapsed ? 0 : 0.5}turn)`,
+      }}
+    />
+  </>
+)
+
+const Actions = defineComponent<ActionsProps>({
+  name: 'QueryFilterActions',
+  props: ['submitter', 'collapsed', 'onCollapse', 'setCollapsed', 'isForm', 'style', 'collapseRender', 'hiddenNum'],
+  setup(rawProps) {
+    const props = rawProps
+    const intl = useIntl()
+    const proProvider = useProProviderContext()
+    const prefixCls = useProPrefixCls('pro-query-filter-collapse-button')
+
     return () => {
-      const renderFn = typeof props.collapseRender === 'function'
-        ? props.collapseRender
-        : defaultCollapseRender
+      const collapseRender = omitBoolean(props.collapseRender) || defaultCollapseRender
+
       return (
         <Space style={props.style} size={16}>
           {props.submitter}
           {props.collapseRender !== false
             ? (
                 <a
-                  class="ant-pro-query-filter-collapse-button"
+                  class={clsx(prefixCls.value, proProvider.hashId)}
                   onClick={() => props.setCollapsed(!props.collapsed)}
                 >
-                  {renderFn(props.collapsed, { collapsed: props.collapsed, hiddenNum: props.hiddenNum }, props.hiddenNum)}
+                  {collapseRender?.(!!props.collapsed, props, intl, props.hiddenNum)}
                 </a>
               )
             : null}

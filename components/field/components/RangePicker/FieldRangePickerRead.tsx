@@ -1,30 +1,24 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { Ref } from 'vue'
+import type { ProFieldFC } from '../../types'
+import type { FieldRangePickerProps } from './types'
 
-export default defineComponent({
-  name: 'FieldRangePickerRead',
-  props: {
-    text: { type: Array as PropType<string[]>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    parsedStartText: { type: String, default: '' },
-    parsedEndText: { type: String, default: '' },
-  },
-  setup(props) {
-    return () => {
-      const dom = (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          <div>{props.parsedStartText || '-'}</div>
-          <div>~</div>
-          <div>{props.parsedEndText || '-'}</div>
-        </div>
-      )
-      if (props.render) {
-        return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? '-'
-      }
-      return dom
-    }
-  },
-})
+type Props = NonNullable<ProFieldFC<FieldRangePickerProps>['__props']> & {
+  parsedStartText: string
+  parsedEndText: string
+}
+
+export function FieldRangePickerRead(props: Props, ref?: Ref) {
+  const { text, mode, render, parsedStartText, parsedEndText } = props
+  const fieldProps = props.fieldProps || {}
+  const start = parsedStartText
+  const end = parsedEndText
+  const content = !start && !end ? '-' : `${start || '-'} ~ ${end || '-'}`
+  const dom = (
+    <div ref={ref}>{content}</div>
+  )
+  if (render)
+    return render(text, { mode, ...fieldProps }, <span>{dom}</span>)
+  return dom
+}
+
+export default FieldRangePickerRead

@@ -1,73 +1,109 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import type { ProFieldValueEnumType } from '../Select/types'
-import type { FieldRadioProps } from './types'
-import { RadioButton, RadioGroup } from 'antdv-next'
-import { defineComponent } from 'vue'
-import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import { objectToMap, proFieldParsingText } from '../Select/utils'
+import type { ProFieldFC } from '../../types'
+import type { GroupProps } from './types'
+import { Spin } from 'antdv-next'
+import { useFormItemInputContext } from 'antdv-next/dist/form/context'
+import { computed, defineComponent, ref } from 'vue'
+import { useStyle } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
+import { isProFieldEditOnlyMode, isProFieldReadMode } from '../../internal/fieldMode'
+import { useFieldFetchData } from '../Select'
+import FieldRadioEdit from './FieldRadioEdit'
+import FieldRadioRead from './FieldRadioRead'
 
-export type { FieldRadioProps }
+export type { GroupProps } from './types'
 
-const FieldRadio = defineComponent({
+type FieldRadioInstance = InstanceType<typeof import('antdv-next')['RadioGroup']>
+export type FieldRadioExpose = Partial<FieldRadioInstance> & {
+  fetchData: (keyWord?: string) => void
+}
+
+type RadioFieldProps = NonNullable<ProFieldFC<GroupProps>['__props']>
+
+const FieldRadio = defineComponent<RadioFieldProps>({
   name: 'FieldRadio',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    valueEnum: { type: [Map, Object] as PropType<ProFieldValueEnumType>, default: undefined },
-    options: { type: Array as PropType<Array<{ label: string, value: string | number, disabled?: boolean }>>, default: undefined },
-    radioType: { type: String as PropType<'default' | 'button'>, default: undefined },
-    layout: { type: String as PropType<'horizontal' | 'vertical'>, default: 'horizontal' },
-  },
-  setup(props) {
-    return () => {
-      // Build optionsValueEnum from options if provided
-      const optionsValueEnum = props.options?.length
-        ? props.options.reduce<Record<string, any>>((pre, cur) => {
-            pre[cur.value ?? ''] = cur.label
-            return pre
-          }, {})
-        : undefined
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'emptyText',
+    'valueEnum',
+    'options',
+    'request',
+    'params',
+    'debounceTime',
+    'defaultKeyWords',
+    'cacheForSwr',
+    'proFieldKey',
+    'radioType',
+    'layout',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps
+    const layoutClassName = useProPrefixCls('pro-field-radio')
+    const radioRef = ref<FieldRadioInstance | null>(null)
+    const [loading, options, fetchData] = useFieldFetchData(props as any)
+    const optionsValueEnum = computed(() => options.value?.length
+      ? options.value.reduce((pre: any, cur: any) => {
+          return { ...pre, [(cur?.value as any) ?? '']: cur?.label }
+        }, {})
+      : undefined)
+    const mergedProps = computed<RadioFieldProps>(() => ({
+      ...props,
+      text: props.text ?? '',
+      mode: props.mode ?? 'read',
+      fieldProps: props.fieldProps ?? {},
+      emptyText: props.emptyText ?? '-',
+    }))
+    const status = useFormItemInputContext()
+    const { wrapSSR, hashId } = useStyle('FieldRadioRadio', token => ({
+      [`.${layoutClassName.value}-error`]: {
+        span: {
+          color: token.colorError,
+        },
+      },
+      [`.${layoutClassName.value}-warning`]: {
+        span: {
+          color: token.colorWarning,
+        },
+      },
+      [`.${layoutClassName.value}-vertical`]: {
+        [`${token.antCls}-radio-wrapper`]: {
+          display: 'flex',
+          marginInlineEnd: 0,
+        },
+      },
+    }))
 
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <>
-            {proFieldParsingText(
-              props.text,
-              objectToMap(props.valueEnum || optionsValueEnum),
-            )}
-          </>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+    expose(createRefProxy<FieldRadioInstance, Pick<FieldRadioExpose, 'fetchData'>>(radioRef, { fetchData }))
+
+    return () => {
+      if (loading.value)
+        return <Spin size="small" />
+
+      const fieldProps = mergedProps.value
+
+      if (isProFieldReadMode(fieldProps.mode)) {
+        return FieldRadioRead({
+          ...fieldProps,
+          optionsValueEnum: optionsValueEnum.value,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <RadioGroup
-            optionType={props.radioType}
-            options={props.options}
-            {...props.fieldProps}
-          >
-            {props.radioType === 'button' && props.options
-              ? props.options.map(opt => (
-                  <RadioButton key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label}
-                  </RadioButton>
-                ))
-              : undefined}
-          </RadioGroup>
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps, options: props.options }, dom)
-        }
-        return dom
+      if (isProFieldEditOnlyMode(fieldProps.mode)) {
+        return FieldRadioEdit({
+          ...fieldProps,
+          options: options.value,
+          loading: loading.value,
+          radioRef,
+          layoutClassName: layoutClassName.value,
+          wrapSSR,
+          hashId,
+          status: status.value,
+        })
       }
 
       return null

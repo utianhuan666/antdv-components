@@ -6,6 +6,10 @@
 Text type, the most basic field component. Supports read and edit mode switching.
 </docs>
 
+<script setup lang="ts">
+import { FieldText } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -22,7 +26,3 @@ Text type, the most basic field component. Supports read and edit mode switching
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldText } from '@antdv/components'
-</script>

@@ -1,66 +1,83 @@
-import type { PropType } from 'vue'
+import type { InputNumberProps, PopoverProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
+import type { FieldMoneyProps } from './types'
 import { InputNumber, Popover } from 'antdv-next'
-import { defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 
-export type InputNumberPopoverProps = Record<string, any> & {
+export type InputNumberPopoverContentProps = InputNumberProps & {
+  value?: InputNumberProps['value']
+}
+
+export type InputNumberPopoverProps = InputNumberProps & {
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  onBlur?: (e: FocusEvent) => void
-  contentRender?: (props: Record<string, any>) => JSX.Element | null
-  numberFormatOptions?: any
-  numberPopoverRender?: any
+  contentRender?: (props: InputNumberPopoverContentProps) => VNodeChild
+  numberFormatOptions?: FieldMoneyProps['numberFormatOptions']
+  numberPopoverRender?: FieldMoneyProps['numberPopoverRender']
 }
+
+type InputNumberPopoverExpose = Partial<InstanceType<typeof InputNumber>>
+type InputNumberValue = InputNumberProps['value']
+type InputNumberChangeValue = Parameters<NonNullable<InputNumberProps['onChange']>>[0]
 
 export default defineComponent({
   name: 'InputNumberPopover',
-  props: {
-    open: { type: Boolean, default: undefined },
-    onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-    contentRender: { type: Function as PropType<(props: Record<string, any>) => JSX.Element | null>, default: undefined },
-    numberFormatOptions: { type: Object, default: undefined },
-    numberPopoverRender: { type: [Function, Boolean], default: undefined },
-    // InputNumber props pass-through
-    value: { type: [Number, String] as PropType<number | string>, default: undefined },
-    defaultValue: { type: [Number, String] as PropType<number | string>, default: undefined },
-    onChange: { type: Function as PropType<(value: any) => void>, default: undefined },
-    onBlur: { type: Function as PropType<(e: FocusEvent) => void>, default: undefined },
-  },
-  setup(props, { attrs }) {
-    const localValue = ref(props.value ?? props.defaultValue)
-    const localOpen = ref(props.open ?? false)
+  inheritAttrs: false,
+  props: [
+    'open',
+    'onOpenChange',
+    'contentRender',
+    'numberFormatOptions',
+    'numberPopoverRender',
+    'value',
+    'defaultValue',
+    'onChange',
+    'onBlur',
+  ],
+  setup(props, { attrs, expose }) {
+    const typedProps = props as unknown as InputNumberPopoverProps
+    const localValue = ref<InputNumberValue>(typedProps.value ?? typedProps.defaultValue)
+    const localOpen = ref(typedProps.open ?? false)
+    const inputRef = ref<InstanceType<typeof InputNumber> | null>(null)
 
-    watch(() => props.value, (val) => {
-      if (val !== undefined)
+    expose(createRefProxy<InstanceType<typeof InputNumber>>(inputRef))
+    const mergedValue = computed(() => typedProps.value !== undefined ? typedProps.value : localValue.value)
+
+    watch(() => typedProps.value, (val) => {
+      if (typedProps.value !== undefined)
         localValue.value = val
     })
 
-    watch(() => props.open, (val) => {
+    watch(() => typedProps.open, (val) => {
       if (val !== undefined)
         localOpen.value = val
     })
 
-    const handleChange = (val: any) => {
-      localValue.value = val
-      props.onChange?.(val)
+    const handleChange = (val: InputNumberChangeValue) => {
+      if (typedProps.value === undefined)
+        localValue.value = val
+      typedProps.onChange?.(val)
     }
 
     const handleOpenChange = (visible: boolean) => {
-      props.onOpenChange?.(visible)
-      if (props.open === undefined) {
+      typedProps.onOpenChange?.(visible)
+      if (typedProps.open === undefined) {
         localOpen.value = visible
       }
     }
 
     return () => {
-      const dom = props.contentRender?.({ ...attrs, value: localValue.value })
+      const dom = typedProps.contentRender?.({ ...attrs, value: mergedValue.value } as InputNumberPopoverContentProps)
 
       if (!dom) {
         return (
           <InputNumber
+            ref={inputRef}
             {...attrs}
-            value={localValue.value}
+            value={mergedValue.value}
             onChange={handleChange}
-            onBlur={props.onBlur}
+            onBlur={typedProps.onBlur}
           />
         )
       }
@@ -71,16 +88,17 @@ export default defineComponent({
           open={localOpen.value}
           onOpenChange={handleOpenChange}
           trigger={['focus', 'click']}
-          content={dom}
+          content={dom as PopoverProps['content']}
           getPopupContainer={(triggerNode: HTMLElement) => {
             return triggerNode?.parentElement || document.body
           }}
         >
           <InputNumber
+            ref={inputRef}
             {...attrs}
-            value={localValue.value}
+            value={mergedValue.value}
             onChange={handleChange}
-            onBlur={props.onBlur}
+            onBlur={typedProps.onBlur}
           />
         </Popover>
       )

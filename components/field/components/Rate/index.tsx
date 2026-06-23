@@ -1,48 +1,48 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { Rate } from 'antdv-next'
-import { defineComponent } from 'vue'
+import type { RateProps } from 'antdv-next'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldRateEdit from './FieldRateEdit'
+import FieldRateRead from './FieldRateRead'
 
-const FieldRate = defineComponent({
+interface FieldRateFCProps {
+  text: string
+  fieldProps?: RateProps
+}
+type FieldRateInstance = InstanceType<typeof import('antdv-next')['Rate']>
+export type FieldRateExpose = Partial<FieldRateInstance>
+type FieldRateProps = NonNullable<ProFieldFC<FieldRateFCProps>['__props']>
+
+const FieldRate = defineComponent<FieldRateProps>({
   name: 'FieldRate',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const rateRef = ref<FieldRateInstance | null>(null)
+
+    expose(createRefProxy<FieldRateInstance>(rateRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <Rate
-            allowHalf
-            disabled
-            value={props.text as number}
-            {...props.fieldProps}
-          />
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+      const props = rawProps as FieldRateProps
+      const mergedProps: FieldRateProps = {
+        ...props,
+        text: props.text ?? '',
+        mode: props.mode ?? 'read',
+        fieldProps: props.fieldProps ?? {},
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <Rate
-            allowHalf
-            {...props.fieldProps}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
-      }
+      if (isProFieldReadMode(mergedProps.mode))
+        return FieldRateRead(mergedProps, rateRef)
+
+      if (isProFieldEditOrUpdateMode(mergedProps.mode))
+        return FieldRateEdit(mergedProps, rateRef)
 
       return null
     }

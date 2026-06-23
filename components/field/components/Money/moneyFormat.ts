@@ -2,10 +2,10 @@
 export const DefaultPrecisionCont = 2
 
 // Money locale formatting maps
-const defaultMoneyIntl = new Intl.NumberFormat('zh-Hans-CN', {
+const defaultMoneyIntl: Intl.NumberFormatOptions = {
   currency: 'CNY',
   style: 'currency',
-})
+}
 
 const enMoneyIntl = {
   style: 'currency',
@@ -32,7 +32,9 @@ const ptMoneyIntl = {
   currency: 'BRL',
 }
 
-const intlMap: Record<string, any> = {
+type MoneyIntlConfig = Intl.NumberFormatOptions
+
+const intlMap: Record<string, MoneyIntlConfig> = {
   'default': defaultMoneyIntl,
   'zh-Hans-CN': {
     currency: 'CNY',
@@ -48,10 +50,16 @@ const intlMap: Record<string, any> = {
 /**
  * Format money text by locale.
  */
-export function getTextByLocale(locale: string | false, paramsText: number | string | undefined, precision: number, config?: any, moneySymbol: string = ''): string {
+export function getTextByLocale(
+  locale: string | false,
+  paramsText: number | string | undefined,
+  precision: number,
+  config?: Intl.NumberFormatOptions,
+  moneySymbol: string = '',
+): string | number {
   let moneyText: number | string | undefined = paramsText
     ?.toString()
-    .replaceAll(',', '')
+    .replace(/,/g, '')
   if (typeof moneyText === 'string') {
     const parsedNum = Number(moneyText)
     if (Number.isNaN(parsedNum))
@@ -106,6 +114,6 @@ export function getTextByLocale(locale: string | false, paramsText: number | str
     return `${moneySymbol || ''}${pureMoneyText}`
   }
   catch {
-    return String(moneyText)
+    return moneyText
   }
 }

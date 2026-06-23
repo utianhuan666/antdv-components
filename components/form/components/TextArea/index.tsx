@@ -1,16 +1,19 @@
-import { defineComponent } from 'vue'
+import type { TextAreaProps } from 'antdv-next'
+import type { ProFormFieldItemProps } from '../../typing'
+import type { ComponentPublicInstance } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import ProFormField from '../Field'
 
-/** 对标 React `ProFormTextArea`：valueType=textarea */
-const ProFormTextArea = defineComponent({
+export type ProFormTextAreaProps = ProFormFieldItemProps<TextAreaProps>
+
+export const ProFormTextArea = defineComponent({
   name: 'ProFormTextArea',
   inheritAttrs: false,
-  setup(_, { attrs, slots }) {
-    return () => (
-      <ProFormField valueType="textarea" {...attrs}>
-        {slots.default?.()}
-      </ProFormField>
-    )
+  setup(_props, { attrs, slots, expose }) {
+    const innerRef = ref<ComponentPublicInstance | null>(null)
+    expose(createRefProxy<ComponentPublicInstance>(innerRef))
+    return () => <ProFormField ref={innerRef} {...attrs as any} valueType="textarea">{slots.default?.()}</ProFormField>
   },
 })
 

@@ -6,6 +6,10 @@
 Date type, supports multiple date formats and picker modes.
 </docs>
 
+<script setup lang="ts">
+import { FieldDatePicker, FieldRangePicker } from '@antdv/components'
+</script>
+
 <template>
   <div style="display: flex; flex-direction: column; gap: 16px;">
     <div>
@@ -26,7 +30,3 @@ Date type, supports multiple date formats and picker modes.
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { FieldDatePicker, FieldRangePicker } from '@antdv/components'
-</script>

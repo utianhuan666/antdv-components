@@ -1,70 +1,77 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { EyeInvisibleOutlined, EyeOutlined } from '@antdv-next/icons'
-import { InputPassword } from 'antdv-next'
-import { computed, defineComponent, ref } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldPasswordEdit from './FieldPasswordEdit'
+import FieldPasswordRead from './FieldPasswordRead'
 
-export default defineComponent({
+type FieldPasswordProps = NonNullable<ProFieldFC<{
+  text: string | number
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}>['__props']>
+
+type FieldPasswordEditInstance = InstanceType<typeof import('antdv-next')['InputPassword']>
+type FieldPasswordInnerRef = FieldPasswordEditInstance | HTMLSpanElement
+export type FieldPasswordExpose = Partial<FieldPasswordEditInstance> & Partial<HTMLSpanElement>
+
+const FieldPassword = defineComponent<FieldPasswordProps>({
   name: 'FieldPassword',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    open: { type: Boolean, default: undefined },
-    onOpenChange: { type: Function as PropType<(open: boolean) => void>, default: undefined },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'open',
+    'onOpenChange',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps
+    const intl = useIntl()
     const openRef = ref(false)
+    const innerRef = ref<FieldPasswordInnerRef | null>(null)
+    const getOpen = () => props.open ?? openRef.value
 
-    // Controlled state: if props.open is provided, use it; otherwise use internal state
-    const isOpen = computed(() => props.open ?? openRef.value)
+    expose(createRefProxy<FieldPasswordInnerRef>(innerRef))
 
-    const setOpen = (value: boolean) => {
-      openRef.value = value
-      props.onOpenChange?.(value)
-    }
-
-    const toggleOpen = () => {
-      setOpen(!isOpen.value)
+    const setOpen = (updater: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof updater === 'function' ? updater(getOpen()) : updater
+      if (props.open === undefined)
+        openRef.value = next
+      props.onOpenChange?.(next)
     }
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        if (!props.text) {
-          return <>{props.emptyText}</>
-        }
-        const dom = (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <span>{isOpen.value ? props.text : '********'}</span>
-            <a onClick={toggleOpen} style={{ cursor: 'pointer' }}>
-              {isOpen.value ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-            </a>
-          </span>
-        )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
-        }
-        return dom
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+
+      if (isProFieldReadMode(mode)) {
+        return FieldPasswordRead({
+          text,
+          mode,
+          render: props.render,
+          fieldProps: props.fieldProps,
+          open: getOpen(),
+          setOpen,
+        }, innerRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const dom = (
-          <InputPassword
-            placeholder="???"
-            {...props.fieldProps}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldPasswordEdit({
+          text,
+          mode,
+          formItemRender: props.formItemRender,
+          fieldProps: props.fieldProps,
+          intl,
+        }, innerRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldPassword

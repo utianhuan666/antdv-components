@@ -1,162 +1,139 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { ProFieldFC } from '../../types'
 import type { FieldMoneyProps } from './types'
-import { computed, defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { intlMap as allIntlMap, useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
-import InputNumberPopover from './InputNumberPopover'
-import { DefaultPrecisionCont, getTextByLocale } from './moneyFormat'
+import FieldMoneyEdit from './FieldMoneyEdit'
+import FieldMoneyRead from './FieldMoneyRead'
+import { DefaultPrecisionCont } from './moneyFormat'
 
 export type { FieldMoneyProps }
+type FieldMoneyInstance = InstanceType<typeof import('antdv-next')['InputNumber']>
+type FieldMoneyInnerRef = FieldMoneyInstance | HTMLSpanElement
+export type FieldMoneyExpose = Partial<FieldMoneyInstance> & Partial<HTMLSpanElement>
+type FieldMoneyFieldProps = NonNullable<ProFieldFC<FieldMoneyProps>['__props']>
 
-export default defineComponent({
+/**
+ * 金额组件
+ */
+const FieldMoney = defineComponent<FieldMoneyFieldProps>({
   name: 'FieldMoney',
-  props: {
-    text: { type: [Number, String] as PropType<number | string>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    placeholder: { type: String, default: undefined },
-    locale: { type: String, default: undefined },
-    customSymbol: { type: String, default: undefined },
-    moneySymbol: { type: Boolean, default: undefined },
-    numberPopoverRender: { type: [Function, Boolean] as PropType<FieldMoneyProps['numberPopoverRender']>, default: false },
-    numberFormatOptions: { type: Object as PropType<FieldMoneyProps['numberFormatOptions']>, default: undefined },
-  },
-  setup(props) {
-    const precision = computed(() => props.fieldProps?.precision ?? DefaultPrecisionCont)
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'render',
+    'formItemRender',
+    'fieldProps',
+    'placeholder',
+    'locale',
+    'customSymbol',
+    'moneySymbol',
+    'numberPopoverRender',
+    'numberFormatOptions',
+  ],
+  setup(rawProps, { expose }) {
+    const baseIntl = useIntl()
+    const innerRef = ref<FieldMoneyInnerRef | null>(null)
 
-    const moneySymbol = computed((): string | undefined => {
-      if (props.customSymbol || props.fieldProps.customSymbol) {
-        return props.customSymbol || props.fieldProps.customSymbol
-      }
-      if (props.moneySymbol === false || props.fieldProps.moneySymbol === false) {
-        return undefined
-      }
-      return '?'
-    })
-
-    const placeholderValue = computed(() => props.placeholder || '???')
-
-    const getFormatValue = (value?: string | number): string => {
-      const reg = new RegExp(
-        `\\B(?=(\\d{${3 + Math.max(precision.value - DefaultPrecisionCont, 0)}})+(?!\\d))`,
-        'g',
-      )
-      const parts = String(value).split('.')
-      const intStr = parts[0] ?? ''
-      const floatStr = parts[1]
-      const resultInt = intStr.replace(reg, ',')
-      let resultFloat = ''
-      if (floatStr && precision.value > 0) {
-        resultFloat = `.${floatStr.slice(
-          0,
-          precision.value === undefined ? DefaultPrecisionCont : precision.value,
-        )}`
-      }
-      return `${resultInt}${resultFloat}`
-    }
+    expose(createRefProxy<FieldMoneyInnerRef>(innerRef))
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <span>
-            {getTextByLocale(
-              props.locale || false,
-              props.text,
-              precision.value,
-              props.numberFormatOptions ?? props.fieldProps.numberFormatOptions,
-              moneySymbol.value,
-            )}
-          </span>
+      const props = rawProps as FieldMoneyFieldProps
+      const {
+        text = '' as unknown as FieldMoneyProps['text'],
+        mode: type = 'read',
+        render,
+        formItemRender,
+        fieldProps = {},
+        placeholder,
+        locale,
+        customSymbol: propsCustomSymbol,
+        moneySymbol: propsMoneySymbol,
+        numberPopoverRender: propsNumberPopoverRender,
+        numberFormatOptions: propsNumberFormatOptions,
+      } = props
+
+      const precision = fieldProps?.precision ?? DefaultPrecisionCont
+
+      let intl = baseIntl
+      if (locale && allIntlMap[locale as keyof typeof allIntlMap])
+        intl = allIntlMap[locale as keyof typeof allIntlMap]
+
+      const customSymbol = propsCustomSymbol ?? fieldProps.customSymbol
+      const moneySymbol = (() => {
+        if (customSymbol)
+          return customSymbol
+
+        if (propsMoneySymbol === false || fieldProps.moneySymbol === false)
+          return undefined
+
+        return intl.getMessage('moneySymbol', '¥')
+      })()
+
+      const placeholderValue = placeholder || intl.getMessage('tableForm.inputPlaceholder', '请输入')
+      const numberPopoverRender = propsNumberPopoverRender ?? fieldProps.numberPopoverRender ?? false
+      const numberFormatOptions = propsNumberFormatOptions ?? fieldProps.numberFormatOptions
+
+      const getFormateValue = (value?: string | number): string => {
+        const reg = new RegExp(
+          `\\B(?=(\\d{${3 + Math.max(precision - DefaultPrecisionCont, 0)}})+(?!\\d))`,
+          'g',
         )
-        if (props.render) {
-          return props.render(props.text, { mode: props.mode, ...props.fieldProps }, dom) ?? props.emptyText
+        const parts = String(value).split('.')
+        const intStr = parts[0] ?? ''
+        const floatStr = parts[1]
+        const resultInt = intStr.replace(reg, ',')
+        let resultFloat = ''
+        if (floatStr && precision > 0) {
+          resultFloat = `.${floatStr.slice(
+            0,
+            precision === undefined ? DefaultPrecisionCont : precision,
+          )}`
         }
-        return dom
+        return `${resultInt}${resultFloat}`
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const {
-          numberFormatOptions: _nf,
-          precision: _p,
-          numberPopoverRender: _np,
-          customSymbol: _cs,
-          moneySymbol: _ms,
-          visible: _vi,
-          open: _op,
-          onChange: fieldOnChange,
-          onBlur: fieldOnBlur,
-          ...restFieldProps
-        } = props.fieldProps
+      if (isProFieldReadMode(type)) {
+        return FieldMoneyRead({
+          text,
+          mode: type,
+          render,
+          formItemRender,
+          fieldProps,
+          placeholder,
+          locale,
+          customSymbol,
+          numberPopoverRender,
+          numberFormatOptions,
+          precision,
+          moneySymbol,
+        }, innerRef)
+      }
 
-        const numberPopoverRenderVal = props.numberPopoverRender || props.fieldProps.numberPopoverRender
-
-        const dom = (
-          <InputNumberPopover
-            {...({
-              contentRender: (p: Record<string, any>) => {
-                if (numberPopoverRenderVal === false)
-                  return null
-                if (!p.value)
-                  return null
-                const localeText = getTextByLocale(
-                  moneySymbol.value || props.locale || false,
-                  `${getFormatValue(p.value)}`,
-                  precision.value,
-                  {
-                    ...(props.numberFormatOptions),
-                    notation: 'compact',
-                  },
-                  moneySymbol.value,
-                )
-                if (typeof numberPopoverRenderVal === 'function') {
-                  return numberPopoverRenderVal(p, String(localeText))
-                }
-                return <span>{localeText}</span>
-              },
-              precision: precision.value,
-              formatter: (value: string | number | undefined) => {
-                if (value && moneySymbol.value) {
-                  return `${moneySymbol.value} ${getFormatValue(value)}`
-                }
-                return value?.toString() || (value as string)
-              },
-              parser: (value: string | undefined) => {
-                if (moneySymbol.value && value) {
-                  return value.replace(
-                    new RegExp(`\\${moneySymbol.value}\\s?|(,*)`, 'g'),
-                    '',
-                  )
-                }
-                return value!
-              },
-              placeholder: placeholderValue.value,
-              ...restFieldProps,
-              onChange: fieldOnChange,
-              onBlur: fieldOnBlur
-                ? (e: FocusEvent) => {
-                    let value = (e.target as HTMLInputElement).value
-                    if (moneySymbol.value && value) {
-                      value = value.replace(
-                        new RegExp(`\\${moneySymbol.value}\\s?|(,*)`, 'g'),
-                        '',
-                      )
-                    }
-                    fieldOnBlur(value)
-                  }
-                : undefined,
-            } as any)}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(props.text, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(type)) {
+        return FieldMoneyEdit({
+          text,
+          mode: type,
+          render,
+          formItemRender,
+          fieldProps,
+          placeholder,
+          locale,
+          customSymbol,
+          numberPopoverRender,
+          numberFormatOptions,
+          precision,
+          placeholderValue,
+          moneySymbol,
+          getFormateValue,
+        }, innerRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldMoney

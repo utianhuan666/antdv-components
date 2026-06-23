@@ -1,305 +1,393 @@
-import type { PropType, VNode, VNodeChild } from 'vue'
-import type { CommonFormProps } from '../../typing'
-import type { FieldLabelVariant } from './FieldLabel'
-import type { FooterRender } from './FilterDropdown'
+import type { FormProps, PopoverProps } from 'antdv-next'
+import type { TooltipPlacement } from 'antdv-next/dist/tooltip'
+import type { VNodeChild } from 'vue'
+import type { CommonFormProps, ProFormInstance } from '../../BaseForm'
+import type { LightFilterFooterRender } from '../../typing'
 import { FilterOutlined } from '@antdv-next/icons'
-import { cloneVNode, Comment, computed, defineComponent, Fragment, isVNode, ref, shallowRef, Text } from 'vue'
-import { BaseForm } from '../../BaseForm'
-import ProFormCascader from '../../components/Cascader'
-import { ProFormCheckboxGroup } from '../../components/Checkbox'
-import ProFormDatePicker, { ProFormDateTimePicker, ProFormTimePicker } from '../../components/DatePicker'
-import ProFormDateRangePicker, { ProFormDateTimeRangePicker } from '../../components/DateRangePicker'
-import ProFormDigit from '../../components/Digit'
-import ProFormDigitRange from '../../components/Digit/DigitRange'
-import ProFormFieldSet from '../../components/FieldSet'
-import ProFormSelect from '../../components/Select'
-import ProFormSlider from '../../components/Slider'
-import ProFormSwitch from '../../components/Switch'
-import ProFormText, { ProFormTextPassword } from '../../components/Text'
-import ProFormTextArea from '../../components/TextArea'
-import ProFormTreeSelect from '../../components/TreeSelect'
-import FieldLabel from './FieldLabel'
-import FilterDropdown from './FilterDropdown'
+import { clsx, omit } from '@v-c/util'
+import { useConfig } from 'antdv-next/dist/config-provider/context'
+import { computed, defineComponent, ref, watch } from 'vue'
+import { useIntl } from '../../../provider'
+import { FieldLabel, FilterDropdown } from '../../../utils'
+import BaseForm from '../../BaseForm'
+import { cloneElement, getVNodeChildren, getVNodeTypeName, setRefValue } from '../_shared/vueHelpers'
+import { lightFilterFieldComponents } from './lightFilterFieldComponents'
+import { LightWrapper } from './LightWrapper'
+import { useStyle } from './style'
 
-export interface LightFilterProps extends CommonFormProps {
+export type LightFilterLayoutProps<T = Record<string, any>, U = Record<string, any>> = {
   collapse?: boolean
   collapseLabel?: VNodeChild
-  variant?: FieldLabelVariant
-  size?: 'small' | 'middle' | 'large'
+  variant?: 'outlined' | 'filled' | 'borderless'
   ignoreRules?: boolean
-  footerRender?: FooterRender
-  placement?: any
-  popoverProps?: Record<string, any>
+  footerRender?: LightFilterFooterRender
+  placement?: TooltipPlacement
+  popoverProps?: Omit<
+    PopoverProps,
+    'children' | 'content' | 'trigger' | 'open' | 'onOpenChange' | 'placement'
+  >
+} & Omit<FormProps, 'onFinish'> & CommonFormProps<T, U>
+
+interface LightFilterContainerProps {
+  items: VNodeChild[]
+  prefixCls: string
+  size?: 'small' | 'middle' | 'large'
+  values: Record<string, any>
+  onValuesChange: (values: Record<string, any>) => void
+  collapse?: boolean
+  collapseLabel?: VNodeChild
+  variant?: 'outlined' | 'filled' | 'borderless'
+  footerRender?: LightFilterFooterRender
+  placement?: TooltipPlacement
+  popoverProps?: Omit<
+    PopoverProps,
+    'children' | 'content' | 'trigger' | 'open' | 'onOpenChange' | 'placement'
+  >
 }
 
-function isVisibleVNode(node: VNodeChild): node is VNode {
-  if (!isVNode(node))
-    return false
-  if (node.type === Comment)
-    return false
-  if (node.type === Text && typeof node.children === 'string' && !node.children.trim())
-    return false
-  return true
-}
-
-/**
- * 展开无 title 的 ProForm.Group，可选去除 rules，对标 React LightFilter 内部对 items 的扁平处理。
- */
-function flattenLightFilterItems(items: VNodeChild): VNode[] {
-  const result: VNode[] = []
-  const list = Array.isArray(items) ? items : [items]
-  for (const node of list) {
-    if (!isVisibleVNode(node))
-      continue
-    if (node.type === Fragment) {
-      result.push(...flattenLightFilterItems(node.children as VNodeChild))
-      continue
-    }
-    const componentName = (node.type as any)?.name
-    if (componentName === 'ProFormGroup' && !(node.props as any)?.title) {
-      const groupChildren = (node.children as any)?.default?.() ?? node.children
-      result.push(...flattenLightFilterItems(groupChildren as VNodeChild))
-      continue
-    }
-    result.push(node)
+interface FormGroupVNode {
+  type?: { displayName?: string, name?: string } | string
+  props?: Record<string, unknown> & {
+    secondary?: boolean
+    fieldProps?: Record<string, unknown> & { placement?: TooltipPlacement }
+    proFieldProps?: Record<string, unknown>
+    label?: VNodeChild
+    name?: string
+    valuePropName?: string
   }
-  return result
+  key?: string | number | null
 }
 
-/**
- * LightFilter – 对标 React `src/form/layouts/LightFilter/index.tsx`：
- * 1. 主体走 BaseForm，子项默认以 popover 形式渲染（FilterDropdown）。
- * 2. `collapse=true` 时所有子项进入折叠区；否则按 `secondary` 划分外侧/折叠两组。
- * 3. 折叠区内部使用临时 `moreValues`，在底部 `确认` 后整体提交，`重置` 清空当前折叠字段。
- */
-const LightFilter = defineComponent({
-  name: 'LightFilter',
-  inheritAttrs: false,
-  props: {
-    collapse: { type: Boolean, default: false },
-    collapseLabel: { type: [String, Number, Object] as PropType<VNodeChild>, default: undefined },
-    variant: { type: String as PropType<FieldLabelVariant>, default: 'borderless' },
-    size: { type: String as PropType<LightFilterProps['size']>, default: 'middle' },
-    ignoreRules: { type: Boolean, default: undefined },
-    footerRender: { type: [Function, Boolean] as PropType<FooterRender>, default: undefined },
-    placement: { type: String as PropType<any>, default: 'bottomLeft' },
-    popoverProps: { type: Object as PropType<Record<string, any>>, default: undefined },
-  },
-  setup(props, { attrs, slots, expose }) {
-    const baseRef = shallowRef<any>()
-    const popoverOpen = ref(false)
-    /** 折叠区临时编辑值，确认后写回主 form */
-    const moreValues = ref<Record<string, any>>({})
+const LightFilterContainer = defineComponent<LightFilterContainerProps>({
+  name: 'LightFilterContainer',
+  props: [
+    'items',
+    'prefixCls',
+    'size',
+    'values',
+    'onValuesChange',
+    'collapse',
+    'collapseLabel',
+    'variant',
+    'footerRender',
+    'placement',
+    'popoverProps',
+  ],
+  setup(rawProps) {
+    const props = rawProps
+    const intl = useIntl()
+    const lightFilterClassName = computed(() => `${props.prefixCls}-light-filter`)
+    const { wrapSSR, hashId } = useStyle(lightFilterClassName.value)
 
-    expose({
-      get formInstance() {
-        return baseRef.value?.formInstance
-      },
-      submit: () => baseRef.value?.submit?.(),
-      reset: () => baseRef.value?.reset?.(),
-      getFieldsValue: () => baseRef.value?.getFieldsValue?.(),
+    const open = ref(false)
+    const moreValues = ref<Record<string, any>>({
+      ...props.values,
     })
 
-    function getFormValues(): Record<string, any> {
-      return baseRef.value?.getFieldsValue?.() || {}
-    }
+    watch(
+      () => props.values,
+      (value) => {
+        moreValues.value = {
+          ...value,
+        }
+      },
+      { deep: true },
+    )
 
-    function setFormValues(next: Record<string, any>) {
-      baseRef.value?.setFieldsValue?.(next)
-    }
-
-    function commitMoreValues() {
-      const formValues = getFormValues()
-      setFormValues({ ...formValues, ...moreValues.value })
-      baseRef.value?.submit?.()
-      popoverOpen.value = false
-    }
-
-    function clearCollapseFields(collapseItems: VNode[]) {
-      const next: Record<string, any> = {}
-      collapseItems.forEach((item) => {
-        const name = (item.props as any)?.name
-        if (typeof name === 'string')
-          next[name] = undefined
-      })
-      moreValues.value = { ...moreValues.value, ...next }
-      const formValues = getFormValues()
-      setFormValues({ ...formValues, ...next })
-    }
-
-    const collapseLabelNode = computed<VNodeChild>(() => {
+    const collapseLabelNode = computed(() => {
       if (props.collapseLabel)
         return props.collapseLabel
-      if (props.collapse)
-        return <FilterOutlined class="ant-pro-form-light-filter-collapse-icon" />
+      if (props.collapse) {
+        return (
+          <FilterOutlined
+            class={clsx(`${lightFilterClassName.value}-collapse-icon`, hashId)}
+          />
+        )
+      }
       return (
         <FieldLabel
           variant={props.variant}
           size={props.size}
-          label="更多筛选"
+          label={intl.getMessage('form.lightFilter.more', '更多筛选')}
         />
       )
     })
 
-    function renderCollapseChild(child: VNode): VNode {
-      const name = (child.props as any)?.name as string | undefined
-      const newFieldProps = {
-        ...((child.props as any)?.fieldProps || {}),
-        onChange: (...args: any[]) => {
-          const value = args[0]?.target ? args[0].target.value ?? args[0].target.checked : args[0]
-          if (name)
-            moreValues.value = { ...moreValues.value, [name]: value }
-          return false
-        },
-      }
-      const valuePropName = (child.props as any)?.valuePropName || 'value'
-      if (name && Object.prototype.hasOwnProperty.call(moreValues.value, name))
-        newFieldProps[valuePropName] = moreValues.value[name]
-      // 折叠区内部：禁用 light 模式（防止 LightFilter.xxx 命名组件叠加一层 popover），按普通字段渲染
-      return cloneVNode(child, {
-        fieldProps: { ...newFieldProps, placement: props.placement },
-        proFieldProps: {
-          ...((child.props as any)?.proFieldProps || {}),
-          light: false,
-        },
+    const collapseItems = computed(() => {
+      const collapseItemsArr: VNodeChild[] = []
+      props.items.forEach((item) => {
+        const typedItem = item as FormGroupVNode
+        const { secondary } = typedItem?.props || {}
+        if (secondary || props.collapse)
+          collapseItemsArr.push(item)
       })
-    }
+      return collapseItemsArr
+    })
 
-    function renderOutsideChild(child: VNode): VNode {
-      // 外侧字段：开启 light，让 ProFormField/LightWrapper 接管 FilterDropdown + FieldLabel 渲染。
-      return cloneVNode(child, {
-        proFieldProps: {
-          ...((child.props as any)?.proFieldProps || {}),
-          light: true,
-          variant: props.variant,
-          size: props.size,
-        },
-        fieldProps: {
-          ...((child.props as any)?.fieldProps || {}),
-          placement: (child.props as any)?.fieldProps?.placement ?? props.placement,
-        },
+    const outsideItems = computed(() => {
+      const outsideItemsArr: VNodeChild[] = []
+      props.items.forEach((item) => {
+        const typedItem = item as FormGroupVNode
+        const { secondary } = typedItem?.props || {}
+        if (!(secondary || props.collapse))
+          outsideItemsArr.push(item)
       })
-    }
+      return outsideItemsArr
+    })
 
-    function renderContent(items: VNodeChild) {
-      const flat = flattenLightFilterItems(items)
-      const collapseItems: VNode[] = []
-      const outsideItems: VNode[] = []
-      flat.forEach((item) => {
-        const secondary = (item.props as any)?.secondary
-        if (props.collapse || secondary)
-          collapseItems.push(item)
-        else
-          outsideItems.push(item)
-      })
+    const isEffective = computed(() =>
+      Object.keys(props.values || {}).some((key) => {
+        const value = props.values[key]
+        return Array.isArray(value) ? value.length > 0 : value
+      }))
 
-      const formValues = getFormValues()
-      const hasEffectiveValue = Object.keys(formValues).some((key) => {
-        const value = formValues[key]
-        return Array.isArray(value) ? value.length > 0 : Boolean(value)
-      })
-
-      return (
-        <div
-          class={[
-            'ant-pro-form-light-filter',
-            `ant-pro-form-light-filter-${props.size}`,
-            hasEffectiveValue ? 'ant-pro-form-light-filter-effective' : '',
-          ].filter(Boolean).join(' ')}
-        >
-          <div class="ant-pro-form-light-filter-container">
-            {outsideItems.map((child, index) => (
-              <div class="ant-pro-form-light-filter-item" key={(child.key as any) ?? index}>
-                {renderOutsideChild(child)}
-              </div>
-            ))}
-            {collapseItems.length > 0
-              ? (
-                  <div class="ant-pro-form-light-filter-item" key="more">
-                    <FilterDropdown
-                      open={popoverOpen.value}
-                      onUpdate:open={(open: boolean) => (popoverOpen.value = open)}
-                      placement={props.placement}
-                      popoverProps={props.popoverProps}
-                      label={collapseLabelNode.value}
-                      footerRender={props.footerRender}
-                      footer={{
-                        onConfirm: commitMoreValues,
-                        onClear: () => clearCollapseFields(collapseItems),
-                      }}
-                    >
-                      {collapseItems.map(child => (
-                        <div class="ant-pro-form-light-filter-line" key={(child.key as any) ?? (child.props as any)?.name}>
-                          {renderCollapseChild(child)}
-                        </div>
-                      ))}
-                    </FilterDropdown>
-                  </div>
-                )
-              : null}
-          </div>
-        </div>
-      )
-    }
-
-    return () => (
-      <BaseForm
-        ref={baseRef}
-        formComponentType="LightFilter"
-        formItemProps={{ colon: false, labelAlign: 'left' }}
-        fieldProps={{ style: { width: undefined } }}
-        contentRender={items => renderContent(items)}
-        {...attrs}
-        onValuesChange={() => {
-          baseRef.value?.submit?.()
-        }}
+    return () => wrapSSR(
+      <div
+        class={clsx(
+          lightFilterClassName.value,
+          hashId,
+          `${lightFilterClassName.value}-${props.size || 'middle'}`,
+          {
+            [`${lightFilterClassName.value}-effective`]: isEffective.value,
+          },
+        )}
       >
-        {{
-          default: () => slots.default?.(),
-        }}
-      </BaseForm>
+        <div class={clsx(`${lightFilterClassName.value}-container`, hashId)}>
+          {outsideItems.value.map((child, index) => {
+            const typedChild = child as FormGroupVNode
+            if (!typedChild?.props)
+              return child
+            const { key } = typedChild
+            const { fieldProps } = typedChild.props || {}
+            const newPlacement = fieldProps?.placement
+              ? fieldProps.placement
+              : props.placement
+
+            return (
+              <div
+                class={clsx(`${lightFilterClassName.value}-item`, hashId)}
+                key={key ?? index}
+              >
+                {typedChild && typeof typedChild === 'object'
+                  ? (
+                      cloneElement(child, {
+                        ...typedChild.props,
+                        fieldProps: {
+                          ...typedChild.props.fieldProps,
+                          placement: newPlacement,
+                          variant: 'borderless',
+                        },
+                        proFieldProps: {
+                          ...typedChild.props.proFieldProps,
+                          label: typedChild.props.label,
+                          variant: props.variant,
+                        },
+                        variant: props.variant,
+                      })
+                    )
+                  : child}
+              </div>
+            )
+          })}
+          {collapseItems.value.length
+            ? (
+                <div
+                  class={clsx(`${lightFilterClassName.value}-item`, hashId)}
+                  key="more"
+                >
+                  <FilterDropdown
+                    padding={24}
+                    open={open.value}
+                    onOpenChange={(changeOpen: boolean) => {
+                      open.value = changeOpen
+                    }}
+                    placement={props.placement}
+                    popoverProps={props.popoverProps}
+                    label={collapseLabelNode.value}
+                    footerRender={props.footerRender}
+                    footer={{
+                      onConfirm: () => {
+                        props.onValuesChange({
+                          ...moreValues.value,
+                        })
+                        open.value = false
+                      },
+                      onClear: () => {
+                        const clearValues: Record<string, any> = {}
+                        collapseItems.value.forEach((child) => {
+                          const typedChild = child as FormGroupVNode
+                          const { name } = typedChild.props || {}
+                          if (typeof name === 'string')
+                            clearValues[name] = undefined
+                        })
+                        props.onValuesChange(clearValues)
+                      },
+                    }}
+                  >
+                    {collapseItems.value.map((child) => {
+                      const typedChild = child as FormGroupVNode
+                      const { key } = typedChild
+                      const { name, fieldProps } = typedChild.props || {}
+                      const newFieldProps = {
+                        ...fieldProps,
+                        onChange: (e: unknown) => {
+                          if (typeof name !== 'string')
+                            return false
+                          moreValues.value = {
+                            ...moreValues.value,
+                            [name]: getEventValue(e),
+                          }
+                          return false
+                        },
+                      } as Record<string, unknown>
+                      if (
+                        typeof name === 'string'
+                        && Object.prototype.hasOwnProperty.call(moreValues.value, name)
+                      ) {
+                        newFieldProps[typedChild.props?.valuePropName || 'value'] = moreValues.value[name]
+                      }
+
+                      const newPlacement = fieldProps?.placement
+                        ? fieldProps.placement
+                        : props.placement
+                      return (
+                        <div
+                          class={clsx(`${lightFilterClassName.value}-line`, hashId)}
+                          key={key ?? (typeof name === 'string' ? name : undefined)}
+                        >
+                          {cloneElement(child, {
+                            ...typedChild.props,
+                            fieldProps: {
+                              ...newFieldProps,
+                              placement: newPlacement,
+                              variant: props.variant,
+                            },
+                          })}
+                        </div>
+                      )
+                    })}
+                  </FilterDropdown>
+                </div>
+              )
+            : null}
+        </div>
+      </div>,
     )
   },
 })
 
-/**
- * 对标 React `lightFilterFieldComponents`，提供 `<LightFilterInput>` 等命名组件。
- * Vue 模板不支持 `Component.subComponent` 用法，因此以独立命名组件导出。
- */
-function createLightFilterField(Field: any, name: string) {
-  return defineComponent({
-    name,
-    inheritAttrs: false,
-    setup(_, { attrs, slots }) {
-      return () => (
-        <Field
-          {...attrs}
-          proFieldProps={{ light: true, ...(attrs as any).proFieldProps }}
-        >
-          {slots.default?.()}
-        </Field>
+const LightFilterComponent = defineComponent(
+  (props: LightFilterLayoutProps) => {
+    const config = useConfig()
+    const prefixCls = computed(() => config.value.getPrefixCls('pro-form'))
+    const values = ref<Record<string, any>>({
+      ...(props.initialValues as Record<string, any>),
+    })
+    const formRef = ref<ProFormInstance>()
+
+    watch(
+      () => props.initialValues as Record<string, any> | undefined,
+      (nextInitialValues) => {
+        values.value = { ...(nextInitialValues || {}) }
+      },
+      { deep: true },
+    )
+
+    watch(
+      formRef,
+      form => setRefValue(props.formRef, form),
+      { immediate: true },
+    )
+
+    return () => {
+      const {
+        size,
+        collapse,
+        collapseLabel,
+        initialValues,
+        onValuesChange,
+        placement,
+        formRef: _userFormRef,
+        variant,
+        footerRender,
+        popoverProps,
+        ...reset
+      } = props as LightFilterLayoutProps
+
+      return (
+        <BaseForm
+          size={size}
+          formComponentType="LightFilter"
+          initialValues={initialValues}
+          contentRender={(items: VNodeChild[]) => (
+            <LightFilterContainer
+              key={JSON.stringify(values.value || {})}
+              prefixCls={prefixCls.value}
+              items={items?.flatMap((item) => {
+                const typedItem = item as FormGroupVNode
+                if (!typedItem || !typedItem?.type)
+                  return item
+                if (getVNodeTypeName(item) === 'ProForm-Group')
+                  return getVNodeChildren(item)
+                return item
+              })}
+              size={size as 'small' | 'middle' | 'large' | undefined}
+              variant={variant || 'borderless'}
+              collapse={collapse}
+              collapseLabel={collapseLabel}
+              placement={placement}
+              popoverProps={popoverProps}
+              values={values.value || {}}
+              footerRender={footerRender}
+              onValuesChange={(newValues: Record<string, any>) => {
+                const newAllValues = {
+                  ...values.value,
+                  ...newValues,
+                }
+                values.value = newAllValues
+                formRef.value?.setFieldsValue?.(newAllValues)
+                formRef.value?.submit?.()
+                onValuesChange?.(newValues, newAllValues)
+              }}
+            />
+          )}
+          formRef={formRef}
+          formItemProps={{
+            colon: false,
+            labelAlign: 'left',
+          }}
+          fieldProps={{
+            style: {
+              width: undefined,
+            },
+          }}
+          {...omit(reset as Record<string, unknown>, ['labelWidth'])}
+          onValuesChange={(_: Record<string, any>, allValues: Record<string, any>) => {
+            values.value = allValues
+            onValuesChange?.(_, allValues)
+            formRef.value?.submit?.()
+          }}
+        />
       )
-    },
-  })
-}
+    }
+  },
+  {
+    name: 'LightFilter',
+    inheritAttrs: false,
+  },
+)
 
-export const LightFilterInput = createLightFilterField(ProFormText, 'LightFilterInput')
-export const LightFilterPassword = createLightFilterField(ProFormTextPassword, 'LightFilterPassword')
-export const LightFilterTextArea = createLightFilterField(ProFormTextArea, 'LightFilterTextArea')
-export const LightFilterSelect = createLightFilterField(ProFormSelect, 'LightFilterSelect')
-export const LightFilterTreeSelect = createLightFilterField(ProFormTreeSelect, 'LightFilterTreeSelect')
-export const LightFilterCascader = createLightFilterField(ProFormCascader, 'LightFilterCascader')
-export const LightFilterDigit = createLightFilterField(ProFormDigit, 'LightFilterDigit')
-export const LightFilterDigitRange = createLightFilterField(ProFormDigitRange, 'LightFilterDigitRange')
-export const LightFilterSlider = createLightFilterField(ProFormSlider, 'LightFilterSlider')
-export const LightFilterDate = createLightFilterField(ProFormDatePicker, 'LightFilterDate')
-export const LightFilterDateTime = createLightFilterField(ProFormDateTimePicker, 'LightFilterDateTime')
-export const LightFilterTime = createLightFilterField(ProFormTimePicker, 'LightFilterTime')
-export const LightFilterDateRange = createLightFilterField(ProFormDateRangePicker, 'LightFilterDateRange')
-export const LightFilterDateTimeRange = createLightFilterField(ProFormDateTimeRangePicker, 'LightFilterDateTimeRange')
-export const LightFilterCheckboxGroup = createLightFilterField(ProFormCheckboxGroup, 'LightFilterCheckboxGroup')
-export const LightFilterFieldSet = createLightFilterField(ProFormFieldSet, 'LightFilterFieldSet')
-export const LightFilterSwitch = createLightFilterField(ProFormSwitch, 'LightFilterSwitch')
-
+export const LightFilter = Object.assign(LightFilterComponent, lightFilterFieldComponents)
+;(LightFilter as { displayName?: string }).displayName = 'LightFilter'
+export { LightWrapper }
 export default LightFilter
-export { FieldLabel, FilterDropdown, LightFilter }
+export type { LightFilterLayoutProps as LightFilterProps }
+
+function getEventValue(event: unknown) {
+  if (event && typeof event === 'object' && 'target' in event) {
+    const target = (event as { target?: { value?: unknown } }).target
+    if (target && typeof target === 'object' && 'value' in target)
+      return target.value
+  }
+  return event
+}

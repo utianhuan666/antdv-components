@@ -1,4 +1,5 @@
 import type { InputNumberProps } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 
 export interface FieldMoneyProps {
   text: number
@@ -7,7 +8,7 @@ export interface FieldMoneyProps {
   placeholder?: string
   customSymbol?: string
   numberPopoverRender?:
-    | ((props: InputNumberProps, defaultText: string) => JSX.Element)
+    | ((props: InputNumberProps, defaultText: string) => VNodeChild)
     | boolean
-  numberFormatOptions?: Record<string, any>
+  numberFormatOptions?: Intl.NumberFormatOptions
 }

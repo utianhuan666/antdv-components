@@ -2,18 +2,17 @@ import type { InjectionKey } from 'vue'
 import { inject, provide } from 'vue'
 
 export interface EditOrReadOnlyContextValue {
-  /** 当前 form 是否整体只读 */
-  readonly?: boolean
-  /** 当前 form 模式，read 强制只读，edit 编辑 */
-  mode?: 'read' | 'edit'
+  mode: 'edit' | 'read' | 'update'
 }
 
-export const EditOrReadOnlyContextKey: InjectionKey<EditOrReadOnlyContextValue> = Symbol('ProEditOrReadOnlyContext')
+export const EditOrReadOnlyContext: InjectionKey<EditOrReadOnlyContextValue> = Symbol('EditOrReadOnlyContext')
 
-export function provideEditOrReadOnly(value: EditOrReadOnlyContextValue) {
-  provide(EditOrReadOnlyContextKey, value)
+export function provideEditOrReadOnlyContext(value: EditOrReadOnlyContextValue) {
+  provide(EditOrReadOnlyContext, value)
 }
 
-export function useEditOrReadOnly(): EditOrReadOnlyContextValue {
-  return inject(EditOrReadOnlyContextKey, {})
+export function useEditOrReadOnlyContext(): EditOrReadOnlyContextValue {
+  return inject(EditOrReadOnlyContext, {
+    mode: 'edit',
+  } satisfies EditOrReadOnlyContextValue)
 }

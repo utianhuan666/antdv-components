@@ -1,51 +1,87 @@
-import type { PropType } from 'vue'
-import { defineComponent } from 'vue'
+import type { SetupContext, VNodeChild } from 'vue'
+import { defineComponent, isVNode, ref } from 'vue'
+import { useStyle } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
+import { createRefProxy } from '../../../utils/createRefProxy'
 
-export default defineComponent({
+export type FieldIndexColumnExpose = Partial<HTMLDivElement>
+
+interface IndexColumnProps {
+  border?: boolean
+  text?: number
+}
+
+function getSlotText(children: VNodeChild[] | undefined, fallback: number) {
+  if (!children?.length)
+    return fallback
+  if (children.length > 1)
+    return children
+
+  const child = children[0]
+  if (isVNode(child) && (typeof child.children === 'string' || typeof child.children === 'number'))
+    return child.children
+  return child
+}
+
+function setupIndexColumn(props: IndexColumnProps, { slots, expose }: SetupContext) {
+  const prefixCls = useProPrefixCls('pro-field-index-column')
+  const rootRef = ref<HTMLDivElement | null>(null)
+
+  expose(createRefProxy<HTMLDivElement>(rootRef))
+
+  const { hashId } = useStyle('IndexColumn', (token) => {
+    const size = token.controlHeightXS + 2
+    return {
+      [`.${prefixCls.value}`]: {
+        'display': 'inline-flex',
+        'alignItems': 'center',
+        'justifyContent': 'center',
+        'width': size,
+        'height': size,
+        '&-border': {
+          'color': token.colorTextLightSolid,
+          'fontSize': token.fontSizeSM,
+          'lineHeight': 1,
+          'backgroundColor': token.colorTextSecondary,
+          'borderRadius': size / 2,
+          '&.top-three': {
+            backgroundColor: token.colorTextQuaternary,
+          },
+        },
+      },
+    }
+  })
+
+  return () => {
+    const text = props.text ?? 1
+    const displayValue = getSlotText(slots.default?.(), text)
+    const isTopThree = Number(displayValue) > 3
+
+    return (
+      <div
+        ref={rootRef}
+        class={[
+          prefixCls.value,
+          hashId,
+          {
+            [`${prefixCls.value}-border`]: props.border,
+            'top-three': isTopThree,
+          },
+        ]}
+      >
+        {displayValue}
+      </div>
+    )
+  }
+}
+
+const FieldIndexColumn = defineComponent({
   name: 'FieldIndexColumn',
   props: {
-    border: { type: Boolean, default: false },
-    text: { type: Number as PropType<number>, default: 0 },
+    border: Boolean,
+    text: Number,
   },
-  setup(props) {
-    return () => {
-      const displayValue = Number(props.text) + 1
-
-      if (props.border) {
-        const isTopThree = displayValue > 3
-        return (
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '18px',
-              height: '18px',
-              color: '#fff',
-              fontSize: '12px',
-              lineHeight: '12px',
-              backgroundColor: isTopThree ? '#979797' : '#314659',
-              borderRadius: '9px',
-            }}
-          >
-            {displayValue}
-          </div>
-        )
-      }
-
-      return (
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '18px',
-            height: '18px',
-          }}
-        >
-          {displayValue}
-        </div>
-      )
-    }
-  },
+  setup: setupIndexColumn,
 })
+
+export default FieldIndexColumn

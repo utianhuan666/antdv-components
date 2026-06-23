@@ -1,66 +1,72 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { TextArea } from 'antdv-next'
-import { computed, defineComponent } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { defineComponent, ref } from 'vue'
+import { proTheme } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
+import FieldCodeEdit from './FieldCodeEdit'
+import FieldCodeRead from './FieldCodeRead'
 import { languageFormat } from './utils'
 
-export default defineComponent({
+type FieldCodeProps = NonNullable<ProFieldFC<{
+  text: string
+  language?: 'json' | 'text'
+}>['__props']>
+
+type FieldCodeEditInstance = InstanceType<typeof import('antdv-next')['TextArea']>
+type FieldCodeInnerRef = FieldCodeEditInstance | HTMLPreElement
+export type FieldCodeExpose = Partial<FieldCodeEditInstance> & Partial<HTMLPreElement>
+
+/**
+ * 代码片段组件 这个组件为了显示简单的配置，复杂的请使用更加重型的组件
+ */
+const FieldCode = defineComponent<FieldCodeProps>({
   name: 'FieldCode',
-  props: {
-    text: { type: String as PropType<string>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-    language: { type: String as PropType<'json' | 'text'>, default: 'text' },
-  },
-  setup(props) {
-    const code = computed(() => languageFormat(props.text, props.language))
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'language',
+    'render',
+    'formItemRender',
+    'fieldProps',
+  ],
+  setup(rawProps, { expose }) {
+    const props = rawProps as FieldCodeProps
+    const { token } = proTheme.useToken()
+    const innerRef = ref<FieldCodeInnerRef | null>(null)
+
+    expose(createRefProxy<FieldCodeInnerRef>(innerRef))
 
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        const dom = (
-          <pre
-            {...props.fieldProps}
-            style={{
-              padding: 16,
-              overflow: 'auto',
-              fontSize: '85%',
-              lineHeight: 1.45,
-              color: 'rgba(0, 0, 0, 0.45)',
-              fontFamily: 'SFMono-Regular, Consolas, \'Liberation Mono\', Menlo, Courier, monospace',
-              backgroundColor: 'rgba(150, 150, 150, 0.1)',
-              borderRadius: 3,
-              width: 'min-content',
-              ...props.fieldProps?.style,
-            }}
-          >
-            <code>{code.value}</code>
-          </pre>
-        )
-        if (props.render) {
-          return props.render(code.value, { mode: props.mode, ...props.fieldProps }, dom)
-        }
-        return dom
+      const text = props.text ?? ''
+      const mode = props.mode ?? 'read'
+      const language = props.language ?? 'text'
+      const code = languageFormat(text, language)
+
+      if (isProFieldReadMode(mode)) {
+        return FieldCodeRead({
+          ...props,
+          text,
+          mode,
+          language,
+          code,
+          token: token.value,
+        }, innerRef)
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        const fp = { ...(props.fieldProps || {}), value: code.value }
-        const dom = (
-          <TextArea
-            rows={5}
-            {...fp}
-          />
-        )
-        if (props.formItemRender) {
-          return props.formItemRender(code.value, { mode: props.mode, ...fp }, dom)
-        }
-        return dom
+      if (isProFieldEditOrUpdateMode(mode)) {
+        return FieldCodeEdit({
+          ...props,
+          text,
+          mode,
+          language,
+          code,
+        }, innerRef)
       }
 
       return null
     }
   },
 })
+
+export default FieldCode

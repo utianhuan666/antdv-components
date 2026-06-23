@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "antdv-next": {
+      "source": "antdv-next/skills",
+      "sourceType": "github",
+      "skillPath": "skills/antdv-next/SKILL.md",
+      "computedHash": "209a85d9fea7e1ce2d52f7cb37313b24e41a477395b0ea8f228d79586bdff628"
+    }
+  }
+}

@@ -95,6 +95,7 @@ export const siteConfig = {
         title: '通用',
         items: [
           { title: 'ProField - 原子组件', link: '/docs/field' },
+          { title: 'ProTable - 高级表格', link: '/docs/table' },
           { title: 'ProSkeleton 骨架屏', link: '/docs/skeleton' },
         ],
       },

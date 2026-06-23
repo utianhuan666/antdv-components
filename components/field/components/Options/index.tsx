@@ -1,56 +1,76 @@
-import type { PropType } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
-import { defineComponent } from 'vue'
+import type { CSSProperties, VNode, VNodeChild } from 'vue'
+import type { ProFieldFC } from '../../types'
+import { cloneVNode, defineComponent, Fragment, h, isVNode } from 'vue'
+import { proTheme } from '../../../provider'
+import { useProPrefixCls } from '../../../provider/useProPrefixCls'
 
-export default defineComponent({
+type FieldOptionsProps = NonNullable<ProFieldFC<{
+  text?: VNodeChild | VNodeChild[]
+}>['__props']>
+
+function addArrayKeys(doms: VNodeChild[]) {
+  return doms.map((dom, index) => {
+    if (!isVNode(dom))
+      return h(Fragment, { key: index }, [dom])
+
+    const props = (dom as VNode).props || {}
+    return cloneVNode(dom, {
+      key: index,
+      ...props,
+      style: {
+        ...(props.style as CSSProperties | undefined),
+      },
+    })
+  })
+}
+
+/**
+ * 一般用于放多个按钮
+ */
+const FieldOptions = defineComponent<FieldOptionsProps>({
   name: 'FieldOptions',
-  props: {
-    text: { type: [Array, Object] as PropType<unknown[] | JSX.Element>, default: () => [] },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-  },
-  setup(props) {
+  props: ['text', 'mode', 'render', 'fieldProps'],
+  setup(rawProps, { expose }) {
+    const props = rawProps
+    const prefixCls = useProPrefixCls('pro-field-option')
+    const { token } = proTheme.useToken()
+
+    // 镜像 React useImperativeHandle(ref, () => ({}))
+    expose({})
+
     return () => {
-      // Options is always read-like; it renders action links/buttons
+      const text = props.text ?? []
+      const mode = props.mode ?? 'read'
+      const style: CSSProperties = {
+        display: 'flex',
+        gap: `${token.value.margin}px`,
+        alignItems: 'center',
+      }
+
       if (props.render) {
-        const doms = props.render(props.text, { mode: props.mode, ...props.fieldProps }, <></>) as unknown as JSX.Element[]
-        if (!doms || !Array.isArray(doms) || doms.length < 1) {
+        const doms = props.render(text, { mode, ...props.fieldProps }, <></>) as FieldOptionsProps['text']
+        if (!doms || !Array.isArray(doms) || doms.length < 1)
           return null
-        }
         return (
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              alignItems: 'center',
-            }}
-          >
-            {doms.map((dom, index) => (
-              <span key={index}>{dom}</span>
-            ))}
+          <div style={style} class={prefixCls.value}>
+            {addArrayKeys(doms as VNodeChild[])}
           </div>
         )
       }
 
-      if (!props.text || !Array.isArray(props.text)) {
-        return null
+      if (!text || !Array.isArray(text)) {
+        if (!isVNode(text))
+          return null
+        return text
       }
 
       return (
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-          }}
-        >
-          {(props.text as unknown[]).map((dom, index) => (
-            <span key={index}>{dom}</span>
-          ))}
+        <div style={style} class={prefixCls.value}>
+          {addArrayKeys(text as VNodeChild[])}
         </div>
       )
     }
   },
 })
+
+export default FieldOptions

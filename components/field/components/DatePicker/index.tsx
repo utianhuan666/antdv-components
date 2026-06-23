@@ -1,53 +1,124 @@
-import type { PropType, VNodeChild } from 'vue'
-import type { ProFieldFCMode } from '../../internal/fieldMode'
+import type { DatePickerProps } from 'antdv-next'
+import type { ProFieldFC, ProFieldLightProps } from '../../types'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useIntl } from '../../../provider'
+import { createRefProxy } from '../../../utils/createRefProxy'
 import { isProFieldEditOrUpdateMode, isProFieldReadMode } from '../../internal/fieldMode'
 import FieldDatePickerEdit from './FieldDatePickerEdit'
+import FieldDatePickerLightEdit from './FieldDatePickerLightEdit'
 import FieldDatePickerRead from './FieldDatePickerRead'
+import '../../initDayjs'
 
 dayjs.extend(weekOfYear)
 
-const FieldDatePicker = defineComponent({
+type FieldDatePickerInstance = InstanceType<typeof import('antdv-next')['DatePicker']>
+export type FieldDatePickerExpose = Partial<FieldDatePickerInstance>
+
+type FieldDatePickerProps = {
+  text: string | number
+  format?: string
+  showTime?: DatePickerProps['showTime']
+  variant?: DatePickerProps['variant']
+  picker?: DatePickerProps['picker']
+  fieldProps?: DatePickerProps & {
+    format?: DatePickerProps['format']
+    picker?: DatePickerProps['picker']
+  }
+} & ProFieldLightProps
+
+type FieldDatePickerFieldProps = NonNullable<ProFieldFC<FieldDatePickerProps>['__props']>
+
+/**
+ * 日期选择组件
+ */
+const FieldDatePicker = defineComponent<FieldDatePickerFieldProps>({
   name: 'FieldDatePicker',
-  props: {
-    text: { type: [String, Number] as PropType<string | number>, default: '' },
-    mode: { type: String as PropType<ProFieldFCMode>, default: 'read' },
-    format: { type: String, default: 'YYYY-MM-DD' },
-    showTime: { type: [Boolean, Object] as PropType<boolean | Record<string, any>>, default: undefined },
-    picker: { type: String as PropType<'time' | 'date' | 'week' | 'month' | 'quarter' | 'year'>, default: undefined },
-    render: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element | undefined>, default: undefined },
-    formItemRender: { type: Function as PropType<(text: any, props: Record<string, any>, dom: JSX.Element) => JSX.Element>, default: undefined },
-    fieldProps: { type: Object as PropType<Record<string, any>>, default: () => ({}) },
-    emptyText: { type: [String, Object, Boolean, Number] as PropType<VNodeChild>, default: '-' },
-  },
-  setup(props) {
+  inheritAttrs: false,
+  props: [
+    'text',
+    'mode',
+    'format',
+    'label',
+    'light',
+    'render',
+    'formItemRender',
+    'showTime',
+    'fieldProps',
+    'picker',
+    'lightLabel',
+    'variant',
+  ],
+  setup(rawProps, { expose }) {
+    const intl = useIntl()
+    const open = ref(false)
+    const innerRef = ref<FieldDatePickerInstance | null>(null)
+    const setOpen = (nextOpen: boolean | ((open: boolean) => boolean)) => {
+      open.value = typeof nextOpen === 'function' ? nextOpen(open.value) : nextOpen
+    }
+
+    expose(createRefProxy<FieldDatePickerInstance>(innerRef))
+
     return () => {
-      if (isProFieldReadMode(props.mode)) {
-        return (
-          <FieldDatePickerRead
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            render={props.render}
-            fieldProps={props.fieldProps}
-          />
-        )
+      const props = rawProps as FieldDatePickerFieldProps
+      const {
+        text = '',
+        mode = 'read',
+        format = 'YYYY-MM-DD',
+        label,
+        light,
+        render,
+        formItemRender,
+        showTime,
+        fieldProps = {},
+        picker,
+        lightLabel,
+        variant,
+      } = props
+      const mergedPicker = fieldProps.picker ?? picker
+
+      if (isProFieldReadMode(mode)) {
+        return FieldDatePickerRead({
+          text,
+          mode,
+          format,
+          render,
+          fieldProps,
+          picker: mergedPicker,
+          label,
+          light,
+          showTime,
+          lightLabel,
+          variant,
+        })
       }
 
-      if (isProFieldEditOrUpdateMode(props.mode)) {
-        return (
-          <FieldDatePickerEdit
-            text={props.text}
-            mode={props.mode}
-            format={props.format}
-            showTime={props.showTime}
-            picker={props.picker}
-            formItemRender={props.formItemRender}
-            fieldProps={props.fieldProps}
-          />
-        )
+      if (isProFieldEditOrUpdateMode(mode)) {
+        const editProps = {
+          text,
+          mode,
+          label,
+          format,
+          render,
+          formItemRender,
+          showTime,
+          fieldProps,
+          picker: mergedPicker,
+          variant,
+          intl,
+        }
+
+        if (light) {
+          return FieldDatePickerLightEdit({
+            ...editProps,
+            lightLabel,
+            open: open.value,
+            setOpen,
+          }, innerRef)
+        }
+
+        return FieldDatePickerEdit(editProps, innerRef)
       }
 
       return null

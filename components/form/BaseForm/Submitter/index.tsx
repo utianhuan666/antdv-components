@@ -1,69 +1,124 @@
-import type { PropType } from 'vue'
-import type { SubmitterContext, SubmitterProps } from '../../typing'
+import type { ButtonProps, FormInstance } from 'antdv-next'
+import type { VNodeChild } from 'vue'
 import { Button } from 'antdv-next'
 import { defineComponent } from 'vue'
+import { proTheme, useIntl } from '../../../provider'
 
-const SubmitterButtonProps = {
-  searchConfig: { type: Object as PropType<SubmitterProps['searchConfig']>, default: () => ({}) },
-  submitButtonProps: { type: [Boolean, Object] as PropType<SubmitterProps['submitButtonProps']>, default: () => ({}) },
-  resetButtonProps: { type: [Boolean, Object] as PropType<SubmitterProps['resetButtonProps']>, default: () => ({}) },
-  onSubmit: { type: Function as PropType<(value?: Record<string, any>) => void>, default: undefined },
-  onReset: { type: Function as PropType<(value?: Record<string, any>) => void>, default: undefined },
-  render: { type: [Boolean, Function] as PropType<SubmitterProps['render']>, default: undefined },
-  context: { type: Object as PropType<SubmitterContext>, required: true },
+export interface SearchConfig {
+  resetText?: VNodeChild
+  submitText?: VNodeChild
 }
 
-const Submitter = defineComponent({
+type ActionButtonProps = ButtonProps & { preventDefault?: boolean }
+
+export interface SubmitterProps<T = Record<string, any>> {
+  form?: FormInstance
+  onSubmit?: (value?: T) => void
+  onReset?: (value?: T) => void
+  searchConfig?: SearchConfig
+  submitButtonProps?: false | ActionButtonProps
+  resetButtonProps?: false | ActionButtonProps
+  render?:
+    | ((
+      props: SubmitterProps<T> & T & {
+        submit: () => void
+        reset: () => void
+      },
+      dom: VNodeChild[],
+    ) => VNodeChild[] | VNodeChild | false)
+    | false
+}
+
+function renderActionButton(
+  buttonProps: ActionButtonProps,
+  key: string,
+  text: VNodeChild,
+  onAction: () => void,
+  extraProps?: ButtonProps,
+) {
+  const {
+    preventDefault,
+    onClick,
+    fieldProps: _fieldProps,
+    ...restButtonProps
+  } = buttonProps as ActionButtonProps & { fieldProps?: unknown }
+
+  return (
+    <Button
+      {...extraProps}
+      {...restButtonProps}
+      key={key}
+      onClick={(e: MouseEvent) => {
+        if (!preventDefault)
+          onAction()
+        onClick?.(e as any)
+      }}
+    >
+      {text}
+    </Button>
+  )
+}
+
+const Submitter = defineComponent<SubmitterProps>({
   name: 'ProFormSubmitter',
-  props: SubmitterButtonProps,
-  setup(props) {
+  props: ['form', 'submitButtonProps', 'resetButtonProps', 'searchConfig', 'render', 'onSubmit', 'onReset'],
+  setup(rawProps) {
+    const props = rawProps
+    const intl = useIntl()
+    const { token } = proTheme.useToken()
+
     return () => {
-      const { searchConfig, submitButtonProps, resetButtonProps } = props
-      const submitText = searchConfig?.submitText ?? '提交'
-      const resetText = searchConfig?.resetText ?? '重置'
-
-      const dom = []
-      if (resetButtonProps !== false) {
-        const { preventDefault, onClick, ...resetRestProps } = (typeof resetButtonProps === 'object' ? resetButtonProps : {}) as Record<string, any>
-        dom.push(
-          <Button
-            key="reset"
-            htmlType="button"
-            {...resetRestProps}
-            onClick={(event: MouseEvent) => {
-              if (!preventDefault)
-                props.context!.reset()
-              props.onReset?.()
-              onClick?.(event)
-            }}
-          >
-            {resetText}
-          </Button>,
-        )
-      }
-      if (submitButtonProps !== false) {
-        const { preventDefault, onClick, ...submitRestProps } = (typeof submitButtonProps === 'object' ? submitButtonProps : {}) as Record<string, any>
-        dom.push(
-          <Button
-            key="submit"
-            type="primary"
-            htmlType="button"
-            {...submitRestProps}
-            onClick={(event: MouseEvent) => {
-              if (!preventDefault)
-                props.context!.submit()
-              props.onSubmit?.()
-              onClick?.(event)
-            }}
-          >
-            {submitText}
-          </Button>,
-        )
-      }
-
       if (props.render === false)
         return null
-      const renderDom = typeof props.render === 'function' ? props.render(props.context!, dom) : dom
+
+      const {
+        onSubmit,
+        render,
+        onReset,
+        searchConfig = {},
+        submitButtonProps,
+        resetButtonProps,
+      } = props
+
+      const submit = () => {
+        props.form?.submit?.()
+        onSubmit?.()
+      }
+
+      const reset = () => {
+        props.form?.resetFields?.()
+        onReset?.()
+      }
+
+      const {
+        submitText = intl.getMessage('tableForm.submit', '提交'),
+        resetText = intl.getMessage('tableForm.reset', '重置'),
+      } = searchConfig
+
+      const dom: VNodeChild[] = []
+
+      if (resetButtonProps !== false) {
+        dom.push(
+          renderActionButton(resetButtonProps ?? {}, 'rest', resetText, reset),
+        )
+      }
+
+      if (submitButtonProps !== false) {
+        dom.push(
+          renderActionButton(
+            submitButtonProps ?? {},
+            'submit',
+            submitText,
+            submit,
+            { type: 'primary' },
+          ),
+        )
+      }
+
+      const renderDom = render
+        ? render({ ...props, submit, reset } as SubmitterProps<any> & { submit: () => void, reset: () => void }, dom)
+        : dom
+
       if (!renderDom)
         return null
 
@@ -73,7 +128,13 @@ const Submitter = defineComponent({
         if (renderDom.length === 1)
           return renderDom[0]
         return (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: `${token.marginXS}px`,
+              alignItems: 'center',
+            }}
+          >
             {renderDom}
           </div>
         )
